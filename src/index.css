@@ -1,68 +1,100 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    --background: 220 20% 97%;
+    --foreground: 216 50% 16%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 216 50% 16%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 50% 16%;
+
+    --primary: 216 50% 16%;
+    --primary-foreground: 40 30% 95%;
+
+    --secondary: 38 42% 58%;
+    --secondary-foreground: 216 50% 16%;
+
+    --muted: 220 15% 92%;
+    --muted-foreground: 216 15% 50%;
+
+    --accent: 38 42% 58%;
+    --accent-foreground: 216 50% 16%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 38 42% 58%;
+
+    --radius: 0.75rem;
+
+    --gold: 38 42% 58%;
+    --gold-light: 38 35% 75%;
+    --navy: 216 50% 16%;
+    --navy-light: 216 40% 30%;
+    --cream: 40 30% 95%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
-  a:hover {
-    color: #747bff;
+
+  .dark {
+    --background: 216 50% 8%;
+    --foreground: 40 30% 95%;
+    --card: 216 45% 12%;
+    --card-foreground: 40 30% 95%;
+    --popover: 216 45% 12%;
+    --popover-foreground: 40 30% 95%;
+    --primary: 38 42% 58%;
+    --primary-foreground: 216 50% 16%;
+    --secondary: 216 40% 22%;
+    --secondary-foreground: 40 30% 95%;
+    --muted: 216 35% 18%;
+    --muted-foreground: 220 15% 60%;
+    --accent: 38 42% 58%;
+    --accent-foreground: 216 50% 16%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 216 35% 20%;
+    --input: 216 35% 20%;
+    --ring: 38 42% 58%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
-  button {
-    background-color: #f9f9f9;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: "Plus Jakarta Sans", sans-serif;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl border border-white/30 shadow-2xl;
   }
 }

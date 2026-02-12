@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import { ProtectedRoute, PublicRoute } from "./routes";
 import LoginForm from "./components/auth/LoginForm";
+import SignUpPage from "./pages/SignUpPage";
 
 /**
  * Main App Component with Routing
@@ -37,10 +38,7 @@ function App() {
           path="/register"
           element={
             <PublicRoute>
-              <div>
-                <h1>Register Page</h1>
-                <p>To be implemented</p>
-              </div>
+              <SignUpPage />
             </PublicRoute>
           }
         />
