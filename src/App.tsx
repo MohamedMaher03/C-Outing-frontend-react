@@ -3,6 +3,7 @@ import "./App.css";
 import { ProtectedRoute, PublicRoute } from "./routes";
 import LoginForm from "./components/auth/LoginForm";
 import SignUpPage from "./pages/SignUpPage";
+import OnboardingPage from "./pages/OnboardingPage";
 
 /**
  * Main App Component with Routing
@@ -39,6 +40,14 @@ function App() {
           element={
             <PublicRoute>
               <SignUpPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/onboarding"
+          element={
+            <PublicRoute>
+              <OnboardingPage />
             </PublicRoute>
           }
         />
