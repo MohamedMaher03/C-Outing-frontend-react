@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -12,9 +12,9 @@ import { useNavigate } from "react-router-dom";
 
 import { loginSchema } from "../../validation/logIn.schema";
 import type { LoginFormData } from "../../validation/logIn.schema";
+import { PasswordInput } from "../form/PasswordInput";
 
 const LoginForm = () => {
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -134,24 +134,12 @@ const LoginForm = () => {
                 </button>
               </div>
               <div className="relative">
-                <Input
+                <PasswordInput
                   id="password"
-                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  {...register("password")}
-                  className={`pr-10 ${errors.password ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  register={register("password")}
+                  error={!!errors.password}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
               </div>
               <FormError message={errors.password?.message} />
             </div>
