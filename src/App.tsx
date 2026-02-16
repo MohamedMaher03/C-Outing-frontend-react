@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import { ProtectedRoute, PublicRoute } from "./routes";
+import AppLayout from "./components/AppLayout";
 import LoginForm from "./components/auth/LoginForm";
 import SignUpPage from "./pages/SignUpPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -16,7 +17,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
+        {/* Public Routes - No Layout */}
         <Route
           path="/"
           element={
@@ -53,79 +54,87 @@ function App() {
           }
         />
 
-        <Route
-          //just for test routes under this should be removed
-          path="/home"
-          element={
-            <PublicRoute>
-              <HomePage />
-            </PublicRoute>
-          }
-        />
-        {/* Protected Routes */}
-        {/* <Route
-          path="/home"
-          element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          }
-        /> */}
-        <Route
-          path="/recommendations"
-          element={
-            <ProtectedRoute>
-              <div>
-                <h1>Recommendations Page</h1>
-                <p>To be implemented</p>
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/venue/:id"
-          element={
-            <ProtectedRoute>
-              <div>
-                <h1>Venue Details Page</h1>
-                <p>To be implemented</p>
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/search"
-          element={
-            <ProtectedRoute>
-              <div>
-                <h1>Search Page</h1>
-                <p>To be implemented</p>
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <div>
-                <h1>Profile Page</h1>
-                <p>To be implemented</p>
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/favorites"
-          element={
-            <ProtectedRoute>
-              <div>
-                <h1>Favorites Page</h1>
-                <p>To be implemented</p>
-              </div>
-            </ProtectedRoute>
-          }
-        />
+        {/* App Routes with AppLayout */}
+        <Route element={<AppLayout />}>
+          {/* Home Page */}
+          <Route
+            path="/home"
+            element={
+              <PublicRoute>
+                <HomePage />
+              </PublicRoute>
+            }
+          />
+
+          {/* Protected Routes */}
+          <Route
+            path="/recommendations"
+            element={
+              <ProtectedRoute>
+                <div>
+                  <h1>Recommendations Page</h1>
+                  <p>To be implemented</p>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/venue/:id"
+            element={
+              <ProtectedRoute>
+                <div>
+                  <h1>Venue Details Page</h1>
+                  <p>To be implemented</p>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/map"
+            element={
+              <ProtectedRoute>
+                <div>
+                  <h1>Map Page</h1>
+                  <p>To be implemented</p>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/search"
+            element={
+              <ProtectedRoute>
+                <div>
+                  <h1>Search Page</h1>
+                  <p>To be implemented</p>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <PublicRoute>
+                <div>
+                  <h1>Profile Page</h1>
+                  <p>To be implemented</p>
+                </div>
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/favorites"
+            element={
+              <ProtectedRoute>
+                <div>
+                  <h1>Favorites Page</h1>
+                  <p>To be implemented</p>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
         {/* 404 Not Found Route */}
         <Route
           path="*"

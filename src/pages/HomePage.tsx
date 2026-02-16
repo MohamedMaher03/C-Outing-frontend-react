@@ -13,6 +13,7 @@ import PlaceCard from "../components/PlaceCard";
 import { PLACES } from "../data/mockData";
 import { useAuth } from "../context/AuthContext";
 import cairoBg from "../assets/images/cairo-bg.jpg";
+import islamicPattern from "../assets/images/islamic-pattern.svg";
 
 type FilterType = "all" | "top-rated" | "near-me" | "open-now";
 
@@ -134,8 +135,15 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Content Sections */}
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
+      {/* Content Sections with Subtle Islamic Pattern Background */}
+      <div
+        className="max-w-5xl mx-auto px-4 py-8 space-y-10"
+        style={{
+          backgroundImage: `url(${islamicPattern})`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "100px 100px",
+        }}
+      >
         {/* Curated Row with AI Picks */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
