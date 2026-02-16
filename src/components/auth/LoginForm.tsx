@@ -3,9 +3,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { FormError } from "../ui/form-error";
+import { FormField } from "../form/FormField";
 import logo from "../../assets/images/logo2.png";
 import cairoBg from "../../assets/images/cairo-bg.jpg";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,22 @@ import { useNavigate } from "react-router-dom";
 import { loginSchema } from "../../validation/logIn.schema";
 import type { LoginFormData } from "../../validation/logIn.schema";
 import { PasswordInput } from "../form/PasswordInput";
+
+interface LoginField {
+  id: keyof LoginFormData;
+  label: string;
+  placeholder: string;
+  type?: string;
+}
+
+const loginFormFields: LoginField[] = [
+  {
+    id: "email",
+    label: "Email",
+    placeholder: "you@example.com",
+    type: "email",
+  },
+];
 
 const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -107,22 +123,20 @@ const LoginForm = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                {...register("email")}
-                className={
-                  errors.email
-                    ? "border-destructive focus-visible:ring-destructive"
-                    : ""
-                }
+            {/* Render form fields using map */}
+            {loginFormFields.map((field) => (
+              <FormField
+                key={field.id}
+                id={field.id}
+                label={field.label}
+                placeholder={field.placeholder}
+                type={field.type}
+                error={errors[field.id]?.message}
+                register={register(field.id)}
               />
-              <FormError message={errors.email?.message} />
-            </div>
+            ))}
 
+            {/* Password Field */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
@@ -133,14 +147,12 @@ const LoginForm = () => {
                   Forgot password?
                 </button>
               </div>
-              <div className="relative">
-                <PasswordInput
-                  id="password"
-                  placeholder="••••••••"
-                  register={register("password")}
-                  error={!!errors.password}
-                />
-              </div>
+              <PasswordInput
+                id="password"
+                placeholder="••••••••"
+                register={register("password")}
+                error={!!errors.password}
+              />
               <FormError message={errors.password?.message} />
             </div>
 

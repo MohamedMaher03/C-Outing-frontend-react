@@ -7,13 +7,48 @@ import { Controller } from "react-hook-form";
 import { PasswordInput } from "../../components/form/PasswordInput";
 import { Loader2, ArrowLeft, User, Mail, Phone } from "lucide-react";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import { FormError } from "../ui/form-error";
+import { FormField } from "../../components/form/FormField";
 import logo from "../../assets/images/logo2.png";
 import cairoBg from "../../assets/images/cairo-bg.jpg";
 import { useNavigate } from "react-router-dom";
+
+interface SignUpFieldConfig {
+  id: keyof Omit<
+    SignUpFormData,
+    "password" | "confirmPassword" | "acceptTerms"
+  >;
+  label: string;
+  placeholder: string;
+  type?: string;
+  icon?: React.ReactNode;
+}
+
+const signUpFormFields: SignUpFieldConfig[] = [
+  {
+    id: "fullName",
+    label: "Full Name",
+    placeholder: "John Doe",
+    type: "text",
+    icon: <User className="h-4 w-4" />,
+  },
+  {
+    id: "email",
+    label: "Email",
+    placeholder: "you@example.com",
+    type: "email",
+    icon: <Mail className="h-4 w-4" />,
+  },
+  {
+    id: "phone",
+    label: "Phone Number",
+    placeholder: "+20 123 456 7890",
+    type: "tel",
+    icon: <Phone className="h-4 w-4" />,
+  },
+];
 
 const SignUpForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -126,65 +161,19 @@ const SignUpForm = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Full Name */}
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="John Doe"
-                  {...register("fullName")}
-                  className={`pl-10 ${
-                    errors.fullName
-                      ? "border-destructive focus-visible:ring-destructive"
-                      : ""
-                  }`}
-                />
-              </div>
-              <FormError message={errors.fullName?.message} />
-            </div>
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  {...register("email")}
-                  className={`pl-10 ${
-                    errors.email
-                      ? "border-destructive focus-visible:ring-destructive"
-                      : ""
-                  }`}
-                />
-              </div>
-              <FormError message={errors.email?.message} />
-            </div>
-
-            {/* Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+20 123 456 7890"
-                  {...register("phone")}
-                  className={`pl-10 ${
-                    errors.phone
-                      ? "border-destructive focus-visible:ring-destructive"
-                      : ""
-                  }`}
-                />
-              </div>
-              <FormError message={errors.phone?.message} />
-            </div>
+            {/* Render form fields using map */}
+            {signUpFormFields.map((field) => (
+              <FormField
+                key={field.id}
+                id={field.id}
+                label={field.label}
+                placeholder={field.placeholder}
+                type={field.type}
+                icon={field.icon}
+                error={errors[field.id]?.message}
+                register={register(field.id)}
+              />
+            ))}
 
             {/* Password */}
             <div className="space-y-2">
