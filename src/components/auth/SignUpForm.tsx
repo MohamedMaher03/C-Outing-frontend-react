@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema } from "../../validation/signUp.schema";
@@ -14,6 +13,7 @@ import { FormField } from "../../components/form/FormField";
 import logo from "../../assets/images/logo2.png";
 import cairoBg from "../../assets/images/cairo-bg.jpg";
 import { useNavigate } from "react-router-dom";
+import { useSignUp } from "../../hooks/useSignUp";
 
 interface SignUpFieldConfig {
   id: keyof Omit<
@@ -51,8 +51,8 @@ const signUpFormFields: SignUpFieldConfig[] = [
 ];
 
 const SignUpForm = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { registerUser, isLoading } = useSignUp();
 
   const {
     register,
@@ -65,16 +65,6 @@ const SignUpForm = () => {
       acceptTerms: false,
     },
   });
-
-  const onSubmit = async (data: SignUpFormData) => {
-    setIsLoading(true);
-    console.log("Sign-up attempt:", data);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsLoading(false);
-    // Redirect to login after successful sign-up
-    // navigate("/login");
-  };
 
   return (
     <div className="relative w-full min-h-screen flex items-center justify-center overflow-hidden py-8">
@@ -160,7 +150,7 @@ const SignUpForm = () => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(registerUser)} className="space-y-4">
             {/* Render form fields using map */}
             {signUpFormFields.map((field) => (
               <FormField

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -13,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { loginSchema } from "../../validation/logIn.schema";
 import type { LoginFormData } from "../../validation/logIn.schema";
 import { PasswordInput } from "../form/PasswordInput";
+import { useLogin } from "../../hooks/useLogin";
 
 interface LoginField {
   id: keyof LoginFormData;
@@ -31,8 +31,8 @@ const loginFormFields: LoginField[] = [
 ];
 
 const LoginForm = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { loginUser, isLoading } = useLogin();
 
   const {
     register,
@@ -41,14 +41,6 @@ const LoginForm = () => {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
-
-  const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
-    console.log("Login attempt:", data.email);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
-  };
 
   return (
     <div className="relative w-full h-screen flex items-center justify-center overflow-hidden">
@@ -122,7 +114,7 @@ const LoginForm = () => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(loginUser)} className="space-y-4">
             {/* Render form fields using map */}
             {loginFormFields.map((field) => (
               <FormField
