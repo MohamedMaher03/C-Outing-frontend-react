@@ -8,6 +8,7 @@ interface PlaceCardProps {
   variant?: "horizontal" | "grid";
   onToggleSave?: (id: string) => void;
   onClick?: (id: string) => void;
+  //   showAiPick?: boolean;
 }
 
 const PlaceCard = ({
@@ -15,6 +16,7 @@ const PlaceCard = ({
   variant = "grid",
   onToggleSave,
   onClick,
+  //   showAiPick = false,
 }: PlaceCardProps) => {
   const isHorizontal = variant === "horizontal";
 
@@ -22,10 +24,19 @@ const PlaceCard = ({
     <div
       onClick={() => onClick?.(place.id)}
       className={cn(
-        "group relative bg-card rounded-xl border border-border overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5",
+        "group relative bg-white rounded-xl border border-border overflow-hidden cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 shadow-md",
         isHorizontal ? "w-[260px] flex-shrink-0" : "w-full",
+        // showAiPick && "ring-2 ring-gold/30",
       )}
     >
+      {/* AI Pick Badge
+      {showAiPick && (
+        <div className="absolute top-2 left-2 z-10 bg-gold text-navy px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-lg">
+          <Sparkles className="h-3 w-3" />
+          AI PICK
+        </div>
+      )} */}
+
       {/* Image */}
       <div
         className={cn(

@@ -97,4 +97,34 @@
   .glass {
     @apply bg-white/80 backdrop-blur-xl border border-white/30 shadow-2xl;
   }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Premium scrollbar for main content */
+  .scrollbar-premium::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-premium::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 10px;
+  }
+
+  .scrollbar-premium::-webkit-scrollbar-thumb {
+    background: hsl(var(--gold));
+    border-radius: 10px;
+    transition: background 0.3s;
+  }
+
+  .scrollbar-premium::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--navy));
+  }
 }
