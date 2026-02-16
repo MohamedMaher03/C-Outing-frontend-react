@@ -4,6 +4,7 @@ import { ProtectedRoute, PublicRoute } from "./routes";
 import LoginForm from "./components/auth/LoginForm";
 import SignUpPage from "./pages/SignUpPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import HomePage from "./pages/HomePage";
 
 /**
  * Main App Component with Routing
@@ -52,7 +53,24 @@ function App() {
           }
         />
 
+        <Route
+          //just for test routes under this should be removed
+          path="/home"
+          element={
+            <PublicRoute>
+              <HomePage />
+            </PublicRoute>
+          }
+        />
         {/* Protected Routes */}
+        {/* <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        /> */}
         <Route
           path="/recommendations"
           element={
@@ -108,7 +126,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* 404 Not Found Route */}
         <Route
           path="*"
