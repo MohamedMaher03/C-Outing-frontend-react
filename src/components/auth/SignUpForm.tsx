@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { signUpSchema } from "../../validation/signUp.schema";
+import type { SignUpFormData } from "../../validation/signUp.schema";
+import { Controller } from "react-hook-form";
 import {
   Eye,
   EyeOff,
@@ -15,43 +17,10 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
+import { FormError } from "../ui/form-error";
 import logo from "../../assets/images/logo2.png";
 import cairoBg from "../../assets/images/cairo-bg.jpg";
 import { useNavigate } from "react-router-dom";
-
-const signUpSchema = z
-  .object({
-    fullName: z
-      .string()
-      .trim()
-      .min(2, "Full name must be at least 2 characters")
-      .max(50, "Full name must be less than 50 characters"),
-    email: z.string().trim().email("Please enter a valid email address"),
-    phone: z
-      .string()
-      .trim()
-      .regex(
-        /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/,
-        "Please enter a valid phone number",
-      ),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        "Password must contain at least one uppercase letter, one lowercase letter, and one number",
-      ),
-    confirmPassword: z.string().min(1, "Please confirm your password"),
-    acceptTerms: z.boolean().refine((val) => val === true, {
-      message: "You must accept the terms and conditions",
-    }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-type SignUpFormData = z.infer<typeof signUpSchema>;
 
 const SignUpForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -63,16 +32,13 @@ const SignUpForm = () => {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
-    watch,
+    control,
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
       acceptTerms: false,
     },
   });
-
-  const acceptTerms = watch("acceptTerms");
 
   const onSubmit = async (data: SignUpFormData) => {
     setIsLoading(true);
@@ -186,11 +152,7 @@ const SignUpForm = () => {
                   }`}
                 />
               </div>
-              {errors.fullName && (
-                <p className="text-xs text-destructive">
-                  {errors.fullName.message}
-                </p>
-              )}
+              <FormError message={errors.fullName?.message} />
             </div>
 
             {/* Email */}
@@ -210,11 +172,7 @@ const SignUpForm = () => {
                   }`}
                 />
               </div>
-              {errors.email && (
-                <p className="text-xs text-destructive">
-                  {errors.email.message}
-                </p>
-              )}
+              <FormError message={errors.email?.message} />
             </div>
 
             {/* Phone */}
@@ -234,11 +192,7 @@ const SignUpForm = () => {
                   }`}
                 />
               </div>
-              {errors.phone && (
-                <p className="text-xs text-destructive">
-                  {errors.phone.message}
-                </p>
-              )}
+              <FormError message={errors.phone?.message} />
             </div>
 
             {/* Password */}
@@ -268,11 +222,7 @@ const SignUpForm = () => {
                   )}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-xs text-destructive">
-                  {errors.password.message}
-                </p>
-              )}
+              <FormError message={errors.password?.message} />
             </div>
 
             {/* Confirm Password */}
@@ -302,26 +252,25 @@ const SignUpForm = () => {
                   )}
                 </button>
               </div>
-              {errors.confirmPassword && (
-                <p className="text-xs text-destructive">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
+              <FormError message={errors.confirmPassword?.message} />
             </div>
 
             {/* Terms and Conditions */}
             <div className="space-y-2">
               <div className="flex items-start gap-3">
-                <Checkbox
-                  id="acceptTerms"
-                  checked={acceptTerms}
-                  onCheckedChange={(checked: boolean) =>
-                    setValue("acceptTerms", checked as boolean, {
-                      shouldValidate: true,
-                    })
-                  }
-                  className="mt-0.5"
+                <Controller
+                  name="acceptTerms"
+                  control={control}
+                  render={({ field }) => (
+                    <Checkbox
+                      id="acceptTerms"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      className="mt-0.5"
+                    />
+                  )}
                 />
+
                 <div className="flex-1">
                   <Label
                     htmlFor="acceptTerms"
@@ -344,11 +293,7 @@ const SignUpForm = () => {
                   </Label>
                 </div>
               </div>
-              {errors.acceptTerms && (
-                <p className="text-xs text-destructive">
-                  {errors.acceptTerms.message}
-                </p>
-              )}
+              <FormError message={errors.acceptTerms?.message} />
             </div>
 
             <Button

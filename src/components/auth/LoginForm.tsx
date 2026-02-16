@@ -1,21 +1,17 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { FormError } from "../ui/form-error";
 import logo from "../../assets/images/logo2.png";
 import cairoBg from "../../assets/images/cairo-bg.jpg";
 import { useNavigate } from "react-router-dom";
 
-const loginSchema = z.object({
-  email: z.string().trim().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+import { loginSchema } from "../../validation/logIn.schema";
+import type { LoginFormData } from "../../validation/logIn.schema";
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -124,11 +120,7 @@ const LoginForm = () => {
                     : ""
                 }
               />
-              {errors.email && (
-                <p className="text-xs text-destructive">
-                  {errors.email.message}
-                </p>
-              )}
+              <FormError message={errors.email?.message} />
             </div>
 
             <div className="space-y-2">
@@ -161,11 +153,7 @@ const LoginForm = () => {
                   )}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-xs text-destructive">
-                  {errors.password.message}
-                </p>
-              )}
+              <FormError message={errors.password?.message} />
             </div>
 
             <Button
