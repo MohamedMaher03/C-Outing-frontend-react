@@ -11,3 +11,5 @@ export * from "./userService";
 export * from "./venueService";
 export * from "./recommendationService";
 export * from "./interactionService";
+export * from "./homeService";
+export * from "./onboardingService";

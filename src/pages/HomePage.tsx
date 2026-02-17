@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -10,21 +9,28 @@ import {
 } from "lucide-react";
 import { Input } from "../components/ui/input";
 import PlaceCard from "../components/PlaceCard";
-import { PLACES } from "../data/mockData";
 import { useAuth } from "../context/AuthContext";
+import { useHome, type FilterType } from "../hooks/useHome";
 import cairoBg from "../assets/images/cairo-bg.jpg";
 import islamicPattern from "../assets/images/islamic-pattern.svg";
-
-type FilterType = "all" | "top-rated" | "near-me" | "open-now";
 
 const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [search, setSearch] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState<FilterType>("all");
-  const [places, setPlaces] = useState(
-    PLACES.map((p) => ({ ...p, isSaved: false })),
-  );
+
+  // Use custom hook for all business logic
+  const {
+    search,
+    setSearch,
+    selectedFilter,
+    setSelectedFilter,
+    filteredPlaces,
+    curatedPlaces,
+    topRatedPlaces,
+    toggleSave,
+    isLoading,
+    error,
+  } = useHome();
 
   const filterOptions = [
     { id: "all" as FilterType, label: "All", icon: Sparkles },
@@ -32,33 +38,6 @@ const HomePage = () => {
     { id: "near-me" as FilterType, label: "Near Me", icon: MapPin },
     { id: "open-now" as FilterType, label: "Open Now", icon: Clock },
   ];
-
-  const toggleSave = (id: string) =>
-    setPlaces((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, isSaved: !p.isSaved } : p)),
-    );
-
-  // Apply filters and search
-  let filtered = places.filter(
-    (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.district.toLowerCase().includes(search.toLowerCase()) ||
-      p.tags.some((t) => t.toLowerCase().includes(search.toLowerCase())),
-  );
-
-  // Apply category filter
-  if (selectedFilter === "top-rated") {
-    filtered = filtered.filter((p) => p.rating >= 4.5);
-  } else if (selectedFilter === "near-me") {
-    filtered = filtered.sort((a, b) => {
-      const distA = parseFloat(a.distance);
-      const distB = parseFloat(b.distance);
-      return distA - distB;
-    });
-  }
-
-  const curated = filtered.slice(0, 5);
-  const topRated = [...filtered].sort((a, b) => b.rating - a.rating);
 
   // Get personalized greeting
   const getGreeting = () => {
@@ -69,6 +48,30 @@ const HomePage = () => {
   };
 
   const userName = user?.name?.split(" ")[0] || "Explorer";
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Sparkles className="h-12 w-12 text-gold animate-pulse mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading places...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Failed to load places</p>
+          <p className="text-sm text-muted-foreground">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F8F9FA" }}>
@@ -158,14 +161,13 @@ const HomePage = () => {
             </div>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide">
-            {curated.map((place) => (
+            {curatedPlaces.map((place) => (
               <PlaceCard
                 key={place.id}
                 place={place}
                 variant="horizontal"
                 onToggleSave={toggleSave}
                 onClick={(id) => navigate(`/place/${id}`)}
-                // showAiPick={index < 3}
               />
             ))}
           </div>
@@ -180,12 +182,12 @@ const HomePage = () => {
                 Top Rated in Cairo
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
-                {filtered.length} venues match your criteria
+                {filteredPlaces.length} venues match your criteria
               </p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {topRated.map((place) => (
+            {topRatedPlaces.map((place) => (
               <PlaceCard
                 key={place.id}
                 place={place}

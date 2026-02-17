@@ -1,43 +1,42 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Slider } from "../components/ui/slider";
 import { cn } from "../libs/utils";
 import { INTERESTS, DISTRICTS } from "../data/mockData";
+import { useOnboarding } from "../hooks/useOnboarding";
 import logo from "../assets/images/logo2.png";
 import cairoBackground from "../assets/images/cairo-bg-onboarding.jpg";
 
 const STEPS = ["Interests", "Vibe", "Areas", "Budget"];
 
 const OnboardingPage = () => {
-  const navigate = useNavigate();
-  const [step, setStep] = useState(0);
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [vibe, setVibe] = useState([50]);
-  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
-  const [budget, setBudget] = useState<string | null>(null);
+  // Use custom hook for all business logic
+  const {
+    step,
+    selectedInterests,
+    vibe,
+    selectedDistricts,
+    budget,
+    isSubmitting,
+    error,
+    canGoNext,
+    toggleInterest,
+    setVibe,
+    toggleDistrict,
+    setBudget,
+    goToNextStep,
+    goToPreviousStep,
+    handleComplete,
+  } = useOnboarding();
 
-  const toggleInterest = (id: string) =>
-    setSelectedInterests((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
-
-  const toggleDistrict = (d: string) =>
-    setSelectedDistricts((prev) =>
-      prev.includes(d) ? prev.filter((i) => i !== d) : [...prev, d],
-    );
-
-  const canNext =
-    (step === 0 && selectedInterests.length >= 2) ||
-    step === 1 ||
-    (step === 2 && selectedDistricts.length >= 1) ||
-    (step === 3 && budget !== null);
-
+  // Handle next button click
   const handleNext = () => {
-    if (step < 3) setStep(step + 1);
-    else navigate("/home");
+    if (step < 3) {
+      goToNextStep();
+    } else {
+      handleComplete();
+    }
   };
 
   return (
@@ -228,12 +227,19 @@ const OnboardingPage = () => {
             </motion.div>
           </AnimatePresence>
 
+          {/* Error Message */}
+          {error && (
+            <div className="text-center">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex items-center gap-3 justify-between">
             <Button
               variant="ghost"
-              onClick={() => step > 0 && setStep(step - 1)}
-              disabled={step === 0}
+              onClick={goToPreviousStep}
+              disabled={step === 0 || isSubmitting}
               className="gap-1"
             >
               <ArrowLeft className="h-4 w-4" /> Back
@@ -241,10 +247,14 @@ const OnboardingPage = () => {
 
             <Button
               onClick={handleNext}
-              disabled={!canNext}
+              disabled={!canGoNext || isSubmitting}
               className="gap-1 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-6"
             >
-              {step === 3 ? (
+              {isSubmitting ? (
+                <>
+                  <Sparkles className="h-4 w-4 animate-pulse" /> Saving...
+                </>
+              ) : step === 3 ? (
                 <>
                   <Sparkles className="h-4 w-4" /> Start Exploring
                 </>
