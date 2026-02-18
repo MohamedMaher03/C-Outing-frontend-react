@@ -12,7 +12,6 @@ import PlaceCard from "../components/PlaceCard";
 import { useAuth } from "../context/AuthContext";
 import { useHome, type FilterType } from "../hooks/useHome";
 import cairoBg from "../assets/images/cairo-bg.jpg";
-import islamicPattern from "../assets/images/islamic-pattern.svg";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -138,15 +137,8 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Content Sections with Subtle Islamic Pattern Background */}
-      <div
-        className="max-w-5xl mx-auto px-4 py-8 space-y-10"
-        style={{
-          backgroundImage: `url(${islamicPattern})`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "100px 100px",
-        }}
-      >
+      {/* Content Sections */}
+      <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
         {/* Curated Row with AI Picks */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
@@ -167,7 +159,7 @@ const HomePage = () => {
                 place={place}
                 variant="horizontal"
                 onToggleSave={toggleSave}
-                onClick={(id) => navigate(`/place/${id}`)}
+                onClick={(id) => navigate(`/venue/${id}`)}
               />
             ))}
           </div>
@@ -193,7 +185,7 @@ const HomePage = () => {
                 place={place}
                 variant="grid"
                 onToggleSave={toggleSave}
-                onClick={(id) => navigate(`/place/${id}`)}
+                onClick={(id) => navigate(`/venue/${id}`)}
               />
             ))}
           </div>

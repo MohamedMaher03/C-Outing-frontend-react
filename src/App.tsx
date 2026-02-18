@@ -6,6 +6,8 @@ import LoginForm from "./components/auth/LoginForm";
 import SignUpPage from "./pages/SignUpPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import HomePage from "./pages/HomePage";
+import FavoritesPage from "./pages/FavoritesPage";
+import PlaceDetailPage from "./pages/PlaceDetailPage";
 
 /**
  * Main App Component with Routing
@@ -81,12 +83,9 @@ function App() {
           <Route
             path="/venue/:id"
             element={
-              <ProtectedRoute>
-                <div>
-                  <h1>Venue Details Page</h1>
-                  <p>To be implemented</p>
-                </div>
-              </ProtectedRoute>
+              <PublicRoute>
+                <PlaceDetailPage />
+              </PublicRoute>
             }
           />
           <Route
@@ -125,12 +124,9 @@ function App() {
           <Route
             path="/favorites"
             element={
-              <ProtectedRoute>
-                <div>
-                  <h1>Favorites Page</h1>
-                  <p>To be implemented</p>
-                </div>
-              </ProtectedRoute>
+              <PublicRoute>
+                <FavoritesPage />
+              </PublicRoute>
             }
           />
         </Route>

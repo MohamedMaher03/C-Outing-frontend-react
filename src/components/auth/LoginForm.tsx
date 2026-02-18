@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 import { Label } from "../ui/label";
 import { FormError } from "../ui/form-error";
 import { FormField } from "../form/FormField";
-import logo from "../../assets/images/logo2.png";
+import logo from "../../assets/images/logo3.png";
 import cairoBg from "../../assets/images/cairo-bg.jpg";
 import { useNavigate } from "react-router-dom";
 
