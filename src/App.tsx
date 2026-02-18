@@ -8,6 +8,11 @@ import OnboardingPage from "./pages/OnboardingPage";
 import HomePage from "./pages/HomePage";
 import FavoritesPage from "./pages/FavoritesPage";
 import PlaceDetailPage from "./pages/PlaceDetailPage";
+import ProfilePage from "./pages/ProfilePage";
+import EditProfilePage from "./pages/EditProfilePage";
+import NotificationsPage from "./pages/NotificationsPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import HelpSupportPage from "./pages/HelpSupportPage";
 
 /**
  * Main App Component with Routing
@@ -114,10 +119,39 @@ function App() {
             path="/profile"
             element={
               <PublicRoute>
-                <div>
-                  <h1>Profile Page</h1>
-                  <p>To be implemented</p>
-                </div>
+                <ProfilePage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/profile/edit"
+            element={
+              <PublicRoute>
+                <EditProfilePage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/profile/notifications"
+            element={
+              <PublicRoute>
+                <NotificationsPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/profile/privacy"
+            element={
+              <PublicRoute>
+                <PrivacyPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/profile/help"
+            element={
+              <PublicRoute>
+                <HelpSupportPage />
               </PublicRoute>
             }
           />

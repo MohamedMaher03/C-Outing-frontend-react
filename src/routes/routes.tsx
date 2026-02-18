@@ -16,6 +16,10 @@ export const ROUTES = {
   VENUE_DETAIL: (id: string) => `/venue/${id}`,
   SEARCH: "/search",
   PROFILE: "/profile",
+  PROFILE_EDIT: "/profile/edit",
+  PROFILE_NOTIFICATIONS: "/profile/notifications",
+  PROFILE_PRIVACY: "/profile/privacy",
+  PROFILE_HELP: "/profile/help",
   FAVORITES: "/favorites",
 
   // Error Routes
@@ -56,6 +60,26 @@ export const ROUTE_DESCRIPTIONS = {
     path: ROUTES.PROFILE,
     title: "Profile",
     description: "Your profile settings",
+  },
+  [ROUTES.PROFILE_EDIT]: {
+    path: ROUTES.PROFILE_EDIT,
+    title: "Edit Profile",
+    description: "Edit your profile information",
+  },
+  [ROUTES.PROFILE_NOTIFICATIONS]: {
+    path: ROUTES.PROFILE_NOTIFICATIONS,
+    title: "Notifications",
+    description: "Manage your notification preferences",
+  },
+  [ROUTES.PROFILE_PRIVACY]: {
+    path: ROUTES.PROFILE_PRIVACY,
+    title: "Privacy",
+    description: "Privacy and data settings",
+  },
+  [ROUTES.PROFILE_HELP]: {
+    path: ROUTES.PROFILE_HELP,
+    title: "Help & Support",
+    description: "Get help and support",
   },
   [ROUTES.FAVORITES]: {
     path: ROUTES.FAVORITES,
