@@ -13,6 +13,7 @@ import EditProfilePage from "./pages/profile/EditProfilePage";
 import NotificationsPage from "./pages/profile/NotificationsPage";
 import PrivacyPage from "./pages/profile/PrivacyPage";
 import HelpSupportPage from "./pages/profile/HelpSupportPage";
+import NotFound from "./pages/NotFound";
 
 /**
  * Main App Component with Routing
@@ -166,15 +167,7 @@ function App() {
         </Route>
 
         {/* 404 Not Found Route */}
-        <Route
-          path="*"
-          element={
-            <div>
-              <h1>404 - Page Not Found</h1>
-              <p>The page you're looking for doesn't exist.</p>
-            </div>
-          }
-        />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

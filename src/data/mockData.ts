@@ -14,7 +14,182 @@ export interface Place {
   isSaved?: boolean;
   lat: number;
   lng: number;
+  isOpen?: boolean;
+  openUntil?: string;
+  matchScore?: number; // AI recommendation match percentage
 }
+
+export interface Category {
+  id: string;
+  label: string;
+  emoji: string;
+  icon: string; // lucide icon name
+  count: number;
+  color: string; // tailwind bg class
+}
+
+export interface MoodOption {
+  id: string;
+  label: string;
+  emoji: string;
+  description: string;
+}
+
+export interface TrendingTag {
+  id: string;
+  label: string;
+  searchCount: number;
+}
+
+export const CATEGORIES: Category[] = [
+  {
+    id: "food",
+    label: "Food & Drink",
+    emoji: "🍽️",
+    icon: "UtensilsCrossed",
+    count: 124,
+    color: "bg-orange-100",
+  },
+  {
+    id: "nightlife",
+    label: "Nightlife",
+    emoji: "🌙",
+    icon: "Moon",
+    count: 56,
+    color: "bg-purple-100",
+  },
+  {
+    id: "culture",
+    label: "Culture & Art",
+    emoji: "🎨",
+    icon: "Palette",
+    count: 43,
+    color: "bg-pink-100",
+  },
+  {
+    id: "outdoor",
+    label: "Outdoors",
+    emoji: "🌿",
+    icon: "Trees",
+    count: 38,
+    color: "bg-green-100",
+  },
+  {
+    id: "shopping",
+    label: "Shopping",
+    emoji: "🛍️",
+    icon: "ShoppingBag",
+    count: 67,
+    color: "bg-blue-100",
+  },
+  {
+    id: "wellness",
+    label: "Wellness",
+    emoji: "🧘",
+    icon: "Heart",
+    count: 29,
+    color: "bg-teal-100",
+  },
+  {
+    id: "activities",
+    label: "Activities",
+    emoji: "⛵",
+    icon: "Compass",
+    count: 45,
+    color: "bg-amber-100",
+  },
+  {
+    id: "coworking",
+    label: "Co-working",
+    emoji: "💻",
+    icon: "Laptop",
+    count: 31,
+    color: "bg-slate-100",
+  },
+];
+
+export const MOOD_OPTIONS: MoodOption[] = [
+  {
+    id: "chill",
+    label: "Chill Vibes",
+    emoji: "😌",
+    description: "Relaxed cafés & parks",
+  },
+  {
+    id: "adventure",
+    label: "Adventure",
+    emoji: "🔥",
+    description: "Exciting activities",
+  },
+  {
+    id: "romantic",
+    label: "Date Night",
+    emoji: "💕",
+    description: "Romantic spots",
+  },
+  {
+    id: "social",
+    label: "Squad Goals",
+    emoji: "🎉",
+    description: "Fun with friends",
+  },
+  { id: "explore", label: "Explore", emoji: "🧭", description: "Hidden gems" },
+  {
+    id: "foodie",
+    label: "Foodie Run",
+    emoji: "🤤",
+    description: "Best eats in Cairo",
+  },
+];
+
+export const TRENDING_TAGS: TrendingTag[] = [
+  { id: "nile-view", label: "Nile View", searchCount: 2340 },
+  { id: "rooftop", label: "Rooftop", searchCount: 1890 },
+  { id: "instagrammable", label: "Instagrammable", searchCount: 1560 },
+  { id: "budget-friendly", label: "Budget Friendly", searchCount: 1230 },
+  { id: "late-night", label: "Late Night", searchCount: 980 },
+  { id: "live-music", label: "Live Music", searchCount: 870 },
+  { id: "hidden-gem", label: "Hidden Gem", searchCount: 760 },
+  { id: "outdoor-seating", label: "Outdoor Seating", searchCount: 650 },
+];
+
+export const POPULAR_DISTRICTS = [
+  {
+    id: "zamalek",
+    name: "Zamalek",
+    image:
+      "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=300&h=200&fit=crop",
+    placeCount: 48,
+  },
+  {
+    id: "downtown",
+    name: "Downtown",
+    image:
+      "https://images.unsplash.com/photo-1553913861-c0fddf2619ee?w=300&h=200&fit=crop",
+    placeCount: 63,
+  },
+  {
+    id: "maadi",
+    name: "Maadi",
+    image:
+      "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=300&h=200&fit=crop",
+    placeCount: 35,
+  },
+  {
+    id: "heliopolis",
+    name: "Heliopolis",
+    image:
+      "https://images.unsplash.com/photo-1497366216548-37526070297c?w=300&h=200&fit=crop",
+    placeCount: 41,
+  },
+  {
+    id: "new-cairo",
+    name: "New Cairo",
+    image:
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300&h=200&fit=crop",
+    placeCount: 57,
+  },
+];
 
 export const INTERESTS = [
   { id: "felucca", label: "Felucca Rides", emoji: "⛵" },
@@ -65,6 +240,9 @@ export const PLACES: Place[] = [
     tags: ["Outdoor", "Romantic", "Scenic"],
     lat: 30.0561,
     lng: 31.2243,
+    isOpen: true,
+    openUntil: "10:00 PM",
+    matchScore: 97,
   },
   {
     id: "2",
@@ -84,6 +262,9 @@ export const PLACES: Place[] = [
     tags: ["Street Food", "Casual", "Local"],
     lat: 30.0609,
     lng: 31.2194,
+    isOpen: true,
+    openUntil: "12:00 AM",
+    matchScore: 92,
   },
   {
     id: "3",
@@ -103,6 +284,9 @@ export const PLACES: Place[] = [
     tags: ["Art", "Culture", "Free Entry"],
     lat: 30.0444,
     lng: 31.2357,
+    isOpen: true,
+    openUntil: "8:00 PM",
+    matchScore: 85,
   },
   {
     id: "4",
@@ -122,6 +306,9 @@ export const PLACES: Place[] = [
     tags: ["Co-working", "Tech", "Community"],
     lat: 30.0392,
     lng: 31.2385,
+    isOpen: true,
+    openUntil: "11:00 PM",
+    matchScore: 78,
   },
   {
     id: "5",
@@ -141,6 +328,9 @@ export const PLACES: Place[] = [
     tags: ["Historical", "Shopping", "Iconic"],
     lat: 30.0477,
     lng: 31.2627,
+    isOpen: false,
+    openUntil: "Closed",
+    matchScore: 88,
   },
   {
     id: "6",
@@ -160,6 +350,9 @@ export const PLACES: Place[] = [
     tags: ["Nightlife", "Live Music", "Iconic"],
     lat: 30.0565,
     lng: 31.2045,
+    isOpen: true,
+    openUntil: "3:00 AM",
+    matchScore: 94,
   },
   {
     id: "7",
@@ -179,6 +372,9 @@ export const PLACES: Place[] = [
     tags: ["Parks", "Scenic", "Family-friendly"],
     lat: 30.0398,
     lng: 31.2628,
+    isOpen: true,
+    openUntil: "10:00 PM",
+    matchScore: 81,
   },
   {
     id: "8",
@@ -195,8 +391,11 @@ export const PLACES: Place[] = [
     whyRecommend:
       "Your interest in rooftop lounges makes this a perfect match. Stunning views and impeccable service.",
     priceLevel: 3,
-    tags: ["Rooftop", "Fine Dining", "Nile View"],
+    tags: ["Rooftop", "Fine Dining", "Nile View", "Late Night"],
     lat: 30.062,
     lng: 31.22,
+    isOpen: true,
+    openUntil: "1:00 AM",
+    matchScore: 91,
   },
 ];

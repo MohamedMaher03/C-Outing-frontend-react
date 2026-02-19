@@ -98,6 +98,61 @@
     @apply bg-white/80 backdrop-blur-xl border border-white/30 shadow-2xl;
   }
 
+  .glass-dark {
+    @apply bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl;
+  }
+
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-lg border border-white/40 shadow-xl;
+  }
+
+  /* Premium text gradient – gold to white */
+  .text-gradient-gold {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--gold)) 0%,
+      hsl(38 55% 72%) 50%,
+      #ffffff 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Shimmer overlay effect for premium gold elements */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.25) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2.5s ease-in-out infinite;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Gold glow shadow */
+  .glow-gold {
+    box-shadow:
+      0 0 15px rgba(191, 163, 105, 0.3),
+      0 0 30px rgba(191, 163, 105, 0.15);
+  }
+
+  .glow-gold-sm {
+    box-shadow:
+      0 0 8px rgba(191, 163, 105, 0.25),
+      0 0 16px rgba(191, 163, 105, 0.1);
+  }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -126,5 +181,22 @@
 
   .scrollbar-premium::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--navy));
+  }
+
+  /* Staggered animation delay helpers */
+  .animate-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animate-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animate-delay-300 {
+    animation-delay: 300ms;
+  }
+  .animate-delay-400 {
+    animation-delay: 400ms;
+  }
+  .animate-delay-500 {
+    animation-delay: 500ms;
   }
 }
