@@ -1,14 +1,21 @@
 /**
  * usePlaceDetail Hook
- * Manages place detail page state and actions
+ * Manages place detail page state and actions including reviews
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getPlaceById,
+  getPlaceReviews,
+  getSocialMediaReviews,
+  getReviewSummary,
+  submitReview,
   recordInteraction,
   type PlaceDetail,
+  type Review,
+  type SocialMediaReview,
+  type ReviewSummary,
 } from "../services/api/placeDetailService";
 import {
   toggleFavorite,
@@ -23,10 +30,23 @@ interface UsePlaceDetailReturn {
   isFavorite: boolean;
   savingFavorite: boolean;
 
+  // Reviews
+  reviews: Review[];
+  socialReviews: SocialMediaReview[];
+  reviewSummary: ReviewSummary | null;
+  reviewsLoading: boolean;
+  socialReviewsLoading: boolean;
+  summaryLoading: boolean;
+
+  // Review form
+  submittingReview: boolean;
+  reviewSubmitted: boolean;
+
   // Actions
   toggleFavorite: () => Promise<void>;
   openInMaps: () => void;
   goBack: () => void;
+  handleSubmitReview: (rating: number, comment: string) => Promise<void>;
   trackInteraction: (
     actionType: "Click" | "ViewDetails" | "Rate" | "Favorite" | "Share",
   ) => Promise<void>;
@@ -40,13 +60,27 @@ export const usePlaceDetail = (
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [savingFavorite, setSavingFavorite] = useState(false); //used for button becomes disabled while saving.
+  const [savingFavorite, setSavingFavorite] = useState(false);
+
+  // Reviews state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [socialReviews, setSocialReviews] = useState<SocialMediaReview[]>([]);
+  const [reviewSummary, setReviewSummary] = useState<ReviewSummary | null>(
+    null,
+  );
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [socialReviewsLoading, setSocialReviewsLoading] = useState(true);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   // Fetch place details on mount or when placeId changes
   useEffect(() => {
     if (placeId) {
       fetchPlaceDetails(placeId);
-      // Track view interaction
+      fetchReviews(placeId);
+      fetchSocialReviews(placeId);
+      fetchReviewSummary(placeId);
       trackViewInteraction(placeId);
     }
   }, [placeId]);
@@ -73,6 +107,42 @@ export const usePlaceDetail = (
     }
   };
 
+  const fetchReviews = async (id: string) => {
+    try {
+      setReviewsLoading(true);
+      const data = await getPlaceReviews(id);
+      setReviews(data);
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const fetchSocialReviews = async (id: string) => {
+    try {
+      setSocialReviewsLoading(true);
+      const data = await getSocialMediaReviews(id);
+      setSocialReviews(data);
+    } catch (err) {
+      console.error("Error fetching social reviews:", err);
+    } finally {
+      setSocialReviewsLoading(false);
+    }
+  };
+
+  const fetchReviewSummary = async (id: string) => {
+    try {
+      setSummaryLoading(true);
+      const data = await getReviewSummary(id);
+      setReviewSummary(data);
+    } catch (err) {
+      console.error("Error fetching review summary:", err);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
   const trackViewInteraction = async (id: string) => {
     try {
       const sessionId =
@@ -84,7 +154,6 @@ export const usePlaceDetail = (
       });
     } catch (err) {
       console.error("Error tracking view interaction:", err);
-      // Don't show error to user for tracking failures
     }
   };
 
@@ -111,6 +180,31 @@ export const usePlaceDetail = (
       setSavingFavorite(false);
     }
   };
+
+  const handleSubmitReview = useCallback(
+    async (rating: number, comment: string) => {
+      if (!place || !placeId) return;
+
+      try {
+        setSubmittingReview(true);
+        const newReview = await submitReview(placeId, rating, comment);
+        setReviews((prev) => [newReview, ...prev]);
+        setReviewSubmitted(true);
+
+        // Track interaction
+        await trackInteraction("Rate");
+
+        // Reset submitted flag after a delay
+        setTimeout(() => setReviewSubmitted(false), 3000);
+      } catch (err) {
+        console.error("Error submitting review:", err);
+        throw err;
+      } finally {
+        setSubmittingReview(false);
+      }
+    },
+    [place, placeId],
+  );
 
   const openInMaps = () => {
     if (!place) return;
@@ -143,7 +237,6 @@ export const usePlaceDetail = (
       });
     } catch (err) {
       console.error("Error tracking interaction:", err);
-      // Don't show error to user for tracking failures
     }
   };
 
@@ -153,9 +246,18 @@ export const usePlaceDetail = (
     error,
     isFavorite,
     savingFavorite,
+    reviews,
+    socialReviews,
+    reviewSummary,
+    reviewsLoading,
+    socialReviewsLoading,
+    summaryLoading,
+    submittingReview,
+    reviewSubmitted,
     toggleFavorite: handleToggleFavorite,
     openInMaps,
     goBack,
+    handleSubmitReview,
     trackInteraction,
   };
 };
