@@ -3,16 +3,16 @@ import "./App.css";
 import { ProtectedRoute, PublicRoute } from "./routes";
 import AppLayout from "./components/AppLayout";
 import LoginForm from "./components/auth/LoginForm";
-import SignUpPage from "./pages/SignUpPage";
+import SignUpPage from "../src/pages/auth/SignUpPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import HomePage from "./pages/HomePage";
 import FavoritesPage from "./pages/FavoritesPage";
 import PlaceDetailPage from "./pages/PlaceDetailPage";
-import ProfilePage from "./pages/ProfilePage";
-import EditProfilePage from "./pages/EditProfilePage";
-import NotificationsPage from "./pages/NotificationsPage";
-import PrivacyPage from "./pages/PrivacyPage";
-import HelpSupportPage from "./pages/HelpSupportPage";
+import ProfilePage from "./pages/profile/ProfilePage";
+import EditProfilePage from "./pages/profile/EditProfilePage";
+import NotificationsPage from "./pages/profile/NotificationsPage";
+import PrivacyPage from "./pages/profile/PrivacyPage";
+import HelpSupportPage from "./pages/profile/HelpSupportPage";
 
 /**
  * Main App Component with Routing
@@ -25,17 +25,17 @@ function App() {
     <Router>
       <Routes>
         {/* Public Routes - No Layout */}
-        <Route
-          path="/"
-          element={
-            <PublicRoute>
-              <div>
-                <h1>Home Page</h1>
-                <p>To be implemented</p>
-              </div>
-            </PublicRoute>
-          }
-        />
+        <Route element={<AppLayout />}>
+          {/* Home Page */}
+          <Route
+            path="/"
+            element={
+              <PublicRoute>
+                <HomePage />
+              </PublicRoute>
+            }
+          />
+        </Route>
         <Route
           path="/login"
           element={

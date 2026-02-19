@@ -11,8 +11,8 @@ import {
   Search,
   ExternalLink,
 } from "lucide-react";
-import { Input } from "../components/ui/input";
-import { cn } from "../libs/utils";
+import { Input } from "../../components/ui/input";
+import { cn } from "../../libs/utils";
 
 const HelpSupportPage = () => {
   const navigate = useNavigate();

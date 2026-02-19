@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Star,
@@ -9,17 +9,35 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
-import { PLACES } from "../data/mockData";
+import { usePlaceDetail } from "../hooks/usePlaceDetail";
 
 const PlaceDetailPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const place = PLACES.find((p) => p.id === id);
+  const {
+    place,
+    loading,
+    error,
+    isFavorite,
+    savingFavorite,
+    toggleFavorite,
+    openInMaps,
+    goBack,
+  } = usePlaceDetail(id);
 
-  if (!place) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-muted-foreground">Place not found.</p>
+        <p className="text-muted-foreground">Loading place details...</p>
+      </div>
+    );
+  }
+
+  if (error || !place) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <p className="text-muted-foreground">{error || "Place not found."}</p>
+        </div>
       </div>
     );
   }
@@ -35,13 +53,21 @@ const PlaceDetailPage = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
         <button
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           className="absolute top-4 left-4 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
         >
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
-        <button className="absolute top-4 right-4 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors">
-          <Heart className="h-5 w-5 text-foreground" />
+        <button
+          onClick={toggleFavorite}
+          disabled={savingFavorite}
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors disabled:opacity-50"
+        >
+          <Heart
+            className={`h-5 w-5 ${
+              isFavorite ? "text-secondary fill-secondary" : "text-foreground"
+            }`}
+          />
         </button>
       </div>
 
@@ -98,12 +124,7 @@ const PlaceDetailPage = () => {
 
         <Button
           className="w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold h-12 gap-2"
-          onClick={() =>
-            window.open(
-              `https://www.google.com/maps?q=${place.lat},${place.lng}`,
-              "_blank",
-            )
-          }
+          onClick={openInMaps}
         >
           <ExternalLink className="h-4 w-4" /> Open in Google Maps
         </Button>

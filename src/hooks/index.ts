@@ -10,3 +10,6 @@ export { useLogin } from "./useLogin";
 export { useSignUp } from "./useSignUp";
 export { useHome } from "./useHome";
 export { useOnboarding } from "./useOnboarding";
+export { useProfile } from "./useProfile";
+export { useFavorites } from "./useFavorites";
+export { usePlaceDetail } from "./usePlaceDetail";

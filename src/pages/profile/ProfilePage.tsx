@@ -1,41 +1,74 @@
-import { useState } from "react";
 import { User, Settings, LogOut, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/ui/button";
+import { Button } from "../../components/ui/button";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../components/ui/tabs";
-import { Slider } from "../components/ui/slider";
-import { cn } from "../libs/utils";
-import { INTERESTS, DISTRICTS } from "../data/mockData";
+} from "../../components/ui/tabs";
+import { Slider } from "../../components/ui/slider";
+import { cn } from "../../libs/utils";
+import { INTERESTS, DISTRICTS } from "../../data/mockData";
+import { useProfile } from "../../hooks/useProfile";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const [selectedInterests, setSelectedInterests] = useState([
-    "cafes",
-    "street-food",
-    "rooftops",
-  ]);
-  const [vibe, setVibe] = useState([65]);
-  const [selectedDistricts, setSelectedDistricts] = useState([
-    "Zamalek",
-    "Downtown",
-    "Maadi",
-  ]);
-  const [selectedBudget, setSelectedBudget] = useState("Medium");
+  const {
+    profile,
+    loading,
+    saving,
+    error,
+    selectedInterests,
+    vibe,
+    selectedDistricts,
+    selectedBudget,
+    toggleInterest,
+    setVibe,
+    toggleDistrict,
+    setSelectedBudget,
+    savePreferences,
+    handleSignOut,
+  } = useProfile();
 
-  const toggleInterest = (id: string) =>
-    setSelectedInterests((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
+  const handleSave = async () => {
+    try {
+      await savePreferences();
+      // Optionally show success message
+    } catch (err) {
+      // Error is already logged in hook
+      console.error("Error saving preferences:", err);
+    }
+  };
 
-  const toggleDistrict = (d: string) =>
-    setSelectedDistricts((prev) =>
-      prev.includes(d) ? prev.filter((i) => i !== d) : [...prev, d],
+  const handleLogout = async () => {
+    try {
+      await handleSignOut();
+      navigate("/");
+    } catch (err) {
+      // Error is already logged in hook
+      console.error("Error signing out:", err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-muted-foreground">Loading profile...</p>
+      </div>
     );
+  }
+
+  if (error && !profile) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Failed to load profile</p>
+          <p className="text-sm text-muted-foreground">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
@@ -45,8 +78,12 @@ const ProfilePage = () => {
           <User className="h-8 w-8 text-secondary" />
         </div>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-foreground">Ahmed Khalil</h1>
-          <p className="text-sm text-muted-foreground">ahmed@couting.app</p>
+          <h1 className="text-xl font-bold text-foreground">
+            {profile?.name || "User"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {profile?.email || "user@couting.app"}
+          </p>
         </div>
         <Button variant="ghost" size="icon">
           <Settings className="h-5 w-5" />
@@ -140,7 +177,9 @@ const ProfilePage = () => {
                 return (
                   <button
                     key={d}
-                    onClick={() => setSelectedBudget(d)}
+                    onClick={() =>
+                      setSelectedBudget(d as "Low" | "Medium" | "High")
+                    }
                     className={cn(
                       "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
                       selectedBudget === d
@@ -155,17 +194,37 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          <Button className="w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold">
-            Save Preferences
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
+          >
+            {saving ? "Saving..." : "Save Preferences"}
           </Button>
         </TabsContent>
 
         <TabsContent value="account" className="space-y-3 pt-4">
           {[
-            { label: "Edit Profile", desc: "Name, photo, and bio", path: "/profile/edit" },
-            { label: "Notifications", desc: "Push and email preferences", path: "/profile/notifications" },
-            { label: "Privacy", desc: "Data and visibility settings", path: "/profile/privacy" },
-            { label: "Help & Support", desc: "FAQs and contact us", path: "/profile/help" },
+            {
+              label: "Edit Profile",
+              desc: "Name, photo, and bio",
+              path: "/profile/edit",
+            },
+            {
+              label: "Notifications",
+              desc: "Push and email preferences",
+              path: "/profile/notifications",
+            },
+            {
+              label: "Privacy",
+              desc: "Data and visibility settings",
+              path: "/profile/privacy",
+            },
+            {
+              label: "Help & Support",
+              desc: "FAQs and contact us",
+              path: "/profile/help",
+            },
           ].map((item) => (
             <button
               key={item.label}
@@ -185,7 +244,7 @@ const ProfilePage = () => {
           <Button
             variant="ghost"
             className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2 mt-4"
-            onClick={() => navigate("/")}
+            onClick={handleLogout}
           >
             <LogOut className="h-4 w-4" /> Sign Out
           </Button>
