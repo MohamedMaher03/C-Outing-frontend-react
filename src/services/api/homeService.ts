@@ -7,17 +7,53 @@ import type { Place } from "../../data/mockData";
 import { PLACES } from "../../data/mockData";
 // import axiosInstance from "../../config/axios.config";
 
+export interface HomePageData {
+  curatedPlaces: Place[];
+  trendingPlaces: Place[];
+  topRatedPlaces: Place[];
+}
+
 /**
- * Fetch all places/venues
- * TODO: Replace with actual API endpoint when backend is ready
+ * Fetch home page data — backend returns pre-computed sections.
+ * The backend is responsible for curating, trending, and top-rated lists.
+ * TODO: Replace with actual API endpoints when backend is ready.
+ */
+export const fetchHomePageData = async (): Promise<HomePageData> => {
+  try {
+    // TODO: Replace with real API calls, e.g.:
+    // const [curated, trending, topRated] = await Promise.all([
+    //   axiosInstance.get<Place[]>('/venues/curated'),
+    //   axiosInstance.get<Place[]>('/venues/trending'),
+    //   axiosInstance.get<Place[]>('/venues/top-rated'),
+    // ]);
+    // return { curatedPlaces: curated.data, trendingPlaces: trending.data, topRatedPlaces: topRated.data };
+
+    // Simulate backend computing these sections from PLACES data
+    const all = PLACES.map((p) => ({ ...p, isSaved: false }));
+
+    const curatedPlaces = [...all]
+      .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0))
+      .slice(0, 5);
+
+    const trendingPlaces = [...all]
+      .sort((a, b) => b.reviewCount - a.reviewCount)
+      .slice(0, 6);
+
+    const topRatedPlaces = [...all].sort((a, b) => b.rating - a.rating);
+
+    return Promise.resolve({ curatedPlaces, trendingPlaces, topRatedPlaces });
+  } catch (error) {
+    console.error("Error fetching home page data:", error);
+    throw new Error("Failed to fetch home page data");
+  }
+};
+
+/**
+ * @deprecated Use fetchHomePageData instead.
+ * Kept for backwards compatibility during migration.
  */
 export const fetchPlaces = async (): Promise<Place[]> => {
   try {
-    // TODO: Uncomment when backend API is ready
-    // const response = await axiosInstance.get<Place[]>('/venues');
-    // return response.data;
-
-    // Using mock data for now
     return Promise.resolve(PLACES.map((p) => ({ ...p, isSaved: false })));
   } catch (error) {
     console.error("Error fetching places:", error);

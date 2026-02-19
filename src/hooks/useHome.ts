@@ -1,7 +1,17 @@
 /**
  * useHome Hook
- * Manages all state and logic for the HomePage
- * Separates business logic from UI components
+ * Manages all state and logic for the HomePage.
+ *
+ * Data architecture:
+ *   - The backend (simulated) is responsible for computing and returning three
+ *     pre-curated sections: curatedPlaces, trendingPlaces, topRatedPlaces.
+ *   - The frontend only applies user-driven filter pills on top of those lists:
+ *       "All"        → no extra filter (show everything the backend returned)
+ *       "Top Rated"  → keep places with rating >= 4.5
+ *       "Open Now"   → keep only places where isOpen === true
+ *       "Near Me"    → sort by distance ascending
+ *   - Multiple pills can be active simultaneously (AND logic).
+ *   - Search text and category selection narrow results further on the client.
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -12,21 +22,22 @@ import {
   TRENDING_TAGS,
   POPULAR_DISTRICTS,
 } from "../data/mockData";
-import { fetchPlaces } from "../services/api/homeService";
+import { fetchHomePageData } from "../services/api/homeService";
 
 export type FilterType = "all" | "top-rated" | "near-me" | "open-now";
 
 interface UseHomeReturn {
   // State
   search: string;
-  selectedFilter: FilterType;
+  /** Active filter pills — empty array means "All" (no filter). */
+  selectedFilters: FilterType[];
   selectedMood: string | null;
   selectedCategory: string | null;
-  places: Place[];
   isLoading: boolean;
   error: string | null;
 
-  // Computed data
+  // Computed / filtered data
+  /** Same as filteredTopRated — used for the "X venues match" count. */
   filteredPlaces: Place[];
   curatedPlaces: Place[];
   topRatedPlaces: Place[];
@@ -40,26 +51,27 @@ interface UseHomeReturn {
 
   // Actions
   setSearch: (search: string) => void;
-  setSelectedFilter: (filter: FilterType) => void;
+  /** Toggle a filter pill on/off. Clicking "all" clears all active filters. */
+  toggleFilter: (filter: FilterType) => void;
   setSelectedMood: (mood: string | null) => void;
   setSelectedCategory: (category: string | null) => void;
   toggleSave: (id: string) => void;
   reloadPlaces: () => Promise<void>;
 }
 
-/**
- * Custom hook for home page logic
- */
 export const useHome = (): UseHomeReturn => {
   const [search, setSearch] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState<FilterType>("all");
+  const [selectedFilters, setSelectedFilters] = useState<FilterType[]>([]);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [places, setPlaces] = useState<Place[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load places on mount
+  // Raw backend-provided sections (source-of-truth ordering / curation)
+  const [rawCurated, setRawCurated] = useState<Place[]>([]);
+  const [rawTrending, setRawTrending] = useState<Place[]>([]);
+  const [rawTopRated, setRawTopRated] = useState<Place[]>([]);
+
   useEffect(() => {
     loadPlaces();
   }, []);
@@ -68,8 +80,11 @@ export const useHome = (): UseHomeReturn => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await fetchPlaces();
-      setPlaces(data);
+      const { curatedPlaces, trendingPlaces, topRatedPlaces } =
+        await fetchHomePageData();
+      setRawCurated(curatedPlaces);
+      setRawTrending(trendingPlaces);
+      setRawTopRated(topRatedPlaces);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load places");
     } finally {
@@ -77,79 +92,104 @@ export const useHome = (): UseHomeReturn => {
     }
   };
 
-  // Toggle save status for a place
-  const toggleSave = useCallback((id: string) => {
-    setPlaces((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, isSaved: !p.isSaved } : p)),
-    );
+  /**
+   * Toggle a filter pill.
+   * Clicking "all" clears every active filter.
+   * Clicking any other pill toggles it in the active set.
+   */
+  const toggleFilter = useCallback((filter: FilterType) => {
+    if (filter === "all") {
+      setSelectedFilters([]);
+    } else {
+      setSelectedFilters((prev) =>
+        prev.includes(filter)
+          ? prev.filter((f) => f !== filter)
+          : [...prev, filter],
+      );
+    }
   }, []);
 
-  // Apply search filter
-  const searchFilteredPlaces = useMemo(() => {
-    if (!search) return places;
+  /** Toggle the saved state for a place across all three backend sections. */
+  const toggleSave = useCallback((id: string) => {
+    const toggle = (list: Place[]) =>
+      list.map((p) => (p.id === id ? { ...p, isSaved: !p.isSaved } : p));
+    setRawCurated((prev) => toggle(prev));
+    setRawTrending((prev) => toggle(prev));
+    setRawTopRated((prev) => toggle(prev));
+  }, []);
 
-    const query = search.toLowerCase();
-    return places.filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        p.district.toLowerCase().includes(query) ||
-        p.tags.some((t) => t.toLowerCase().includes(query)),
-    );
-  }, [places, search]);
+  /**
+   * Apply all active client-side filters to a list.
+   *
+   * Order:
+   *   1. Search text
+   *   2. Category
+   *   3. "top-rated" pill  → rating >= 4.5
+   *   4. "open-now"  pill  → isOpen === true
+   *   5. "near-me"   pill  → sort by distance (can combine with others)
+   */
+  const applyFilters = useCallback(
+    (list: Place[]): Place[] => {
+      let result = [...list];
 
-  // Apply category filter
-  const categoryFilteredPlaces = useMemo(() => {
-    if (!selectedCategory) return searchFilteredPlaces;
-    return searchFilteredPlaces.filter((p) =>
-      p.category.toLowerCase().includes(selectedCategory.toLowerCase()),
-    );
-  }, [searchFilteredPlaces, selectedCategory]);
+      // Search
+      if (search) {
+        const q = search.toLowerCase();
+        result = result.filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) ||
+            p.district.toLowerCase().includes(q) ||
+            p.tags.some((t) => t.toLowerCase().includes(q)),
+        );
+      }
 
-  // Apply category + type filter
-  const filteredPlaces = useMemo(() => {
-    let result = categoryFilteredPlaces;
+      // Category
+      if (selectedCategory) {
+        result = result.filter((p) =>
+          p.category.toLowerCase().includes(selectedCategory.toLowerCase()),
+        );
+      }
 
-    if (selectedFilter === "top-rated") {
-      result = result.filter((p) => p.rating >= 4.5);
-    } else if (selectedFilter === "near-me") {
-      result = [...result].sort((a, b) => {
-        const distA = parseFloat(a.distance);
-        const distB = parseFloat(b.distance);
-        return distA - distB;
-      });
-    } else if (selectedFilter === "open-now") {
-      result = result.filter((p) => p.isOpen === true);
-    }
+      // Filter pills (AND logic — all active filters must match)
+      if (selectedFilters.includes("top-rated")) {
+        result = result.filter((p) => p.rating >= 4.5);
+      }
+      if (selectedFilters.includes("open-now")) {
+        result = result.filter((p) => p.isOpen === true);
+      }
+      if (selectedFilters.includes("near-me")) {
+        result = result.sort(
+          (a, b) => parseFloat(a.distance) - parseFloat(b.distance),
+        );
+      }
 
-    return result;
-  }, [categoryFilteredPlaces, selectedFilter]);
+      return result;
+    },
+    [search, selectedCategory, selectedFilters],
+  );
 
-  // Curated recommendations (top 5 by matchScore)
-  const curatedPlaces = useMemo(() => {
-    return [...filteredPlaces]
-      .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0))
-      .slice(0, 5);
-  }, [filteredPlaces]);
+  const curatedPlaces = useMemo(
+    () => applyFilters(rawCurated),
+    [rawCurated, applyFilters],
+  );
+  const trendingPlaces = useMemo(
+    () => applyFilters(rawTrending),
+    [rawTrending, applyFilters],
+  );
+  const topRatedPlaces = useMemo(
+    () => applyFilters(rawTopRated),
+    [rawTopRated, applyFilters],
+  );
 
-  // Top rated places (sorted by rating)
-  const topRatedPlaces = useMemo(() => {
-    return [...filteredPlaces].sort((a, b) => b.rating - a.rating);
-  }, [filteredPlaces]);
-
-  // Trending places (most reviewed)
-  const trendingPlaces = useMemo(() => {
-    return [...filteredPlaces]
-      .sort((a, b) => b.reviewCount - a.reviewCount)
-      .slice(0, 6);
-  }, [filteredPlaces]);
+  // Alias used by the "X venues match your criteria" counter
+  const filteredPlaces = topRatedPlaces;
 
   return {
     // State
     search,
-    selectedFilter,
+    selectedFilters,
     selectedMood,
     selectedCategory,
-    places,
     isLoading,
     error,
 
@@ -167,7 +207,7 @@ export const useHome = (): UseHomeReturn => {
 
     // Actions
     setSearch,
-    setSelectedFilter,
+    toggleFilter,
     setSelectedMood,
     setSelectedCategory,
     toggleSave,

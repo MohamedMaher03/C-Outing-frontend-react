@@ -3,7 +3,7 @@ import { Home, Heart, User, LogOut } from "lucide-react";
 import { cn } from "../libs/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import logo from "../assets/images/logo2.png";
+import logo from "../assets/images/logo3.png";
 
 const NAV_ITEMS = [
   { path: "/home", label: "Home", icon: Home },

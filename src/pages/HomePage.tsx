@@ -23,8 +23,8 @@ const HomePage = () => {
   const {
     search,
     setSearch,
-    selectedFilter,
-    setSelectedFilter,
+    selectedFilters,
+    toggleFilter,
     selectedMood,
     setSelectedMood,
     selectedCategory,
@@ -138,13 +138,16 @@ const HomePage = () => {
           >
             {filterOptions.map((filter) => {
               const Icon = filter.icon;
-              const isActive = selectedFilter === filter.id;
+              const isActive =
+                filter.id === "all"
+                  ? selectedFilters.length === 0
+                  : selectedFilters.includes(filter.id);
               return (
                 <button
                   key={filter.id}
                   role="tab"
                   aria-selected={isActive}
-                  onClick={() => setSelectedFilter(filter.id)}
+                  onClick={() => toggleFilter(filter.id)}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
                     isActive
                       ? "bg-secondary text-primary shadow-lg shadow-secondary/40 scale-105 glow-gold"
