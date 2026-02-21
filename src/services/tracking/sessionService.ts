@@ -4,7 +4,7 @@
  * Tracks context and interactions for the entire user session
  */
 
-import { Session } from "../../types";
+import type { Session } from "@/types";
 
 const SESSION_ID_KEY = "hcars_session_id";
 

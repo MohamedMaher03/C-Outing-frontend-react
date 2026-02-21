@@ -4,7 +4,7 @@
  * Provides persistent state across page reloads
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export function useLocalStorage<T>(
   key: string,

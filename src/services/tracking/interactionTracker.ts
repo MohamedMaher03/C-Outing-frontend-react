@@ -4,8 +4,9 @@
  * Queues interactions and sends them to API
  */
 
-import { Interaction } from "../../types";
-import { interactionService } from "../api/interactionService";
+import type { Interaction } from "@/types";
+// interactionService will be implemented when backend is ready
+// import { interactionService } from "@/services/api/interactionService";
 import { sessionService } from "./sessionService";
 
 interface QueuedInteraction extends Omit<Interaction, "interactionId"> {
@@ -15,7 +16,7 @@ interface QueuedInteraction extends Omit<Interaction, "interactionId"> {
 class InteractionTracker {
   private queue: QueuedInteraction[] = [];
   private isProcessing = false;
-  private processInterval: NodeJS.Timeout | null = null;
+  private processInterval: ReturnType<typeof setInterval> | null = null;
   private maxRetries = 3;
 
   /**
@@ -91,7 +92,9 @@ class InteractionTracker {
 
     for (const interaction of toProcess) {
       try {
-        await interactionService.trackInteraction(interaction);
+        // TODO: Uncomment when interactionService is implemented
+        // await interactionService.trackInteraction(interaction);
+        console.log("[Tracker] Interaction queued:", interaction);
       } catch (error) {
         // Re-queue failed interaction with retry count
         const retryCount = (interaction.retryCount || 0) + 1;

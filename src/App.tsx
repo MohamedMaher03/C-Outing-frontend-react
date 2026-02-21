@@ -1,19 +1,19 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
-import { ProtectedRoute, PublicRoute } from "./routes";
-import AppLayout from "./components/AppLayout";
-import LoginForm from "./components/auth/LoginForm";
-import SignUpPage from "../src/pages/auth/SignUpPage";
-import OnboardingPage from "./pages/OnboardingPage";
-import HomePage from "./pages/HomePage";
-import FavoritesPage from "./pages/FavoritesPage";
-import PlaceDetailPage from "./pages/PlaceDetailPage";
-import ProfilePage from "./pages/profile/ProfilePage";
-import EditProfilePage from "./pages/profile/EditProfilePage";
-import NotificationsPage from "./pages/profile/NotificationsPage";
-import PrivacyPage from "./pages/profile/PrivacyPage";
-import HelpSupportPage from "./pages/profile/HelpSupportPage";
-import NotFound from "./pages/NotFound";
+import { ProtectedRoute, PublicRoute } from "@/routes";
+import AppLayout from "@/components/layout/AppLayout";
+import LoginForm from "@/features/auth/components/LoginForm";
+import SignUpPage from "@/features/auth/pages/SignUpPage";
+import OnboardingPage from "@/features/onboarding/pages/OnboardingPage";
+import HomePage from "@/features/home/pages/HomePage";
+import FavoritesPage from "@/features/favorites/pages/FavoritesPage";
+import PlaceDetailPage from "@/features/place-detail/pages/PlaceDetailPage";
+import ProfilePage from "@/features/profile/pages/ProfilePage";
+import EditProfilePage from "@/features/profile/pages/EditProfilePage";
+import NotificationsPage from "@/features/profile/pages/NotificationsPage";
+import PrivacyPage from "@/features/profile/pages/PrivacyPage";
+import HelpSupportPage from "@/features/profile/pages/HelpSupportPage";
+import NotFound from "@/pages/NotFound";
 
 /**
  * Main App Component with Routing

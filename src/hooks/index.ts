@@ -1,15 +1,15 @@
 /**
- * Custom Hooks Export
- * Centralized export of all custom hooks
+ * Shared Hooks — Cross-feature utilities
+ *
+ * Feature-specific hooks live inside their feature:
+ *   @/features/auth/hooks/useLogin
+ *   @/features/auth/hooks/useSignUp
+ *   @/features/home/hooks/useHome
+ *   @/features/favorites/hooks/useFavorites
+ *   @/features/place-detail/hooks/usePlaceDetail
+ *   @/features/onboarding/hooks/useOnboarding
+ *   @/features/profile/hooks/useProfile
  */
-
 export { useGeolocation } from "./useGeolocation";
 export { useAsync } from "./useAsync";
 export { useLocalStorage } from "./useLocalStorage";
-export { useLogin } from "./useLogin";
-export { useSignUp } from "./useSignUp";
-export { useHome } from "./useHome";
-export { useOnboarding } from "./useOnboarding";
-export { useProfile } from "./useProfile";
-export { useFavorites } from "./useFavorites";
-export { usePlaceDetail } from "./usePlaceDetail";
