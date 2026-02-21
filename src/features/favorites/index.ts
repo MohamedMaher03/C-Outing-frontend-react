@@ -9,4 +9,7 @@ export {
   toggleFavorite,
   checkIsFavorite,
 } from "./services/favoritesService";
-export type { FavoritePlace, ToggleFavoriteResponse } from "./services/favoritesService";
+export type {
+  FavoritePlace,
+  ToggleFavoriteResponse,
+} from "./services/favoritesService";
