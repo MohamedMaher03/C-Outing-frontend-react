@@ -30,7 +30,7 @@ export interface Category {
 export interface MoodOption {
   id: string;
   label: string;
-  emoji: string;
+  icon: string; // lucide icon name
   description: string;
 }
 
@@ -103,32 +103,37 @@ export const MOOD_OPTIONS: MoodOption[] = [
   {
     id: "chill",
     label: "Chill Vibes",
-    emoji: "😌",
+    icon: "Coffee",
     description: "Relaxed cafés & parks",
   },
   {
     id: "adventure",
     label: "Adventure",
-    emoji: "🔥",
+    icon: "Mountain",
     description: "Exciting activities",
   },
   {
     id: "romantic",
     label: "Date Night",
-    emoji: "💕",
+    icon: "Heart",
     description: "Romantic spots",
   },
   {
     id: "social",
     label: "Squad Goals",
-    emoji: "🎉",
+    icon: "Users",
     description: "Fun with friends",
   },
-  { id: "explore", label: "Explore", emoji: "🧭", description: "Hidden gems" },
+  {
+    id: "explore",
+    label: "Explore",
+    icon: "Binoculars",
+    description: "Hidden gems",
+  },
   {
     id: "foodie",
     label: "Foodie Run",
-    emoji: "🤤",
+    icon: "UtensilsCrossed",
     description: "Best eats in Cairo",
   },
 ];

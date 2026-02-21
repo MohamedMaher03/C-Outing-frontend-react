@@ -18,6 +18,10 @@ import {
   Compass,
   Laptop,
   type LucideIcon,
+  Binoculars,
+  Mountain,
+  Coffee,
+  Users,
 } from "lucide-react";
 import { Input } from "../components/ui/input";
 import PlaceCard from "../components/PlaceCard";
@@ -67,6 +71,15 @@ const HomePage = () => {
     Heart,
     Compass,
     Laptop,
+  };
+
+  const moodIconMap: Record<string, LucideIcon> = {
+    Coffee,
+    Mountain,
+    Heart,
+    Users,
+    Binoculars,
+    UtensilsCrossed,
   };
 
   const getGreeting = () => {
@@ -207,6 +220,7 @@ const HomePage = () => {
                 {categories.map((cat) => {
                   const isActive = selectedCategory === cat.id;
                   const CatIcon = categoryIconMap[cat.icon] ?? Compass;
+
                   return (
                     <button
                       key={cat.id}
@@ -402,6 +416,7 @@ const HomePage = () => {
               <div className="grid grid-cols-2 gap-2">
                 {moodOptions.map((mood) => {
                   const isActive = selectedMood === mood.id;
+                  const MoodIcon = moodIconMap[mood.icon] ?? Sparkles;
                   return (
                     <button
                       key={mood.id}
@@ -412,7 +427,7 @@ const HomePage = () => {
                           : "bg-background border-border/50 hover:border-secondary/30 hover:shadow-md"
                       }`}
                     >
-                      <span className="text-xl">{mood.emoji}</span>
+                      <MoodIcon className="h-5 w-5 text-secondary" />
                       <span className="text-[11px] font-semibold text-foreground leading-tight">
                         {mood.label}
                       </span>
