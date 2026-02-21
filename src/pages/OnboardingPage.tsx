@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowLeft, Sparkles, type LucideIcon } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Slider } from "../components/ui/slider";
 import { cn } from "../libs/utils";
@@ -7,6 +7,21 @@ import { INTERESTS, DISTRICTS } from "../data/mockData";
 import { useOnboarding } from "../hooks/useOnboarding";
 import logo from "../assets/images/logo2.png";
 import cairoBackground from "../assets/images/cairo-bg-onboarding.jpg";
+
+import {
+  Ship,
+  Utensils,
+  Palette,
+  Laptop,
+  Moon,
+  Landmark,
+  Coffee,
+  ShoppingBag,
+  Trees,
+  Dumbbell,
+  Music,
+  Building2,
+} from "lucide-react";
 
 const STEPS = ["Interests", "Vibe", "Areas", "Budget"];
 
@@ -29,6 +44,21 @@ const OnboardingPage = () => {
     goToPreviousStep,
     handleComplete,
   } = useOnboarding();
+
+  const interestIconMap: Record<string, LucideIcon> = {
+    Ship,
+    Utensils,
+    Palette,
+    Laptop,
+    Moon,
+    Landmark,
+    Coffee,
+    ShoppingBag,
+    Trees,
+    Dumbbell,
+    Music,
+    Building2,
+  };
 
   // Handle next button click
   const handleNext = () => {
@@ -95,6 +125,8 @@ const OnboardingPage = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {INTERESTS.map((item) => {
                       const selected = selectedInterests.includes(item.id);
+                      const InterestIcon =
+                        interestIconMap[item.icon] ?? Palette;
                       return (
                         <button
                           key={item.id}
@@ -106,7 +138,7 @@ const OnboardingPage = () => {
                               : "border-border bg-card text-muted-foreground hover:border-secondary/40",
                           )}
                         >
-                          <span className="text-lg">{item.emoji}</span>
+                          <InterestIcon className="h-4 w-4" />
                           {item.label}
                         </button>
                       );

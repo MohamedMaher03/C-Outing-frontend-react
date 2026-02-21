@@ -1,4 +1,10 @@
-import { User, Settings, LogOut, ChevronRight } from "lucide-react";
+import {
+  User,
+  Settings,
+  LogOut,
+  ChevronRight,
+  type LucideIcon,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import {
@@ -11,7 +17,20 @@ import { Slider } from "../../components/ui/slider";
 import { cn } from "../../libs/utils";
 import { INTERESTS, DISTRICTS } from "../../data/mockData";
 import { useProfile } from "../../hooks/useProfile";
-
+import {
+  Ship,
+  Utensils,
+  Palette,
+  Laptop,
+  Moon,
+  Landmark,
+  Coffee,
+  ShoppingBag,
+  Trees,
+  Dumbbell,
+  Music,
+  Building2,
+} from "lucide-react";
 const ProfilePage = () => {
   const navigate = useNavigate();
   const {
@@ -30,6 +49,21 @@ const ProfilePage = () => {
     savePreferences,
     handleSignOut,
   } = useProfile();
+
+  const interestIconMap: Record<string, LucideIcon> = {
+    Ship,
+    Utensils,
+    Palette,
+    Laptop,
+    Moon,
+    Landmark,
+    Coffee,
+    ShoppingBag,
+    Trees,
+    Dumbbell,
+    Music,
+    Building2,
+  };
 
   const handleSave = async () => {
     try {
@@ -109,6 +143,7 @@ const ProfilePage = () => {
             <div className="flex flex-wrap gap-2">
               {INTERESTS.map((item) => {
                 const selected = selectedInterests.includes(item.id);
+                const InterestIcon = interestIconMap[item.icon] ?? Palette;
                 return (
                   <button
                     key={item.id}
@@ -120,7 +155,7 @@ const ProfilePage = () => {
                         : "border-border bg-card text-muted-foreground hover:border-secondary/40",
                     )}
                   >
-                    <span>{item.emoji}</span>
+                    <InterestIcon className="h-4 w-4" />
                     {item.label}
                   </button>
                 );

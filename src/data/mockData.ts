@@ -188,18 +188,18 @@ export const POPULAR_DISTRICTS = [
 ];
 
 export const INTERESTS = [
-  { id: "felucca", label: "Felucca Rides", emoji: "⛵" },
-  { id: "street-food", label: "Street Food", emoji: "🥙" },
-  { id: "art-galleries", label: "Art Galleries", emoji: "🎨" },
-  { id: "coworking", label: "Co-working", emoji: "💻" },
-  { id: "nightlife", label: "Nightlife", emoji: "🌙" },
-  { id: "historical", label: "Historical Sites", emoji: "🏛️" },
-  { id: "cafes", label: "Cafés & Coffee", emoji: "☕" },
-  { id: "shopping", label: "Shopping", emoji: "🛍️" },
-  { id: "parks", label: "Parks & Nature", emoji: "🌿" },
-  { id: "fitness", label: "Fitness & Wellness", emoji: "🧘" },
-  { id: "live-music", label: "Live Music", emoji: "🎵" },
-  { id: "rooftops", label: "Rooftop Lounges", emoji: "🏙️" },
+  { id: "felucca", label: "Felucca Rides", icon: "Ship" },
+  { id: "street-food", label: "Street Food", icon: "Utensils" },
+  { id: "art-galleries", label: "Art Galleries", icon: "Palette" },
+  { id: "coworking", label: "Co-working", icon: "Laptop" },
+  { id: "nightlife", label: "Nightlife", icon: "Moon" },
+  { id: "historical", label: "Historical Sites", icon: "Landmark" },
+  { id: "cafes", label: "Cafés & Coffee", icon: "Coffee" },
+  { id: "shopping", label: "Shopping", icon: "ShoppingBag" },
+  { id: "parks", label: "Parks & Nature", icon: "Trees" },
+  { id: "fitness", label: "Fitness & Wellness", icon: "Dumbbell" },
+  { id: "live-music", label: "Live Music", icon: "Music" },
+  { id: "rooftops", label: "Rooftop Lounges", icon: "Building2" },
 ];
 
 export const DISTRICTS = [
