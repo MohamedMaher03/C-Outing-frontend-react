@@ -22,7 +22,6 @@ export interface Place {
 export interface Category {
   id: string;
   label: string;
-  emoji: string;
   icon: string; // lucide icon name
   count: number;
   color: string; // tailwind bg class
@@ -45,7 +44,6 @@ export const CATEGORIES: Category[] = [
   {
     id: "food",
     label: "Food & Drink",
-    emoji: "🍽️",
     icon: "UtensilsCrossed",
     count: 124,
     color: "bg-orange-100",
@@ -53,7 +51,6 @@ export const CATEGORIES: Category[] = [
   {
     id: "nightlife",
     label: "Nightlife",
-    emoji: "🌙",
     icon: "Moon",
     count: 56,
     color: "bg-purple-100",
@@ -61,7 +58,6 @@ export const CATEGORIES: Category[] = [
   {
     id: "culture",
     label: "Culture & Art",
-    emoji: "🎨",
     icon: "Palette",
     count: 43,
     color: "bg-pink-100",
@@ -69,7 +65,6 @@ export const CATEGORIES: Category[] = [
   {
     id: "outdoor",
     label: "Outdoors",
-    emoji: "🌿",
     icon: "Trees",
     count: 38,
     color: "bg-green-100",
@@ -77,7 +72,6 @@ export const CATEGORIES: Category[] = [
   {
     id: "shopping",
     label: "Shopping",
-    emoji: "🛍️",
     icon: "ShoppingBag",
     count: 67,
     color: "bg-blue-100",
@@ -85,7 +79,6 @@ export const CATEGORIES: Category[] = [
   {
     id: "wellness",
     label: "Wellness",
-    emoji: "🧘",
     icon: "Heart",
     count: 29,
     color: "bg-teal-100",
@@ -93,7 +86,6 @@ export const CATEGORIES: Category[] = [
   {
     id: "activities",
     label: "Activities",
-    emoji: "⛵",
     icon: "Compass",
     count: 45,
     color: "bg-amber-100",
@@ -101,7 +93,6 @@ export const CATEGORIES: Category[] = [
   {
     id: "coworking",
     label: "Co-working",
-    emoji: "💻",
     icon: "Laptop",
     count: 31,
     color: "bg-slate-100",

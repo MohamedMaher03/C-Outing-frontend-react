@@ -9,6 +9,15 @@ import {
   Flame,
   Navigation,
   Star,
+  UtensilsCrossed,
+  Moon,
+  Palette,
+  Trees,
+  ShoppingBag,
+  Heart,
+  Compass,
+  Laptop,
+  type LucideIcon,
 } from "lucide-react";
 import { Input } from "../components/ui/input";
 import PlaceCard from "../components/PlaceCard";
@@ -48,6 +57,17 @@ const HomePage = () => {
     { id: "near-me" as FilterType, label: "Near Me", icon: Navigation },
     { id: "open-now" as FilterType, label: "Open Now", icon: Clock },
   ];
+
+  const categoryIconMap: Record<string, LucideIcon> = {
+    UtensilsCrossed,
+    Moon,
+    Palette,
+    Trees,
+    ShoppingBag,
+    Heart,
+    Compass,
+    Laptop,
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -186,23 +206,45 @@ const HomePage = () => {
               <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
                 {categories.map((cat) => {
                   const isActive = selectedCategory === cat.id;
+                  const CatIcon = categoryIconMap[cat.icon] ?? Compass;
                   return (
                     <button
                       key={cat.id}
                       onClick={() =>
                         setSelectedCategory(isActive ? null : cat.id)
                       }
-                      className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-200 border ${
+                      className={`group flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-200 border ${
                         isActive
-                          ? "bg-primary/10 border-primary/40 shadow-md glow-gold-sm scale-105"
-                          : `${cat.color} border-transparent hover:shadow-md hover:scale-105`
+                          ? "bg-foreground border-foreground shadow-lg scale-105"
+                          : "bg-background border-border/60 hover:border-foreground/40 hover:shadow-md hover:scale-105"
                       }`}
                     >
-                      <span className="text-2xl">{cat.emoji}</span>
-                      <span className="text-[10px] font-semibold text-foreground whitespace-nowrap leading-tight">
+                      <div
+                        className={`flex items-center justify-center w-9 h-9 rounded-xl transition-colors duration-200 ${
+                          isActive
+                            ? "bg-white/15"
+                            : "bg-muted group-hover:bg-foreground/8"
+                        }`}
+                      >
+                        <CatIcon
+                          className={`h-5 w-5 transition-colors duration-200 ${
+                            isActive ? "text-white" : "text-foreground"
+                          }`}
+                          strokeWidth={1.75}
+                        />
+                      </div>
+                      <span
+                        className={`text-[10px] font-semibold whitespace-nowrap leading-tight transition-colors duration-200 ${
+                          isActive ? "text-white" : "text-foreground"
+                        }`}
+                      >
                         {cat.label}
                       </span>
-                      <span className="text-[9px] text-muted-foreground">
+                      <span
+                        className={`text-[9px] transition-colors duration-200 ${
+                          isActive ? "text-white/60" : "text-muted-foreground"
+                        }`}
+                      >
                         {cat.count} spots
                       </span>
                     </button>
