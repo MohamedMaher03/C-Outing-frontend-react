@@ -96,7 +96,7 @@ const HomePage = () => {
       {/* ====== HERO SECTION ====== */}
       <div className="relative overflow-hidden h-[380px] sm:h-[400px]">
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 transition-transform duration-[20s] hover:scale-110"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 transition-transform duration-20s hover:scale-110"
           style={{ backgroundImage: `url(${cairoBg})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-transparent" />
