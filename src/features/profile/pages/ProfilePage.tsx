@@ -1,36 +1,12 @@
-import {
-  User,
-  Settings,
-  LogOut,
-  ChevronRight,
-  type LucideIcon,
-} from "lucide-react";
+import { User, Settings, LogOut, ChevronRight, Palette } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { INTERESTS, DISTRICTS } from "@/mocks/mockData";
 import { useProfile } from "@/features/profile/hooks/useProfile";
-import {
-  Ship,
-  Utensils,
-  Palette,
-  Laptop,
-  Moon,
-  Landmark,
-  Coffee,
-  ShoppingBag,
-  Trees,
-  Dumbbell,
-  Music,
-  Building2,
-} from "lucide-react";
+import { INTEREST_ICON_MAP } from "@/features/profile/mocks";
 const ProfilePage = () => {
   const navigate = useNavigate();
   const {
@@ -49,21 +25,6 @@ const ProfilePage = () => {
     savePreferences,
     handleSignOut,
   } = useProfile();
-
-  const interestIconMap: Record<string, LucideIcon> = {
-    Ship,
-    Utensils,
-    Palette,
-    Laptop,
-    Moon,
-    Landmark,
-    Coffee,
-    ShoppingBag,
-    Trees,
-    Dumbbell,
-    Music,
-    Building2,
-  };
 
   const handleSave = async () => {
     try {
@@ -143,7 +104,7 @@ const ProfilePage = () => {
             <div className="flex flex-wrap gap-2">
               {INTERESTS.map((item) => {
                 const selected = selectedInterests.includes(item.id);
-                const InterestIcon = interestIconMap[item.icon] ?? Palette;
+                const InterestIcon = INTEREST_ICON_MAP[item.icon] ?? Palette;
                 return (
                   <button
                     key={item.id}

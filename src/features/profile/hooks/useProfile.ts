@@ -9,9 +9,8 @@ import {
   getUserPreferences,
   updateUserPreferences,
   signOut,
-  type UserProfile,
-  type UserPreferences,
 } from "@/features/profile/services/profileService";
+import type { UserProfile, UserPreferences } from "@/features/profile/types";
 
 interface UseProfileReturn {
   // State

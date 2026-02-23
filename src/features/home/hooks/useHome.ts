@@ -22,9 +22,11 @@ import {
   TRENDING_TAGS,
   POPULAR_DISTRICTS,
 } from "@/mocks/mockData";
-import { fetchHomePageData } from "@/features/home/services/homeService";
-
-export type FilterType = "all" | "top-rated" | "near-me" | "open-now";
+import {
+  fetchHomePageData,
+  togglePlaceSave,
+} from "@/features/home/services/homeService";
+import type { FilterType } from "@/features/home/types";
 
 interface UseHomeReturn {
   // State
@@ -110,14 +112,30 @@ export const useHome = (): UseHomeReturn => {
   }, []);
 
   /** Toggle the saved state for a place across all three backend sections. */
-  const toggleSave = useCallback((id: string) => {
-    const toggle = (list: Place[]) =>
-      list.map((p) => (p.id === id ? { ...p, isSaved: !p.isSaved } : p));
-    setRawCurated((prev) => toggle(prev));
-    setRawTrending((prev) => toggle(prev));
-    setRawTopRated((prev) => toggle(prev));
-  }, []);
+  const toggleSave = useCallback(
+    async (id: string) => {
+      try {
+        const place =
+          rawCurated.find((p) => p.id === id) ||
+          rawTrending.find((p) => p.id === id) ||
+          rawTopRated.find((p) => p.id === id);
 
+        if (!place) return;
+
+        await togglePlaceSave(id, !place.isSaved);
+
+        const toggle = (list: Place[]) =>
+          list.map((p) => (p.id === id ? { ...p, isSaved: !p.isSaved } : p));
+
+        setRawCurated((prev) => toggle(prev));
+        setRawTrending((prev) => toggle(prev));
+        setRawTopRated((prev) => toggle(prev));
+      } catch (error) {
+        console.error("Failed to toggle save", error);
+      }
+    },
+    [rawCurated, rawTrending, rawTopRated],
+  );
   /**
    * Apply all active client-side filters to a list.
    *

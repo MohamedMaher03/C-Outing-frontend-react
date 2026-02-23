@@ -1,32 +1,24 @@
 import { useNavigate } from "react-router-dom";
 import {
   Search,
-  TrendingUp,
   Sparkles,
   MapPin,
-  Clock,
   ChevronRight,
   Flame,
-  Navigation,
   Star,
-  UtensilsCrossed,
-  Moon,
-  Palette,
-  Trees,
-  ShoppingBag,
-  Heart,
   Compass,
-  Laptop,
   type LucideIcon,
-  Binoculars,
-  Mountain,
-  Coffee,
-  Users,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { useHome, type FilterType } from "@/features/home/hooks/useHome";
+import { useHome } from "@/features/home/hooks/useHome";
+import type { FilterType } from "@/features/home/types";
+import {
+  FILTER_OPTIONS,
+  CATEGORY_ICON_MAP,
+  MOOD_ICON_MAP,
+} from "@/features/home/mocks";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
 
 const HomePage = () => {
@@ -54,33 +46,6 @@ const HomePage = () => {
     trendingTags,
     popularDistricts,
   } = useHome();
-
-  const filterOptions = [
-    { id: "all" as FilterType, label: "All", icon: Sparkles },
-    { id: "top-rated" as FilterType, label: "Top Rated", icon: TrendingUp },
-    { id: "near-me" as FilterType, label: "Near Me", icon: Navigation },
-    { id: "open-now" as FilterType, label: "Open Now", icon: Clock },
-  ];
-
-  const categoryIconMap: Record<string, LucideIcon> = {
-    UtensilsCrossed,
-    Moon,
-    Palette,
-    Trees,
-    ShoppingBag,
-    Heart,
-    Compass,
-    Laptop,
-  };
-
-  const moodIconMap: Record<string, LucideIcon> = {
-    Coffee,
-    Mountain,
-    Heart,
-    Users,
-    Binoculars,
-    UtensilsCrossed,
-  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -169,7 +134,7 @@ const HomePage = () => {
             role="tablist"
             aria-label="Filter venues"
           >
-            {filterOptions.map((filter) => {
+            {FILTER_OPTIONS.map((filter) => {
               const Icon = filter.icon;
               const isActive =
                 filter.id === "all"
@@ -219,7 +184,7 @@ const HomePage = () => {
               <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
                 {categories.map((cat) => {
                   const isActive = selectedCategory === cat.id;
-                  const CatIcon = categoryIconMap[cat.icon] ?? Compass;
+                  const CatIcon = CATEGORY_ICON_MAP[cat.icon] ?? Compass;
 
                   return (
                     <button
@@ -416,7 +381,7 @@ const HomePage = () => {
               <div className="grid grid-cols-2 gap-2">
                 {moodOptions.map((mood) => {
                   const isActive = selectedMood === mood.id;
-                  const MoodIcon = moodIconMap[mood.icon] ?? Sparkles;
+                  const MoodIcon = MOOD_ICON_MAP[mood.icon] ?? Sparkles;
                   return (
                     <button
                       key={mood.id}

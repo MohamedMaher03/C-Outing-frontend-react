@@ -11,3 +11,10 @@ export type { LoginFormData } from "./validation/login.schema";
 export type { SignUpFormData } from "./validation/signUp.schema";
 export { default as LoginForm } from "./components/LoginForm";
 export { default as SignUpForm } from "./components/SignUpForm";
+export type {
+  LoginField,
+  SignUpFieldConfig,
+  FormFieldProps,
+  PasswordInputProps,
+} from "./types";
+export { LOGIN_FORM_FIELDS, SIGN_UP_FORM_FIELDS } from "./mocks";

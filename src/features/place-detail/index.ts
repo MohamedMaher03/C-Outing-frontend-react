@@ -17,4 +17,9 @@ export type {
   SocialMediaReview,
   ReviewSummary,
   RecordInteractionRequest,
-} from "./services/placeDetailService";
+} from "./types";
+export { ReviewCard } from "./components/ReviewCard";
+export { SocialReviewCard } from "./components/SocialReviewCard";
+export { ReviewSummarySection } from "./components/ReviewSummarySection";
+export { AddReviewForm } from "./components/AddReviewForm";
+export { ReviewSkeleton } from "./components/ReviewSkeleton";

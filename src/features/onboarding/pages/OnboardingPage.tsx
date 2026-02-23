@@ -1,29 +1,23 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, Sparkles, type LucideIcon } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Sparkles,
+  Palette,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { INTERESTS, DISTRICTS } from "@/mocks/mockData";
 import { useOnboarding } from "@/features/onboarding/hooks/useOnboarding";
+import {
+  ONBOARDING_STEPS,
+  BUDGET_OPTIONS,
+  INTEREST_ICON_MAP,
+} from "@/features/onboarding/mocks";
 import logo from "@/assets/images/logo2.png";
 import cairoBackground from "@/assets/images/cairo-bg-onboarding.jpg";
-
-import {
-  Ship,
-  Utensils,
-  Palette,
-  Laptop,
-  Moon,
-  Landmark,
-  Coffee,
-  ShoppingBag,
-  Trees,
-  Dumbbell,
-  Music,
-  Building2,
-} from "lucide-react";
-
-const STEPS = ["Interests", "Vibe", "Areas", "Budget"];
 
 const OnboardingPage = () => {
   // Use custom hook for all business logic
@@ -44,21 +38,6 @@ const OnboardingPage = () => {
     goToPreviousStep,
     handleComplete,
   } = useOnboarding();
-
-  const interestIconMap: Record<string, LucideIcon> = {
-    Ship,
-    Utensils,
-    Palette,
-    Laptop,
-    Moon,
-    Landmark,
-    Coffee,
-    ShoppingBag,
-    Trees,
-    Dumbbell,
-    Music,
-    Building2,
-  };
 
   // Handle next button click
   const handleNext = () => {
@@ -89,7 +68,7 @@ const OnboardingPage = () => {
 
           {/* Progress */}
           <div className="flex items-center gap-2 justify-center">
-            {STEPS.map((s, i) => (
+            {ONBOARDING_STEPS.map((s, i) => (
               <div key={s} className="flex items-center gap-2">
                 <div
                   className={cn(
@@ -126,7 +105,7 @@ const OnboardingPage = () => {
                     {INTERESTS.map((item) => {
                       const selected = selectedInterests.includes(item.id);
                       const InterestIcon =
-                        interestIconMap[item.icon] ?? Palette;
+                        INTEREST_ICON_MAP[item.icon] ?? Palette;
                       return (
                         <button
                           key={item.id}
@@ -239,7 +218,7 @@ const OnboardingPage = () => {
                   </div>
 
                   <div className="flex items-center justify-center gap-4">
-                    {["Low", "Medium", "High"].map((b) => (
+                    {BUDGET_OPTIONS.map((b) => (
                       <button
                         key={b}
                         onClick={() => setBudget(b)}

@@ -7,8 +7,8 @@ import { useState, useEffect } from "react";
 import {
   getFavorites,
   toggleFavorite as toggleFavoriteService,
-  type FavoritePlace,
 } from "@/features/favorites/services/favoritesService";
+import type { FavoritePlace } from "@/features/favorites/types";
 
 interface UseFavoritesReturn {
   // State

@@ -5,15 +5,7 @@
 
 // import axiosInstance from "../../config/axios.config";
 
-/**
- * User onboarding preferences data structure
- */
-export interface OnboardingPreferences {
-  interests: string[];
-  vibe: number;
-  districts: string[];
-  budget: "Low" | "Medium" | "High" | null;
-}
+import type { OnboardingPreferences } from "@/features/onboarding/types";
 
 /**
  * Submit user onboarding preferences

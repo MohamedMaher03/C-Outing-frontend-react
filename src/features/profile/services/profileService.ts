@@ -5,42 +5,21 @@
 
 // import { apiClient } from "./client"; // TODO: Uncomment when backend is ready
 
-// ============ Types ============
-export interface UserProfile {
-  userId: number;
-  name: string;
-  email: string;
-  avatar?: string;
-  bio?: string;
-}
+import type {
+  UserProfile,
+  UserPreferences,
+  UpdatePreferencesRequest,
+} from "@/features/profile/types";
+import {
+  MOCK_PROFILE,
+  MOCK_PREFERENCES as INITIAL_PREFERENCES,
+} from "@/features/profile/mocks";
 
-export interface UserPreferences {
-  interests: string[];
-  vibe: number;
-  districts: string[];
-  budget: "Low" | "Medium" | "High";
-}
+// Re-export types for backward compatibility
+export type { UserProfile, UserPreferences, UpdatePreferencesRequest };
 
-export interface UpdatePreferencesRequest {
-  interests?: string[];
-  vibe?: number;
-  districts?: string[];
-  budget?: "Low" | "Medium" | "High";
-}
-
-// ============ Mock Data ============
-const MOCK_PROFILE: UserProfile = {
-  userId: 1,
-  name: "Ahmed Khalil",
-  email: "ahmed@couting.app",
-};
-
-let MOCK_PREFERENCES: UserPreferences = {
-  interests: ["cafes", "street-food", "rooftops"],
-  vibe: 65,
-  districts: ["Zamalek", "Downtown", "Maadi"],
-  budget: "Medium",
-};
+// Mutable copy of preferences for mock mutations
+let MOCK_PREFERENCES: UserPreferences = { ...INITIAL_PREFERENCES };
 
 // ============ Service Functions ============
 

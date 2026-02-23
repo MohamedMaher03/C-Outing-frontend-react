@@ -13,22 +13,7 @@ import { loginSchema } from "@/features/auth/validation/login.schema";
 import type { LoginFormData } from "@/features/auth/validation/login.schema";
 import { PasswordInput } from "./form/PasswordInput";
 import { useLogin } from "@/features/auth/hooks/useLogin";
-
-interface LoginField {
-  id: keyof LoginFormData;
-  label: string;
-  placeholder: string;
-  type?: string;
-}
-
-const loginFormFields: LoginField[] = [
-  {
-    id: "email",
-    label: "Email",
-    placeholder: "you@example.com",
-    type: "email",
-  },
-];
+import { LOGIN_FORM_FIELDS } from "@/features/auth/mocks";
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -116,7 +101,7 @@ const LoginForm = () => {
           {/* Form */}
           <form onSubmit={handleSubmit(loginUser)} className="space-y-4">
             {/* Render form fields using map */}
-            {loginFormFields.map((field) => (
+            {LOGIN_FORM_FIELDS.map((field) => (
               <FormField
                 key={field.id}
                 id={field.id}

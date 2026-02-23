@@ -4,27 +4,16 @@
  */
 
 // import { apiClient } from "./client"; // TODO: Uncomment when backend is ready
-import type { Place } from "@/mocks/mockData";
 import { PLACES } from "@/mocks/mockData";
-
-// ============ Types ============
-export interface FavoritePlace extends Place {
-  savedAt: Date;
-}
-
-export interface ToggleFavoriteResponse {
-  success: boolean;
-  isFavorite: boolean;
-  message?: string;
-}
+import type {
+  FavoritePlace,
+  ToggleFavoriteResponse,
+} from "@/features/favorites/types";
+import { createInitialFavorites } from "@/features/favorites/mocks";
 
 // ============ Mock Data ============
 // Simulate in-memory favorites storage
-let MOCK_FAVORITES: FavoritePlace[] = PLACES.slice(0, 3).map((place) => ({
-  ...place,
-  savedAt: new Date(),
-  isSaved: true,
-}));
+let MOCK_FAVORITES: FavoritePlace[] = createInitialFavorites();
 
 // ============ Service Functions ============
 

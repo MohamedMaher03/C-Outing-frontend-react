@@ -6,4 +6,4 @@ export {
   submitOnboardingPreferences,
   updateUserPreferences,
 } from "./services/onboardingService";
-export type { OnboardingPreferences } from "./services/onboardingService";
+export type { OnboardingPreferences } from "./types";

@@ -4,7 +4,7 @@ import { signUpSchema } from "@/features/auth/validation/signUp.schema";
 import type { SignUpFormData } from "@/features/auth/validation/signUp.schema";
 import { Controller } from "react-hook-form";
 import { PasswordInput } from "./form/PasswordInput";
-import { Loader2, ArrowLeft, User, Mail, Phone } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,41 +14,7 @@ import logo from "@/assets/images/logo2.png";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
 import { useNavigate } from "react-router-dom";
 import { useSignUp } from "@/features/auth/hooks/useSignUp";
-
-interface SignUpFieldConfig {
-  id: keyof Omit<
-    SignUpFormData,
-    "password" | "confirmPassword" | "acceptTerms"
-  >;
-  label: string;
-  placeholder: string;
-  type?: string;
-  icon?: React.ReactNode;
-}
-
-const signUpFormFields: SignUpFieldConfig[] = [
-  {
-    id: "fullName",
-    label: "Full Name",
-    placeholder: "John Doe",
-    type: "text",
-    icon: <User className="h-4 w-4" />,
-  },
-  {
-    id: "email",
-    label: "Email",
-    placeholder: "you@example.com",
-    type: "email",
-    icon: <Mail className="h-4 w-4" />,
-  },
-  {
-    id: "phone",
-    label: "Phone Number",
-    placeholder: "+20 123 456 7890",
-    type: "tel",
-    icon: <Phone className="h-4 w-4" />,
-  },
-];
+import { SIGN_UP_FORM_FIELDS } from "@/features/auth/mocks";
 
 const SignUpForm = () => {
   const navigate = useNavigate();
@@ -152,14 +118,14 @@ const SignUpForm = () => {
           {/* Form */}
           <form onSubmit={handleSubmit(registerUser)} className="space-y-4">
             {/* Render form fields using map */}
-            {signUpFormFields.map((field) => (
+            {SIGN_UP_FORM_FIELDS.map((field) => (
               <FormField
                 key={field.id}
                 id={field.id}
                 label={field.label}
                 placeholder={field.placeholder}
                 type={field.type}
-                icon={field.icon}
+                icon={field.Icon && <field.Icon className="h-4 w-4" />}
                 error={errors[field.id]?.message}
                 register={register(field.id)}
               />

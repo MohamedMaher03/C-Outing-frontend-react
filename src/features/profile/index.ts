@@ -13,4 +13,4 @@ export type {
   UserProfile,
   UserPreferences,
   UpdatePreferencesRequest,
-} from "./services/profileService";
+} from "./types";

@@ -12,11 +12,13 @@ import {
   getReviewSummary,
   submitReview,
   recordInteraction,
-  type PlaceDetail,
-  type Review,
-  type SocialMediaReview,
-  type ReviewSummary,
 } from "@/features/place-detail/services/placeDetailService";
+import type {
+  PlaceDetail,
+  Review,
+  SocialMediaReview,
+  ReviewSummary,
+} from "@/features/place-detail/types";
 import {
   toggleFavorite,
   checkIsFavorite,

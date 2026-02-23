@@ -6,10 +6,8 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  submitOnboardingPreferences,
-  type OnboardingPreferences,
-} from "@/features/onboarding/services/onboardingService";
+import { submitOnboardingPreferences } from "@/features/onboarding/services/onboardingService";
+import type { OnboardingPreferences } from "@/features/onboarding/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 
 interface UseOnboardingReturn {

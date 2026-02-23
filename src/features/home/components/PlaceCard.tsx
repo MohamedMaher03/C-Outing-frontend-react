@@ -1,15 +1,7 @@
 import { Heart, MapPin, Star, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { Place } from "@/mocks/mockData";
-
-interface PlaceCardProps {
-  place: Place;
-  variant?: "horizontal" | "grid";
-  onToggleSave?: (id: string) => void;
-  onClick?: (id: string) => void;
-  // showAiPick?: boolean;
-}
+import type { PlaceCardProps } from "@/features/home/types";
 
 const PlaceCard = ({
   place,
