@@ -1,19 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import {
   Search,
-  Sparkles,
   MapPin,
   ChevronRight,
   Flame,
   Star,
   Compass,
-  type LucideIcon,
+  Sparkles,
 } from "lucide-react";
+import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Input } from "@/components/ui/input";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useHome } from "@/features/home/hooks/useHome";
-import type { FilterType } from "@/features/home/types";
 import {
   FILTER_OPTIONS,
   CATEGORY_ICON_MAP,
@@ -58,20 +57,10 @@ const HomePage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="relative mx-auto w-16 h-16">
-            <Sparkles className="h-16 w-16 text-secondary animate-pulse" />
-            <div className="absolute inset-0 rounded-full bg-secondary/20 animate-ping" />
-          </div>
-          <div>
-            <p className="text-foreground font-semibold">Discovering Cairo</p>
-            <p className="text-muted-foreground text-sm mt-1">
-              Finding the best places for you...
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageLoading
+        text="Discovering Cairo"
+        subText="Finding the best places for you..."
+      />
     );
   }
 

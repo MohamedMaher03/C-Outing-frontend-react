@@ -4,8 +4,9 @@ import { signUpSchema } from "@/features/auth/validation/signUp.schema";
 import type { SignUpFormData } from "@/features/auth/validation/signUp.schema";
 import { Controller } from "react-hook-form";
 import { PasswordInput } from "./form/PasswordInput";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InlineLoading } from "@/components/ui/LoadingSpinner";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormError } from "@/components/ui/form-error";
@@ -207,7 +208,7 @@ const SignUpForm = () => {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <InlineLoading className="mr-2" />
                   Creating account...
                 </>
               ) : (

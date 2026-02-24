@@ -12,6 +12,7 @@ import {
   Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePlaceDetail } from "@/features/place-detail/hooks/usePlaceDetail";
@@ -91,12 +92,7 @@ const PlaceDetailPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 border-3 border-secondary/30 border-t-secondary rounded-full animate-spin" />
-          <p className="text-muted-foreground text-sm">
-            Loading place details...
-          </p>
-        </div>
+        <LoadingSpinner size="md" text="Loading place details..." />
       </div>
     );
   }

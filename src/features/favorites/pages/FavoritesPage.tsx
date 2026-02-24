@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Heart } from "lucide-react";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import { useFavorites } from "@/features/favorites/hooks/useFavorites";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const FavoritesPage = () => {
   const navigate = useNavigate();
@@ -16,9 +17,10 @@ const FavoritesPage = () => {
   };
 
   if (loading) {
+    /* i need loading spinner in center of page  */
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-muted-foreground">Loading favorites...</p>
+        <LoadingSpinner size="md" text="Loading favorites..." />
       </div>
     );
   }

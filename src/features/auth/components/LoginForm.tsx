@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InlineLoading } from "@/components/ui/LoadingSpinner";
 import { Label } from "@/components/ui/label";
 import { FormError } from "@/components/ui/form-error";
 import { FormField } from "./form/FormField";
@@ -140,7 +140,7 @@ const LoginForm = () => {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <InlineLoading className="mr-2" />
                   Signing in...
                 </>
               ) : (

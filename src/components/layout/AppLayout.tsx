@@ -6,7 +6,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import logo from "@/assets/images/logo3.png";
 
 const NAV_ITEMS = [
-  { path: "/home", label: "Home", icon: Home },
+  { path: "/", label: "Home", icon: Home },
   { path: "/favorites", label: "Saved", icon: Heart },
   { path: "/profile", label: "Profile", icon: User },
 ];
@@ -27,7 +27,7 @@ const AppLayout = () => {
       <header className="hidden md:flex items-center justify-between px-8 py-3 bg-card border-b border-border sticky top-0 z-50">
         <div
           className="flex items-center gap-3 cursor-pointer"
-          onClick={() => navigate("/home")}
+          onClick={() => navigate("/")}
         >
           <img src={logo} alt="C-Outing" className="h-9 w-auto rounded-lg" />
           <span className="text-xl font-bold text-foreground tracking-tight">

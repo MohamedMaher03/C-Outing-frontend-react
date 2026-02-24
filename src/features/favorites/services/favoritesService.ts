@@ -23,7 +23,7 @@ let MOCK_FAVORITES: FavoritePlace[] = createInitialFavorites();
  */
 export const getFavorites = async (): Promise<FavoritePlace[]> => {
   // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 5000));
   return Promise.resolve(MOCK_FAVORITES);
 
   // TODO: Uncomment when backend is ready

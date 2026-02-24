@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { PageLoading } from "@/components/ui/LoadingSpinner";
 
 /**
  * Protected Route Component
@@ -14,8 +15,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    // TODO: Replace with Loading Spinner component
-    return <div>Loading...</div>;
+    return <PageLoading />;
   }
 
   if (!user) {
@@ -37,8 +37,7 @@ export function PublicRoute({ children }: PublicRouteProps) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    // TODO: Replace with Loading Spinner component
-    return <div>Loading...</div>;
+    return <PageLoading />;
   }
 
   if (user) {

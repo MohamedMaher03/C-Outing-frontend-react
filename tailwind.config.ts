@@ -110,6 +110,14 @@ export default {
           "0%": { opacity: "0", transform: "translateX(24px)" },
           "100%": { opacity: "1", transform: "translateX(0)" },
         },
+        "compass-spin": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        "compass-pulse": {
+          "0%, 100%": { transform: "scale(0.85)", opacity: "0.3" },
+          "50%": { transform: "scale(1.15)", opacity: "0.6" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -119,6 +127,8 @@ export default {
         float: "float 3s ease-in-out infinite",
         "fade-in-up": "fade-in-up 0.5s ease-out forwards",
         "slide-in-right": "slide-in-right 0.4s ease-out forwards",
+        "compass-spin": "compass-spin 2s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+        "compass-pulse": "compass-pulse 2s ease-in-out infinite",
       },
       duration: {
         "20s": "20s",
