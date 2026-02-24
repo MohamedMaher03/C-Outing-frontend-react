@@ -155,11 +155,11 @@ const PlaceDetailPage = () => {
         </div>
 
         {/* Match score overlay */}
-        {place.matchScore && (
+        {/* {place.matchScore && (
           <div className="absolute bottom-4 right-4 bg-secondary/90 backdrop-blur-sm text-secondary-foreground px-3 py-1.5 rounded-full text-xs font-bold">
             {place.matchScore}% Match
           </div>
-        )}
+        )} */}
 
         {/* Notification Toast */}
         {notification.show && (
@@ -307,10 +307,7 @@ const PlaceDetailPage = () => {
             <TabsContent value="social" className="space-y-4 mt-4">
               <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
                 <Globe className="h-3.5 w-3.5 shrink-0" />
-                <span>
-                  Reviews collected from social media platforms including
-                  Instagram, Twitter, Facebook, TikTok, and Google.
-                </span>
+                <span>Reviews collected from social media platforms.</span>
               </div>
 
               {socialReviewsLoading ? (

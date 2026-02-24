@@ -112,17 +112,19 @@ const PlaceCard = ({
             </div>
           )}
         </div>
-        <div className="flex gap-1.5 flex-wrap pt-0.5">
-          {place.tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="text-[10px] px-2.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground font-medium border border-border/40"
-            >
-              {tag}
-            </span>
-          ))}
+        <div className="flex items-center gap-1.5 pt-0.5">
+          <div className="flex gap-1.5 overflow-hidden flex-1 min-w-0">
+            {place.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] px-2.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground font-medium border border-border/40 flex-shrink-0"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
           {/* Price Level */}
-          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary font-bold border border-secondary/20 ml-auto">
+          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary font-bold border border-secondary/20 flex-shrink-0 ml-auto">
             {"$".repeat(place.priceLevel)}
           </span>
         </div>
