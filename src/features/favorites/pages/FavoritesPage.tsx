@@ -17,11 +17,8 @@ const FavoritesPage = () => {
   };
 
   if (loading) {
-    /* i need loading spinner in center of page  */
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <LoadingSpinner size="md" text="Loading favorites..." />
-      </div>
+      <LoadingSpinner size="md" text="Loading favorites..." fullScreen={true} />
     );
   }
 

@@ -91,9 +91,11 @@ const PlaceDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <LoadingSpinner size="md" text="Loading place details..." />
-      </div>
+      <LoadingSpinner
+        size="md"
+        text="Loading place details..."
+        fullScreen={true}
+      />
     );
   }
 

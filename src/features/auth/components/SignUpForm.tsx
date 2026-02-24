@@ -203,12 +203,12 @@ const SignUpForm = () => {
 
             <Button
               type="submit"
-              className="w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold h-11"
+              className="w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold h-11 disabled:opacity-100"
               disabled={isLoading}
             >
               {isLoading ? (
                 <>
-                  <InlineLoading className="mr-2" />
+                  <InlineLoading size="lg" className="mr-2" />
                   Creating account...
                 </>
               ) : (

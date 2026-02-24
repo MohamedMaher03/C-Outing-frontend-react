@@ -1,5 +1,7 @@
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
-import compassLogo from "@/assets/images/logo6.png";
+import arrowLogo from "@/assets/images/arrow-loading.png";
+import pyramidLogo from "@/assets/images/pyramid-loading-2.png";
 
 interface LoadingSpinnerProps {
   /** Size of the spinner: sm (32px), md (64px), lg (96px), xl (128px) */
@@ -31,7 +33,6 @@ const glowSizeMap = {
 /**
  * LoadingSpinner — Spinning compass logo used across the entire project.
  *
- * Uses logo6.png (compass) with a smooth CSS rotation animation.
  * Supports multiple sizes, optional text, and full-screen overlay mode.
  */
 export default function LoadingSpinner({
@@ -58,13 +59,23 @@ export default function LoadingSpinner({
           )}
         />
 
-        {/* Spinning compass image — full logo rotates */}
-        <img
-          src={compassLogo}
-          alt="Loading..."
-          className={cn("animate-compass-spin drop-shadow-md", sizeMap[size])}
-          draggable={false}
-        />
+        {/* Stacked logo: pyramid (static) + arrow (spinning) */}
+        <div className={cn("relative", sizeMap[size])}>
+          {/* Static pyramid */}
+          <img
+            src={pyramidLogo}
+            alt=""
+            className="absolute inset-0 w-full h-full object-contain drop-shadow-md"
+            draggable={false}
+          />
+          {/* Spinning arrow */}
+          <img
+            src={arrowLogo}
+            alt="Loading..."
+            className="absolute inset-0 w-full h-full object-contain animate-compass-spin drop-shadow-md"
+            draggable={false}
+          />
+        </div>
       </div>
 
       {/* Optional text */}
@@ -82,10 +93,11 @@ export default function LoadingSpinner({
   );
 
   if (fullScreen) {
-    return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    return createPortal(
+      <div className="fixed inset-0 pointer-events-none flex items-center justify-center">
         {spinner}
-      </div>
+      </div>,
+      document.body,
     );
   }
 
@@ -113,12 +125,27 @@ export function PageLoading({
 /**
  * InlineLoading — Small inline spinner for buttons / cards.
  */
-export function InlineLoading({ className }: { className?: string }) {
+export function InlineLoading({
+  className,
+  size = "sm",
+}: {
+  className?: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  const sizeClasses = {
+    sm: "w-4 h-4",
+    md: "w-5 h-5",
+    lg: "w-9 h-9",
+  };
+
   return (
     <img
-      src={compassLogo}
+      src={arrowLogo}
       alt="Loading..."
-      className={cn("animate-compass-spin w-4 h-4 shrink-0", className)}
+      className={cn(
+        `animate-compass-spin shrink-0 ${sizeClasses[size]}`,
+        className,
+      )}
       draggable={false}
     />
   );

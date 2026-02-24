@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { INTERESTS, DISTRICTS } from "@/mocks/mockData";
 import { useProfile } from "@/features/profile/hooks/useProfile";
 import { INTEREST_ICON_MAP } from "@/features/profile/mocks";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 const ProfilePage = () => {
   const navigate = useNavigate();
   const {
@@ -48,9 +49,7 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-muted-foreground">Loading profile...</p>
-      </div>
+      <LoadingSpinner size="md" text="Loading profile..." fullScreen={true} />
     );
   }
 
