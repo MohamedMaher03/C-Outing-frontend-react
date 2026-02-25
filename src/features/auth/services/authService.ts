@@ -1,74 +1,97 @@
 /**
- * Authentication Service
- * Handles user login, registration, and JWT token management
+ * Auth Service — Business Logic Layer
+ *
+ * Sits between AuthContext and the HTTP layer (authApi).
+ * Responsibilities:
+ *   • Call authApi functions
+ *   • Persist / restore / clear the session from localStorage
+ *   • Keep storage key names centralised via AUTH_STORAGE_KEYS
+ *
+ * ┌──────────────────────────────────────────────────────────┐
+ * │  AuthContext  →  authService  →  authApi  →  axios       │
+ * └──────────────────────────────────────────────────────────┘
+ *
+ * 🔧 To use mocks during development, swap the import:
+ *   import { authMock as authApi } from "../mocks/authMock";
  */
 
-import { apiClient } from "@/services/api/client";
-import { API_ENDPOINTS } from "@/config/api";
-import type { AuthResponse, ApiResponse } from "@/types";
+//import { authApi } from "../api/authApi";(WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
+import { authMock as authApi } from "../mocks/authMock";
+import { AUTH_STORAGE_KEYS } from "../constants";
+import type { LoginRequest, RegisterRequest, AuthApiResponse } from "../types";
+import type { User } from "@/types";
+
+// ── Session helpers (private) ────────────────────────────────
+
+const persistSession = (token: string, user: User): void => {
+  localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, token);
+  localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+};
+
+const clearSession = (): void => {
+  localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
+  localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
+};
+
+// ── Auth Service ─────────────────────────────────────────────
 
 export const authService = {
   /**
-   * Login user with email and password
+   * Login — authenticates the user and persists the session.
    */
-  async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await apiClient.post<ApiResponse<AuthResponse>>(
-      API_ENDPOINTS.auth.login,
-      { email, password },
-    );
-
-    if (response.data?.token) {
-      apiClient.setToken(response.data.token);
-    }
-
-    return response.data!;
+  async login(payload: LoginRequest): Promise<AuthApiResponse> {
+    const response = await authApi.login(payload);
+    persistSession(response.token, response.user);
+    return response;
   },
 
   /**
-   * Register new user
+   * Register — creates a new account and persists the session.
    */
-  async register(data: {
-    name: string;
-    email: string;
-    password: string;
-    age?: number;
-  }): Promise<AuthResponse> {
-    const response = await apiClient.post<ApiResponse<AuthResponse>>(
-      API_ENDPOINTS.auth.register,
-      data,
-    );
-
-    if (response.data?.token) {
-      apiClient.setToken(response.data.token);
-    }
-
-    return response.data!;
+  async register(payload: RegisterRequest): Promise<AuthApiResponse> {
+    const response = await authApi.register(payload);
+    persistSession(response.token, response.user);
+    return response;
   },
 
   /**
-   * Logout user and clear token
+   * Logout — calls backend to invalidate session (best-effort),
+   *          then unconditionally clears localStorage.
    */
   async logout(): Promise<void> {
     try {
-      await apiClient.post(API_ENDPOINTS.auth.logout);
+      await authApi.logout();
     } finally {
-      apiClient.clearToken();
+      clearSession();
     }
   },
 
   /**
-   * Verify and restore session from stored token
+   * Restore session — reads token + user from localStorage.
+   * Called once on app startup to rehydrate the AuthContext.
+   * Returns null if no valid session is stored.
    */
-  async verifyToken(): Promise<boolean> {
-    try {
-      const token = localStorage.getItem("authToken");
-      if (!token) return false;
+  restoreSession(): { token: string; user: User } | null {
+    const token = localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN);
+    const raw = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
 
-      apiClient.setToken(token);
-      return true;
+    if (!token || !raw) return null;
+
+    try {
+      const user = JSON.parse(raw) as User;
+      return { token, user };
     } catch {
-      apiClient.clearToken();
-      return false;
+      // Corrupted storage — clear it
+      clearSession();
+      return null;
     }
+  },
+
+  /**
+   * Update stored user — called after profile edits so the cached
+   *                       user stays in sync with the latest data.
+   */
+  updateStoredUser(user: User): void {
+    localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
   },
 };

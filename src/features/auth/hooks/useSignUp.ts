@@ -1,49 +1,56 @@
-/* structure is 
-UI → Hook → Service → API */
+/**
+ * useSignUp Hook
+ *
+ * Handles the complete registration flow:
+ *   1. Calls AuthContext.register (which delegates to authService → authApi)
+ *   2. Surfaces loading and error state to the UI
+ *   3. Returns a boolean indicating success so the caller can navigate
+ *
+ * Flow: SignUpForm → useSignUp → AuthContext.register → authService → authApi → axios
+ */
 
 import { useState } from "react";
-import type { SignUpFormData } from "@/features/auth/validation/signUp.schema";
+import { useAuth } from "../context/AuthContext";
+import { AUTH_ERROR_MESSAGES } from "../constants";
+import type { SignUpFormData } from "../validation/signUp.schema";
 
-export const useSignUp = () => {
+interface UseSignUpReturn {
+  registerUser: (data: SignUpFormData) => Promise<boolean>;
+  isLoading: boolean;
+  error: string | null;
+  clearError: () => void;
+}
+
+export const useSignUp = (): UseSignUpReturn => {
+  const { register } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  /* Before clicking Register → isLoading = false
-     When user clicks Register → isLoading = true
-     After API finishes → isLoading = false
-     So it controls the spinner / loading button. */
+  const [error, setError] = useState<string | null>(null);
 
-  const registerUser = async (data: SignUpFormData) => {
-    /*
-        This function:Takes the form data
-        Sends it to backend (later)
-        Handles loading
-        Handles error
-      */
+  const clearError = () => setError(null);
+
+  const registerUser = async (data: SignUpFormData): Promise<boolean> => {
     setIsLoading(true);
+    setError(null);
 
     try {
-      // TODO: Replace with real API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      console.log("Sign-up attempt:", data);
-
-      // here later:
-      // await authService.register(data);
-    } catch (error) {
-      console.error(error);
+      await register({
+        name: data.fullName,
+        email: data.email,
+        password: data.password,
+        phone: data.phone,
+      });
+      return true;
+    } catch (err) {
+      const key = err instanceof Error ? err.message : "UNKNOWN_ERROR";
+      setError(
+        AUTH_ERROR_MESSAGES[key as keyof typeof AUTH_ERROR_MESSAGES] ??
+          AUTH_ERROR_MESSAGES.UNKNOWN_ERROR,
+      );
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  return {
-    registerUser,
-    isLoading,
-  };
+  return { registerUser, isLoading, error, clearError };
 };
-/*
-So inside your component you can use:
-const { registerUser, isLoading } = useSignUp();
-Then:
-Call registerUser(data)
-Use isLoading to disable button
-*/

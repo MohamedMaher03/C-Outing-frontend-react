@@ -26,17 +26,6 @@ function App() {
     <Router>
       <Routes>
         {/* Public Routes - No Layout */}
-        <Route element={<AppLayout />}>
-          {/* Home Page */}
-          <Route
-            path="/"
-            element={
-              <PublicRoute>
-                <HomePage />
-              </PublicRoute>
-            }
-          />
-        </Route>
         <Route
           path="/login"
           element={
@@ -62,15 +51,15 @@ function App() {
           }
         />
 
-        {/* App Routes with AppLayout */}
+        {/* App Routes with AppLayout - all require authentication */}
         <Route element={<AppLayout />}>
           {/* Home Page */}
           <Route
-            path="/home"
+            path="/"
             element={
-              <PublicRoute>
+              <ProtectedRoute>
                 <HomePage />
-              </PublicRoute>
+              </ProtectedRoute>
             }
           />
 
@@ -89,9 +78,9 @@ function App() {
           <Route
             path="/venue/:id"
             element={
-              <PublicRoute>
+              <ProtectedRoute>
                 <PlaceDetailPage />
-              </PublicRoute>
+              </ProtectedRoute>
             }
           />
           <Route
@@ -119,49 +108,49 @@ function App() {
           <Route
             path="/profile"
             element={
-              <PublicRoute>
+              <ProtectedRoute>
                 <ProfilePage />
-              </PublicRoute>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/profile/edit"
             element={
-              <PublicRoute>
+              <ProtectedRoute>
                 <EditProfilePage />
-              </PublicRoute>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/profile/notifications"
             element={
-              <PublicRoute>
+              <ProtectedRoute>
                 <NotificationsPage />
-              </PublicRoute>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/profile/privacy"
             element={
-              <PublicRoute>
+              <ProtectedRoute>
                 <PrivacyPage />
-              </PublicRoute>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/profile/help"
             element={
-              <PublicRoute>
+              <ProtectedRoute>
                 <HelpSupportPage />
-              </PublicRoute>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/favorites"
             element={
-              <PublicRoute>
+              <ProtectedRoute>
                 <FavoritesPage />
-              </PublicRoute>
+              </ProtectedRoute>
             }
           />
         </Route>

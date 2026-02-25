@@ -1,0 +1,37 @@
+UI Component
+  └─▶ Hook (useLogin / useSignUp / useLogout)
+        └─▶ AuthContext  (manages React state)
+              └─▶ authService  (business logic + localStorage)
+                    └─▶ authApi  ← real
+                    └─▶ authMock ← swap here during dev
+                          └─▶ axios (interceptors auto-inject token)
+
+
+features/auth/
+├── constants/
+│   └── index.ts           ← AUTH_STORAGE_KEYS, AUTH_ERROR_MESSAGES (one source of truth)
+├── types/
+│   └── index.ts           ← Added: LoginRequest, RegisterRequest, AuthApiResponse, AuthState
+├── api/
+│   └── authApi.ts         ← NEW: pure HTTP calls via axios (no business logic, no storage)
+├── services/
+│   └── authService.ts     ← Rewritten: orchestrates authApi + localStorage session helpers
+├── mocks/
+│   ├── authMock.ts        ← NEW: drop-in replacement for authApi (realistic delays + error scenarios)
+│   ├── formFields.ts      ← Moved from index.ts (form field config constants)
+│   └── index.ts           ← Updated barrel
+├── context/
+│   └── AuthContext.tsx    ← Fully implemented: login/register/logout/updateUser wired to authService
+├── hooks/
+│   ├── useLogin.ts        ← Wired to AuthContext, returns { loginUser, isLoading, error, clearError }
+│   ├── useSignUp.ts       ← Wired to AuthContext, returns { registerUser, isLoading, error, clearError }
+│   └── useLogout.ts       ← NEW: wired to AuthContext, navigate to /login on success
+└── index.ts               ← Updated barrel — exports everything cleanly
+
+
+Switching to mocks
+In authService.ts, change one import line:
+// real
+import { authApi } from "../api/authApi";
+// mock
+import { authMock as authApi } from "../mocks/authMock";

@@ -41,7 +41,7 @@ export function PublicRoute({ children }: PublicRouteProps) {
   }
 
   if (user) {
-    return <Navigate to="/recommendations" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;

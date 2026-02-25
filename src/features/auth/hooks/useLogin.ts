@@ -1,32 +1,51 @@
-/* structure is 
-UI → Hook → Service → API */
+/**
+ * useLogin Hook
+ *
+ * Handles the complete login flow:
+ *   1. Calls AuthContext.login (which delegates to authService → authApi)
+ *   2. Surfaces loading and error state to the UI
+ *   3. Returns a boolean indicating success so the caller can navigate
+ *
+ * Flow: LoginForm → useLogin → AuthContext.login → authService → authApi → axios
+ */
 
 import { useState } from "react";
-import type { LoginFormData } from "@/features/auth/validation/login.schema";
+import { useAuth } from "../context/AuthContext";
+import { AUTH_ERROR_MESSAGES } from "../constants";
+import type { LoginFormData } from "../validation/login.schema";
 
-export const useLogin = () => {
+interface UseLoginReturn {
+  loginUser: (data: LoginFormData) => Promise<boolean>;
+  isLoading: boolean;
+  error: string | null;
+  clearError: () => void;
+}
+
+export const useLogin = (): UseLoginReturn => {
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const loginUser = async (data: LoginFormData) => {
+  const clearError = () => setError(null);
+
+  const loginUser = async (data: LoginFormData): Promise<boolean> => {
     setIsLoading(true);
+    setError(null);
 
     try {
-      console.log("Login attempt:", data);
-
-      // simulate API
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // later:
-      // await authService.login(data); FROM : services/auth.service.ts
-    } catch (error) {
-      console.error(error);
+      await login(data.email, data.password);
+      return true;
+    } catch (err) {
+      const key = err instanceof Error ? err.message : "UNKNOWN_ERROR";
+      setError(
+        AUTH_ERROR_MESSAGES[key as keyof typeof AUTH_ERROR_MESSAGES] ??
+          AUTH_ERROR_MESSAGES.UNKNOWN_ERROR,
+      );
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  return {
-    loginUser,
-    isLoading,
-  };
+  return { loginUser, isLoading, error, clearError };
 };

@@ -14,10 +14,11 @@ import type { LoginFormData } from "@/features/auth/validation/login.schema";
 import { PasswordInput } from "./form/PasswordInput";
 import { useLogin } from "@/features/auth/hooks/useLogin";
 import { LOGIN_FORM_FIELDS } from "@/features/auth/mocks";
+import type { LoginField } from "../types";
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const { loginUser, isLoading } = useLogin();
+  const { loginUser, isLoading, error, clearError } = useLogin();
 
   const {
     register,
@@ -26,6 +27,13 @@ const LoginForm = () => {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  const onSubmit = async (data: LoginFormData) => {
+    const success = await loginUser(data);
+    if (success) {
+      navigate("/");
+    }
+  };
 
   return (
     <div className="relative w-full h-screen flex items-center justify-center overflow-hidden">
@@ -98,10 +106,41 @@ const LoginForm = () => {
             <div className="flex-1 h-px bg-border" />
           </div>
 
+          {/* API Error Banner */}
+          {error && (
+            <div className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <svg
+                className="mt-0.5 h-4 w-4 shrink-0"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span className="flex-1">{error}</span>
+              <button
+                type="button"
+                onClick={clearError}
+                className="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+              >
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              </button>
+            </div>
+          )}
+
           {/* Form */}
-          <form onSubmit={handleSubmit(loginUser)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Render form fields using map */}
-            {LOGIN_FORM_FIELDS.map((field) => (
+            {LOGIN_FORM_FIELDS.map((field: LoginField) => (
               <FormField
                 key={field.id}
                 id={field.id}
