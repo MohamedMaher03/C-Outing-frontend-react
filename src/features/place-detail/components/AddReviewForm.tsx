@@ -20,6 +20,7 @@ export const AddReviewForm = ({
   const [formError, setFormError] = useState("");
 
   const handleSubmit = async () => {
+    if (submitting) return; // guard against async double-fire before re-render
     setFormError("");
     if (rating === 0) {
       setFormError("Please select a rating");

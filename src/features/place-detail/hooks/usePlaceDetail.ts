@@ -3,7 +3,7 @@
  * Manages place detail page state and actions including reviews
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getPlaceById,
@@ -75,6 +75,7 @@ export const usePlaceDetail = (
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const isSubmittingReviewRef = useRef(false);
 
   // Fetch place details on mount or when placeId changes
   useEffect(() => {
@@ -186,11 +187,19 @@ export const usePlaceDetail = (
   const handleSubmitReview = useCallback(
     async (rating: number, comment: string) => {
       if (!place || !placeId) return;
+      // Synchronous ref guard: prevents double-submission before React
+      // re-renders the button as disabled (state updates are async)
+      if (isSubmittingReviewRef.current) return;
+      isSubmittingReviewRef.current = true;
 
       try {
         setSubmittingReview(true);
         const newReview = await submitReview(placeId, rating, comment);
-        setReviews((prev) => [newReview, ...prev]);
+        setReviews((prev) => {
+          // Extra safety: avoid duplicate if the same review id is already present
+          if (prev.some((r) => r.id === newReview.id)) return prev;
+          return [newReview, ...prev];
+        });
         setReviewSubmitted(true);
 
         // Track interaction
@@ -203,6 +212,7 @@ export const usePlaceDetail = (
         throw err;
       } finally {
         setSubmittingReview(false);
+        isSubmittingReviewRef.current = false;
       }
     },
     [place, placeId],
