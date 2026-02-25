@@ -13,12 +13,13 @@
 
 import type { LoginRequest, RegisterRequest, AuthApiResponse } from "../types";
 import type { User } from "@/types";
+import { AuthError } from "../errors";
 
 // ── Mock seed data ───────────────────────────────────────────
 
 const MOCK_USER: User = {
   userId: 1,
-  name: "Jane Smith",
+  name: "maher Smith",
   email: "jane@example.com",
   age: 28,
   preferences: [0.9, 0.6, 0.4, 0.2],
@@ -46,7 +47,7 @@ export const authMock = {
     await delay(900);
 
     if (payload.password === "wrongpass") {
-      throw new Error("INVALID_CREDENTIALS");
+      throw new AuthError("INVALID_CREDENTIALS");
     }
 
     return {
@@ -65,11 +66,11 @@ export const authMock = {
     await delay(1100);
 
     if (payload.email === "exists@example.com") {
-      throw new Error("EMAIL_ALREADY_EXISTS");
+      throw new AuthError("EMAIL_ALREADY_EXISTS");
     }
 
     if (payload.phone === "0000000000") {
-      throw new Error("PHONE_ALREADY_EXISTS");
+      throw new AuthError("PHONE_ALREADY_EXISTS");
     }
 
     const newUser: User = {

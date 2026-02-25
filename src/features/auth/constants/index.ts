@@ -19,3 +19,6 @@ export const AUTH_ERROR_MESSAGES = {
 } as const;
 
 export type AuthErrorKey = keyof typeof AUTH_ERROR_MESSAGES;
+
+/** Alias — preferred name in the errors/ module. */
+export type AuthErrorCode = AuthErrorKey;

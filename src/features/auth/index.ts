@@ -49,6 +49,10 @@ export type {
 // Constants
 export { AUTH_STORAGE_KEYS, AUTH_ERROR_MESSAGES } from "./constants";
 
+// Errors
+export { AuthError, normalizeAuthError } from "./errors";
+export type { AuthErrorCode } from "./errors";
+
 // Mocks (development use)
 export { authMock } from "./mocks/authMock";
 export { LOGIN_FORM_FIELDS, SIGN_UP_FORM_FIELDS } from "./mocks/formFields";

@@ -4,6 +4,12 @@
  * Pure HTTP functions — no business logic, no side effects, no storage.
  * Each function maps 1-to-1 with a backend endpoint.
  *
+ * Error handling:
+ *   Every method wraps its axios call in a try-catch and re-throws a
+ *   normalised AuthError so that upstream layers (hooks, UI) always
+ *   receive a predictable error shape with a `.code` that maps straight
+ *   to AUTH_ERROR_MESSAGES.
+ *
  * The shared axios instance (src/config/axios.config.ts) handles:
  *   • Attaching the Authorization header on every request
  *   • Handling 401 responses globally
@@ -16,6 +22,7 @@ import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type { ApiResponse } from "@/types";
 import type { LoginRequest, RegisterRequest, AuthApiResponse } from "../types";
+import { normalizeAuthError } from "../errors";
 
 export const authApi = {
   /**
@@ -23,11 +30,15 @@ export const authApi = {
    * Authenticates with email + password, returns token + user.
    */
   async login(payload: LoginRequest): Promise<AuthApiResponse> {
-    const { data } = await axiosInstance.post<ApiResponse<AuthApiResponse>>(
-      API_ENDPOINTS.auth.login,
-      payload,
-    );
-    return data.data!;
+    try {
+      const { data } = await axiosInstance.post<ApiResponse<AuthApiResponse>>(
+        API_ENDPOINTS.auth.login,
+        payload,
+      );
+      return data.data!;
+    } catch (error) {
+      throw normalizeAuthError(error);
+    }
   },
 
   /**
@@ -35,11 +46,15 @@ export const authApi = {
    * Creates a new account, returns token + user.
    */
   async register(payload: RegisterRequest): Promise<AuthApiResponse> {
-    const { data } = await axiosInstance.post<ApiResponse<AuthApiResponse>>(
-      API_ENDPOINTS.auth.register,
-      payload,
-    );
-    return data.data!;
+    try {
+      const { data } = await axiosInstance.post<ApiResponse<AuthApiResponse>>(
+        API_ENDPOINTS.auth.register,
+        payload,
+      );
+      return data.data!;
+    } catch (error) {
+      throw normalizeAuthError(error);
+    }
   },
 
   /**
@@ -47,6 +62,10 @@ export const authApi = {
    * Invalidates the server-side session / refresh token (best-effort).
    */
   async logout(): Promise<void> {
-    await axiosInstance.post(API_ENDPOINTS.auth.logout);
+    try {
+      await axiosInstance.post(API_ENDPOINTS.auth.logout);
+    } catch (error) {
+      throw normalizeAuthError(error);
+    }
   },
 };

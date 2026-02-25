@@ -12,6 +12,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { AUTH_ERROR_MESSAGES } from "../constants";
+import { AuthError } from "../errors";
 import type { LoginFormData } from "../validation/login.schema";
 
 interface UseLoginReturn {
@@ -36,11 +37,8 @@ export const useLogin = (): UseLoginReturn => {
       await login(data.email, data.password);
       return true;
     } catch (err) {
-      const key = err instanceof Error ? err.message : "UNKNOWN_ERROR";
-      setError(
-        AUTH_ERROR_MESSAGES[key as keyof typeof AUTH_ERROR_MESSAGES] ??
-          AUTH_ERROR_MESSAGES.UNKNOWN_ERROR,
-      );
+      const code = err instanceof AuthError ? err.code : "UNKNOWN_ERROR";
+      setError(AUTH_ERROR_MESSAGES[code] ?? AUTH_ERROR_MESSAGES.UNKNOWN_ERROR);
       return false;
     } finally {
       setIsLoading(false);
