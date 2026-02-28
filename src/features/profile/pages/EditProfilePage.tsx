@@ -1,33 +1,22 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Camera, User, Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
+import { useEditProfile } from "@/features/profile/hooks/useEditProfile";
 
 const EditProfilePage = () => {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    name: "Ahmed Khalil",
-    email: "ahmed@couting.app",
-    phone: "+20 123 456 7890",
-    location: "Cairo, Egypt",
-    bio: "Food lover | Explorer | Coffee enthusiast",
-  });
+  const { formData, loading, saving, error, handleChange, handleSubmit } =
+    useEditProfile();
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission
-    console.log("Updated profile:", formData);
-    navigate("/profile");
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -35,7 +24,7 @@ const EditProfilePage = () => {
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
-            onClick={() => navigate("/profile")}
+            onClick={() => history.back()}
             className="p-2 hover:bg-muted rounded-full transition-colors"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
@@ -45,6 +34,10 @@ const EditProfilePage = () => {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
+        {error && (
+          <p className="text-sm text-destructive text-center">{error}</p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Profile Photo */}
           <div className="flex flex-col items-center gap-4">
@@ -177,16 +170,17 @@ const EditProfilePage = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => navigate("/profile")}
+              onClick={() => history.back()}
               className="flex-1"
             >
               Cancel
             </Button>
             <Button
               type="submit"
+              disabled={saving}
               className="flex-1 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
             >
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </form>

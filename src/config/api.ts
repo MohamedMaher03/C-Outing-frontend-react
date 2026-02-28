@@ -24,25 +24,19 @@ export const API_ENDPOINTS = {
       `${API_BASE_URL}/users/${userId}/preferences`,
   },
 
-  // Recommendations
-  recommendations: {
-    getByUserId: (userId: number) =>
-      `${API_BASE_URL}/recommendations/${userId}`,
-  },
-
-  // Venues
-  venues: {
-    list: `${API_BASE_URL}/venues`,
-    getById: (venueId: number) => `${API_BASE_URL}/venue/${venueId}`,
-    search: `${API_BASE_URL}/venues/search`,
-  },
-
-  // Interactions & Ratings
-  interactions: {
-    track: `${API_BASE_URL}/interactions`,
-  },
-  ratings: {
-    submit: (venueId: number) => `${API_BASE_URL}/rate/${venueId}`,
+  // Profile settings (notifications, privacy, account)
+  profile: {
+    getNotifications: (userId: number) =>
+      `${API_BASE_URL}/users/${userId}/notifications`,
+    updateNotifications: (userId: number) =>
+      `${API_BASE_URL}/users/${userId}/notifications`,
+    getPrivacy: (userId: number) => `${API_BASE_URL}/users/${userId}/privacy`,
+    updatePrivacy: (userId: number) =>
+      `${API_BASE_URL}/users/${userId}/privacy`,
+    downloadData: (userId: number) =>
+      `${API_BASE_URL}/users/${userId}/data/export`,
+    deleteAccount: (userId: number) =>
+      `${API_BASE_URL}/users/${userId}/account`,
   },
 };
 

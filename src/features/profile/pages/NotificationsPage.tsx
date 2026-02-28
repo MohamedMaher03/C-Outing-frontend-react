@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Bell,
@@ -11,39 +9,29 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useNotifications } from "@/features/profile/hooks/useNotifications";
+import type { NotificationSettings } from "@/features/profile/types";
 
 const NotificationsPage = () => {
-  const navigate = useNavigate();
-  const [pushNotifications, setPushNotifications] = useState({
-    recommendations: true,
-    favorites: true,
-    reviews: false,
-    messages: true,
-    updates: true,
-  });
+  const {
+    pushNotifications,
+    emailNotifications,
+    loading,
+    saving,
+    error,
+    togglePush,
+    toggleEmail,
+    handleSave,
+  } = useNotifications();
 
-  const [emailNotifications, setEmailNotifications] = useState({
-    weekly: true,
-    monthly: false,
-    promotions: true,
-    tips: true,
-  });
-
-  const togglePush = (key: keyof typeof pushNotifications) => {
-    setPushNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const toggleEmail = (key: keyof typeof emailNotifications) => {
-    setEmailNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handleSave = () => {
-    console.log("Saved notifications:", {
-      pushNotifications,
-      emailNotifications,
-    });
-    navigate("/profile");
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   const notificationGroups = [
     {
@@ -120,7 +108,7 @@ const NotificationsPage = () => {
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
-            onClick={() => navigate("/profile")}
+            onClick={() => history.back()}
             className="p-2 hover:bg-muted rounded-full transition-colors"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
@@ -130,6 +118,9 @@ const NotificationsPage = () => {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {error && (
+          <p className="text-sm text-destructive text-center">{error}</p>
+        )}
         {notificationGroups.map((group) => (
           <div key={group.title} className="space-y-4">
             {/* Section Header */}
@@ -153,17 +144,19 @@ const NotificationsPage = () => {
                 const isChecked =
                   group.type === "push"
                     ? pushNotifications[
-                        item.key as keyof typeof pushNotifications
+                        item.key as keyof NotificationSettings["push"]
                       ]
                     : emailNotifications[
-                        item.key as keyof typeof emailNotifications
+                        item.key as keyof NotificationSettings["email"]
                       ];
 
                 const handleToggle = () => {
                   if (group.type === "push") {
-                    togglePush(item.key as keyof typeof pushNotifications);
+                    togglePush(item.key as keyof NotificationSettings["push"]);
                   } else {
-                    toggleEmail(item.key as keyof typeof emailNotifications);
+                    toggleEmail(
+                      item.key as keyof NotificationSettings["email"],
+                    );
                   }
                 };
 
@@ -209,16 +202,17 @@ const NotificationsPage = () => {
           <Button
             type="button"
             variant="ghost"
-            onClick={() => navigate("/profile")}
+            onClick={() => history.back()}
             className="flex-1"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
+            disabled={saving}
             className="flex-1 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
           >
-            Save Preferences
+            {saving ? "Saving..." : "Save Preferences"}
           </Button>
         </div>
       </div>

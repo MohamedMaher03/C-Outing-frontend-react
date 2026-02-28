@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Shield,
@@ -12,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,36 +22,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { usePrivacy } from "@/features/profile/hooks/usePrivacy";
 
 const PrivacyPage = () => {
-  const navigate = useNavigate();
-  const [privacySettings, setPrivacySettings] = useState({
-    profileVisible: true,
-    showLocation: true,
-    showFavorites: false,
-    showActivity: true,
-    dataCollection: true,
-    personalization: true,
-  });
+  const {
+    privacySettings,
+    loading,
+    saving,
+    downloading,
+    deleting,
+    error,
+    toggleSetting,
+    handleSave,
+    handleDownloadData,
+    handleDeleteAccount,
+  } = usePrivacy();
 
-  const toggleSetting = (key: keyof typeof privacySettings) => {
-    setPrivacySettings((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handleSave = () => {
-    console.log("Saved privacy settings:", privacySettings);
-    navigate("/profile");
-  };
-
-  const handleDownloadData = () => {
-    console.log("Downloading user data...");
-    // Implementation for downloading user data
-  };
-
-  const handleDeleteAccount = () => {
-    console.log("Account deletion requested");
-    // Implementation for account deletion
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   const privacySections = [
     {
@@ -106,7 +98,7 @@ const PrivacyPage = () => {
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
-            onClick={() => navigate("/profile")}
+            onClick={() => history.back()}
             className="p-2 hover:bg-muted rounded-full transition-colors"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
@@ -121,6 +113,9 @@ const PrivacyPage = () => {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {error && (
+          <p className="text-sm text-destructive text-center">{error}</p>
+        )}
         {/* Privacy Settings */}
         {privacySections.map((section) => (
           <div key={section.title} className="space-y-4">
@@ -176,13 +171,16 @@ const PrivacyPage = () => {
           <div className="space-y-3">
             <button
               onClick={handleDownloadData}
-              className="w-full flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:bg-muted/50 transition-colors"
+              disabled={downloading}
+              className="w-full flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:bg-muted/50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <div className="flex items-center gap-3">
                 <Download className="h-5 w-5 text-foreground" />
                 <div className="text-left">
                   <p className="text-sm font-medium text-foreground">
-                    Download Your Data
+                    {downloading
+                      ? "Preparing download..."
+                      : "Download Your Data"}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Get a copy of your information
@@ -220,9 +218,10 @@ const PrivacyPage = () => {
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeleteAccount}
+                    disabled={deleting}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    Delete Account
+                    {deleting ? "Deleting..." : "Delete Account"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -247,16 +246,17 @@ const PrivacyPage = () => {
           <Button
             type="button"
             variant="ghost"
-            onClick={() => navigate("/profile")}
+            onClick={() => history.back()}
             className="flex-1"
           >
             Cancel
           </Button>
           <Button
             onClick={handleSave}
+            disabled={saving}
             className="flex-1 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
           >
-            Save Settings
+            {saving ? "Saving..." : "Save Settings"}
           </Button>
         </div>
       </div>
