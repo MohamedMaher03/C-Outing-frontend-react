@@ -1,104 +1,102 @@
 /**
- * Favorites Service
- * Handles all API calls related to saved/favorite places
+ * Favorites Service — Business Logic Layer
+ *
+ * Sits between hooks/components and the HTTP layer (favoritesApi).
+ * Responsibilities:
+ *   • Call favoritesApi functions
+ *   • Transform DTOs to UI models if needed
+ *   • Centralise error handling
+ *
+ * ┌──────────────────────────────────────────────────────────────┐
+ * │  useFavorites  →  favoritesService  →  favoritesApi  →  axios│
+ * └──────────────────────────────────────────────────────────────┘
+ *
+ * 🔧 To use mocks during development, swap the import:
+ *   import { favoritesMock as favoritesApi } from "../mocks/favoritesMock";
  */
 
-// import { apiClient } from "./client"; // TODO: Uncomment when backend is ready
-import { PLACES } from "@/mocks/mockData";
+// import { favoritesApi } from "../api/favoritesApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
+import { favoritesMock as favoritesApi } from "../mocks/favoritesMock";
 import type {
   FavoritePlace,
   ToggleFavoriteResponse,
 } from "@/features/favorites/types";
-import { createInitialFavorites } from "@/features/favorites/mocks";
 
-// ============ Mock Data ============
-// Simulate in-memory favorites storage
-let MOCK_FAVORITES: FavoritePlace[] = createInitialFavorites();
+// ── Favorites Service ────────────────────────────────────────
 
-// ============ Service Functions ============
+export const favoritesService = {
+  /**
+   * Fetch all saved places for the current user.
+   */
+  async getFavorites(): Promise<FavoritePlace[]> {
+    try {
+      return await favoritesApi.getFavorites();
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+      throw new Error("Failed to load favorites");
+    }
+  },
 
-/**
- * Fetch all saved places for the current user
- * TODO: Replace with real API call when backend is ready
- */
-export const getFavorites = async (): Promise<FavoritePlace[]> => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 5000));
-  return Promise.resolve(MOCK_FAVORITES);
+  /**
+   * Add a place to favorites.
+   */
+  async addToFavorites(placeId: string): Promise<ToggleFavoriteResponse> {
+    try {
+      return await favoritesApi.addToFavorites(placeId);
+    } catch (error) {
+      console.error("Error adding to favorites:", error);
+      throw new Error("Failed to add to favorites");
+    }
+  },
 
-  // TODO: Uncomment when backend is ready
-  // return apiClient.get<FavoritePlace[]>("/favorites");
+  /**
+   * Remove a place from favorites.
+   */
+  async removeFromFavorites(placeId: string): Promise<ToggleFavoriteResponse> {
+    try {
+      return await favoritesApi.removeFromFavorites(placeId);
+    } catch (error) {
+      console.error("Error removing from favorites:", error);
+      throw new Error("Failed to remove from favorites");
+    }
+  },
+
+  /**
+   * Toggle favorite status for a place.
+   */
+  async toggleFavorite(
+    placeId: string,
+    isFavorite: boolean,
+  ): Promise<ToggleFavoriteResponse> {
+    if (isFavorite) {
+      return this.removeFromFavorites(placeId);
+    } else {
+      return this.addToFavorites(placeId);
+    }
+  },
+
+  /**
+   * Check if a place is favorited.
+   */
+  async checkIsFavorite(placeId: string): Promise<boolean> {
+    try {
+      return await favoritesApi.checkIsFavorite(placeId);
+    } catch (error) {
+      console.error("Error checking favorite status:", error);
+      throw new Error("Failed to check favorite status");
+    }
+  },
 };
 
-/**
- * Add a place to favorites
- * TODO: Replace with real API call when backend is ready
- */
-export const addToFavorites = async (
-  placeId: string,
-): Promise<ToggleFavoriteResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
+// ── Legacy named exports (keep backward compatibility with hooks) ──
 
-  const place = PLACES.find((p) => p.id === placeId);
-  if (place && !MOCK_FAVORITES.find((f) => f.id === placeId)) {
-    MOCK_FAVORITES.push({ ...place, savedAt: new Date(), isSaved: true });
-  }
-
-  return Promise.resolve({
-    success: true,
-    isFavorite: true,
-  });
-
-  // TODO: Uncomment when backend is ready
-  // return apiClient.post<ToggleFavoriteResponse>("/favorites", { placeId });
-};
-
-/**
- * Remove a place from favorites
- * TODO: Replace with real API call when backend is ready
- */
-export const removeFromFavorites = async (
-  placeId: string,
-): Promise<ToggleFavoriteResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
-  MOCK_FAVORITES = MOCK_FAVORITES.filter((f) => f.id !== placeId);
-
-  return Promise.resolve({
-    success: true,
-    isFavorite: false,
-  });
-
-  // TODO: Uncomment when backend is ready
-  // return apiClient.delete<ToggleFavoriteResponse>(`/favorites/${placeId}`);
-};
-
-/**
- * Toggle favorite status for a place
- * TODO: Replace with real API call when backend is ready
- */
-export const toggleFavorite = async (
-  placeId: string,
-  isFavorite: boolean,
-): Promise<ToggleFavoriteResponse> => {
-  if (isFavorite) {
-    return removeFromFavorites(placeId);
-  } else {
-    return addToFavorites(placeId);
-  }
-};
-
-/**
- * Check if a place is favorited
- * TODO: Replace with real API call when backend is ready
- */
-export const checkIsFavorite = async (placeId: string): Promise<boolean> => {
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  return Promise.resolve(!!MOCK_FAVORITES.find((f) => f.id === placeId));
-
-  // TODO: Uncomment when backend is ready
-  // const response = await apiClient.get<{ isFavorite: boolean }>(
-  //   `/favorites/check/${placeId}`,
-  // );
-  // return response.isFavorite;
-};
+export const getFavorites =
+  favoritesService.getFavorites.bind(favoritesService);
+export const addToFavorites =
+  favoritesService.addToFavorites.bind(favoritesService);
+export const removeFromFavorites =
+  favoritesService.removeFromFavorites.bind(favoritesService);
+export const toggleFavorite =
+  favoritesService.toggleFavorite.bind(favoritesService);
+export const checkIsFavorite =
+  favoritesService.checkIsFavorite.bind(favoritesService);

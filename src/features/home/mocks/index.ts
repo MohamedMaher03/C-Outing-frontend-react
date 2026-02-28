@@ -24,6 +24,9 @@ import {
 } from "lucide-react";
 import type { FilterType } from "../types";
 
+// Re-export mock API for convenient access
+export { homeMock } from "./homeMock";
+
 // ============ Filter Pills ============
 
 export interface FilterOption {

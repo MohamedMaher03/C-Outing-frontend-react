@@ -1,113 +1,53 @@
 /**
- * Home Service
- * Handles API calls for home page data (places, recommendations, etc.)
+ * Home Service — Business Logic Layer
+ *
+ * Sits between hooks/components and the HTTP layer (homeApi).
+ * Responsibilities:
+ *   • Call homeApi functions
+ *   • Transform DTOs to UI models if needed
+ *   • Centralise error handling
+ *
+ * ┌────────────────────────────────────────────────────────────┐
+ * │  useHome  →  homeService  →  homeApi  →  axios            │
+ * └────────────────────────────────────────────────────────────┘
+ *
+ * 🔧 To use mocks during development, swap the import:
+ *   import { homeMock as homeApi } from "../mocks/homeMock";
  */
 
-import { PLACES } from "@/mocks/mockData";
+// import { homeApi } from "../api/homeApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
+import { homeMock as homeApi } from "../mocks/homeMock";
 import type { HomePageData } from "@/features/home/types";
-// import axiosInstance from "../../config/axios.config";
 
-/**
- * Fetch home page data — backend returns pre-computed sections.
- * The backend is responsible for curating, trending, and top-rated lists.
- * TODO: Replace with actual API endpoints when backend is ready.
- */
-export const fetchHomePageData = async (): Promise<HomePageData> => {
-  try {
-    // TODO: Replace with real API calls, e.g.:
-    // const [curated, trending, topRated] = await Promise.all([
-    //   axiosInstance.get<Place[]>('/venues/curated'),
-    //   axiosInstance.get<Place[]>('/venues/trending'),
-    //   axiosInstance.get<Place[]>('/venues/top-rated'),
-    // ]);
-    // return { curatedPlaces: curated.data, trendingPlaces: trending.data, topRatedPlaces: topRated.data };
+// ── Home Service ─────────────────────────────────────────────
 
-    // Simulate backend computing these sections from PLACES data
-    const all = PLACES.map((p) => ({ ...p, isSaved: false }));
+export const homeService = {
+  /**
+   * Fetch home page data for a specific user.
+   *
+   * @param userId - Required. curatedPlaces are personalized recommendations
+   *                 computed from the user's preference vector by the backend.
+   *                 trending and topRated are global, but the call is batched
+   *                 together for a single loading state.
+   */
+  async fetchHomePageData(userId: number): Promise<HomePageData> {
+    try {
+      return await homeApi.fetchHomePageData(userId);
+    } catch (error) {
+      console.error("Error fetching home page data:", error);
+      throw new Error("Failed to fetch home page data");
+    }
+  },
 
-    const curatedPlaces = [...all]
-      .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0))
-      .slice(0, 5);
-
-    const trendingPlaces = [...all]
-      .sort((a, b) => b.reviewCount - a.reviewCount)
-      .slice(0, 6);
-
-    const topRatedPlaces = [...all].sort((a, b) => b.rating - a.rating);
-
-    return Promise.resolve({ curatedPlaces, trendingPlaces, topRatedPlaces });
-  } catch (error) {
-    console.error("Error fetching home page data:", error);
-    throw new Error("Failed to fetch home page data");
-  }
+  /**
+   * Toggle save/bookmark status for a place.
+   */
+  async togglePlaceSave(placeId: string, isSaved: boolean): Promise<void> {
+    try {
+      await homeApi.togglePlaceSave(placeId, isSaved);
+    } catch (error) {
+      console.error("Error toggling place save:", error);
+      throw new Error("Failed to toggle place save");
+    }
+  },
 };
-
-export const togglePlaceSave = async (
-  placeId: string,
-  isSaved: boolean,
-): Promise<void> => {
-  try {
-    // TODO: Uncomment when backend API is ready
-    // await axiosInstance.post(`/venues/${placeId}/save`, { isSaved });
-
-    // Mock implementation
-    console.log(`Toggle save for place ${placeId}:`, isSaved);
-    return Promise.resolve();
-  } catch (error) {
-    console.error("Error toggling place save:", error);
-    throw new Error("Failed to toggle place save");
-  }
-};
-
-/**
- * Fetch personalized recommendations for a user
- * @param userId - The user ID
- * TODO: Implement actual API call when backend is ready
- */
-// export const fetchRecommendations = async (
-//   userId: number,
-// ): Promise<Place[]> => {
-//   try {
-//     // TODO: Uncomment when backend API is ready
-//     // const response = await axiosInstance.get<Place[]>(`/recommendations/${userId}`);
-//     // return response.data;
-
-//     // Using mock data for now
-//     console.log("Fetching recommendations for user:", userId);
-//     return Promise.resolve(
-//       PLACES.slice(0, 5).map((p) => ({ ...p, isSaved: false })),
-//     );
-//   } catch (error) {
-//     console.error("Error fetching recommendations:", error);
-//     throw new Error("Failed to fetch recommendations");
-//   }
-// };
-
-/**
- * Toggle save/bookmark status for a place
- * @param placeId - The place ID
- * @param isSaved - Whether to save or unsave
- * TODO: Implement actual API call when backend is ready
- */
-
-/**
- * Search places by query
- * @param query - Search query string
- * TODO: Implement actual API call when backend is ready
- */
-// export const searchPlaces = async (query: string): Promise<Place[]> => {
-//   try {
-//     // TODO: Uncomment when backend API is ready
-//     // const response = await axiosInstance.get<Place[]>('/venues/search', {
-//     //   params: { q: query }
-//     // });
-//     // return response.data;
-
-//     // Mock implementation
-//     console.log("Searching places with query:", query);
-//     return Promise.resolve(PLACES);
-//   } catch (error) {
-//     console.error("Error searching places:", error);
-//     throw new Error("Failed to search places");
-//   }
-// };

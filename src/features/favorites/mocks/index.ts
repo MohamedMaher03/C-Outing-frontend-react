@@ -13,3 +13,6 @@ export const createInitialFavorites = (): FavoritePlace[] =>
     savedAt: new Date(),
     isSaved: true,
   }));
+
+// Re-export mock API for convenient access
+export { favoritesMock } from "./favoritesMock";

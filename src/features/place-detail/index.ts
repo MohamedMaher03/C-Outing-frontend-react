@@ -1,8 +1,16 @@
 /**
  * Place Detail Feature — Public API
  */
+
+// Hooks
 export { usePlaceDetail } from "./hooks/usePlaceDetail";
+
+// API layer (exposed for advanced usage / testing)
+export { placeDetailApi } from "./api/placeDetailApi";
+
+// Services
 export {
+  placeDetailService,
   getPlaceById,
   getPlaceReviews,
   getSocialMediaReviews,
@@ -11,6 +19,8 @@ export {
   getSimilarPlaces,
   submitReview,
 } from "./services/placeDetailService";
+
+// Types
 export type {
   PlaceDetail,
   Review,
@@ -18,8 +28,13 @@ export type {
   ReviewSummary,
   RecordInteractionRequest,
 } from "./types";
+
+// Components
 export { ReviewCard } from "./components/ReviewCard";
 export { SocialReviewCard } from "./components/SocialReviewCard";
 export { ReviewSummarySection } from "./components/ReviewSummarySection";
 export { AddReviewForm } from "./components/AddReviewForm";
 export { ReviewSkeleton } from "./components/ReviewSkeleton";
+
+// Mocks (development use)
+export { placeDetailMock } from "./mocks/placeDetailMock";

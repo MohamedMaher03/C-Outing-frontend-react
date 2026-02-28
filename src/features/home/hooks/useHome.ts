@@ -22,11 +22,9 @@ import {
   TRENDING_TAGS,
   POPULAR_DISTRICTS,
 } from "@/mocks/mockData";
-import {
-  fetchHomePageData,
-  togglePlaceSave,
-} from "@/features/home/services/homeService";
+import { homeService } from "@/features/home/services/homeService";
 import type { FilterType } from "@/features/home/types";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 interface UseHomeReturn {
   // State
@@ -62,6 +60,7 @@ interface UseHomeReturn {
 }
 
 export const useHome = (): UseHomeReturn => {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [selectedFilters, setSelectedFilters] = useState<FilterType[]>([]);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
@@ -75,15 +74,19 @@ export const useHome = (): UseHomeReturn => {
   const [rawTopRated, setRawTopRated] = useState<Place[]>([]);
 
   useEffect(() => {
-    loadPlaces();
-  }, []);
+    if (user) {
+      loadPlaces();
+    }
+  }, [user?.userId]);
 
   const loadPlaces = async () => {
+    if (!user) return;
     try {
       setIsLoading(true);
       setError(null);
+      // userId is required — curatedPlaces are personalized per user
       const { curatedPlaces, trendingPlaces, topRatedPlaces } =
-        await fetchHomePageData();
+        await homeService.fetchHomePageData(user.userId);
       setRawCurated(curatedPlaces);
       setRawTrending(trendingPlaces);
       setRawTopRated(topRatedPlaces);
@@ -122,7 +125,7 @@ export const useHome = (): UseHomeReturn => {
 
         if (!place) return;
 
-        await togglePlaceSave(id, !place.isSaved);
+        await homeService.togglePlaceSave(id, !place.isSaved);
 
         const toggle = (list: Place[]) =>
           list.map((p) => (p.id === id ? { ...p, isSaved: !p.isSaved } : p));

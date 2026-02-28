@@ -1,59 +1,59 @@
 /**
- * Onboarding Service
- * Handles API calls for user onboarding and preference submission
+ * Onboarding Service — Business Logic Layer
+ *
+ * Sits between hooks/components and the HTTP layer (onboardingApi).
+ * Responsibilities:
+ *   • Call onboardingApi functions
+ *   • Transform DTOs to UI models if needed
+ *   • Centralise error handling
+ *
+ * ┌──────────────────────────────────────────────────────────────────┐
+ * │  useOnboarding  →  onboardingService  →  onboardingApi  →  axios│
+ * └──────────────────────────────────────────────────────────────────┘
+ *
+ * 🔧 To use mocks during development, swap the import:
+ *   import { onboardingMock as onboardingApi } from "../mocks/onboardingMock";
  */
 
-// import axiosInstance from "../../config/axios.config";
-
+// import { onboardingApi } from "../api/onboardingApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
+import { onboardingMock as onboardingApi } from "../mocks/onboardingMock";
 import type { OnboardingPreferences } from "@/features/onboarding/types";
 
-/**
- * Submit user onboarding preferences
- * @param userId - The user ID
- * @param preferences - User preferences from onboarding flow
- * TODO: Implement actual API call when backend is ready
- */
-export const submitOnboardingPreferences = async (
-  userId: number,
-  preferences: OnboardingPreferences,
-): Promise<void> => {
-  try {
-    // TODO: Uncomment when backend API is ready
-    // await axiosInstance.post(`/users/${userId}/preferences`, {
-    //   interests: preferences.interests,
-    //   vibe: preferences.vibe,
-    //   preferredDistricts: preferences.districts,
-    //   budgetRange: preferences.budget?.toLowerCase(),
-    // });
+// ── Onboarding Service ───────────────────────────────────────
 
-    // Mock implementation - simulate API delay
-    console.log("Submitting preferences for user:", userId, preferences);
-    return new Promise((resolve) => setTimeout(resolve, 500));
-  } catch (error) {
-    console.error("Error submitting onboarding preferences:", error);
-    throw new Error("Failed to submit preferences");
-  }
+export const onboardingService = {
+  /**
+   * Submit user onboarding preferences.
+   */
+  async submitPreferences(
+    userId: number,
+    preferences: OnboardingPreferences,
+  ): Promise<void> {
+    try {
+      await onboardingApi.submitPreferences(userId, preferences);
+    } catch (error) {
+      console.error("Error submitting onboarding preferences:", error);
+      throw new Error("Failed to submit preferences");
+    }
+  },
+
+  /**
+   * Update user preferences (can be called after initial onboarding).
+   */
+  async updatePreferences(
+    userId: number,
+    preferences: Partial<OnboardingPreferences>,
+  ): Promise<void> {
+    try {
+      await onboardingApi.updatePreferences(userId, preferences);
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
+      throw new Error("Failed to update preferences");
+    }
+  },
 };
 
-/**
- * Update user preferences (can be called after initial onboarding)
- * @param userId - The user ID
- * @param preferences - Updated preferences
- * TODO: Implement actual API call when backend is ready
- */
-export const updateUserPreferences = async (
-  userId: number,
-  preferences: Partial<OnboardingPreferences>,
-): Promise<void> => {
-  try {
-    // TODO: Uncomment when backend API is ready
-    // await axiosInstance.patch(`/users/${userId}/preferences`, preferences);
+// ── Legacy named exports (keep backward compatibility with hooks) ──
 
-    // Mock implementation
-    console.log("Updating preferences for user:", userId, preferences);
-    return Promise.resolve();
-  } catch (error) {
-    console.error("Error updating user preferences:", error);
-    throw new Error("Failed to update preferences");
-  }
-};
+export const submitOnboardingPreferences = onboardingService.submitPreferences;
+export const updateUserPreferences = onboardingService.updatePreferences;
