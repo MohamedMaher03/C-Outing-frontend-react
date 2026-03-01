@@ -94,26 +94,4 @@ export const authService = {
   updateStoredUser(user: User): void {
     localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
   },
-
-  /**
-   * Mark onboarding as completed for the given user.
-   * Stored per-user so multiple accounts on the same device work correctly.
-   */
-  markOnboardingCompleted(userId: number): void {
-    localStorage.setItem(
-      `${AUTH_STORAGE_KEYS.ONBOARDING_PREFIX}${userId}`,
-      "true",
-    );
-  },
-
-  /**
-   * Check if onboarding has been completed for the given user.
-   */
-  isOnboardingCompleted(userId: number): boolean {
-    return (
-      localStorage.getItem(
-        `${AUTH_STORAGE_KEYS.ONBOARDING_PREFIX}${userId}`,
-      ) === "true"
-    );
-  },
 };

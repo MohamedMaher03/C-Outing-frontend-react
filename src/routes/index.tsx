@@ -1,30 +1,27 @@
 import { type ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 
 /**
  * Protected Route Component
- * Requires authentication AND completed onboarding.
- * - Unauthenticated → /login
- * - Authenticated but onboarding pending → /onboarding
+ * Wraps routes that require authentication
  */
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, isLoading, onboardingCompleted } = useAuth();
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
 
-  if (isLoading) {
-    return <PageLoading />;
-  }
+  if (isLoading) return <PageLoading />;
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  // Not authenticated → redirect to login
+  if (!user) return <Navigate to="/login" replace />;
 
-  if (!onboardingCompleted) {
+  // User authenticated but hasn't completed onboarding → redirect to /onboarding
+  if (!user.hasCompletedOnboarding && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
 
@@ -33,51 +30,26 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
 /**
  * Public Route Component
- * Redirects authenticated users away from public pages (login, register).
- * - Authenticated + onboarding done → /
- * - Authenticated + onboarding pending → /onboarding
+ * Redirects authenticated users away from public pages (login, register)
  */
 interface PublicRouteProps {
   children: ReactNode;
 }
 
 export function PublicRoute({ children }: PublicRouteProps) {
-  const { user, isLoading, onboardingCompleted } = useAuth();
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return <PageLoading />;
   }
 
   if (user) {
-    return <Navigate to={onboardingCompleted ? "/" : "/onboarding"} replace />;
-  }
-
-  return children;
-}
-
-/**
- * Onboarding Route Component
- * Only accessible to authenticated users who have NOT yet completed onboarding.
- * - Unauthenticated → /login
- * - Onboarding already completed → /
- */
-interface OnboardingRouteProps {
-  children: ReactNode;
-}
-
-export function OnboardingRoute({ children }: OnboardingRouteProps) {
-  const { user, isLoading, onboardingCompleted } = useAuth();
-
-  if (isLoading) {
-    return <PageLoading />;
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (onboardingCompleted) {
-    return <Navigate to="/" replace />;
+    return (
+      <Navigate
+        to={user.hasCompletedOnboarding ? "/" : "/onboarding"}
+        replace
+      />
+    );
   }
 
   return children;

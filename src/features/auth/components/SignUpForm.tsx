@@ -35,10 +35,8 @@ const SignUpForm = () => {
   });
 
   const onSubmit = async (data: SignUpFormData) => {
-    const success = await registerUser(data);
-    if (success) {
-      navigate("/onboarding");
-    }
+    await registerUser(data);
+    // Navigation is handled by PublicRoute based on user.hasCompletedOnboarding
   };
 
   return (

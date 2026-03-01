@@ -38,7 +38,7 @@ interface UseOnboardingReturn {
  */
 export const useOnboarding = (): UseOnboardingReturn => {
   const navigate = useNavigate();
-  const { user, markOnboardingCompleted } = useAuth();
+  const { user, updateUser } = useAuth();
 
   // State management
   const [step, setStep] = useState(0);
@@ -106,8 +106,11 @@ export const useOnboarding = (): UseOnboardingReturn => {
 
       await submitOnboardingPreferences(user.userId, preferences);
 
-      // Persist completion BEFORE navigating so route guards resolve correctly
-      markOnboardingCompleted();
+      // Mark onboarding as completed in context + localStorage so the
+      // ProtectedRoute no longer redirects back to /onboarding
+      updateUser({ ...user, hasCompletedOnboarding: true });
+
+      // Navigate to home page after successful submission
       navigate("/");
     } catch (err) {
       setError(

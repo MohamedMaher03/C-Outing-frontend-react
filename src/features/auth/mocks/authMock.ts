@@ -25,6 +25,7 @@ const MOCK_USER: User = {
   preferences: [0.9, 0.6, 0.4, 0.2],
   lastUpdated: new Date(),
   totalInteractions: 12,
+  hasCompletedOnboarding: true,
 };
 
 const MOCK_TOKEN =
@@ -82,6 +83,7 @@ export const authMock = {
       preferences: [],
       totalInteractions: 0,
       lastUpdated: new Date(),
+      hasCompletedOnboarding: false,
     };
 
     return {

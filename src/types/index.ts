@@ -11,6 +11,7 @@ export interface User {
   preferences: number[]; // Preference vector (e.g., [0.8, 0.5])
   lastUpdated: Date;
   totalInteractions: number;
+  hasCompletedOnboarding: boolean;
 }
 
 // ============ API Response Wrapper ============

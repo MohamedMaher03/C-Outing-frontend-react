@@ -20,14 +20,10 @@ export interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  /** Whether the current user has completed the onboarding flow. */
-  onboardingCompleted: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: User) => void;
-  /** Persist onboarding completion for the current user. */
-  markOnboardingCompleted: () => void;
 }
 
 // ── Context ─────────────────────────────────────────────────────

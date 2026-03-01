@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
-import { ProtectedRoute, PublicRoute, OnboardingRoute } from "@/routes";
+import { ProtectedRoute, PublicRoute } from "@/routes";
 import AppLayout from "@/components/layout/AppLayout";
 import LoginForm from "@/features/auth/components/LoginForm";
 import SignUpPage from "@/features/auth/pages/SignUpPage";
@@ -46,13 +46,13 @@ function App() {
 
         {/* App Routes with AppLayout - all require authentication */}
         <Route element={<AppLayout />}>
-          {/* Onboarding - only for users who haven't completed it yet */}
+          {/* Onboarding - special case, shown only on first login */}
           <Route
             path="/onboarding"
             element={
-              <OnboardingRoute>
+              <ProtectedRoute>
                 <OnboardingPage />
-              </OnboardingRoute>
+              </ProtectedRoute>
             }
           />
 

@@ -6,8 +6,6 @@
 export const AUTH_STORAGE_KEYS = {
   TOKEN: "authToken",
   USER: "authUser",
-  /** Prefix for per-user onboarding completion flag: `onboarding_done_${userId}` */
-  ONBOARDING_PREFIX: "onboarding_done_",
 } as const;
 
 /** Human-readable error messages surfaced to the UI. */

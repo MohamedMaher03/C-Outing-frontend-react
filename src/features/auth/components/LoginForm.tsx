@@ -29,10 +29,8 @@ const LoginForm = () => {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    const success = await loginUser(data);
-    if (success) {
-      navigate("/");
-    }
+    await loginUser(data);
+    // Navigation is handled by PublicRoute based on user.hasCompletedOnboarding
   };
 
   return (
