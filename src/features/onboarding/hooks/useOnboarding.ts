@@ -38,7 +38,7 @@ interface UseOnboardingReturn {
  */
 export const useOnboarding = (): UseOnboardingReturn => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, markOnboardingCompleted } = useAuth();
 
   // State management
   const [step, setStep] = useState(0);
@@ -88,8 +88,11 @@ export const useOnboarding = (): UseOnboardingReturn => {
 
   // Complete onboarding and submit preferences
   const handleComplete = async () => {
+    console.log("handle complete called");
+    console.log("can go next:", canGoNext);
+    console.log("user:", user);
     if (!canGoNext || !user) return;
-
+    console.log("can go next and user exists");
     try {
       setIsSubmitting(true);
       setError(null);
@@ -103,8 +106,9 @@ export const useOnboarding = (): UseOnboardingReturn => {
 
       await submitOnboardingPreferences(user.userId, preferences);
 
-      // Navigate to home page after successful submission
-      navigate("/home");
+      // Persist completion BEFORE navigating so route guards resolve correctly
+      markOnboardingCompleted();
+      navigate("/");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to submit preferences",

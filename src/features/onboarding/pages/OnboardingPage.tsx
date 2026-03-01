@@ -1,11 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ArrowRight,
-  ArrowLeft,
-  Sparkles,
-  Palette,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, ArrowLeft, Sparkles, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -43,7 +37,9 @@ const OnboardingPage = () => {
   const handleNext = () => {
     if (step < 3) {
       goToNextStep();
+      console.log("go next");
     } else {
+      console.log("before handle");
       handleComplete();
     }
   };

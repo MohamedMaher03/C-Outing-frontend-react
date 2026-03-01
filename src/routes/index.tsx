@@ -5,14 +5,16 @@ import { PageLoading } from "@/components/ui/LoadingSpinner";
 
 /**
  * Protected Route Component
- * Wraps routes that require authentication
+ * Requires authentication AND completed onboarding.
+ * - Unauthenticated → /login
+ * - Authenticated but onboarding pending → /onboarding
  */
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, onboardingCompleted } = useAuth();
 
   if (isLoading) {
     return <PageLoading />;
@@ -22,25 +24,59 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
+  if (!onboardingCompleted) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   return children;
 }
 
 /**
  * Public Route Component
- * Redirects authenticated users away from public pages (login, register)
+ * Redirects authenticated users away from public pages (login, register).
+ * - Authenticated + onboarding done → /
+ * - Authenticated + onboarding pending → /onboarding
  */
 interface PublicRouteProps {
   children: ReactNode;
 }
 
 export function PublicRoute({ children }: PublicRouteProps) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, onboardingCompleted } = useAuth();
 
   if (isLoading) {
     return <PageLoading />;
   }
 
   if (user) {
+    return <Navigate to={onboardingCompleted ? "/" : "/onboarding"} replace />;
+  }
+
+  return children;
+}
+
+/**
+ * Onboarding Route Component
+ * Only accessible to authenticated users who have NOT yet completed onboarding.
+ * - Unauthenticated → /login
+ * - Onboarding already completed → /
+ */
+interface OnboardingRouteProps {
+  children: ReactNode;
+}
+
+export function OnboardingRoute({ children }: OnboardingRouteProps) {
+  const { user, isLoading, onboardingCompleted } = useAuth();
+
+  if (isLoading) {
+    return <PageLoading />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (onboardingCompleted) {
     return <Navigate to="/" replace />;
   }
 

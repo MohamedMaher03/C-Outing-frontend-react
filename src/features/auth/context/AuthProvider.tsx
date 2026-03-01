@@ -24,6 +24,7 @@ export function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
 
   // On mount: restore stored session (token + user from localStorage).
   useEffect(() => {
@@ -32,6 +33,9 @@ export function AuthProvider({
       if (session) {
         setToken(session.token);
         setUser(session.user);
+        setOnboardingCompleted(
+          authService.isOnboardingCompleted(session.user.userId),
+        );
       }
       setIsLoading(false);
     };
@@ -48,17 +52,23 @@ export function AuthProvider({
       const response = await authService.login({ email, password });
       setToken(response.token);
       setUser(response.user);
+      setOnboardingCompleted(
+        authService.isOnboardingCompleted(response.user.userId),
+      );
     },
     [],
   );
 
   /**
    * Register — same pattern as login.
+   * Onboarding is NOT marked complete here; new users must go through it.
    */
   const register = useCallback(async (data: RegisterRequest): Promise<void> => {
     const response = await authService.register(data);
     setToken(response.token);
     setUser(response.user);
+    // New users always start with onboarding incomplete
+    setOnboardingCompleted(false);
   }, []);
 
   /**
@@ -69,7 +79,18 @@ export function AuthProvider({
     await authService.logout();
     setUser(null);
     setToken(null);
+    setOnboardingCompleted(false);
   }, []);
+
+  /**
+   * MarkOnboardingCompleted — persists the flag and updates React state.
+   */
+  const markOnboardingCompleted = useCallback((): void => {
+    if (user) {
+      authService.markOnboardingCompleted(user.userId);
+      setOnboardingCompleted(true);
+    }
+  }, [user]);
 
   /**
    * UpdateUser — syncs an updated user object into context + storage
@@ -85,10 +106,12 @@ export function AuthProvider({
     token,
     isLoading,
     isAuthenticated: !!user && !!token,
+    onboardingCompleted,
     login,
     register,
     logout,
     updateUser,
+    markOnboardingCompleted,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

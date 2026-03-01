@@ -37,7 +37,7 @@ const SignUpForm = () => {
   const onSubmit = async (data: SignUpFormData) => {
     const success = await registerUser(data);
     if (success) {
-      navigate("/");
+      navigate("/onboarding");
     }
   };
 
