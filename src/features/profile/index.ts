@@ -17,6 +17,7 @@ export {
   updateUserProfile,
   getEditProfile,
   updateEditProfile,
+  uploadAvatar,
   getUserPreferences,
   updateUserPreferences,
   getNotificationSettings,

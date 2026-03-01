@@ -68,8 +68,16 @@ const ProfilePage = () => {
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       {/* Profile Header */}
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center">
-          <User className="h-8 w-8 text-secondary" />
+        <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
+          {profile?.avatar ? (
+            <img
+              src={profile.avatar}
+              alt="Profile avatar"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <User className="h-8 w-8 text-secondary" />
+          )}
         </div>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-foreground">

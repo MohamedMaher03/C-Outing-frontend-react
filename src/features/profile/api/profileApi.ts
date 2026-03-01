@@ -44,6 +44,22 @@ export const profileApi = {
     return data;
   },
 
+  // ── Avatar ─────────────────────────────────────────────────
+
+  async uploadAvatar(
+    userId: number,
+    file: File,
+  ): Promise<{ avatarUrl: string }> {
+    const formData = new FormData();
+    formData.append("avatar", file);
+    const { data } = await axiosInstance.post<{ avatarUrl: string }>(
+      API_ENDPOINTS.profile.uploadAvatar(userId),
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return data;
+  },
+
   // ── Preferences ────────────────────────────────────────────
 
   async getPreferences(userId: number): Promise<UserPreferences> {

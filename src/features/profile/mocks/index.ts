@@ -46,6 +46,7 @@ export const MOCK_EDIT_PROFILE: EditProfileData = {
   phone: "+20 123 456 7890",
   location: "Cairo, Egypt",
   bio: "Food lover | Explorer | Coffee enthusiast",
+  avatar: undefined,
 };
 
 export const MOCK_NOTIFICATION_SETTINGS: NotificationSettings = {

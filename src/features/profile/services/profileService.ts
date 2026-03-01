@@ -82,8 +82,27 @@ export const updateUserProfile = async (
 
 // ── Edit Profile (extended fields) ──────────────────────────────────────────
 
-/**
- * Fetch extended profile data (name, email, phone, location, bio).
+/** * Upload a new avatar image.
+ * Returns the URL for the uploaded avatar.
+ *
+ * Mock: Creates a local blob URL to simulate the upload.
+ * TODO: Uncomment when backend is ready:
+ *   return profileApi.uploadAvatar(CURRENT_USER_ID, file);
+ */
+export const uploadAvatar = async (
+  file: File,
+): Promise<{ avatarUrl: string }> => {
+  await new Promise((resolve) => setTimeout(resolve, 600));
+
+  // Mock: create a local object URL to simulate a server-returned URL
+  const avatarUrl = URL.createObjectURL(file);
+  MOCK_EDIT_PROFILE_DATA = { ...MOCK_EDIT_PROFILE_DATA, avatar: avatarUrl };
+  return { avatarUrl };
+
+  // return profileApi.uploadAvatar(CURRENT_USER_ID, file);
+};
+
+/** * Fetch extended profile data (name, email, phone, location, bio).
  * TODO: Uncomment when backend is ready:
  *   return profileApi.getProfile(CURRENT_USER_ID) as unknown as EditProfileData;
  */

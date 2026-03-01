@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
   },
 
   profile: {
+    uploadAvatar: (userId: number) => `/users/${userId}/avatar`,
     getNotifications: (userId: number) => `/users/${userId}/notifications`,
     updateNotifications: (userId: number) => `/users/${userId}/notifications`,
     getPrivacy: (userId: number) => `/users/${userId}/privacy`,

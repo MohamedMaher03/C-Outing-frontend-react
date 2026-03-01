@@ -31,6 +31,7 @@ export interface EditProfileData {
   phone: string;
   location: string;
   bio: string;
+  avatar?: string;
 }
 
 /** Push + email notification toggles */

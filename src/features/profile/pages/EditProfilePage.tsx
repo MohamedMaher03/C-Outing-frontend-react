@@ -1,4 +1,12 @@
-import { ArrowLeft, Camera, User, Mail, Phone, MapPin } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,8 +15,19 @@ import { cn } from "@/lib/utils";
 import { useEditProfile } from "@/features/profile/hooks/useEditProfile";
 
 const EditProfilePage = () => {
-  const { formData, loading, saving, error, handleChange, handleSubmit } =
-    useEditProfile();
+  const {
+    formData,
+    avatarPreview,
+    loading,
+    saving,
+    uploadingAvatar,
+    error,
+    fileInputRef,
+    triggerFilePicker,
+    handleAvatarChange,
+    handleChange,
+    handleSubmit,
+  } = useEditProfile();
 
   if (loading) {
     return (
@@ -42,18 +61,42 @@ const EditProfilePage = () => {
           {/* Profile Photo */}
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
-              <div className="h-24 w-24 rounded-full bg-secondary/10 flex items-center justify-center">
-                <User className="h-12 w-12 text-secondary" />
+              <div className="h-24 w-24 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
+                {avatarPreview ? (
+                  <img
+                    src={avatarPreview}
+                    alt="Profile avatar"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <User className="h-12 w-12 text-secondary" />
+                )}
               </div>
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
               <button
                 type="button"
-                className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-secondary text-white flex items-center justify-center hover:bg-secondary/90 transition-colors"
+                onClick={triggerFilePicker}
+                disabled={uploadingAvatar}
+                className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-secondary text-white flex items-center justify-center hover:bg-secondary/90 transition-colors disabled:opacity-50"
               >
-                <Camera className="h-4 w-4" />
+                {uploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
               </button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Click to upload a new photo
+              {avatarPreview
+                ? "Click the camera to change photo"
+                : "Click to upload a new photo"}
             </p>
           </div>
 
@@ -177,10 +220,14 @@ const EditProfilePage = () => {
             </Button>
             <Button
               type="submit"
-              disabled={saving}
+              disabled={saving || uploadingAvatar}
               className="flex-1 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {uploadingAvatar
+                ? "Uploading photo..."
+                : saving
+                  ? "Saving..."
+                  : "Save Changes"}
             </Button>
           </div>
         </form>
