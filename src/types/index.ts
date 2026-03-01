@@ -120,13 +120,28 @@ export interface RecommendationResponse {
 }
 
 // ============ API Response Wrapper ============
+
+/**
+ * Standard backend envelope for ALL API responses.
+ *
+ * Success shape:  { success: true,  data: T,    message: "OK" }
+ * Error shape:    { success: false, data: null, message: "...", errorCode: "..." }
+ *
+ * The axiosInstance response interceptor (src/config/axios.config.ts) unwraps
+ * this automatically on success, so components always receive `T` directly.
+ * On error the interceptor rejects with `ApiError` (src/utils/apiError.ts).
+ */
 export interface ApiResponse<T> {
+  /** `true` on 2xx, `false` on any error. */
   success: boolean;
-  data?: T;
-  error?: {
-    message: string;
-    code: string;
-  };
+  /** The actual payload.  Typed as `T` on success, `null` on error. */
+  data: T;
+  /** Human-readable message from the server (success or error). */
+  message: string;
+  /** Pagination info or any extra metadata. */
+  meta?: unknown;
+  /** Machine-readable error code (e.g. "EMAIL_ALREADY_EXISTS"). */
+  errorCode?: string;
 }
 
 export interface PaginatedResponse<T> {

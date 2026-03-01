@@ -11,6 +11,9 @@
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type { PublicUserProfile, UserReviewActivity } from "../types";
+// NOTE: All axiosInstance calls below use `T` as the generic (not `ApiResponse<T>`).
+// The axiosInstance response interceptor automatically unwraps the
+// { success, data: T, message } envelope, so response.data IS T directly.
 
 export const userApi = {
   /**

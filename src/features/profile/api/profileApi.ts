@@ -22,6 +22,9 @@ import type {
   NotificationSettings,
   PrivacySettings,
 } from "../types";
+// NOTE: All axiosInstance calls below use `T` as the generic (not `ApiResponse<T>`).
+// The axiosInstance response interceptor automatically unwraps the
+// { success, data: T, message } envelope, so response.data IS T directly.
 
 export const profileApi = {
   // ── Profile ────────────────────────────────────────────────

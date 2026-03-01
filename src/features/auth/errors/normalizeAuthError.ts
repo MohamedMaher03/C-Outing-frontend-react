@@ -36,6 +36,7 @@
 
 import axios from "axios";
 import { AuthError } from "./AuthError";
+import { isApiError } from "@/utils/apiError";
 import { AUTH_ERROR_MESSAGES } from "../constants";
 import type { AuthErrorCode } from "../constants";
 
@@ -61,22 +62,51 @@ export function normalizeAuthError(error: unknown): AuthError {
     return error;
   }
 
-  // 2. Axios error — extract info from the HTTP response.
+  // 2. ApiError (thrown by the axiosInstance response interceptor).
+  //    The interceptor already extracted message + errorCode from the envelope.
+  if (isApiError(error)) {
+    const code = error.errorCode;
+    if (code && isAuthErrorCode(code)) {
+      return new AuthError(
+        code as AuthErrorCode,
+        error.message,
+        error.statusCode,
+      );
+    }
+    if (error.statusCode && HTTP_STATUS_TO_AUTH_CODE[error.statusCode]) {
+      return new AuthError(
+        HTTP_STATUS_TO_AUTH_CODE[error.statusCode]!,
+        error.message,
+        error.statusCode,
+      );
+    }
+    if (!error.statusCode || error.statusCode >= 500) {
+      return new AuthError("UNKNOWN_ERROR", error.message, error.statusCode);
+    }
+    return new AuthError(
+      "INVALID_CREDENTIALS",
+      error.message,
+      error.statusCode,
+    );
+  }
+
+  // 3. Raw Axios error — only reached when NOT using the shared axiosInstance
+  //    (e.g. unit tests that bypass interceptors).
   if (axios.isAxiosError(error)) {
     const status = error.response?.status;
     const body = error.response?.data as Record<string, unknown> | undefined;
 
-    // 2a. Backend provided an explicit error code in the response body.
-    //     Supports both { error: { code } } (our ApiResponse) and flat { errorCode }.
+    // 3a. Backend provided an explicit error code in the response body.
+    //     Supports both { errorCode } (new envelope) and { error: { code } } (legacy).
     const backendCode =
-      (body?.error as Record<string, unknown> | undefined)?.code ??
-      body?.errorCode;
+      body?.errorCode ??
+      (body?.error as Record<string, unknown> | undefined)?.code;
 
     if (typeof backendCode === "string" && isAuthErrorCode(backendCode)) {
       return new AuthError(backendCode, error.message, status);
     }
 
-    // 2b. No explicit code — fallback to status-code mapping.
+    // 3b. No explicit code — fallback to status-code mapping.
     if (status && HTTP_STATUS_TO_AUTH_CODE[status]) {
       return new AuthError(
         HTTP_STATUS_TO_AUTH_CODE[status]!,
@@ -85,18 +115,18 @@ export function normalizeAuthError(error: unknown): AuthError {
       );
     }
 
-    // 2c. No response received at all — network / timeout issue.
+    // 3c. No response received at all — network / timeout issue.
     if (!error.response) {
       return new AuthError("NETWORK_ERROR", error.message);
     }
   }
 
-  // 3. Plain Error with a message that matches a known code (legacy / mock compat).
+  // 4. Plain Error with a message that matches a known code (legacy / mock compat).
   if (error instanceof Error && isAuthErrorCode(error.message)) {
     return new AuthError(error.message as AuthErrorCode);
   }
 
-  // 4. Anything else — unknown.
+  // 5. Anything else — unknown.
   return new AuthError(
     "UNKNOWN_ERROR",
     error instanceof Error ? error.message : String(error),

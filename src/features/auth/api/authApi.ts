@@ -20,7 +20,6 @@
 
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
-import type { ApiResponse } from "@/types";
 import type { LoginRequest, RegisterRequest, AuthApiResponse } from "../types";
 import { normalizeAuthError } from "../errors";
 
@@ -28,14 +27,17 @@ export const authApi = {
   /**
    * POST /users/login
    * Authenticates with email + password, returns token + user.
+   *
+   * The axiosInstance response interceptor unwraps the ApiResponse envelope,
+   * so `data` here is already `AuthApiResponse` — no `.data.data` needed.
    */
   async login(payload: LoginRequest): Promise<AuthApiResponse> {
     try {
-      const { data } = await axiosInstance.post<ApiResponse<AuthApiResponse>>(
+      const { data } = await axiosInstance.post<AuthApiResponse>(
         API_ENDPOINTS.auth.login,
         payload,
       );
-      return data.data!;
+      return data;
     } catch (error) {
       throw normalizeAuthError(error);
     }
@@ -44,14 +46,17 @@ export const authApi = {
   /**
    * POST /users/register
    * Creates a new account, returns token + user.
+   *
+   * The axiosInstance response interceptor unwraps the ApiResponse envelope,
+   * so `data` here is already `AuthApiResponse` — no `.data.data` needed.
    */
   async register(payload: RegisterRequest): Promise<AuthApiResponse> {
     try {
-      const { data } = await axiosInstance.post<ApiResponse<AuthApiResponse>>(
+      const { data } = await axiosInstance.post<AuthApiResponse>(
         API_ENDPOINTS.auth.register,
         payload,
       );
-      return data.data!;
+      return data;
     } catch (error) {
       throw normalizeAuthError(error);
     }
