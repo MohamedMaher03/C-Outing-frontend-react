@@ -8,6 +8,7 @@ import type { Review, SocialMediaReview, ReviewSummary } from "../types";
 
 // ============ User Reviews ============
 
+//string is the placeId, value is the array of reviews for that place
 export const MOCK_REVIEWS: Record<string, Review[]> = {
   "1": [
     {

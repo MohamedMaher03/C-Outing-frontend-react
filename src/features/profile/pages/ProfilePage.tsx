@@ -86,6 +86,9 @@ const ProfilePage = () => {
           <p className="text-sm text-muted-foreground">
             {profile?.email || "user@couting.app"}
           </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {profile?.bio || ""}
+          </p>
         </div>
         <Button variant="ghost" size="icon">
           <Settings className="h-5 w-5" />

@@ -31,6 +31,8 @@ export const MOCK_PROFILE: UserProfile = {
   userId: 1,
   name: "Ahmed Khalil",
   email: "ahmed@couting.app",
+  bio: "Food lover | Explorer | Coffee enthusiast",
+  avatar: "https://i.pravatar.cc/150?img=3",
 };
 
 export const MOCK_PREFERENCES: UserPreferences = {

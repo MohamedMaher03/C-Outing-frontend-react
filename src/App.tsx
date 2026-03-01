@@ -13,6 +13,7 @@ import EditProfilePage from "@/features/profile/pages/EditProfilePage";
 import NotificationsPage from "@/features/profile/pages/NotificationsPage";
 import PrivacyPage from "@/features/profile/pages/PrivacyPage";
 import HelpSupportPage from "@/features/profile/pages/HelpSupportPage";
+import PublicProfilePage from "@/features/users/pages/PublicProfilePage";
 import NotFound from "@/pages/NotFound";
 
 /**
@@ -150,6 +151,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <FavoritesPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Public user profile (read-only) */}
+          <Route
+            path="/users/:id"
+            element={
+              <ProtectedRoute>
+                <PublicProfilePage />
               </ProtectedRoute>
             }
           />

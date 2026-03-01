@@ -22,6 +22,9 @@ export const ROUTES = {
   PROFILE_HELP: "/profile/help",
   FAVORITES: "/favorites",
 
+  // Public user profile (read-only)
+  USER_PROFILE: (id: string) => `/users/${id}`,
+
   // Error Routes
   NOT_FOUND: "*",
 };

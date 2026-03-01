@@ -17,10 +17,15 @@ export const API_ENDPOINTS = {
 
   // ── Users / Profile ──────────────────────────────────────────
   users: {
+    getMe: "/users/me",
     getProfile: (userId: number) => `/users/${userId}`,
     updateProfile: (userId: number) => `/users/${userId}`,
     getPreferences: (userId: number) => `/users/${userId}/preferences`,
     updatePreferences: (userId: number) => `/users/${userId}/preferences`,
+    // Public-user endpoints (used by features/users)
+    getPublicProfile: (userId: string) => `/users/${userId}`,
+    getReviews: (userId: string) => `/users/${userId}/reviews`,
+    follow: (userId: string) => `/users/${userId}/follow`,
   },
 
   profile: {

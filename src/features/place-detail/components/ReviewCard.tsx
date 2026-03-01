@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { Review } from "../types";
 
 /** A single user review card */
@@ -6,13 +7,21 @@ export const ReviewCard = ({ review }: { review: Review }) => (
   <div className="border border-border rounded-xl p-4 space-y-2 bg-card">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
+        <Link
+          to={`/users/${review.userId}`}
+          className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary hover:bg-primary/20 transition-colors flex-shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
           {review.userName.charAt(0)}
-        </div>
+        </Link>
         <div>
-          <p className="text-sm font-semibold text-foreground">
+          <Link
+            to={`/users/${review.userId}`}
+            className="text-sm font-semibold text-foreground hover:text-secondary transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
             {review.userName}
-          </p>
+          </Link>
           <p className="text-xs text-muted-foreground">
             {new Date(review.date).toLocaleDateString("en-US", {
               year: "numeric",
