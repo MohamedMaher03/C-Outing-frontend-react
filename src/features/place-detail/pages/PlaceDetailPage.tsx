@@ -10,7 +10,9 @@ import {
   MessageSquare,
   ThumbsUp,
   Globe,
+  Flag,
 } from "lucide-react";
+import type { ReportPayload } from "@/features/place-detail/components/ReportReviewDialog";
 import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
@@ -30,9 +32,13 @@ const PlaceDetailPage = () => {
   const [savingLike, setSavingLike] = useState(false);
   const [notification, setNotification] = useState<{
     show: boolean;
-    type: "like" | "favorite" | null;
-    action: "added" | "removed";
+    type: "like" | "favorite" | "report" | null;
+    action: "added" | "removed" | "submitted";
   }>({ show: false, type: null, action: "added" });
+  // Track which review IDs the current user has already reported (session-based)
+  const [reportedReviews, setReportedReviews] = useState<Set<string>>(
+    new Set(),
+  );
 
   const {
     place,
@@ -53,6 +59,18 @@ const PlaceDetailPage = () => {
     goBack,
     handleSubmitReview,
   } = usePlaceDetail(id);
+
+  const handleReportReview = async (payload: ReportPayload) => {
+    // Prevent duplicate reports in this session
+    if (reportedReviews.has(payload.reviewId)) return;
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    setReportedReviews((prev) => new Set([...prev, payload.reviewId]));
+    setNotification({ show: true, type: "report", action: "submitted" });
+    setTimeout(() => {
+      setNotification({ show: false, type: null, action: "added" });
+    }, 2500);
+  };
 
   const showNotification = (
     type: "like" | "favorite",
@@ -168,11 +186,15 @@ const PlaceDetailPage = () => {
               className={`animate-in fade-in slide-in-from-top-2 duration-500 px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl backdrop-blur-md border ${
                 notification.type === "like"
                   ? "bg-blue-500/90 text-white border-blue-400/50"
-                  : "bg-secondary/90 text-secondary-foreground border-secondary/50"
+                  : notification.type === "report"
+                    ? "bg-amber-500/90 text-white border-amber-400/50"
+                    : "bg-secondary/90 text-secondary-foreground border-secondary/50"
               }`}
             >
               {notification.type === "like" ? (
                 <ThumbsUp className="h-5 w-5 fill-current" />
+              ) : notification.type === "report" ? (
+                <Flag className="h-5 w-5 fill-current" />
               ) : (
                 <Heart className="h-5 w-5 fill-current" />
               )}
@@ -181,9 +203,11 @@ const PlaceDetailPage = () => {
                   ? notification.action === "added"
                     ? "You liked this place! 👍"
                     : "You unliked this place 👎"
-                  : notification.action === "added"
-                    ? "Added to favorites! ❤️"
-                    : "Removed from favorites 💔"}
+                  : notification.type === "report"
+                    ? "Report submitted — thank you! 🚩"
+                    : notification.action === "added"
+                      ? "Added to favorites! ❤️"
+                      : "Removed from favorites 💔"}
               </span>
             </div>
           </div>
@@ -297,7 +321,12 @@ const PlaceDetailPage = () => {
               ) : (
                 <div className="space-y-3">
                   {reviews.map((review) => (
-                    <ReviewCard key={review.id} review={review} />
+                    <ReviewCard
+                      key={review.id}
+                      review={review}
+                      alreadyReported={reportedReviews.has(review.id)}
+                      onReport={handleReportReview}
+                    />
                   ))}
                 </div>
               )}

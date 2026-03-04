@@ -2,6 +2,8 @@
  * Reported Content Page (Moderator)
  *
  * Handle user reports — view, investigate, resolve, or dismiss reports.
+ * Enhanced with: Delete Review, Warn User, Escalate/Ban User actions,
+ * side-by-side review content display, and toast feedback.
  */
 
 import { useState, useEffect } from "react";
@@ -19,7 +21,23 @@ import {
   MapPin,
   User,
   FileText,
+  Trash2,
+  Bell,
+  Ban,
+  ChevronDown,
+  MessageSquare,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -74,8 +92,29 @@ const ReportedContentPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
+  // Default to reviews filter per task requirement
+  const [typeFilter, setTypeFilter] = useState<string>("review");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<
+    {
+      id: number;
+      message: string;
+      variant: "success" | "warning" | "destructive";
+    }[]
+  >([]);
+
+  const showToast = (
+    message: string,
+    variant: "success" | "warning" | "destructive" = "success",
+  ) => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, variant }]);
+    setTimeout(
+      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
+      3000,
+    );
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -109,6 +148,61 @@ const ReportedContentPage = () => {
     );
   };
 
+  const handleDeleteReview = async (reportId: string) => {
+    try {
+      setActionLoading(reportId + "_delete");
+      await moderatorMock.deleteReview(reportId);
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === reportId
+            ? { ...r, status: "resolved", resolvedAt: new Date() }
+            : r,
+        ),
+      );
+      setExpandedId(null);
+      showToast("Review deleted successfully.", "destructive");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleWarnUser = async (reportId: string, authorName?: string) => {
+    try {
+      setActionLoading(reportId + "_warn");
+      await moderatorMock.warnUser(reportId);
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === reportId
+            ? { ...r, status: "resolved", resolvedAt: new Date() }
+            : r,
+        ),
+      );
+      showToast(`Warning sent to ${authorName ?? "user"}.`, "warning");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBanUser = async (reportId: string, authorName?: string) => {
+    try {
+      setActionLoading(reportId + "_ban");
+      await moderatorMock.banUser(reportId);
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === reportId
+            ? { ...r, status: "resolved", resolvedAt: new Date() }
+            : r,
+        ),
+      );
+      showToast(
+        `${authorName ?? "User"} escalated to admin for ban review.`,
+        "destructive",
+      );
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const filtered = reports.filter((r) => {
     const matchesSearch =
       r.reportedItemName.toLowerCase().includes(search.toLowerCase()) ||
@@ -130,6 +224,32 @@ const ReportedContentPage = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* Toast Notifications */}
+      <div className="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={cn(
+              "px-5 py-3 rounded-xl shadow-xl text-sm font-medium animate-in fade-in slide-in-from-right-4 flex items-center gap-2",
+              t.variant === "success"
+                ? "bg-emerald-500 text-white"
+                : t.variant === "warning"
+                  ? "bg-amber-500 text-white"
+                  : "bg-destructive text-destructive-foreground",
+            )}
+          >
+            {t.variant === "success" ? (
+              <CheckCircle className="h-4 w-4" />
+            ) : t.variant === "warning" ? (
+              <Bell className="h-4 w-4" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            {t.message}
+          </div>
+        ))}
+      </div>
+
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -153,7 +273,6 @@ const ReportedContentPage = () => {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {/* Status */}
           {["all", "open", "investigating", "resolved", "dismissed"].map(
             (status) => (
               <button
@@ -230,12 +349,10 @@ const ReportedContentPage = () => {
               >
                 {/* Main Row */}
                 <div className="flex items-start gap-3">
-                  {/* Type icon */}
                   <div className="p-2 rounded-lg bg-muted/50 flex-shrink-0 mt-0.5">
                     <TypeIcon className="h-4 w-4 text-muted-foreground" />
                   </div>
 
-                  {/* Content */}
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold text-foreground">
@@ -268,7 +385,6 @@ const ReportedContentPage = () => {
                     </p>
                   </div>
 
-                  {/* Expand / Actions */}
                   <div className="flex flex-shrink-0 gap-1">
                     <Button
                       variant="ghost"
@@ -280,21 +396,56 @@ const ReportedContentPage = () => {
                     >
                       <Eye className="h-3.5 w-3.5" />
                       {isExpanded ? "Less" : "Details"}
+                      <ChevronDown
+                        className={cn(
+                          "h-3 w-3 transition-transform",
+                          isExpanded && "rotate-180",
+                        )}
+                      />
                     </Button>
                   </div>
                 </div>
 
                 {/* Expanded Details */}
                 {isExpanded && (
-                  <div className="mt-3 pt-3 border-t border-border space-y-3">
-                    <div className="p-3 rounded-lg bg-muted/30">
-                      <div className="flex items-start gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-foreground leading-relaxed">
-                          {report.description}
-                        </p>
+                  <div className="mt-3 pt-3 border-t border-border space-y-4">
+                    {/* Side-by-side for review reports */}
+                    {report.type === "review" ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="p-3 rounded-lg bg-muted/30 space-y-1.5">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                            <MessageSquare className="h-3.5 w-3.5 text-secondary" />
+                            Original Review
+                            {report.reviewAuthorName && (
+                              <span className="text-muted-foreground font-normal">
+                                — by {report.reviewAuthorName}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-foreground leading-relaxed italic">
+                            "{report.reviewContent ?? "Content unavailable"}"
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/10 space-y-1.5">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-destructive">
+                            <FileText className="h-3.5 w-3.5" />
+                            Reporter's Description
+                          </div>
+                          <p className="text-sm text-foreground leading-relaxed">
+                            {report.description}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="p-3 rounded-lg bg-muted/30">
+                        <div className="flex items-start gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-foreground leading-relaxed">
+                            {report.description}
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {report.resolvedAt && (
                       <p className="text-xs text-muted-foreground">
@@ -307,53 +458,193 @@ const ReportedContentPage = () => {
                       </p>
                     )}
 
-                    {/* Action buttons */}
+                    {/* Actions */}
                     {(report.status === "open" ||
                       report.status === "investigating") && (
-                      <div className="flex gap-2 flex-wrap">
-                        {report.status === "open" && (
+                      <div className="space-y-3">
+                        {/* Status workflow */}
+                        <div className="flex gap-2 flex-wrap">
+                          {report.status === "open" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleStatusChange(report.id, "investigating")
+                              }
+                              className="text-xs gap-1 h-8 text-amber-600 border-amber-200 hover:bg-amber-50"
+                            >
+                              <Clock className="h-3.5 w-3.5" /> Investigate
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              handleStatusChange(report.id, "investigating")
+                              handleStatusChange(report.id, "dismissed")
                             }
-                            className="text-xs gap-1 h-8 text-amber-600 border-amber-200 hover:bg-amber-50"
+                            className="text-xs gap-1 h-8 text-gray-500 border-gray-200 hover:bg-gray-50"
                           >
-                            <Clock className="h-3.5 w-3.5" /> Investigate
+                            <XCircle className="h-3.5 w-3.5" /> Dismiss
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleStatusChange(report.id, "resolved")
+                            }
+                            className="text-xs gap-1 h-8 text-emerald-600 border-emerald-200 hover:bg-emerald-50 ml-auto"
+                          >
+                            <ArrowUpRight className="h-3.5 w-3.5" /> Mark
+                            Resolved
+                          </Button>
+                        </div>
+
+                        {/* Resolution Menu — review-specific */}
+                        {report.type === "review" && (
+                          <div className="p-3 rounded-lg bg-card border border-border space-y-2">
+                            <p className="text-xs font-semibold text-foreground uppercase tracking-wide">
+                              Resolution Actions
+                            </p>
+                            <div className="flex gap-2 flex-wrap">
+                              {/* Delete Review */}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-xs gap-1.5 h-8 text-destructive border-destructive/20 hover:bg-destructive/5"
+                                    disabled={
+                                      actionLoading === report.id + "_delete"
+                                    }
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Delete Review
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Delete Review
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Permanently delete this review? This
+                                      action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        handleDeleteReview(report.id)
+                                      }
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+
+                              {/* Warn User */}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-xs gap-1.5 h-8 text-amber-600 border-amber-200 hover:bg-amber-50"
+                                    disabled={
+                                      actionLoading === report.id + "_warn"
+                                    }
+                                  >
+                                    <Bell className="h-3.5 w-3.5" />
+                                    Warn User
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Send Warning
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Send a policy-violation warning to{" "}
+                                      <span className="font-semibold">
+                                        {report.reviewAuthorName ??
+                                          "the review author"}
+                                      </span>
+                                      ?
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        handleWarnUser(
+                                          report.id,
+                                          report.reviewAuthorName,
+                                        )
+                                      }
+                                      className="bg-amber-500 text-white hover:bg-amber-600"
+                                    >
+                                      Send Warning
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+
+                              {/* Ban / Escalate */}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-xs gap-1.5 h-8 text-red-700 border-red-200 hover:bg-red-50"
+                                    disabled={
+                                      actionLoading === report.id + "_ban"
+                                    }
+                                  >
+                                    <Ban className="h-3.5 w-3.5" />
+                                    Escalate &amp; Ban
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Escalate for Ban
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Flag{" "}
+                                      <span className="font-semibold">
+                                        {report.reviewAuthorName ?? "this user"}
+                                      </span>{" "}
+                                      for admin ban review? Their account will
+                                      be queued for suspension.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        handleBanUser(
+                                          report.id,
+                                          report.reviewAuthorName,
+                                        )
+                                      }
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Escalate to Admin
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </div>
                         )}
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleStatusChange(report.id, "resolved")
-                          }
-                          className="text-xs gap-1 h-8 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                        >
-                          <CheckCircle className="h-3.5 w-3.5" /> Resolve
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            handleStatusChange(report.id, "dismissed")
-                          }
-                          className="text-xs gap-1 h-8 text-gray-500 border-gray-200 hover:bg-gray-50"
-                        >
-                          <XCircle className="h-3.5 w-3.5" /> Dismiss
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs gap-1 h-8 text-blue-600 border-blue-200 hover:bg-blue-50 ml-auto"
-                        >
-                          <ArrowUpRight className="h-3.5 w-3.5" /> Escalate to
-                          Admin
-                        </Button>
                       </div>
                     )}
                   </div>

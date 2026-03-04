@@ -1,7 +1,7 @@
 /**
  * Manage Categories Page (Admin)
  *
- * CRUD operations on venue categories.
+ * CRUD operations on venue categories. Includes icon picker using Lucide icons.
  */
 
 import { useState, useEffect } from "react";
@@ -13,6 +13,26 @@ import {
   Plus,
   Save,
   X,
+  MapPin,
+  Coffee,
+  UtensilsCrossed,
+  Moon,
+  Palette,
+  Trees,
+  ShoppingBag,
+  Heart,
+  Compass,
+  Laptop,
+  Camera,
+  Music,
+  Dumbbell,
+  BookOpen,
+  Mountain,
+  Beer,
+  Star,
+  Building,
+  Bike,
+  Globe,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,13 +43,58 @@ import { cn } from "@/lib/utils";
 import { adminMock } from "@/features/admin/mocks/adminMock";
 import type { AdminCategory } from "@/features/admin/types";
 
+// ── Icon Picker Data ───────────────────────────────────────────
+
+const CURATED_ICONS = [
+  { name: "MapPin", icon: MapPin },
+  { name: "Coffee", icon: Coffee },
+  { name: "UtensilsCrossed", icon: UtensilsCrossed },
+  { name: "Moon", icon: Moon },
+  { name: "Palette", icon: Palette },
+  { name: "Trees", icon: Trees },
+  { name: "ShoppingBag", icon: ShoppingBag },
+  { name: "Heart", icon: Heart },
+  { name: "Compass", icon: Compass },
+  { name: "Laptop", icon: Laptop },
+  { name: "Camera", icon: Camera },
+  { name: "Music", icon: Music },
+  { name: "Dumbbell", icon: Dumbbell },
+  { name: "BookOpen", icon: BookOpen },
+  { name: "Mountain", icon: Mountain },
+  { name: "Beer", icon: Beer },
+  { name: "Star", icon: Star },
+  { name: "Building", icon: Building },
+  { name: "Bike", icon: Bike },
+  { name: "Globe", icon: Globe },
+] as const;
+
+const ICON_MAP: Record<
+  string,
+  React.ComponentType<{ className?: string }>
+> = Object.fromEntries(CURATED_ICONS.map(({ name, icon }) => [name, icon]));
+
+const CategoryIcon = ({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) => {
+  const IconComp = ICON_MAP[name] ?? MapPin;
+  return <IconComp className={className} />;
+};
+
+// ── Component ─────────────────────────────────────────────────
+
 const ManageCategoriesPage = () => {
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
+  const [editIcon, setEditIcon] = useState<string>("Compass");
   const [showAdd, setShowAdd] = useState(false);
   const [newLabel, setNewLabel] = useState("");
+  const [newIcon, setNewIcon] = useState<string>("Compass");
 
   useEffect(() => {
     const load = async () => {
@@ -56,13 +121,19 @@ const ManageCategoriesPage = () => {
   const handleStartEdit = (cat: AdminCategory) => {
     setEditingId(cat.id);
     setEditLabel(cat.label);
+    setEditIcon(cat.icon ?? "Compass");
   };
 
   const handleSaveEdit = async (catId: string) => {
     if (!editLabel.trim()) return;
-    await adminMock.updateCategory(catId, { label: editLabel.trim() });
+    await adminMock.updateCategory(catId, {
+      label: editLabel.trim(),
+      icon: editIcon,
+    });
     setCategories((prev) =>
-      prev.map((c) => (c.id === catId ? { ...c, label: editLabel.trim() } : c)),
+      prev.map((c) =>
+        c.id === catId ? { ...c, label: editLabel.trim(), icon: editIcon } : c,
+      ),
     );
     setEditingId(null);
   };
@@ -72,13 +143,14 @@ const ManageCategoriesPage = () => {
     const newCat: AdminCategory = {
       id: newLabel.toLowerCase().replace(/\s+/g, "-"),
       label: newLabel.trim(),
-      icon: "Compass",
+      icon: newIcon,
       count: 0,
       color: "bg-gray-100",
       status: "active",
     };
     setCategories((prev) => [...prev, newCat]);
     setNewLabel("");
+    setNewIcon("Compass");
     setShowAdd(false);
   };
 
@@ -111,28 +183,52 @@ const ManageCategoriesPage = () => {
 
       {/* Add Category Form */}
       {showAdd && (
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-          <Label className="text-sm font-medium">New Category Name</Label>
-          <div className="flex gap-3">
-            <Input
-              value={newLabel}
-              onChange={(e) => setNewLabel(e.target.value)}
-              placeholder="e.g., Rooftop Lounges"
-              className="flex-1"
-            />
-            <Button onClick={handleAddCategory} size="sm" className="gap-1">
-              <Save className="h-4 w-4" /> Save
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setShowAdd(false);
-                setNewLabel("");
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+        <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">New Category Name</Label>
+            <div className="flex gap-3">
+              <Input
+                value={newLabel}
+                onChange={(e) => setNewLabel(e.target.value)}
+                placeholder="e.g., Rooftop Lounges"
+                className="flex-1"
+              />
+              <Button onClick={handleAddCategory} size="sm" className="gap-1">
+                <Save className="h-4 w-4" /> Save
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowAdd(false);
+                  setNewLabel("");
+                  setNewIcon("Compass");
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Icon</Label>
+            <div className="grid grid-cols-10 gap-1.5">
+              {CURATED_ICONS.map(({ name, icon: IconComp }) => (
+                <button
+                  key={name}
+                  type="button"
+                  title={name}
+                  onClick={() => setNewIcon(name)}
+                  className={cn(
+                    "h-9 w-9 flex items-center justify-center rounded-lg border transition-all",
+                    newIcon === name
+                      ? "bg-secondary/20 border-secondary text-secondary"
+                      : "border-border text-muted-foreground hover:border-secondary/50 hover:text-foreground",
+                  )}
+                >
+                  <IconComp className="h-4 w-4" />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -152,58 +248,60 @@ const ManageCategoriesPage = () => {
             {/* Color dot + icon */}
             <div
               className={cn(
-                "h-10 w-10 rounded-xl flex items-center justify-center",
+                "h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0",
                 cat.color,
               )}
             >
-              <span className="text-lg">
-                {cat.icon === "UtensilsCrossed"
-                  ? "🍽️"
-                  : cat.icon === "Moon"
-                    ? "🌙"
-                    : cat.icon === "Palette"
-                      ? "🎨"
-                      : cat.icon === "Trees"
-                        ? "🌳"
-                        : cat.icon === "ShoppingBag"
-                          ? "🛍️"
-                          : cat.icon === "Heart"
-                            ? "❤️"
-                            : cat.icon === "Compass"
-                              ? "🧭"
-                              : cat.icon === "Laptop"
-                                ? "💻"
-                                : "📍"}
-              </span>
+              <CategoryIcon name={cat.icon ?? "MapPin"} className="h-5 w-5" />
             </div>
 
             {/* Label */}
             <div className="flex-1 min-w-0">
               {editingId === cat.id ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={editLabel}
-                    onChange={(e) => setEditLabel(e.target.value)}
-                    className="h-8 text-sm"
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && handleSaveEdit(cat.id)
-                    }
-                  />
-                  <Button
-                    size="sm"
-                    className="h-8 gap-1"
-                    onClick={() => handleSaveEdit(cat.id)}
-                  >
-                    <Save className="h-3 w-3" /> Save
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8"
-                    onClick={() => setEditingId(null)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      className="h-8 text-sm"
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleSaveEdit(cat.id)
+                      }
+                    />
+                    <Button
+                      size="sm"
+                      className="h-8 gap-1"
+                      onClick={() => handleSaveEdit(cat.id)}
+                    >
+                      <Save className="h-3 w-3" /> Save
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => setEditingId(null)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-10 gap-1">
+                    {CURATED_ICONS.map(({ name, icon: IconComp }) => (
+                      <button
+                        key={name}
+                        type="button"
+                        title={name}
+                        onClick={() => setEditIcon(name)}
+                        className={cn(
+                          "h-8 w-8 flex items-center justify-center rounded-lg border transition-all",
+                          editIcon === name
+                            ? "bg-secondary/20 border-secondary text-secondary"
+                            : "border-border text-muted-foreground hover:border-secondary/50 hover:text-foreground",
+                        )}
+                      >
+                        <IconComp className="h-3.5 w-3.5" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div>

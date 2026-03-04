@@ -1,9 +1,20 @@
 import { Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Review } from "../types";
+import { ReportReviewDialog, type ReportPayload } from "./ReportReviewDialog";
+
+interface ReviewCardProps {
+  review: Review;
+  alreadyReported?: boolean;
+  onReport?: (payload: ReportPayload) => Promise<void> | void;
+}
 
 /** A single user review card */
-export const ReviewCard = ({ review }: { review: Review }) => (
+export const ReviewCard = ({
+  review,
+  alreadyReported = false,
+  onReport,
+}: ReviewCardProps) => (
   <div className="border border-border rounded-xl p-4 space-y-2 bg-card">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -31,17 +42,31 @@ export const ReviewCard = ({ review }: { review: Review }) => (
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-1">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Star
-            key={i}
-            className={`h-3.5 w-3.5 ${
-              i < review.rating
-                ? "text-secondary fill-secondary"
-                : "text-muted-foreground/20"
-            }`}
+
+      <div className="flex items-center gap-2">
+        {/* Star rating */}
+        <div className="flex items-center gap-0.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              className={`h-3.5 w-3.5 ${
+                i < review.rating
+                  ? "text-secondary fill-secondary"
+                  : "text-muted-foreground/20"
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Report button — only rendered when handler is provided */}
+        {onReport && (
+          <ReportReviewDialog
+            reviewId={review.id}
+            reviewAuthor={review.userName}
+            alreadyReported={alreadyReported}
+            onReport={onReport}
           />
-        ))}
+        )}
       </div>
     </div>
     <p className="text-sm text-muted-foreground leading-relaxed">

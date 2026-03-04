@@ -37,6 +37,9 @@ export const MOCK_REPORTED_CONTENT: ReportedContent[] = [
     reason: "Inappropriate content",
     description:
       "This review contains offensive language and personal attacks against staff.",
+    reviewContent:
+      "This place is terrible. Contains inappropriate content... [flagged for review]",
+    reviewAuthorName: "Mohamed Nasser",
     status: "open",
     priority: "high",
     createdAt: new Date("2026-03-02T14:20:00"),
@@ -51,6 +54,8 @@ export const MOCK_REPORTED_CONTENT: ReportedContent[] = [
     reason: "Spam",
     description:
       "Contains external links and promotional content not related to the venue.",
+    reviewContent: "Spam review with links to external sites...",
+    reviewAuthorName: "Nour Samir",
     status: "open",
     priority: "medium",
     createdAt: new Date("2026-03-03T09:00:00"),
@@ -93,6 +98,9 @@ export const MOCK_REPORTED_CONTENT: ReportedContent[] = [
     reason: "Misleading information",
     description:
       "The prices mentioned in this review are completely wrong and misleading.",
+    reviewContent:
+      "Great food but the wait times can be long on weekends. The hawawshi is a must-try!",
+    reviewAuthorName: "Fatima Ali",
     status: "resolved",
     priority: "low",
     createdAt: new Date("2026-02-25T08:15:00"),
@@ -122,6 +130,9 @@ export const MOCK_REPORTED_CONTENT: ReportedContent[] = [
     reason: "Copyright violation",
     description:
       "This review copies text from a travel blog without attribution.",
+    reviewContent:
+      "Absolutely magical experience! The sunset from the felucca was breathtaking. Highly recommend for couples.",
+    reviewAuthorName: "Ahmed Khalil",
     status: "investigating",
     priority: "medium",
     createdAt: new Date("2026-03-02T20:00:00"),
@@ -203,5 +214,35 @@ export const moderatorMock = {
   async getRecentActions(): Promise<ModerationAction[]> {
     await delay(400);
     return [...MOCK_MODERATION_ACTIONS];
+  },
+
+  async deleteReview(reportId: string): Promise<void> {
+    await delay(500);
+    const report = MOCK_REPORTED_CONTENT.find((r) => r.id === reportId);
+    if (report) {
+      report.status = "resolved";
+      report.resolvedAt = new Date();
+    }
+    console.log(`[Mock] Deleted review for report ${reportId}`);
+  },
+
+  async warnUser(reportId: string): Promise<void> {
+    await delay(400);
+    const report = MOCK_REPORTED_CONTENT.find((r) => r.id === reportId);
+    if (report) {
+      report.status = "resolved";
+      report.resolvedAt = new Date();
+    }
+    console.log(`[Mock] Warned user for report ${reportId}`);
+  },
+
+  async banUser(reportId: string): Promise<void> {
+    await delay(500);
+    const report = MOCK_REPORTED_CONTENT.find((r) => r.id === reportId);
+    if (report) {
+      report.status = "resolved";
+      report.resolvedAt = new Date();
+    }
+    console.log(`[Mock] Escalated/banned user for report ${reportId}`);
   },
 };

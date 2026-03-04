@@ -448,7 +448,28 @@ export const adminMock = {
 
   async deletePlace(placeId: string): Promise<void> {
     await delay(400);
+    const idx = MOCK_ADMIN_PLACES.findIndex((p) => p.id === placeId);
+    if (idx !== -1) MOCK_ADMIN_PLACES.splice(idx, 1);
     console.log(`[Mock] Deleted place ${placeId}`);
+  },
+
+  async addPlace(
+    data: Omit<
+      AdminPlace,
+      "id" | "rating" | "reviewCount" | "createdAt" | "status"
+    >,
+  ): Promise<AdminPlace> {
+    await delay(600);
+    const newPlace: AdminPlace = {
+      ...data,
+      id: `place_${Date.now()}`,
+      rating: 0,
+      reviewCount: 0,
+      status: "pending",
+      createdAt: new Date(),
+    };
+    MOCK_ADMIN_PLACES.push(newPlace);
+    return newPlace;
   },
 
   async getReviews(): Promise<AdminReview[]> {

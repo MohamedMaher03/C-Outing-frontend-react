@@ -35,6 +35,13 @@ export interface AdminPlace {
   status: "active" | "pending" | "flagged" | "removed";
   createdAt: Date;
   image: string;
+  // Extended fields for the Add/Edit form
+  tags?: string[];
+  description?: string;
+  whyRecommend?: string;
+  priceLevel?: 1 | 2 | 3;
+  phone?: string;
+  website?: string;
 }
 
 export interface AdminReview {

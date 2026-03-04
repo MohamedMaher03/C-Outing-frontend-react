@@ -20,11 +20,21 @@ export interface ReportedContent {
   reporterId: number;
   reason: string;
   description: string;
+  /** Original text of the reported review (populated for type="review") */
+  reviewContent?: string;
+  /** Username of the review author (populated for type="review") */
+  reviewAuthorName?: string;
   status: "open" | "investigating" | "resolved" | "dismissed";
   priority: "low" | "medium" | "high";
   createdAt: Date;
   resolvedAt?: Date;
 }
+
+export type ModerationResolutionAction =
+  | "delete_review"
+  | "warn_user"
+  | "ban_user"
+  | "escalate_admin";
 
 export interface ModerationAction {
   id: string;
