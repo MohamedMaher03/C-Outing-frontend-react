@@ -1,0 +1,3452 @@
+openapi: 3.0.0
+
+# ──────────────────────────────────────────────────────────────────────────────
+# C-Outing API — OpenAPI 3.0.0 Specification
+#
+# Generated from:  src/features/*/api/*Api.ts  +  src/features/*/types/index.ts
+#                  src/config/api.ts            +  src/config/axios.config.ts
+#
+# Standard envelope (axios interceptor unwraps this automatically):
+#   Success: { success: true,  data: T,    message: "OK" }
+#   Error:   { success: false, data: null, message: "...", errorCode: "..." }
+#
+# All protected routes require:  Authorization: Bearer <JWT>
+# ──────────────────────────────────────────────────────────────────────────────
+
+info:
+  title: C-Outing API
+  version: 1.0.0
+  description: >
+    Backend REST API consumed by the C-Outing React frontend.
+    All responses are wrapped in the standard ApiResponse envelope.
+    The frontend axios interceptor unwraps the envelope, so the
+    frontend types represent the *inner* `data` payload only.
+  contact:
+    name: C-Outing Frontend Team
+
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+  - url: https://api.c-outing.com/api
+    description: Production server
+
+# ── Security ──────────────────────────────────────────────────────────────────
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from POST /login or POST /register
+
+  # ── Reusable Response Schemas ──────────────────────────────────────────────
+  schemas:
+    # ── Envelope ──────────────────────────────────────────────────────────────
+    ApiResponse:
+      type: object
+      required: [success, data, message]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          description: The actual payload (type varies per endpoint).
+        message:
+          type: string
+          example: OK
+        meta:
+          description: Optional pagination or extra metadata.
+          nullable: true
+        errorCode:
+          type: string
+          description: Machine-readable error code on failure.
+          example: EMAIL_ALREADY_EXISTS
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      required: [success, data, message]
+      properties:
+        success:
+          type: boolean
+          example: false
+        data:
+          nullable: true
+          example: null
+        message:
+          type: string
+          example: Resource not found
+        errorCode:
+          type: string
+          nullable: true
+          example: RESOURCE_NOT_FOUND
+
+    # ── Auth ──────────────────────────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: "secret123"
+
+    RegisterRequest:
+      type: object
+      required: [name, email, password, phone]
+      properties:
+        name:
+          type: string
+          example: Ahmed Hassan
+        email:
+          type: string
+          format: email
+          example: ahmed@example.com
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: "secret123"
+        phone:
+          type: string
+          example: "+201001234567"
+        age:
+          type: integer
+          minimum: 13
+          example: 25
+
+    AuthApiResponse:
+      type: object
+      required: [userId, token, user]
+      properties:
+        userId:
+          type: integer
+          example: 42
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: "#/components/schemas/User"
+
+    # ── Core User ─────────────────────────────────────────────────────────────
+    User:
+      type: object
+      required:
+        [
+          userId,
+          name,
+          email,
+          age,
+          preferences,
+          lastUpdated,
+          totalInteractions,
+          hasCompletedOnboarding,
+          role,
+        ]
+      properties:
+        userId:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Ahmed Hassan
+        email:
+          type: string
+          format: email
+          example: ahmed@example.com
+        age:
+          type: integer
+          example: 25
+        preferences:
+          type: array
+          items:
+            type: number
+          description: Preference vector (e.g. [0.8, 0.5]) used by the recommendation engine.
+          example: [0.8, 0.5, 0.3]
+        lastUpdated:
+          type: string
+          format: date-time
+        totalInteractions:
+          type: integer
+          example: 120
+        hasCompletedOnboarding:
+          type: boolean
+          example: true
+        role:
+          type: string
+          enum: [user, moderator, admin]
+          example: user
+
+    # ── Public User Profile (features/users) ──────────────────────────────────
+    PublicUserProfile:
+      type: object
+      required: [userId, name, reviewCount]
+      properties:
+        userId:
+          type: string
+          example: "42"
+        name:
+          type: string
+          example: Ahmed Hassan
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+          example: https://cdn.example.com/avatars/42.jpg
+        bio:
+          type: string
+          nullable: true
+          example: Cairo explorer & foodie.
+        reviewCount:
+          type: integer
+          example: 34
+        joinedDate:
+          type: string
+          format: date-time
+          nullable: true
+        isFollowing:
+          type: boolean
+          description: Whether the authenticated user follows this user.
+          nullable: true
+
+    UserReviewActivity:
+      type: object
+      required: [reviewId, placeId, placeName, rating, comment, date]
+      properties:
+        reviewId:
+          type: string
+          example: "rv-001"
+        placeId:
+          type: string
+          example: "pl-007"
+        placeName:
+          type: string
+          example: Cairo Jazz Club
+        placeImage:
+          type: string
+          format: uri
+          nullable: true
+        placeCategory:
+          type: string
+          nullable: true
+          example: Nightlife
+        rating:
+          type: number
+          format: float
+          minimum: 1
+          maximum: 5
+          example: 4.5
+        comment:
+          type: string
+          example: Amazing live music, will definitely come back!
+        date:
+          type: string
+          format: date-time
+
+    FollowToggleResponse:
+      type: object
+      required: [isFollowing]
+      properties:
+        isFollowing:
+          type: boolean
+          example: true
+
+    # ── Profile (features/profile) ────────────────────────────────────────────
+    UserProfile:
+      type: object
+      required: [userId, name, email]
+      properties:
+        userId:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Ahmed Hassan
+        email:
+          type: string
+          format: email
+          example: ahmed@example.com
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+
+    EditProfileData:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Ahmed Hassan
+        email:
+          type: string
+          format: email
+          example: ahmed@example.com
+        phone:
+          type: string
+          example: "+201001234567"
+        location:
+          type: string
+          example: Zamalek, Cairo
+        bio:
+          type: string
+          example: Passionate about discovering Cairo's hidden gems.
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+
+    AvatarUploadResponse:
+      type: object
+      required: [avatarUrl]
+      properties:
+        avatarUrl:
+          type: string
+          format: uri
+          example: https://cdn.example.com/avatars/42.jpg
+
+    UserPreferences:
+      type: object
+      required: [interests, vibe, districts, budget]
+      properties:
+        interests:
+          type: array
+          items:
+            type: string
+          example: ["street-food", "nightlife", "art-galleries"]
+        vibe:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: A 0–100 vibe score (0 = calm, 100 = energetic).
+          example: 75
+        districts:
+          type: array
+          items:
+            type: string
+          example: ["Zamalek", "Maadi"]
+        budget:
+          type: string
+          enum: [Low, Medium, High]
+          example: Medium
+
+    UpdatePreferencesRequest:
+      type: object
+      properties:
+        interests:
+          type: array
+          items:
+            type: string
+          example: ["cafes", "parks"]
+        vibe:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 60
+        districts:
+          type: array
+          items:
+            type: string
+          example: ["Heliopolis"]
+        budget:
+          type: string
+          enum: [Low, Medium, High]
+          example: High
+
+    NotificationSettings:
+      type: object
+      required: [push, email]
+      properties:
+        push:
+          type: object
+          required: [recommendations, favorites, reviews, messages, updates]
+          properties:
+            recommendations:
+              type: boolean
+            favorites:
+              type: boolean
+            reviews:
+              type: boolean
+            messages:
+              type: boolean
+            updates:
+              type: boolean
+        email:
+          type: object
+          required: [weekly, monthly, promotions, tips]
+          properties:
+            weekly:
+              type: boolean
+            monthly:
+              type: boolean
+            promotions:
+              type: boolean
+            tips:
+              type: boolean
+
+    PrivacySettings:
+      type: object
+      required:
+        [
+          profileVisible,
+          showLocation,
+          showFavorites,
+          showActivity,
+          dataCollection,
+          personalization,
+        ]
+      properties:
+        profileVisible:
+          type: boolean
+        showLocation:
+          type: boolean
+        showFavorites:
+          type: boolean
+        showActivity:
+          type: boolean
+        dataCollection:
+          type: boolean
+        personalization:
+          type: boolean
+
+    # ── Onboarding (features/onboarding) ─────────────────────────────────────
+    OnboardingSubmitRequest:
+      type: object
+      required: [interests, vibe, preferredDistricts]
+      properties:
+        interests:
+          type: array
+          items:
+            type: string
+          example: ["street-food", "nightlife"]
+        vibe:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 70
+        preferredDistricts:
+          type: array
+          items:
+            type: string
+          example: ["Zamalek", "Maadi"]
+        budgetRange:
+          type: string
+          enum: [low, medium, high]
+          nullable: true
+          example: medium
+
+    # ── Place (shared across features) ────────────────────────────────────────
+    Place:
+      type: object
+      required:
+        [
+          id,
+          name,
+          category,
+          image,
+          rating,
+          reviewCount,
+          distance,
+          district,
+          description,
+          whyRecommend,
+          priceLevel,
+          tags,
+          lat,
+          lng,
+        ]
+      properties:
+        id:
+          type: string
+          example: "pl-007"
+        name:
+          type: string
+          example: Cairo Jazz Club
+        category:
+          type: string
+          example: Nightlife
+        image:
+          type: string
+          format: uri
+          example: https://images.unsplash.com/photo-1514525253161-7a46d19cd819
+        rating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 5
+          example: 4.7
+        reviewCount:
+          type: integer
+          example: 890
+        distance:
+          type: string
+          example: "3.0 km"
+        district:
+          type: string
+          example: Agouza
+        description:
+          type: string
+          example: Legendary live music venue featuring jazz, electronic, and world music.
+        whyRecommend:
+          type: string
+          example: Cairo's best live music venue.
+        priceLevel:
+          type: integer
+          enum: [1, 2, 3]
+          description: "1 = Budget, 2 = Mid-range, 3 = Upscale"
+          example: 2
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["Nightlife", "Live Music", "Iconic"]
+        isSaved:
+          type: boolean
+          nullable: true
+        lat:
+          type: number
+          format: double
+          example: 30.0565
+        lng:
+          type: number
+          format: double
+          example: 31.2045
+        isOpen:
+          type: boolean
+          nullable: true
+        openUntil:
+          type: string
+          nullable: true
+          example: "3:00 AM"
+        matchScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: AI recommendation match percentage.
+          nullable: true
+          example: 94
+
+    # ── Place Detail (features/place-detail) ──────────────────────────────────
+    PlaceDetail:
+      allOf:
+        - $ref: "#/components/schemas/Place"
+        - type: object
+          properties:
+            openingHours:
+              type: object
+              nullable: true
+              properties:
+                open:
+                  type: string
+                  example: "09:00"
+                close:
+                  type: string
+                  example: "23:00"
+            phoneNumber:
+              type: string
+              nullable: true
+              example: "+20 2 1234 5678"
+            website:
+              type: string
+              format: uri
+              nullable: true
+              example: https://cairojazzclub.com
+
+    Review:
+      type: object
+      required: [id, userId, userName, rating, comment, date]
+      properties:
+        id:
+          type: string
+          example: "rv-001"
+        userId:
+          type: string
+          example: "42"
+        userName:
+          type: string
+          example: Ahmed Hassan
+        userAvatar:
+          type: string
+          format: uri
+          nullable: true
+        rating:
+          type: number
+          format: float
+          minimum: 1
+          maximum: 5
+          example: 4.5
+        comment:
+          type: string
+          example: The live music was phenomenal!
+        date:
+          type: string
+          format: date-time
+
+    SubmitReviewRequest:
+      type: object
+      required: [rating, comment]
+      properties:
+        rating:
+          type: number
+          format: float
+          minimum: 1
+          maximum: 5
+          example: 4.5
+        comment:
+          type: string
+          minLength: 1
+          example: Absolutely loved the atmosphere!
+
+    SocialMediaReview:
+      type: object
+      required: [id, platform, author, content, sentiment, date]
+      properties:
+        id:
+          type: string
+          example: "sm-001"
+        platform:
+          type: string
+          enum: [instagram, twitter, facebook, tiktok, google]
+          example: instagram
+        author:
+          type: string
+          example: "@cairo_explorer"
+        authorAvatar:
+          type: string
+          format: uri
+          nullable: true
+        content:
+          type: string
+          example: Best jazz night in Cairo 🎷🔥
+        sentiment:
+          type: string
+          enum: [positive, neutral, negative]
+          example: positive
+        date:
+          type: string
+          format: date-time
+        likes:
+          type: integer
+          nullable: true
+          example: 342
+        url:
+          type: string
+          format: uri
+          nullable: true
+
+    ReviewSummary:
+      type: object
+      required:
+        [
+          overallSentiment,
+          averageRating,
+          totalReviews,
+          summary,
+          highlights,
+          commonTopics,
+        ]
+      properties:
+        overallSentiment:
+          type: string
+          enum: [positive, neutral, negative]
+          example: positive
+        averageRating:
+          type: number
+          format: float
+          example: 4.7
+        totalReviews:
+          type: integer
+          example: 890
+        summary:
+          type: string
+          example: Visitors consistently praise the live music quality and vibrant atmosphere.
+        highlights:
+          type: array
+          items:
+            type: string
+          example: ["Great live music", "Friendly staff", "Iconic venue"]
+        commonTopics:
+          type: array
+          items:
+            type: object
+            required: [topic, count, sentiment]
+            properties:
+              topic:
+                type: string
+                example: Live Music
+              count:
+                type: integer
+                example: 230
+              sentiment:
+                type: string
+                enum: [positive, neutral, negative]
+                example: positive
+
+    # ── Report Review (Reporting flow) ────────────────────────────────────────
+    ReportReviewRequest:
+      type: object
+      required: [reason, description]
+      description: Payload to report an abusive or inappropriate review.
+      properties:
+        reason:
+          type: string
+          description: Short categorized reason for the report.
+          example: "Spam or misleading content"
+        description:
+          type: string
+          minLength: 10
+          description: Detailed description of why this review is being reported.
+          example: "This review contains false information and promotional links."
+
+    # ── Interactions ──────────────────────────────────────────────────────────
+    RecordInteractionRequest:
+      type: object
+      required: [placeId, actionType, sessionId]
+      properties:
+        placeId:
+          type: string
+          example: "pl-007"
+        actionType:
+          type: string
+          enum: [Click, ViewDetails, Rate, Favorite, Share]
+          example: ViewDetails
+        ratingValue:
+          type: number
+          format: float
+          minimum: 1
+          maximum: 5
+          nullable: true
+          example: 4.5
+        comment:
+          type: string
+          nullable: true
+          example: Amazing place!
+        sessionId:
+          type: string
+          example: "sess-abc123"
+        positionInList:
+          type: integer
+          nullable: true
+          description: Zero-based position in the recommendation list (for CTR tracking).
+          example: 2
+
+    # ── Favorites (features/favorites) ────────────────────────────────────────
+    FavoritePlace:
+      allOf:
+        - $ref: "#/components/schemas/Place"
+        - type: object
+          required: [savedAt]
+          properties:
+            savedAt:
+              type: string
+              format: date-time
+
+    AddFavoriteRequest:
+      type: object
+      required: [placeId]
+      properties:
+        placeId:
+          type: string
+          example: "pl-007"
+
+    ToggleFavoriteResponse:
+      type: object
+      required: [success, isFavorite]
+      properties:
+        success:
+          type: boolean
+          example: true
+        isFavorite:
+          type: boolean
+          example: true
+        message:
+          type: string
+          nullable: true
+          example: Place added to favorites.
+
+    CheckFavoriteResponse:
+      type: object
+      required: [isFavorite]
+      properties:
+        isFavorite:
+          type: boolean
+          example: true
+
+    # ── Admin Stats (features/admin) ──────────────────────────────────────────
+    AdminStats:
+      type: object
+      required:
+        [
+          totalUsers,
+          totalPlaces,
+          totalReviews,
+          totalReports,
+          activeUsersToday,
+          newUsersThisWeek,
+          pendingReviews,
+          resolvedReportsThisWeek,
+        ]
+      properties:
+        totalUsers:
+          type: integer
+          example: 12450
+        totalPlaces:
+          type: integer
+          example: 834
+        totalReviews:
+          type: integer
+          example: 45230
+        totalReports:
+          type: integer
+          example: 127
+        activeUsersToday:
+          type: integer
+          example: 543
+        newUsersThisWeek:
+          type: integer
+          example: 89
+        pendingReviews:
+          type: integer
+          example: 23
+        resolvedReportsThisWeek:
+          type: integer
+          example: 41
+
+    RecentActivity:
+      type: object
+      required: [id, type, description, timestamp]
+      properties:
+        id:
+          type: string
+          example: "act-001"
+        type:
+          type: string
+          enum: [user_joined, review_posted, place_added, report_filed]
+          example: review_posted
+        description:
+          type: string
+          example: "Ahmed Hassan posted a review for Cairo Jazz Club."
+        timestamp:
+          type: string
+          format: date-time
+        userId:
+          type: integer
+          nullable: true
+          example: 42
+        userName:
+          type: string
+          nullable: true
+          example: Ahmed Hassan
+
+    # ── Admin User (features/admin) ───────────────────────────────────────────
+    AdminUser:
+      type: object
+      required:
+        [userId, name, email, role, status, joinedDate, lastActive, reviewCount]
+      properties:
+        userId:
+          type: integer
+          example: 42
+        name:
+          type: string
+          example: Ahmed Hassan
+        email:
+          type: string
+          format: email
+          example: ahmed@example.com
+        role:
+          type: string
+          enum: [user, moderator, admin]
+          example: user
+        status:
+          type: string
+          enum: [active, banned, suspended]
+          example: active
+        joinedDate:
+          type: string
+          format: date-time
+        lastActive:
+          type: string
+          format: date-time
+        reviewCount:
+          type: integer
+          example: 34
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+
+    UpdateUserRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [user, moderator, admin]
+          example: moderator
+
+    UpdateUserStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [active, banned, suspended]
+          example: banned
+
+    # ── Admin Place (features/admin) ──────────────────────────────────────────
+    AdminPlace:
+      type: object
+      required:
+        [
+          id,
+          name,
+          category,
+          district,
+          rating,
+          reviewCount,
+          status,
+          createdAt,
+          image,
+        ]
+      properties:
+        id:
+          type: string
+          example: "pl-007"
+        name:
+          type: string
+          example: Cairo Jazz Club
+        category:
+          type: string
+          example: Nightlife
+        district:
+          type: string
+          example: Agouza
+        rating:
+          type: number
+          format: float
+          example: 4.7
+        reviewCount:
+          type: integer
+          example: 890
+        status:
+          type: string
+          enum: [active, pending, flagged, removed]
+          example: active
+        createdAt:
+          type: string
+          format: date-time
+        image:
+          type: string
+          format: uri
+          example: https://images.unsplash.com/photo-1514525253161-7a46d19cd819
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+          example: ["Nightlife", "Live Music"]
+        description:
+          type: string
+          nullable: true
+          example: Legendary live music venue.
+        whyRecommend:
+          type: string
+          nullable: true
+          example: Cairo's best live music venue.
+        priceLevel:
+          type: integer
+          enum: [1, 2, 3]
+          nullable: true
+          example: 2
+        phone:
+          type: string
+          nullable: true
+          example: "+20 2 345 6789"
+        website:
+          type: string
+          format: uri
+          nullable: true
+          example: https://cairojazzclub.com
+
+    CreatePlaceRequest:
+      type: object
+      required: [name, category, district, image]
+      description: >
+        Payload for creating a new place. Maps to PlaceFormData in the frontend.
+        The fields `id`, `rating`, `reviewCount`, `createdAt`, and `status`
+        are generated server-side.
+      properties:
+        name:
+          type: string
+          example: Cairo Jazz Club
+        category:
+          type: string
+          example: Nightlife
+        district:
+          type: string
+          example: Agouza
+        description:
+          type: string
+          example: Legendary live music venue featuring jazz and world music.
+        whyRecommend:
+          type: string
+          example: Cairo's best live music venue.
+        priceLevel:
+          type: integer
+          enum: [1, 2, 3]
+          example: 2
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["Nightlife", "Live Music", "Iconic"]
+        image:
+          type: string
+          format: uri
+          example: https://images.unsplash.com/photo-1514525253161-7a46d19cd819
+        phone:
+          type: string
+          example: "+20 2 345 6789"
+        website:
+          type: string
+          format: uri
+          example: https://cairojazzclub.com
+
+    UpdatePlaceStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [active, pending, flagged, removed]
+          example: flagged
+
+    # ── Admin Review (features/admin) ─────────────────────────────────────────
+    AdminReview:
+      type: object
+      required:
+        [
+          id,
+          userId,
+          userName,
+          placeId,
+          placeName,
+          rating,
+          comment,
+          status,
+          reportCount,
+          createdAt,
+        ]
+      properties:
+        id:
+          type: string
+          example: "rv-001"
+        userId:
+          type: integer
+          example: 42
+        userName:
+          type: string
+          example: Ahmed Hassan
+        userAvatar:
+          type: string
+          format: uri
+          nullable: true
+        placeId:
+          type: string
+          example: "pl-007"
+        placeName:
+          type: string
+          example: Cairo Jazz Club
+        rating:
+          type: number
+          format: float
+          minimum: 1
+          maximum: 5
+          example: 4.5
+        comment:
+          type: string
+          example: The live music was phenomenal!
+        status:
+          type: string
+          enum: [published, pending, flagged, removed]
+          example: published
+        reportCount:
+          type: integer
+          example: 3
+        createdAt:
+          type: string
+          format: date-time
+
+    UpdateReviewStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [published, pending, flagged, removed]
+          example: removed
+
+    # ── Admin Category (features/admin) ───────────────────────────────────────
+    AdminCategory:
+      type: object
+      required: [id, label, icon, count, color, status]
+      properties:
+        id:
+          type: string
+          example: nightlife
+        label:
+          type: string
+          example: Nightlife
+        icon:
+          type: string
+          description: >
+            Lucide React icon component name (e.g. "Moon", "UtensilsCrossed").
+            The frontend renders this string by looking up the icon in the
+            Lucide library. Must be a valid Lucide icon name.
+          example: Moon
+        count:
+          type: integer
+          description: Number of places in this category.
+          example: 56
+        color:
+          type: string
+          description: Tailwind CSS background class (e.g. "bg-purple-100").
+          example: bg-purple-100
+        status:
+          type: string
+          enum: [active, inactive]
+          example: active
+
+    CreateCategoryRequest:
+      type: object
+      required: [label, icon]
+      description: >
+        Payload to create a new category. The `id` is derived server-side
+        from the label (lower-cased, hyphenated). The `count` starts at 0.
+        The `iconName` must be a valid Lucide React icon name.
+      properties:
+        label:
+          type: string
+          example: Water Sports
+        icon:
+          type: string
+          description: Valid Lucide React icon name (e.g. "Waves", "Anchor").
+          example: Waves
+        color:
+          type: string
+          description: Tailwind CSS background class for the category chip.
+          example: bg-cyan-100
+
+    UpdateCategoryRequest:
+      type: object
+      description: Partial update — send only the fields you want to change.
+      properties:
+        label:
+          type: string
+          example: Water Activities
+        icon:
+          type: string
+          description: Valid Lucide React icon name.
+          example: Anchor
+        color:
+          type: string
+          example: bg-blue-100
+        status:
+          type: string
+          enum: [active, inactive]
+          example: inactive
+
+    # ── System Settings (features/admin) ─────────────────────────────────────
+    SystemSettings:
+      type: object
+      required:
+        [
+          siteName,
+          maintenanceMode,
+          maxUploadSize,
+          defaultLanguage,
+          enableNotifications,
+          enableReviews,
+          moderationRequired,
+          autoFlagThreshold,
+        ]
+      properties:
+        siteName:
+          type: string
+          example: C-Outing
+        maintenanceMode:
+          type: boolean
+          example: false
+        maxUploadSize:
+          type: integer
+          description: Maximum file upload size in megabytes.
+          example: 10
+        defaultLanguage:
+          type: string
+          example: en
+        enableNotifications:
+          type: boolean
+          example: true
+        enableReviews:
+          type: boolean
+          example: true
+        moderationRequired:
+          type: boolean
+          description: If true, new places/reviews require moderator approval.
+          example: false
+        autoFlagThreshold:
+          type: integer
+          description: Number of reports that triggers automatic flagging.
+          example: 5
+
+    # ── Moderator Stats (features/moderator) ──────────────────────────────────
+    ModeratorStats:
+      type: object
+      required:
+        [
+          pendingReviews,
+          flaggedPlaces,
+          openReports,
+          resolvedToday,
+          resolvedThisWeek,
+          totalModerated,
+        ]
+      properties:
+        pendingReviews:
+          type: integer
+          example: 23
+        flaggedPlaces:
+          type: integer
+          example: 7
+        openReports:
+          type: integer
+          example: 15
+        resolvedToday:
+          type: integer
+          example: 8
+        resolvedThisWeek:
+          type: integer
+          example: 41
+        totalModerated:
+          type: integer
+          example: 1203
+
+    # ── Reported Content (features/moderator) ─────────────────────────────────
+    ReportedContent:
+      type: object
+      required:
+        [
+          id,
+          type,
+          reportedItemId,
+          reportedItemName,
+          reporterName,
+          reporterId,
+          reason,
+          description,
+          status,
+          priority,
+          createdAt,
+        ]
+      properties:
+        id:
+          type: string
+          example: "rpt-001"
+        type:
+          type: string
+          enum: [review, place, user]
+          example: review
+        reportedItemId:
+          type: string
+          example: "rv-001"
+        reportedItemName:
+          type: string
+          example: "Review on Cairo Jazz Club"
+        reporterName:
+          type: string
+          example: Sara Khalil
+        reporterId:
+          type: integer
+          example: 17
+        reason:
+          type: string
+          example: Spam or misleading content
+        description:
+          type: string
+          example: This review contains false information and promotional links.
+        reviewContent:
+          type: string
+          nullable: true
+          description: Original text of the reported review (populated when type="review").
+          example: "Best place ever! Visit https://spam.com for discount!"
+        reviewAuthorName:
+          type: string
+          nullable: true
+          description: Username of the review author (populated when type="review").
+          example: Ahmed Hassan
+        status:
+          type: string
+          enum: [open, investigating, resolved, dismissed]
+          example: open
+        priority:
+          type: string
+          enum: [low, medium, high]
+          example: high
+        createdAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    UpdateReportStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [open, investigating, resolved, dismissed]
+          example: investigating
+
+    # ── Moderation Action ─────────────────────────────────────────────────────
+    ModerationAction:
+      type: object
+      required: [id, action, moderatorName, itemType, itemName, timestamp]
+      properties:
+        id:
+          type: string
+          example: "ma-001"
+        action:
+          type: string
+          enum: [approved, removed, warned, escalated]
+          example: removed
+        moderatorName:
+          type: string
+          example: Moderator Youssef
+        itemType:
+          type: string
+          example: review
+        itemName:
+          type: string
+          example: "Review on Cairo Jazz Club"
+        timestamp:
+          type: string
+          format: date-time
+        note:
+          type: string
+          nullable: true
+          example: Contained spam links.
+
+  # ── Reusable Responses ────────────────────────────────────────────────────
+  responses:
+    NoContent:
+      description: Operation successful. No response body.
+
+    BadRequest:
+      description: Invalid request payload or parameters.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            data: null
+            message: "Validation failed: email is required."
+            errorCode: VALIDATION_ERROR
+
+    Unauthorized:
+      description: Missing or invalid JWT token.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            data: null
+            message: "Unauthorized"
+            errorCode: UNAUTHORIZED
+
+    Forbidden:
+      description: Authenticated but insufficient permissions.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            data: null
+            message: "Access denied."
+            errorCode: FORBIDDEN
+
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            data: null
+            message: "Resource not found."
+            errorCode: RESOURCE_NOT_FOUND
+
+    InternalError:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            success: false
+            data: null
+            message: "An unexpected error occurred."
+            errorCode: INTERNAL_SERVER_ERROR
+
+# ──────────────────────────────────────────────────────────────────────────────
+# PATHS
+# ──────────────────────────────────────────────────────────────────────────────
+paths:
+  # ════════════════════════════════════════════════════════════════════════════
+  # TAG: Auth
+  # ════════════════════════════════════════════════════════════════════════════
+
+  /login:
+    post:
+      tags: [Auth]
+      summary: Authenticate a user
+      operationId: login
+      security: []
+      description: >
+        Accepts email + password credentials. Returns a JWT token and the
+        authenticated user object. Store the token in localStorage as
+        `authToken` — the axios interceptor will attach it automatically.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Invalid email or password.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                data: null
+                message: "Invalid credentials."
+                errorCode: INVALID_CREDENTIALS
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /register:
+    post:
+      tags: [Auth]
+      summary: Register a new user account
+      operationId: register
+      security: []
+      description: >
+        Creates a new user account and returns a JWT token immediately
+        (no separate verification step required by the frontend).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Account created successfully.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Email already registered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                data: null
+                message: "Email already exists."
+                errorCode: EMAIL_ALREADY_EXISTS
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /logout:
+    post:
+      tags: [Auth]
+      summary: Invalidate the current session
+      operationId: logout
+      description: >
+        Best-effort server-side session invalidation. The frontend
+        clears the local token regardless of the response code.
+      responses:
+        "200":
+          description: Logout acknowledged.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # TAG: Users
+  # ════════════════════════════════════════════════════════════════════════════
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get the authenticated user's own profile
+      operationId: getMe
+      description: Returns the public-facing profile snapshot for the currently authenticated user.
+      responses:
+        "200":
+          description: Profile returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PublicUserProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}:
+    get:
+      tags: [Users]
+      summary: Get public profile for any user
+      operationId: getUserById
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Numeric or string user ID.
+          example: "42"
+      responses:
+        "200":
+          description: Public profile returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PublicUserProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags: [Users]
+      summary: Update a user's profile
+      operationId: updateUserProfile
+      description: Used by the Profile feature to save edits (name, email, phone, location, bio).
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditProfileData"
+      responses:
+        "200":
+          description: Profile updated. Returns the full updated profile.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UserProfile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}/avatar:
+    post:
+      tags: [Users]
+      summary: Upload or replace the user's avatar
+      operationId: uploadAvatar
+      description: >
+        Accepts a `multipart/form-data` payload with the file under the
+        key `avatar`. Returns the CDN URL of the stored image.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [avatar]
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: The image file to upload (JPEG, PNG, WebP).
+      responses:
+        "200":
+          description: Avatar uploaded. Returns the new CDN URL.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AvatarUploadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}/preferences:
+    get:
+      tags: [Users]
+      summary: Get a user's saved preferences
+      operationId: getUserPreferences
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      responses:
+        "200":
+          description: Preferences returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UserPreferences"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Users, Onboarding]
+      summary: Submit initial onboarding preferences
+      operationId: submitOnboardingPreferences
+      description: >
+        Called once after the user completes the onboarding flow.
+        The `budgetRange` is sent as lowercase ("low", "medium", "high")
+        even though the UI stores it as capitalized ("Low", "Medium", "High").
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingSubmitRequest"
+      responses:
+        "201":
+          description: Preferences saved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags: [Users]
+      summary: Replace a user's preferences (full update)
+      operationId: replaceUserPreferences
+      description: Used by the Profile feature to fully replace preference settings.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePreferencesRequest"
+      responses:
+        "200":
+          description: Preferences updated.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UserPreferences"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      tags: [Users, Onboarding]
+      summary: Partially update a user's preferences
+      operationId: updateUserPreferences
+      description: >
+        Used by the Onboarding feature (`updatePreferences`) and any
+        partial update flow. Send only the fields you want to change.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePreferencesRequest"
+      responses:
+        "200":
+          description: Preferences patched.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}/notifications:
+    get:
+      tags: [Users]
+      summary: Get notification settings
+      operationId: getNotificationSettings
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      responses:
+        "200":
+          description: Settings returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/NotificationSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags: [Users]
+      summary: Update notification settings
+      operationId: updateNotificationSettings
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationSettings"
+      responses:
+        "200":
+          description: Settings updated.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/NotificationSettings"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}/privacy:
+    get:
+      tags: [Users]
+      summary: Get privacy settings
+      operationId: getPrivacySettings
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      responses:
+        "200":
+          description: Settings returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PrivacySettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags: [Users]
+      summary: Update privacy settings
+      operationId: updatePrivacySettings
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrivacySettings"
+      responses:
+        "200":
+          description: Settings updated.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PrivacySettings"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}/data/export:
+    get:
+      tags: [Users]
+      summary: Download a user's personal data export
+      operationId: downloadUserData
+      description: Returns a binary file (JSON or ZIP) containing all data associated with the user.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      responses:
+        "200":
+          description: Data export file.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}/account:
+    delete:
+      tags: [Users]
+      summary: Permanently delete a user account
+      operationId: deleteUserAccount
+      description: >
+        Hard-deletes the authenticated user's account including all
+        reviews, favorites, and preferences. This action is irreversible.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      responses:
+        "200":
+          description: Account deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}/reviews:
+    get:
+      tags: [Users]
+      summary: Get a user's review activity
+      operationId: getUserReviews
+      description: Returns the recent reviews posted by the given user (public endpoint for profile pages).
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "42"
+      responses:
+        "200":
+          description: Review activity list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/UserReviewActivity"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}/follow:
+    post:
+      tags: [Users]
+      summary: Toggle follow status for a user
+      operationId: toggleFollowUser
+      description: >
+        If the authenticated user does not follow `userId`, they will start
+        following. If they already follow, they will unfollow. The response
+        indicates the resulting state.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "17"
+      responses:
+        "200":
+          description: Follow status toggled.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/FollowToggleResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # TAG: Favorites
+  # ════════════════════════════════════════════════════════════════════════════
+
+  /users/{userId}/favorites:
+    get:
+      tags: [Favorites]
+      summary: Get all favorited places for a user
+      operationId: getFavorites
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      responses:
+        "200":
+          description: Favorites list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/FavoritePlace"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Favorites]
+      summary: Add a place to favorites
+      operationId: addFavorite
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddFavoriteRequest"
+      responses:
+        "201":
+          description: Place added to favorites.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ToggleFavoriteResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}/favorites/{placeId}:
+    delete:
+      tags: [Favorites]
+      summary: Remove a place from favorites
+      operationId: removeFavorite
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+      responses:
+        "200":
+          description: Place removed from favorites.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ToggleFavoriteResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/{userId}/favorites/{placeId}/check:
+    get:
+      tags: [Favorites]
+      summary: Check if a place is in the user's favorites
+      operationId: checkIsFavorite
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+      responses:
+        "200":
+          description: Favorite status.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/CheckFavoriteResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # TAG: Home
+  # ════════════════════════════════════════════════════════════════════════════
+
+  /recommendations/{userId}:
+    get:
+      tags: [Home]
+      summary: Get personalized place recommendations
+      operationId: getCuratedRecommendations
+      description: >
+        Returns a personalized ranked list of places computed from the
+        user's preference vector. This endpoint is **user-specific** —
+        there is no generic /recommendations endpoint.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      responses:
+        "200":
+          description: Curated recommendations.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Place"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /venues/trending:
+    get:
+      tags: [Home]
+      summary: Get trending places
+      operationId: getTrendingPlaces
+      description: Returns the globally trending venues — same for all users.
+      responses:
+        "200":
+          description: Trending places list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Place"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /venues/top-rated:
+    get:
+      tags: [Home]
+      summary: Get top-rated places
+      operationId: getTopRatedPlaces
+      description: Returns the globally top-rated venues — same for all users.
+      responses:
+        "200":
+          description: Top-rated places list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Place"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /venues/{placeId}/save:
+    post:
+      tags: [Home]
+      summary: Toggle the saved/bookmark status of a place from the Home screen
+      operationId: toggleVenueSave
+      description: >
+        Quick save/unsave action available directly on Home page cards.
+        Distinct from the Favorites feature — this lightweight toggle is
+        used for immediate UI feedback without navigating to Place Detail.
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isSaved]
+              properties:
+                isSaved:
+                  type: boolean
+                  description: The NEW desired saved state (true = save, false = unsave).
+                  example: true
+      responses:
+        "200":
+          description: Saved status toggled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # TAG: Places
+  # ════════════════════════════════════════════════════════════════════════════
+
+  /places/{placeId}:
+    get:
+      tags: [Places]
+      summary: Get full place details
+      operationId: getPlaceById
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+      responses:
+        "200":
+          description: Place detail returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PlaceDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /places/{placeId}/reviews:
+    get:
+      tags: [Places, Reviews]
+      summary: Get user-submitted reviews for a place
+      operationId: getPlaceReviews
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+      responses:
+        "200":
+          description: Reviews list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Review"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Places, Reviews]
+      summary: Submit a new review for a place
+      operationId: submitReview
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitReviewRequest"
+      responses:
+        "201":
+          description: Review created. Returns the saved review with server-generated fields.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Review"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /places/{placeId}/social-reviews:
+    get:
+      tags: [Places, Reviews]
+      summary: Get scraped social-media reviews for a place
+      operationId: getSocialMediaReviews
+      description: >
+        Returns reviews scraped from Instagram, Twitter, Google, etc.
+        These are read-only and aggregated by a background scraper service.
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+      responses:
+        "200":
+          description: Social reviews list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/SocialMediaReview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /places/{placeId}/review-summary:
+    get:
+      tags: [Places, Reviews]
+      summary: Get the NLP-generated review summary for a place
+      operationId: getReviewSummary
+      description: >
+        Returns an AI/NLP summary including overall sentiment, average rating,
+        highlights, and common topics extracted from all reviews.
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+      responses:
+        "200":
+          description: Review summary.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ReviewSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /places/{placeId}/similar:
+    get:
+      tags: [Places]
+      summary: Get places similar to a given place
+      operationId: getSimilarPlaces
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+      responses:
+        "200":
+          description: Similar places list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Place"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # TAG: Reviews  (Report flow — source: ReportedContent type + moderator feature)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  /places/{placeId}/reviews/{reviewId}/report:
+    post:
+      tags: [Reviews]
+      summary: Report an abusive or inappropriate review
+      operationId: reportReview
+      description: >
+        Allows any authenticated user to report a review. The report lands
+        in the Moderator queue (GET /moderator/reports) with
+        `type: "review"`, populated `reviewContent`, and `reviewAuthorName`.
+        Required fields are `reason` (short category) and `description`
+        (free-text explanation).
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the review being reported.
+          example: "rv-001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportReviewRequest"
+      responses:
+        "201":
+          description: Report submitted successfully. A new entry appears in the moderator queue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # TAG: Interactions
+  # ════════════════════════════════════════════════════════════════════════════
+
+  /interactions:
+    post:
+      tags: [Interactions]
+      summary: Record a user interaction event
+      operationId: recordInteraction
+      description: >
+        Records fine-grained interaction events (Click, ViewDetails, Rate,
+        Favorite, Share) for the recommendation engine. Called automatically
+        by the Place Detail hook on page load and on user actions. The
+        `sessionId` is a client-generated UUID per browser session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordInteractionRequest"
+      responses:
+        "200":
+          description: Interaction recorded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # TAG: Admin
+  # ════════════════════════════════════════════════════════════════════════════
+
+  /admin/stats:
+    get:
+      tags: [Admin]
+      summary: Get system-wide aggregate statistics
+      operationId: getAdminStats
+      description: Returns totals for users, places, reviews, reports, and activity metrics.
+      responses:
+        "200":
+          description: Statistics returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AdminStats"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/activity:
+    get:
+      tags: [Admin]
+      summary: Get recent system activity feed
+      operationId: getRecentActivity
+      description: Returns a chronological list of significant system events for the admin dashboard.
+      responses:
+        "200":
+          description: Activity feed.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/RecentActivity"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: Get all registered users
+      operationId: getAdminUsers
+      description: Returns the full list of all user accounts with their roles and statuses.
+      responses:
+        "200":
+          description: Users list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/users/{userId}/role:
+    patch:
+      tags: [Admin]
+      summary: Update a user's role
+      operationId: updateUserRole
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRoleRequest"
+      responses:
+        "200":
+          description: Role updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/users/{userId}/status:
+    patch:
+      tags: [Admin]
+      summary: Update a user's account status
+      operationId: updateUserStatus
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserStatusRequest"
+      responses:
+        "200":
+          description: Status updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/places:
+    get:
+      tags: [Admin]
+      summary: Get all places (admin view)
+      operationId: getAdminPlaces
+      description: Returns all places with their full admin metadata including status and review counts.
+      responses:
+        "200":
+          description: Places list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/AdminPlace"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Admin]
+      summary: Create a new place
+      operationId: createPlace
+      description: >
+        Creates a new place entry. Server generates `id`, sets `rating` to 0,
+        `reviewCount` to 0, `status` to "pending" (or "active" if
+        `moderationRequired` is false), and `createdAt` to now.
+        The `About` / description fields, `tags`, `district`, and `photoURLs`
+        (image field) are all part of this payload.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePlaceRequest"
+      responses:
+        "201":
+          description: Place created.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AdminPlace"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/places/{placeId}/status:
+    patch:
+      tags: [Admin]
+      summary: Update the moderation status of a place
+      operationId: updateAdminPlaceStatus
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePlaceStatusRequest"
+      responses:
+        "200":
+          description: Place status updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/places/{placeId}:
+    delete:
+      tags: [Admin]
+      summary: Permanently delete a place
+      operationId: deleteAdminPlace
+      description: Hard-deletes the place and all associated reviews.
+      parameters:
+        - name: placeId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pl-007"
+      responses:
+        "200":
+          description: Place deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/reviews:
+    get:
+      tags: [Admin]
+      summary: Get all reviews (admin view)
+      operationId: getAdminReviews
+      description: Returns all reviews across all places including flagged and removed ones.
+      responses:
+        "200":
+          description: Reviews list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/AdminReview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/reviews/{reviewId}/status:
+    patch:
+      tags: [Admin]
+      summary: Update the moderation status of a review
+      operationId: updateAdminReviewStatus
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "rv-001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateReviewStatusRequest"
+      responses:
+        "200":
+          description: Review status updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/reviews/{reviewId}:
+    delete:
+      tags: [Admin]
+      summary: Permanently delete a review
+      operationId: deleteAdminReview
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "rv-001"
+      responses:
+        "200":
+          description: Review deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/categories:
+    get:
+      tags: [Admin]
+      summary: Get all venue categories
+      operationId: getAdminCategories
+      responses:
+        "200":
+          description: Categories list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/AdminCategory"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Admin]
+      summary: Create a new category
+      operationId: createCategory
+      description: >
+        Creates a new place category. The `icon` field must be a valid
+        **Lucide React** icon component name (e.g. "Waves", "Anchor",
+        "UtensilsCrossed"). The frontend renders the icon by looking up
+        this string in the Lucide library. Refer to https://lucide.dev/icons
+        for the full list of valid names. The `id` is derived server-side
+        from the label (lower-cased, spaces replaced with hyphens).
+        The `count` starts at 0.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryRequest"
+      responses:
+        "201":
+          description: Category created.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AdminCategory"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: A category with this label already exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                data: null
+                message: Category already exists.
+                errorCode: CATEGORY_ALREADY_EXISTS
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/categories/{categoryId}:
+    patch:
+      tags: [Admin]
+      summary: Partially update a category
+      operationId: updateAdminCategory
+      description: >
+        Send only the fields you want to change (label, icon, color, status).
+        If updating `icon`, it must be a valid Lucide React icon name.
+        Used for toggling category status (active/inactive), renaming, and
+        changing the displayed icon.
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: nightlife
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoryRequest"
+      responses:
+        "200":
+          description: Category updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /admin/settings:
+    get:
+      tags: [Admin]
+      summary: Get system-wide configuration
+      operationId: getSystemSettings
+      responses:
+        "200":
+          description: System settings returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SystemSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      tags: [Admin]
+      summary: Update system-wide configuration
+      operationId: updateSystemSettings
+      description: Partial update — send only the settings you want to change.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SystemSettings"
+      responses:
+        "200":
+          description: Settings updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # TAG: Moderator
+  # ════════════════════════════════════════════════════════════════════════════
+
+  /moderator/stats:
+    get:
+      tags: [Moderator]
+      summary: Get moderation queue statistics
+      operationId: getModeratorStats
+      description: Returns counts of pending reviews, flagged places, open reports, and resolution metrics.
+      responses:
+        "200":
+          description: Moderation stats returned.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ModeratorStats"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /moderator/reports:
+    get:
+      tags: [Moderator]
+      summary: Get all reported content items
+      operationId: getReportedContent
+      description: >
+        Returns all open, investigating, resolved, and dismissed reports.
+        Each item includes the `type` (review, place, or user), the
+        `reason` and `description` fields submitted by the reporter,
+        and — for review reports — the original `reviewContent` and
+        `reviewAuthorName`.
+      responses:
+        "200":
+          description: Reported content list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/ReportedContent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /moderator/reports/{reportId}/status:
+    patch:
+      tags: [Moderator]
+      summary: Update the status of a reported content item
+      operationId: updateReportStatus
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "rpt-001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateReportStatusRequest"
+      responses:
+        "200":
+          description: Report status updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /moderator/actions:
+    get:
+      tags: [Moderator]
+      summary: Get recent moderation actions
+      operationId: getRecentModerationActions
+      description: Returns a chronological list of actions taken by moderators (approved, removed, warned, escalated).
+      responses:
+        "200":
+          description: Moderation actions list.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/ModerationAction"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /moderator/reports/{reportId}/delete-review:
+    post:
+      tags: [Moderator]
+      summary: Delete the review associated with a report
+      operationId: moderatorDeleteReview
+      description: >
+        Deletes the flagged review referenced by the report and automatically
+        resolves the report with `action: "removed"`. This is a moderator-level
+        action (does not require admin privileges).
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "rpt-001"
+      responses:
+        "200":
+          description: Review deleted and report resolved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /moderator/reports/{reportId}/warn:
+    post:
+      tags: [Moderator]
+      summary: Send a warning to the user associated with a report
+      operationId: moderatorWarnUser
+      description: >
+        Sends a system warning notification to the user who authored the
+        reported content and resolves the report with `action: "warned"`.
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "rpt-001"
+      responses:
+        "200":
+          description: Warning sent and report resolved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /moderator/reports/{reportId}/ban:
+    post:
+      tags: [Moderator]
+      summary: Escalate the user for ban review and resolve the report
+      operationId: moderatorBanUser
+      description: >
+        Escalates the report to admin-level for user ban consideration and
+        resolves the report with `action: "escalated"`. The actual account
+        suspension is processed by an admin via PATCH /admin/users/{userId}/status.
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "rpt-001"
+      responses:
+        "200":
+          description: Report escalated for ban review.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# TAG DEFINITIONS (display order in Swagger UI)
+# ──────────────────────────────────────────────────────────────────────────────
+tags:
+  - name: Auth
+    description: >
+      Authentication endpoints. POST /login and POST /register are
+      public (no Bearer token required). POST /logout requires a token.
+  - name: Users
+    description: >
+      User profile, preferences, privacy, notifications, and account management.
+      Both the Profile feature (numeric userId) and the Users feature (string
+      userId for public profiles) target these endpoints.
+  - name: Onboarding
+    description: >
+      First-time preference submission after account creation.
+      Re-uses /users/{userId}/preferences — tagged separately for clarity.
+  - name: Favorites
+    description: Add, remove, list, and check saved/favorited places per user.
+  - name: Home
+    description: >
+      Home page data — personalized recommendations, trending, and top-rated lists.
+      Also includes the quick save/unsave toggle for venue cards.
+  - name: Places
+    description: Place detail page data, including similar places.
+  - name: Reviews
+    description: >
+      User-submitted reviews (CRUD), social-media scraped reviews,
+      NLP review summaries, and the Review Report flow.
+  - name: Interactions
+    description: >
+      Fine-grained user interaction event tracking for the AI recommendation engine.
+  - name: Admin
+    description: >
+      Admin-only endpoints. Requires role = "admin".
+      Covers user management, place CRUD, review moderation,
+      category management (including iconName/Lucide icon), and system settings.
+  - name: Moderator
+    description: >
+      Moderator-only endpoints (role = "moderator" or "admin").
+      Covers the report queue, moderation actions, and place moderation.
+      Delegates place CRUD to the Admin endpoints.
