@@ -3,6 +3,9 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 
+// Re-export RoleBasedRoute for convenient importing
+export { RoleBasedRoute } from "./RoleBasedRoute";
+
 /**
  * Protected Route Component
  * Wraps routes that require authentication
@@ -44,6 +47,13 @@ export function PublicRoute({ children }: PublicRouteProps) {
   }
 
   if (user) {
+    // Redirect based on role
+    if (user.role === "admin") {
+      return <Navigate to="/admin" replace />;
+    }
+    if (user.role === "moderator") {
+      return <Navigate to="/moderator" replace />;
+    }
     return (
       <Navigate
         to={user.hasCompletedOnboarding ? "/" : "/onboarding"}

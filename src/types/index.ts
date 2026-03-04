@@ -3,6 +3,10 @@
  */
 
 // ============ User Types ============
+
+/** Possible user roles in the system */
+export type UserRole = "user" | "moderator" | "admin";
+
 export interface User {
   userId: number;
   name: string;
@@ -12,6 +16,7 @@ export interface User {
   lastUpdated: Date;
   totalInteractions: number;
   hasCompletedOnboarding: boolean;
+  role: UserRole;
 }
 
 // ============ API Response Wrapper ============

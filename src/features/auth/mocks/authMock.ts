@@ -26,6 +26,31 @@ const MOCK_USER: User = {
   lastUpdated: new Date(),
   totalInteractions: 12,
   hasCompletedOnboarding: true,
+  role: "user",
+};
+
+const MOCK_ADMIN: User = {
+  userId: 99,
+  name: "Admin User",
+  email: "admin@example.com",
+  age: 35,
+  preferences: [],
+  lastUpdated: new Date(),
+  totalInteractions: 0,
+  hasCompletedOnboarding: true,
+  role: "admin",
+};
+
+const MOCK_MODERATOR: User = {
+  userId: 50,
+  name: "Moderator User",
+  email: "mod@example.com",
+  age: 30,
+  preferences: [],
+  lastUpdated: new Date(),
+  totalInteractions: 0,
+  hasCompletedOnboarding: true,
+  role: "moderator",
 };
 
 const MOCK_TOKEN =
@@ -43,6 +68,11 @@ export const authMock = {
   /**
    * Mock POST /users/login
    * Use password "wrongpass" to simulate invalid-credentials error.
+   *
+   * Test accounts (any password except "wrongpass"):
+   *   admin@example.com  → Admin role
+   *   mod@example.com    → Moderator role
+   *   (anything else)    → Regular user role
    */
   async login(payload: LoginRequest): Promise<AuthApiResponse> {
     await delay(900);
@@ -51,10 +81,20 @@ export const authMock = {
       throw new AuthError("INVALID_CREDENTIALS");
     }
 
+    // Pick the right mock user based on email
+    let mockUser: User;
+    if (payload.email === "admin@example.com") {
+      mockUser = { ...MOCK_ADMIN, email: payload.email };
+    } else if (payload.email === "mod@example.com") {
+      mockUser = { ...MOCK_MODERATOR, email: payload.email };
+    } else {
+      mockUser = { ...MOCK_USER, email: payload.email };
+    }
+
     return {
-      userId: MOCK_USER.userId,
+      userId: mockUser.userId,
       token: MOCK_TOKEN,
-      user: { ...MOCK_USER, email: payload.email },
+      user: mockUser,
     };
   },
 
@@ -84,6 +124,7 @@ export const authMock = {
       totalInteractions: 0,
       lastUpdated: new Date(),
       hasCompletedOnboarding: false,
+      role: "user",
     };
 
     return {
