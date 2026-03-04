@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 
 import type { DashboardNavItem } from "@/components/layout/DashboardLayout";
+import RoleBasedLayout from "./components/layout/RoleBasedLayout";
 
 // ── Nav Configs ──────────────────────────────────────────────
 
@@ -95,126 +96,41 @@ function App() {
         />
 
         {/* App Routes with AppLayout - all require authentication */}
-        <Route element={<AppLayout />}>
-          {/* Onboarding - special case, shown only on first login */}
-          <Route
-            path="/onboarding"
-            element={
-              <ProtectedRoute>
-                <OnboardingPage />
-              </ProtectedRoute>
-            }
-          />
+        {/* ── User Routes (ONLY user role) ───────────────────────── */}
 
-          {/* Home Page */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <HomePage />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Protected Routes */}
-          <Route
-            path="/recommendations"
-            element={
-              <ProtectedRoute>
-                <div>
-                  <h1>Recommendations Page</h1>
-                  <p>To be implemented</p>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/venue/:id"
-            element={
-              <ProtectedRoute>
-                <PlaceDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/map"
-            element={
-              <ProtectedRoute>
-                <div>
-                  <h1>Map Page</h1>
-                  <p>To be implemented</p>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/search"
-            element={
-              <ProtectedRoute>
-                <div>
-                  <h1>Search Page</h1>
-                  <p>To be implemented</p>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile/edit"
-            element={
-              <ProtectedRoute>
-                <EditProfilePage />
-              </ProtectedRoute>
-            }
-          />
+        <Route
+          element={
+            <RoleBasedRoute allowedRoles={["user"]} redirectTo="/">
+              <AppLayout />
+            </RoleBasedRoute>
+          }
+        >
+          <Route path="/" element={<HomePage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/edit" element={<EditProfilePage />} />
           <Route
             path="/profile/notifications"
-            element={
-              <ProtectedRoute>
-                <NotificationsPage />
-              </ProtectedRoute>
-            }
+            element={<NotificationsPage />}
           />
-          <Route
-            path="/profile/privacy"
-            element={
-              <ProtectedRoute>
-                <PrivacyPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile/help"
-            element={
-              <ProtectedRoute>
-                <HelpSupportPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/favorites"
-            element={
-              <ProtectedRoute>
-                <FavoritesPage />
-              </ProtectedRoute>
-            }
-          />
-          {/* Public user profile (read-only) */}
-          <Route
-            path="/users/:id"
-            element={
-              <ProtectedRoute>
-                <PublicProfilePage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/profile/privacy" element={<PrivacyPage />} />
+          <Route path="/profile/help" element={<HelpSupportPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+        </Route>
+
+        {/* ── Protected Routes (ANY authenticated user) ──────────────────────────── */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <RoleBasedLayout
+                adminNavItems={adminNavItems}
+                moderatorNavItems={moderatorNavItems}
+              />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/venue/:id" element={<PlaceDetailPage />} />
+          <Route path="/users/:id" element={<PublicProfilePage />} />
         </Route>
 
         {/* ── Admin Routes ──────────────────────────────── */}

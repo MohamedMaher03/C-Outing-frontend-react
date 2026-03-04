@@ -15,7 +15,7 @@ import { LogOut, Menu, X, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import logo from "@/assets/images/logo3.png";
 
 export interface DashboardNavItem {
@@ -27,6 +27,7 @@ export interface DashboardNavItem {
 interface DashboardLayoutProps {
   navItems: DashboardNavItem[];
   title: string;
+  children?: ReactNode;
 }
 
 const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
