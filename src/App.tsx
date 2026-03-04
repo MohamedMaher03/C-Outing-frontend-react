@@ -100,7 +100,7 @@ function App() {
 
         <Route
           element={
-            <RoleBasedRoute allowedRoles={["user"]} redirectTo="/">
+            <RoleBasedRoute allowedRoles={["user"]} redirectTo="/not-found">
               <AppLayout />
             </RoleBasedRoute>
           }
@@ -131,12 +131,13 @@ function App() {
         >
           <Route path="/venue/:id" element={<PlaceDetailPage />} />
           <Route path="/users/:id" element={<PublicProfilePage />} />
+          <Route path="/not-found" element={<NotFound />} />
         </Route>
 
         {/* ── Admin Routes ──────────────────────────────── */}
         <Route
           element={
-            <RoleBasedRoute allowedRoles={["admin"]} redirectTo="/">
+            <RoleBasedRoute allowedRoles={["admin"]} redirectTo="/not-found">
               <DashboardLayout navItems={adminNavItems} title="Admin Panel" />
             </RoleBasedRoute>
           }
@@ -152,7 +153,10 @@ function App() {
         {/* ── Moderator Routes ──────────────────────────── */}
         <Route
           element={
-            <RoleBasedRoute allowedRoles={["moderator"]} redirectTo="/">
+            <RoleBasedRoute
+              allowedRoles={["moderator"]}
+              redirectTo="/not-found"
+            >
               <DashboardLayout navItems={moderatorNavItems} title="Moderator" />
             </RoleBasedRoute>
           }
