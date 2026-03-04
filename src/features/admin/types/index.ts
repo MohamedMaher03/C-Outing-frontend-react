@@ -86,3 +86,106 @@ export interface RecentActivity {
   userId?: number;
   userName?: string;
 }
+
+// ── Shared UI Types ───────────────────────────────────────────
+
+export interface AdminToast {
+  id: string;
+  message: string;
+  variant: "success" | "error" | "info" | "warning";
+}
+
+export interface PlaceFormData {
+  name: string;
+  category: string;
+  district: string;
+  description: string;
+  whyRecommend: string;
+  priceLevel: 1 | 2 | 3;
+  tags: string[];
+  image: string;
+  phone: string;
+  website: string;
+}
+
+export interface PlaceFormErrors {
+  name?: string;
+  category?: string;
+  district?: string;
+  description?: string;
+  image?: string;
+}
+
+export interface AdminUser {
+  userId: number;
+  name: string;
+  email: string;
+  role: "user" | "moderator" | "admin";
+  status: "active" | "banned" | "suspended";
+  joinedDate: Date;
+  lastActive: Date;
+  reviewCount: number;
+  avatar?: string;
+}
+
+export interface AdminPlace {
+  id: string;
+  name: string;
+  category: string;
+  district: string;
+  rating: number;
+  reviewCount: number;
+  status: "active" | "pending" | "flagged" | "removed";
+  createdAt: Date;
+  image: string;
+  // Extended fields for the Add/Edit form
+  tags?: string[];
+  description?: string;
+  whyRecommend?: string;
+  priceLevel?: 1 | 2 | 3;
+  phone?: string;
+  website?: string;
+}
+
+export interface AdminReview {
+  id: string;
+  userId: number;
+  userName: string;
+  userAvatar?: string;
+  placeId: string;
+  placeName: string;
+  rating: number;
+  comment: string;
+  status: "published" | "pending" | "flagged" | "removed";
+  reportCount: number;
+  createdAt: Date;
+}
+
+export interface AdminCategory {
+  id: string;
+  label: string;
+  icon: string;
+  count: number;
+  color: string;
+  status: "active" | "inactive";
+}
+
+export interface SystemSettings {
+  siteName: string;
+  maintenanceMode: boolean;
+  maxUploadSize: number;
+  defaultLanguage: string;
+  enableNotifications: boolean;
+  enableReviews: boolean;
+  moderationRequired: boolean;
+  autoFlagThreshold: number;
+}
+
+export interface RecentActivity {
+  id: string;
+  type: "user_joined" | "review_posted" | "place_added" | "report_filed";
+  description: string;
+  timestamp: Date;
+  userId?: number;
+  userName?: string;
+}

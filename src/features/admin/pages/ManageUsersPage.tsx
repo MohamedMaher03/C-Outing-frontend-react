@@ -5,7 +5,6 @@
  * Follows the project's card-based design with secondary accent.
  */
 
-import { useState, useEffect } from "react";
 import {
   Search,
   Shield,
@@ -21,8 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { adminMock } from "@/features/admin/mocks/adminMock";
-import type { AdminUser } from "@/features/admin/types";
+import { useManageUsers } from "@/features/admin/hooks/useManageUsers";
 
 const roleBadge: Record<string, { label: string; class: string }> = {
   admin: { label: "Admin", class: "bg-red-100 text-red-700 border-red-200" },
@@ -47,53 +45,19 @@ const statusBadge: Record<
 };
 
 const ManageUsersPage = () => {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [actionMenu, setActionMenu] = useState<number | null>(null);
-
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const data = await adminMock.getUsers();
-        setUsers(data);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadUsers();
-  }, []);
-
-  const handleRoleChange = async (
-    userId: number,
-    role: "user" | "moderator" | "admin",
-  ) => {
-    await adminMock.updateUserRole(userId, role);
-    setUsers((prev) =>
-      prev.map((u) => (u.userId === userId ? { ...u, role } : u)),
-    );
-    setActionMenu(null);
-  };
-
-  const handleStatusChange = async (
-    userId: number,
-    status: "active" | "banned" | "suspended",
-  ) => {
-    await adminMock.updateUserStatus(userId, status);
-    setUsers((prev) =>
-      prev.map((u) => (u.userId === userId ? { ...u, status } : u)),
-    );
-    setActionMenu(null);
-  };
-
-  const filteredUsers = users.filter((u) => {
-    const matchesSearch =
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
-    const matchesRole = roleFilter === "all" || u.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
+  const {
+    users,
+    loading,
+    search,
+    roleFilter,
+    actionMenu,
+    filteredUsers,
+    setSearch,
+    setRoleFilter,
+    setActionMenu,
+    handleRoleChange,
+    handleStatusChange,
+  } = useManageUsers();
 
   if (loading) {
     return <LoadingSpinner size="md" text="Loading users..." fullScreen />;

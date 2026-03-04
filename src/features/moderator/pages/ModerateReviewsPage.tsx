@@ -5,7 +5,6 @@
  * Moderators cannot delete reviews (only admins can).
  */
 
-import { useState, useEffect } from "react";
 import {
   Search,
   MessageSquare,
@@ -22,8 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { adminMock } from "@/features/admin/mocks/adminMock";
-import type { AdminReview } from "@/features/admin/types";
+import { useModerateReviews } from "@/features/moderator/hooks/useModerateReviews";
 
 const statusConfig: Record<
   string,
@@ -52,58 +50,18 @@ const statusConfig: Record<
 };
 
 const ModerateReviewsPage = () => {
-  const [reviews, setReviews] = useState<AdminReview[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("pending");
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await adminMock.getReviews();
-        setReviews(data);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  const handleApprove = async (reviewId: string) => {
-    await adminMock.updateReviewStatus(reviewId, "published");
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === reviewId ? { ...r, status: "published" as const } : r,
-      ),
-    );
-  };
-
-  const handleReject = async (reviewId: string) => {
-    await adminMock.updateReviewStatus(reviewId, "removed");
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === reviewId ? { ...r, status: "removed" as const } : r,
-      ),
-    );
-  };
-
-  const handleFlag = async (reviewId: string) => {
-    await adminMock.updateReviewStatus(reviewId, "flagged");
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === reviewId ? { ...r, status: "flagged" as const } : r,
-      ),
-    );
-  };
-
-  const filtered = reviews.filter((r) => {
-    const matchesSearch =
-      r.userName.toLowerCase().includes(search.toLowerCase()) ||
-      r.placeName.toLowerCase().includes(search.toLowerCase()) ||
-      r.comment.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const {
+    reviews,
+    loading,
+    search,
+    statusFilter,
+    filteredReviews: filtered,
+    setSearch,
+    setStatusFilter,
+    handleApprove,
+    handleReject,
+    handleFlag,
+  } = useModerateReviews();
 
   if (loading) {
     return (

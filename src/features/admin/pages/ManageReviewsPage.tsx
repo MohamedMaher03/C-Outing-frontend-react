@@ -4,7 +4,6 @@
  * Full control over reviews: list, filter by status, approve/reject/remove.
  */
 
-import { useState, useEffect } from "react";
 import {
   Search,
   MessageSquare,
@@ -32,8 +31,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { adminMock } from "@/features/admin/mocks/adminMock";
-import type { AdminReview } from "@/features/admin/types";
+import { useManageReviews } from "@/features/admin/hooks/useManageReviews";
 
 const statusConfig: Record<
   string,
@@ -62,46 +60,17 @@ const statusConfig: Record<
 };
 
 const ManageReviewsPage = () => {
-  const [reviews, setReviews] = useState<AdminReview[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await adminMock.getReviews();
-        setReviews(data);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  const handleStatusChange = async (
-    reviewId: string,
-    status: AdminReview["status"],
-  ) => {
-    await adminMock.updateReviewStatus(reviewId, status);
-    setReviews((prev) =>
-      prev.map((r) => (r.id === reviewId ? { ...r, status } : r)),
-    );
-  };
-
-  const handleDelete = async (reviewId: string) => {
-    await adminMock.deleteReview(reviewId);
-    setReviews((prev) => prev.filter((r) => r.id !== reviewId));
-  };
-
-  const filtered = reviews.filter((r) => {
-    const matchesSearch =
-      r.userName.toLowerCase().includes(search.toLowerCase()) ||
-      r.placeName.toLowerCase().includes(search.toLowerCase()) ||
-      r.comment.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const {
+    reviews,
+    loading,
+    search,
+    statusFilter,
+    filteredReviews: filtered,
+    setSearch,
+    setStatusFilter,
+    handleStatusChange,
+    handleDelete,
+  } = useManageReviews();
 
   if (loading) {
     return <LoadingSpinner size="md" text="Loading reviews..." fullScreen />;

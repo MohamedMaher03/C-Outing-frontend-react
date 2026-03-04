@@ -4,7 +4,6 @@
  * CRUD operations on venue categories. Includes icon picker using Lucide icons.
  */
 
-import { useState, useEffect } from "react";
 import {
   Layers,
   Edit2,
@@ -40,8 +39,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { adminMock } from "@/features/admin/mocks/adminMock";
-import type { AdminCategory } from "@/features/admin/types";
+import { useManageCategories } from "@/features/admin/hooks/useManageCategories";
 
 // ── Icon Picker Data ───────────────────────────────────────────
 
@@ -87,72 +85,26 @@ const CategoryIcon = ({
 // ── Component ─────────────────────────────────────────────────
 
 const ManageCategoriesPage = () => {
-  const [categories, setCategories] = useState<AdminCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editLabel, setEditLabel] = useState("");
-  const [editIcon, setEditIcon] = useState<string>("Compass");
-  const [showAdd, setShowAdd] = useState(false);
-  const [newLabel, setNewLabel] = useState("");
-  const [newIcon, setNewIcon] = useState<string>("Compass");
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await adminMock.getCategories();
-        setCategories(data);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  const handleToggleStatus = async (catId: string) => {
-    const cat = categories.find((c) => c.id === catId);
-    if (!cat) return;
-    const newStatus = cat.status === "active" ? "inactive" : "active";
-    await adminMock.updateCategory(catId, { status: newStatus });
-    setCategories((prev) =>
-      prev.map((c) => (c.id === catId ? { ...c, status: newStatus } : c)),
-    );
-  };
-
-  const handleStartEdit = (cat: AdminCategory) => {
-    setEditingId(cat.id);
-    setEditLabel(cat.label);
-    setEditIcon(cat.icon ?? "Compass");
-  };
-
-  const handleSaveEdit = async (catId: string) => {
-    if (!editLabel.trim()) return;
-    await adminMock.updateCategory(catId, {
-      label: editLabel.trim(),
-      icon: editIcon,
-    });
-    setCategories((prev) =>
-      prev.map((c) =>
-        c.id === catId ? { ...c, label: editLabel.trim(), icon: editIcon } : c,
-      ),
-    );
-    setEditingId(null);
-  };
-
-  const handleAddCategory = () => {
-    if (!newLabel.trim()) return;
-    const newCat: AdminCategory = {
-      id: newLabel.toLowerCase().replace(/\s+/g, "-"),
-      label: newLabel.trim(),
-      icon: newIcon,
-      count: 0,
-      color: "bg-gray-100",
-      status: "active",
-    };
-    setCategories((prev) => [...prev, newCat]);
-    setNewLabel("");
-    setNewIcon("Compass");
-    setShowAdd(false);
-  };
+  const {
+    categories,
+    loading,
+    editingId,
+    editLabel,
+    editIcon,
+    showAdd,
+    newLabel,
+    newIcon,
+    setEditLabel,
+    setEditIcon,
+    setShowAdd,
+    setNewLabel,
+    setNewIcon,
+    handleToggleStatus,
+    handleStartEdit,
+    handleSaveEdit,
+    handleCancelEdit,
+    handleAddCategory,
+  } = useManageCategories();
 
   if (loading) {
     return <LoadingSpinner size="md" text="Loading categories..." fullScreen />;
@@ -279,7 +231,7 @@ const ManageCategoriesPage = () => {
                       variant="ghost"
                       size="sm"
                       className="h-8"
-                      onClick={() => setEditingId(null)}
+                      onClick={() => handleCancelEdit()}
                     >
                       <X className="h-3 w-3" />
                     </Button>

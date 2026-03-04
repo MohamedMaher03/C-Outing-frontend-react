@@ -4,7 +4,6 @@
  * Overview of moderation queue, stats, and recent actions.
  */
 
-import { useState, useEffect } from "react";
 import {
   MessageSquare,
   MapPin,
@@ -17,32 +16,10 @@ import {
 } from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { moderatorMock } from "@/features/moderator/mocks/moderatorMock";
-import type {
-  ModeratorStats,
-  ModerationAction,
-} from "@/features/moderator/types";
+import { useModeratorDashboard } from "@/features/moderator/hooks/useModeratorDashboard";
 
 const ModeratorDashboardPage = () => {
-  const [stats, setStats] = useState<ModeratorStats | null>(null);
-  const [actions, setActions] = useState<ModerationAction[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [s, a] = await Promise.all([
-          moderatorMock.getStats(),
-          moderatorMock.getRecentActions(),
-        ]);
-        setStats(s);
-        setActions(a);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const { stats, actions, loading } = useModeratorDashboard();
 
   if (loading || !stats) {
     return <LoadingSpinner size="md" text="Loading dashboard..." fullScreen />;

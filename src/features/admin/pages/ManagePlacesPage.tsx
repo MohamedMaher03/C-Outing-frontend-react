@@ -5,7 +5,7 @@
  * Enhanced: Add Place form with validated fields, dropdowns, photo preview & toast feedback.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   Search,
   MapPin,
@@ -41,8 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import { adminMock } from "@/features/admin/mocks/adminMock";
-import type { AdminPlace, AdminCategory } from "@/features/admin/types";
+import { useManagePlaces } from "@/features/admin/hooks/useManagePlaces";
 import { DISTRICTS } from "@/mocks/mockData";
 
 // ── Constants ─────────────────────────────────────────────────
@@ -76,35 +75,6 @@ const COMMON_TAGS = [
   "Instagrammable",
 ];
 
-// ── Types ─────────────────────────────────────────────────────
-
-interface PlaceFormData {
-  name: string;
-  category: string;
-  district: string;
-  description: string;
-  whyRecommend: string;
-  priceLevel: 1 | 2 | 3;
-  tags: string[];
-  image: string;
-  phone: string;
-  website: string;
-}
-
-interface FormErrors {
-  name?: string;
-  category?: string;
-  district?: string;
-  description?: string;
-  image?: string;
-}
-
-interface Toast {
-  id: string;
-  message: string;
-  variant: "success" | "error" | "info";
-}
-
 // ── Config ────────────────────────────────────────────────────
 
 const statusConfig: Record<
@@ -133,72 +103,50 @@ const statusConfig: Record<
   },
 };
 
-const EMPTY_FORM: PlaceFormData = {
+// ── Component ─────────────────────────────────────────────────
+
+const EMPTY_FORM = {
   name: "",
   category: "",
   district: "",
   description: "",
   whyRecommend: "",
-  priceLevel: 2,
-  tags: [],
+  priceLevel: 2 as 1 | 2 | 3,
+  tags: [] as string[],
   image: "",
   phone: "",
   website: "",
 };
 
-// ── Component ─────────────────────────────────────────────────
-
 const ManagePlacesPage = () => {
   const navigate = useNavigate();
   const formRef = useRef<HTMLDivElement>(null);
 
-  // List state
-  const [places, setPlaces] = useState<AdminPlace[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const {
+    places,
+    categories,
+    loading,
+    search,
+    statusFilter,
+    filteredPlaces: filtered,
+    showAddForm,
+    form,
+    formErrors,
+    submittingForm,
+    showTagPicker,
+    toasts,
+    setSearch,
+    setStatusFilter,
+    setShowAddForm,
+    setForm,
+    setShowTagPicker,
+    handleStatusChange,
+    handleDelete,
+    handleAddPlace,
+    toggleTag,
+  } = useManagePlaces();
 
-  // Form state
-  const [categories, setCategories] = useState<AdminCategory[]>([]);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [form, setForm] = useState<PlaceFormData>(EMPTY_FORM);
-  const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [submittingForm, setSubmittingForm] = useState(false);
-  const [showTagPicker, setShowTagPicker] = useState(false);
-
-  // Toasts
-  const [toasts, setToasts] = useState<Toast[]>([]);
-
-  const showToast = (
-    message: string,
-    variant: Toast["variant"] = "success",
-  ) => {
-    const id = Date.now().toString();
-    setToasts((prev) => [...prev, { id, message, variant }]);
-    setTimeout(
-      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-      3500,
-    );
-  };
-
-  // Load data
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [placesData, catsData] = await Promise.all([
-          adminMock.getPlaces(),
-          adminMock.getCategories(),
-        ]);
-        setPlaces(placesData);
-        setCategories(catsData);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  // Scroll to form when opened
+  // Scroll to form when opened (DOM-specific side effect stays in the component)
   useEffect(() => {
     if (showAddForm) {
       setTimeout(
@@ -211,86 +159,6 @@ const ManagePlacesPage = () => {
       );
     }
   }, [showAddForm]);
-
-  // Handlers
-  const handleStatusChange = async (
-    placeId: string,
-    status: AdminPlace["status"],
-  ) => {
-    await adminMock.updatePlaceStatus(placeId, status);
-    setPlaces((prev) =>
-      prev.map((p) => (p.id === placeId ? { ...p, status } : p)),
-    );
-    showToast(`Place status updated to ${status}.`);
-  };
-
-  const handleDelete = async (placeId: string, placeName: string) => {
-    await adminMock.deletePlace(placeId);
-    setPlaces((prev) => prev.filter((p) => p.id !== placeId));
-    showToast(`"${placeName}" has been permanently deleted.`, "error");
-  };
-
-  const validateForm = (): boolean => {
-    const errors: FormErrors = {};
-    if (!form.name.trim()) errors.name = "Place name is required.";
-    if (!form.category) errors.category = "Please select a category.";
-    if (!form.district) errors.district = "Please select a district.";
-    if (!form.description.trim()) {
-      errors.description = "Description is required.";
-    } else if (form.description.trim().length < 20) {
-      errors.description = "Description must be at least 20 characters.";
-    }
-    if (!form.image.trim()) errors.image = "Image URL is required.";
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleAddPlace = async () => {
-    if (!validateForm()) return;
-    setSubmittingForm(true);
-    try {
-      const newPlace = await adminMock.addPlace({
-        name: form.name.trim(),
-        category: form.category,
-        district: form.district,
-        image: form.image.trim(),
-        tags: form.tags,
-        description: form.description.trim(),
-        whyRecommend: form.whyRecommend.trim(),
-        priceLevel: form.priceLevel,
-        phone: form.phone.trim(),
-        website: form.website.trim(),
-      });
-      setPlaces((prev) => [newPlace, ...prev]);
-      setForm(EMPTY_FORM);
-      setFormErrors({});
-      setShowAddForm(false);
-      showToast(
-        `"${newPlace.name}" added successfully! Status: pending review.`,
-      );
-    } catch {
-      showToast("Failed to add place. Please try again.", "error");
-    } finally {
-      setSubmittingForm(false);
-    }
-  };
-
-  const toggleTag = (tag: string) => {
-    setForm((prev) => ({
-      ...prev,
-      tags: prev.tags.includes(tag)
-        ? prev.tags.filter((t) => t !== tag)
-        : [...prev.tags, tag],
-    }));
-  };
-
-  const filtered = places.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.district.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
 
   if (loading) {
     return <LoadingSpinner size="md" text="Loading places..." fullScreen />;
@@ -522,7 +390,7 @@ const ManagePlacesPage = () => {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setShowTagPicker((v) => !v)}
+                onClick={() => setShowTagPicker(!showTagPicker)}
                 className="flex items-center justify-between w-full h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm hover:border-ring transition-colors"
               >
                 <span className="text-muted-foreground">
@@ -620,7 +488,6 @@ const ManagePlacesPage = () => {
               onClick={() => {
                 setShowAddForm(false);
                 setForm(EMPTY_FORM);
-                setFormErrors({});
               }}
             >
               Cancel

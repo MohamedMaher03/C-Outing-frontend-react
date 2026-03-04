@@ -4,7 +4,6 @@
  * App-wide configuration: maintenance mode, upload limits, feature toggles.
  */
 
-import { useState, useEffect } from "react";
 import {
   Settings,
   Save,
@@ -21,43 +20,11 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { adminMock } from "@/features/admin/mocks/adminMock";
-import type { SystemSettings } from "@/features/admin/types";
+import { useSystemSettings } from "@/features/admin/hooks/useSystemSettings";
 
 const SystemSettingsPage = () => {
-  const [settings, setSettings] = useState<SystemSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await adminMock.getSettings();
-        setSettings(data);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  const handleSave = async () => {
-    if (!settings) return;
-    setSaving(true);
-    try {
-      await adminMock.updateSettings(settings);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const update = (key: keyof SystemSettings, value: unknown) => {
-    if (!settings) return;
-    setSettings({ ...settings, [key]: value });
-  };
+  const { settings, loading, saving, saved, update, handleSave } =
+    useSystemSettings();
 
   if (loading || !settings) {
     return <LoadingSpinner size="md" text="Loading settings..." fullScreen />;

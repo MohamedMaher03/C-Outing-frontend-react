@@ -5,7 +5,6 @@
  * Design follows the project's card-based layout with secondary (gold) accents.
  */
 
-import { useState, useEffect } from "react";
 import {
   Users,
   MapPin,
@@ -18,29 +17,10 @@ import {
   Activity,
 } from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { adminMock } from "@/features/admin/mocks/adminMock";
-import type { AdminStats, RecentActivity } from "@/features/admin/types";
+import { useAdminDashboard } from "@/features/admin/hooks/useAdminDashboard";
 
 const AdminDashboardPage = () => {
-  const [stats, setStats] = useState<AdminStats | null>(null);
-  const [activity, setActivity] = useState<RecentActivity[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [s, a] = await Promise.all([
-          adminMock.getStats(),
-          adminMock.getRecentActivity(),
-        ]);
-        setStats(s);
-        setActivity(a);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, []);
+  const { stats, activity, loading } = useAdminDashboard();
 
   if (loading || !stats) {
     return <LoadingSpinner size="md" text="Loading dashboard..." fullScreen />;

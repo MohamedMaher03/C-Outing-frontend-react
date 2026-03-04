@@ -6,7 +6,6 @@
  * side-by-side review content display, and toast feedback.
  */
 
-import { useState, useEffect } from "react";
 import {
   Search,
   ShieldAlert,
@@ -43,8 +42,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { moderatorMock } from "../mocks/moderatorMock";
 import type { ReportedContent } from "../types";
+import { useReportedContent } from "@/features/moderator/hooks/useReportedContent";
 
 const statusConfig: Record<
   ReportedContent["status"],
@@ -88,130 +87,25 @@ const typeIcon: Record<ReportedContent["type"], typeof MessageSquareWarning> = {
 };
 
 const ReportedContentPage = () => {
-  const [reports, setReports] = useState<ReportedContent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  // Default to reviews filter per task requirement
-  const [typeFilter, setTypeFilter] = useState<string>("review");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<
-    {
-      id: number;
-      message: string;
-      variant: "success" | "warning" | "destructive";
-    }[]
-  >([]);
-
-  const showToast = (
-    message: string,
-    variant: "success" | "warning" | "destructive" = "success",
-  ) => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, variant }]);
-    setTimeout(
-      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-      3000,
-    );
-  };
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await moderatorMock.getReportedContent();
-        setReports(data);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  const handleStatusChange = async (
-    reportId: string,
-    status: ReportedContent["status"],
-  ) => {
-    await moderatorMock.updateReportStatus(reportId, status);
-    setReports((prev) =>
-      prev.map((r) =>
-        r.id === reportId
-          ? {
-              ...r,
-              status,
-              ...(["resolved", "dismissed"].includes(status)
-                ? { resolvedAt: new Date() }
-                : {}),
-            }
-          : r,
-      ),
-    );
-  };
-
-  const handleDeleteReview = async (reportId: string) => {
-    try {
-      setActionLoading(reportId + "_delete");
-      await moderatorMock.deleteReview(reportId);
-      setReports((prev) =>
-        prev.map((r) =>
-          r.id === reportId
-            ? { ...r, status: "resolved", resolvedAt: new Date() }
-            : r,
-        ),
-      );
-      setExpandedId(null);
-      showToast("Review deleted successfully.", "destructive");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleWarnUser = async (reportId: string, authorName?: string) => {
-    try {
-      setActionLoading(reportId + "_warn");
-      await moderatorMock.warnUser(reportId);
-      setReports((prev) =>
-        prev.map((r) =>
-          r.id === reportId
-            ? { ...r, status: "resolved", resolvedAt: new Date() }
-            : r,
-        ),
-      );
-      showToast(`Warning sent to ${authorName ?? "user"}.`, "warning");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleBanUser = async (reportId: string, authorName?: string) => {
-    try {
-      setActionLoading(reportId + "_ban");
-      await moderatorMock.banUser(reportId);
-      setReports((prev) =>
-        prev.map((r) =>
-          r.id === reportId
-            ? { ...r, status: "resolved", resolvedAt: new Date() }
-            : r,
-        ),
-      );
-      showToast(
-        `${authorName ?? "User"} escalated to admin for ban review.`,
-        "destructive",
-      );
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const filtered = reports.filter((r) => {
-    const matchesSearch =
-      r.reportedItemName.toLowerCase().includes(search.toLowerCase()) ||
-      r.reporterName.toLowerCase().includes(search.toLowerCase()) ||
-      r.reason.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || r.status === statusFilter;
-    const matchesType = typeFilter === "all" || r.type === typeFilter;
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  const {
+    reports,
+    loading,
+    search,
+    statusFilter,
+    typeFilter,
+    expandedId,
+    actionLoading,
+    toasts,
+    filteredReports: filtered,
+    setSearch,
+    setStatusFilter,
+    setTypeFilter,
+    setExpandedId,
+    handleStatusChange,
+    handleDeleteReview,
+    handleWarnUser,
+    handleBanUser,
+  } = useReportedContent();
 
   const openCount = reports.filter((r) => r.status === "open").length;
   const investigatingCount = reports.filter(

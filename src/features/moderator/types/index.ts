@@ -45,3 +45,37 @@ export interface ModerationAction {
   timestamp: Date;
   note?: string;
 }
+
+// ── Shared UI Types ───────────────────────────────────────────
+
+export interface ModeratorToast {
+  id: number;
+  message: string;
+  variant: "success" | "warning" | "destructive";
+}
+
+export interface ModeratePlaceFormData {
+  name: string;
+  category: string;
+  district: string;
+  description: string;
+  priceLevel: 1 | 2 | 3;
+  tags: string[];
+  image: string;
+  phone: string;
+  website: string;
+}
+
+export interface ModeratePlaceFormErrors {
+  name?: string;
+  category?: string;
+  district?: string;
+  description?: string;
+  image?: string;
+}
+
+export interface ModeratePlaceToast {
+  id: string;
+  message: string;
+  variant: "success" | "error" | "info" | "warning";
+}

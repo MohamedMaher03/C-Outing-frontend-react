@@ -81,4 +81,38 @@ export const API_ENDPOINTS = {
   interactions: {
     record: "/interactions",
   },
+
+  // ── Admin ─────────────────────────────────────────────────────
+  admin: {
+    getStats: "/admin/stats",
+    getRecentActivity: "/admin/activity",
+    getUsers: "/admin/users",
+    updateUserRole: (userId: number) => `/admin/users/${userId}/role`,
+    updateUserStatus: (userId: number) => `/admin/users/${userId}/status`,
+    getPlaces: "/admin/places",
+    addPlace: "/admin/places",
+    updatePlaceStatus: (placeId: string) => `/admin/places/${placeId}/status`,
+    deletePlace: (placeId: string) => `/admin/places/${placeId}`,
+    getReviews: "/admin/reviews",
+    updateReviewStatus: (reviewId: string) =>
+      `/admin/reviews/${reviewId}/status`,
+    deleteReview: (reviewId: string) => `/admin/reviews/${reviewId}`,
+    getCategories: "/admin/categories",
+    updateCategory: (categoryId: string) => `/admin/categories/${categoryId}`,
+    getSettings: "/admin/settings",
+    updateSettings: "/admin/settings",
+  },
+
+  // ── Moderator ────────────────────────────────────────────────
+  moderator: {
+    getStats: "/moderator/stats",
+    getReportedContent: "/moderator/reports",
+    updateReportStatus: (reportId: string) =>
+      `/moderator/reports/${reportId}/status`,
+    getRecentActions: "/moderator/actions",
+    deleteReview: (reportId: string) =>
+      `/moderator/reports/${reportId}/delete-review`,
+    warnUser: (reportId: string) => `/moderator/reports/${reportId}/warn`,
+    banUser: (reportId: string) => `/moderator/reports/${reportId}/ban`,
+  },
 };
