@@ -77,6 +77,15 @@ export const API_ENDPOINTS = {
     getSimilar: (placeId: string) => `/places/${placeId}/similar`,
   },
 
+  // ── Notifications (in-app feed) ────────────────────────────
+  notifications: {
+    getAll: (userId: number) => `/users/${userId}/notifications`,
+    markRead: (notificationId: string) =>
+      `/notifications/${notificationId}/read`,
+    markAllRead: (userId: number) => `/users/${userId}/notifications/read-all`,
+    delete: (notificationId: string) => `/notifications/${notificationId}`,
+  },
+
   // ── Interactions ─────────────────────────────────────────────
   interactions: {
     record: "/interactions",
