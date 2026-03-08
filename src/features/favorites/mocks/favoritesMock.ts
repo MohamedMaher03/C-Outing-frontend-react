@@ -31,7 +31,7 @@ export const favoritesMock = {
    * Mock GET /users/:userId/favorites
    */
   async getFavorites(): Promise<FavoritePlace[]> {
-    await delay(500);
+    await delay(5000);
     return [...mockFavorites];
   },
 
@@ -39,7 +39,7 @@ export const favoritesMock = {
    * Mock POST /users/:userId/favorites
    */
   async addToFavorites(placeId: string): Promise<ToggleFavoriteResponse> {
-    await delay(300);
+    await delay(900);
 
     const place = PLACES.find((p) => p.id === placeId);
     if (place && !mockFavorites.find((f) => f.id === placeId)) {

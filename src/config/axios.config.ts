@@ -5,12 +5,12 @@
  * Request interceptor  — injects the JWT access token on every outgoing call.
  *
  * Response interceptor (SUCCESS) — unwraps our standard ApiResponse envelope.
- *   Backend sends: { success: true, data: T, message: "OK" }
+ *   Backend sends: { success: true, statusCode: 200, data: T, message: "OK" }
  *   Caller receives: response.data === T   (envelope is transparent to the UI)
  *
  * Response interceptor (ERROR) — converts any HTTP error into a typed ApiError.
- *   Backend sends: { success: false, message: "...", errorCode: "...", data: null }
- *   Caller receives: Promise.reject(new ApiError(message, statusCode, errorCode))
+ *   Backend sends: { success: false, statusCode: 4xx, message: "...", data: null }
+ *   Caller receives: Promise.reject(new ApiError(message, statusCode))
  *
  * This means ALL feature API files can type their calls as:
  *   axiosInstance.get<T>(url)  →  AxiosResponse<T>  →  { data: T }
@@ -89,15 +89,14 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    // Extract message / errorCode from the standard envelope.
+    // Extract message from the standard envelope.
     const body = error.response?.data as
       | Partial<ApiResponse<never>>
       | undefined;
     const message =
       body?.message ?? error.message ?? "An unexpected error occurred.";
-    const errorCode = body?.errorCode;
 
-    return Promise.reject(new ApiError(message, status, errorCode));
+    return Promise.reject(new ApiError(message, status));
   },
 );
 

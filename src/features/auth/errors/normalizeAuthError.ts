@@ -8,10 +8,10 @@
  *
  *   1. If the error is already an AuthError → return it as-is.
  *
- *   2. If it's an AxiosError with a response body:
- *      a. Check response.data.error.code   (matches our ApiResponse<T> contract)
- *      b. Check response.data.errorCode    (common alternative shape)
- *      → If found, use that code.
+ *   2. If it's an ApiError (thrown by the axiosInstance response interceptor):
+ *      The interceptor already extracted message from the backend envelope.
+ *      Map the HTTP status code to a typed AuthErrorCode.
+ *      → The backend ApiResponse does not include an errorCode field.
  *
  *   3. If none of the above, map the HTTP status code to a sensible default:
  *        400 → INVALID_CREDENTIALS
