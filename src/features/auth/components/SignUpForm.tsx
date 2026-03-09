@@ -35,8 +35,10 @@ const SignUpForm = () => {
   });
 
   const onSubmit = async (data: SignUpFormData) => {
-    await registerUser(data);
-    // Navigation is handled by PublicRoute based on user.hasCompletedOnboarding
+    const success = await registerUser(data);
+    if (success) {
+      navigate("/verify-email", { state: { email: data.email } });
+    }
   };
 
   return (

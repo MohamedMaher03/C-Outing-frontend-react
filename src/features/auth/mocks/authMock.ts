@@ -11,7 +11,14 @@
  * can be fully developed and tested without a running backend.
  */
 
-import type { LoginRequest, RegisterRequest, AuthApiResponse } from "../types";
+import type {
+  LoginRequest,
+  RegisterRequest,
+  RegisterResponse,
+  VerifyEmailRequest,
+  ResendOtpRequest,
+  AuthApiResponse,
+} from "../types";
 import type { User } from "@/types";
 import { AuthError } from "../errors";
 
@@ -56,7 +63,16 @@ const MOCK_MODERATOR: User = {
 const MOCK_TOKEN =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.bW9ja19wYXlsb2Fk.mock_signature";
 
-// ── Helper ───────────────────────────────────────────────────
+/** Mock OTP used during development — any other OTP will fail. */
+const MOCK_OTP = "123456";
+
+/**
+ * Holds users who have registered but not yet verified their email.
+ * Key: email address. Value: the pre-built User object.
+ */
+const pendingVerifications = new Map<string, User>();
+
+// ── Helper ──────────────────────────────────────────────────────
 
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -102,8 +118,11 @@ export const authMock = {
    * Mock POST /users/register
    * Use email "exists@example.com" to simulate duplicate-email error.
    * Use phone "0000000000" to simulate duplicate-phone error.
+   *
+   * On success, queues the user for pending email verification.
+   * The OTP to use on /verify-email is always "123456".
    */
-  async register(payload: RegisterRequest): Promise<AuthApiResponse> {
+  async register(payload: RegisterRequest): Promise<RegisterResponse> {
     await delay(1100);
 
     if (payload.email === "exists@example.com") {
@@ -127,11 +146,54 @@ export const authMock = {
       role: "user",
     };
 
-    return {
-      userId: newUser.userId,
-      token: MOCK_TOKEN,
-      user: newUser,
-    };
+    // Store for later retrieval by verifyEmail
+    pendingVerifications.set(payload.email, newUser);
+
+    return { message: "OTP sent to your email" };
+  },
+
+  /**
+   * Mock POST /verify-email
+   * Use OTP "123456" for a successful verification.
+   * Any other code throws INVALID_OTP.
+   *
+   * Use email "unregistered@example.com" to simulate a not-found error.
+   */
+  async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
+    await delay(900);
+
+    if (payload.otp !== MOCK_OTP) {
+      throw new AuthError("INVALID_OTP");
+    }
+
+    const user = pendingVerifications.get(payload.email);
+    if (!user) {
+      // Fallback: create a user on the fly (handles edge cases in dev)
+      const fallbackUser: User = {
+        ...MOCK_USER,
+        email: payload.email,
+        hasCompletedOnboarding: false,
+      };
+      return {
+        userId: fallbackUser.userId,
+        token: MOCK_TOKEN,
+        user: fallbackUser,
+      };
+    }
+
+    pendingVerifications.delete(payload.email);
+
+    return { userId: user.userId, token: MOCK_TOKEN, user };
+  },
+
+  /**
+   * Mock POST /resend-otp
+   * Use email "unregistered@example.com" to simulate not-found error.
+   * Always succeeds for any other email after a short delay.
+   */
+  async resendOtp(_payload: ResendOtpRequest): Promise<void> {
+    await delay(800);
+    // In mock, resend always succeeds — just simulate the delay
   },
 
   /**

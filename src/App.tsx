@@ -5,6 +5,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import LoginForm from "@/features/auth/components/LoginForm";
 import SignUpPage from "@/features/auth/pages/SignUpPage";
+import VerifyEmailPage from "@/features/auth/pages/VerifyEmailPage";
 import OnboardingPage from "@/features/onboarding/pages/OnboardingPage";
 import HomePage from "@/features/home/pages/HomePage";
 import FavoritesPage from "@/features/favorites/pages/FavoritesPage";
@@ -95,6 +96,7 @@ function App() {
             </PublicRoute>
           }
         />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
 
         {/* App Routes with AppLayout - all require authentication */}
         {/* ── User Routes (ONLY user role) ───────────────────────── */}

@@ -20,7 +20,14 @@
 
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
-import type { LoginRequest, RegisterRequest, AuthApiResponse } from "../types";
+import type {
+  LoginRequest,
+  RegisterRequest,
+  RegisterResponse,
+  VerifyEmailRequest,
+  ResendOtpRequest,
+  AuthApiResponse,
+} from "../types";
 import { normalizeAuthError } from "../errors";
 
 export const authApi = {
@@ -45,18 +52,45 @@ export const authApi = {
 
   /**
    * POST /users/register
-   * Creates a new account, returns token + user.
-   *
-   * The axiosInstance response interceptor unwraps the ApiResponse envelope,
-   * so `data` here is already `AuthApiResponse` — no `.data.data` needed.
+   * Creates a new account and triggers an OTP email — does NOT return a session.
+   * The user must verify their email before they can log in.
    */
-  async register(payload: RegisterRequest): Promise<AuthApiResponse> {
+  async register(payload: RegisterRequest): Promise<RegisterResponse> {
     try {
-      const { data } = await axiosInstance.post<AuthApiResponse>(
+      const { data } = await axiosInstance.post<RegisterResponse>(
         API_ENDPOINTS.auth.register,
         payload,
       );
       return data;
+    } catch (error) {
+      throw normalizeAuthError(error);
+    }
+  },
+
+  /**
+   * POST /verify-email
+   * Verifies the OTP sent to the user's email.
+   * Returns a full auth session (token + user) on success.
+   */
+  async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
+    try {
+      const { data } = await axiosInstance.post<AuthApiResponse>(
+        API_ENDPOINTS.auth.verifyEmail,
+        payload,
+      );
+      return data;
+    } catch (error) {
+      throw normalizeAuthError(error);
+    }
+  },
+
+  /**
+   * POST /resend-otp
+   * Sends a new OTP to the given email address.
+   */
+  async resendOtp(payload: ResendOtpRequest): Promise<void> {
+    try {
+      await axiosInstance.post(API_ENDPOINTS.auth.resendOtp, payload);
     } catch (error) {
       throw normalizeAuthError(error);
     }

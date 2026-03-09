@@ -53,12 +53,30 @@ export function AuthProvider({
   );
 
   /**
-   * Register — same pattern as login.
+   * Register — triggers account creation + OTP email dispatch.
+   * Does NOT set user/token; the user must verify their email first.
    */
   const register = useCallback(async (data: RegisterRequest): Promise<void> => {
-    const response = await authService.register(data);
-    setToken(response.token);
-    setUser(response.user);
+    await authService.register(data);
+  }, []);
+
+  /**
+   * Verify email — validates the OTP, receives a session, and sets state.
+   */
+  const verifyEmail = useCallback(
+    async (email: string, otp: string): Promise<void> => {
+      const response = await authService.verifyEmail({ email, otp });
+      setToken(response.token);
+      setUser(response.user);
+    },
+    [],
+  );
+
+  /**
+   * Resend OTP — requests a new verification code for the given email.
+   */
+  const resendOtp = useCallback(async (email: string): Promise<void> => {
+    await authService.resendOtp({ email });
   }, []);
 
   /**
@@ -87,6 +105,8 @@ export function AuthProvider({
     isAuthenticated: !!user && !!token,
     login,
     register,
+    verifyEmail,
+    resendOtp,
     logout,
     updateUser,
   };

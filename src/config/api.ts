@@ -13,6 +13,8 @@ export const API_ENDPOINTS = {
     login: "/login",
     register: "/register",
     logout: "/logout",
+    verifyEmail: "/verify-email",
+    resendOtp: "/resend-otp",
   },
 
   // ── Users / Profile ──────────────────────────────────────────

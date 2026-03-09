@@ -16,6 +16,8 @@ export const AUTH_ERROR_MESSAGES = {
   NETWORK_ERROR: "Network error. Please check your connection and try again.",
   UNKNOWN_ERROR: "An unexpected error occurred. Please try again.",
   SESSION_EXPIRED: "Your session has expired. Please log in again.",
+  INVALID_OTP: "Invalid or expired code. Please check and try again.",
+  OTP_EXPIRED: "Your verification code has expired. Please request a new one.",
 } as const;
 
 export type AuthErrorKey = keyof typeof AUTH_ERROR_MESSAGES;

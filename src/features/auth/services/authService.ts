@@ -18,7 +18,14 @@
 //import { authApi } from "../api/authApi";(WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
 import { authMock as authApi } from "../mocks/authMock";
 import { AUTH_STORAGE_KEYS } from "../constants";
-import type { LoginRequest, RegisterRequest, AuthApiResponse } from "../types";
+import type {
+  LoginRequest,
+  RegisterRequest,
+  RegisterResponse,
+  VerifyEmailRequest,
+  ResendOtpRequest,
+  AuthApiResponse,
+} from "../types";
 import type { User } from "@/types";
 
 // ── Session helpers (private) ────────────────────────────────
@@ -46,12 +53,27 @@ export const authService = {
   },
 
   /**
-   * Register — creates a new account and persists the session.
+   * Register — creates the account and triggers an OTP email.
+   * Does NOT persist a session; the user must verify email first.
    */
-  async register(payload: RegisterRequest): Promise<AuthApiResponse> {
-    const response = await authApi.register(payload);
+  async register(payload: RegisterRequest): Promise<RegisterResponse> {
+    return await authApi.register(payload);
+  },
+
+  /**
+   * Verify email — submits the OTP, receives a full auth session, and persists it.
+   */
+  async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
+    const response = await authApi.verifyEmail(payload);
     persistSession(response.token, response.user);
     return response;
+  },
+
+  /**
+   * Resend OTP — requests a new verification code for the given email.
+   */
+  async resendOtp(payload: ResendOtpRequest): Promise<void> {
+    await authApi.resendOtp(payload);
   },
 
   /**

@@ -25,7 +25,23 @@ export interface RegisterRequest {
   age?: number;
 }
 
-/** Shape the backend returns after a successful login / register */
+/** Shape the backend returns after a successful register (before email verification) */
+export interface RegisterResponse {
+  message: string;
+}
+
+/** Payload sent to POST /verify-email */
+export interface VerifyEmailRequest {
+  email: string;
+  otp: string;
+}
+
+/** Payload sent to POST /resend-otp */
+export interface ResendOtpRequest {
+  email: string;
+}
+
+/** Shape the backend returns after a successful login / verify-email */
 export interface AuthApiResponse {
   userId: number;
   token: string;

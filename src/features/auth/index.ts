@@ -23,21 +23,28 @@ export { authApi } from "./api/authApi";
 export { useLogin } from "./hooks/useLogin";
 export { useSignUp } from "./hooks/useSignUp";
 export { useLogout } from "./hooks/useLogout";
+export { useVerifyEmail } from "./hooks/useVerifyEmail";
 
 // Validation schemas + inferred types
 export { loginSchema } from "./validation/login.schema";
 export { signUpSchema } from "./validation/signUp.schema";
+export { verifyEmailSchema } from "./validation/verifyEmail.schema";
 export type { LoginFormData } from "./validation/login.schema";
 export type { SignUpFormData } from "./validation/signUp.schema";
+export type { VerifyEmailFormData } from "./validation/verifyEmail.schema";
 
 // UI Components
 export { default as LoginForm } from "./components/LoginForm";
 export { default as SignUpForm } from "./components/SignUpForm";
+export { default as VerifyEmailPage } from "./pages/VerifyEmailPage";
 
 // Types
 export type {
   LoginRequest,
   RegisterRequest,
+  RegisterResponse,
+  VerifyEmailRequest,
+  ResendOtpRequest,
   AuthApiResponse,
   AuthState,
   LoginField,
