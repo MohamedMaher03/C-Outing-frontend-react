@@ -26,7 +26,7 @@ export const onboardingService = {
    * Submit user onboarding preferences.
    */
   async submitPreferences(
-    userId: number,
+    userId: string,
     preferences: OnboardingPreferences,
   ): Promise<void> {
     try {
@@ -41,7 +41,7 @@ export const onboardingService = {
    * Update user preferences (can be called after initial onboarding).
    */
   async updatePreferences(
-    userId: number,
+    userId: string,
     preferences: Partial<OnboardingPreferences>,
   ): Promise<void> {
     try {

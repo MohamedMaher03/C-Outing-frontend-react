@@ -25,7 +25,7 @@ export const onboardingMock = {
    * Mock POST /users/:userId/preferences
    */
   async submitPreferences(
-    userId: number,
+    userId: string,
     preferences: OnboardingPreferences,
   ): Promise<void> {
     await delay(500);
@@ -40,7 +40,7 @@ export const onboardingMock = {
    * Mock PATCH /users/:userId/preferences
    */
   async updatePreferences(
-    userId: number,
+    userId: string,
     preferences: Partial<OnboardingPreferences>,
   ): Promise<void> {
     await delay(400);

@@ -367,14 +367,27 @@ Check if a specific place is in user's favorites.
 
 #### `POST /users/{userId}/preferences`
 
-Submit initial onboarding preferences.
+Submit initial onboarding preferences (called once after the user completes the
+4-step onboarding wizard). After a successful response the frontend sets
+`hasCompletedOnboarding: true` on the user object and navigates to `/`.
 
 |                   |                    |
 | ----------------- | ------------------ |
-| **Auth Required** | Yes                |
+| **Auth Required** | Yes (Bearer JWT)   |
 | **Content-Type**  | `application/json` |
 
-**Request Body:**
+**URL Parameter**
+
+| Name     | Type   | Description                       |
+| -------- | ------ | --------------------------------- |
+| `userId` | string | The authenticated user's `userId` |
+
+**Request Body** (`OnboardingPayload`)
+
+> The frontend transforms UI values before sending:
+>
+> - `budget: "Medium"` (UI) → `budgetRange: "medium"` (lowercase)
+> - `districts: string[]` (UI) → `preferredDistricts: string[]`
 
 ```json
 {
@@ -385,33 +398,95 @@ Submit initial onboarding preferences.
 }
 ```
 
-> **Note:** The frontend transforms `budget: "Medium"` → `budgetRange: "medium"` (lowercase) and `districts` → `preferredDistricts`.
+**Field Constraints**
 
-**Response `200 OK`:** Empty or acknowledgment
+| Field                | Type       | Required | Notes                                       |
+| -------------------- | ---------- | -------- | ------------------------------------------- |
+| `interests`          | `string[]` | Yes      | Min 2 items (UI-enforced). Category IDs.    |
+| `vibe`               | `number`   | Yes      | Integer `0–100`. 0 = calm, 100 = energetic  |
+| `preferredDistricts` | `string[]` | Yes      | Min 1 item (UI-enforced)                    |
+| `budgetRange`        | `string`   | Yes      | `"low"` \| `"medium"` \| `"high"` \| `null` |
+
+**Response `200 OK`**
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": null,
+  "message": "Preferences saved successfully"
+}
+```
+
+**Error Responses**
+
+| Status | Condition                                                                    |
+| ------ | ---------------------------------------------------------------------------- |
+| `400`  | Missing required fields                                                      |
+| `401`  | Invalid or expired JWT                                                       |
+| `403`  | `userId` does not match token                                                |
+| `404`  | User not found                                                               |
+| `409`  | Preferences already submitted (optional — frontend can re-POST to overwrite) |
 
 ---
 
 #### `PATCH /users/{userId}/preferences`
 
-Partial update of preferences.
+Partial update of preferences after the initial onboarding has been completed
+(e.g. from the user profile settings page).
 
 |                   |                    |
 | ----------------- | ------------------ |
-| **Auth Required** | Yes                |
+| **Auth Required** | Yes (Bearer JWT)   |
 | **Content-Type**  | `application/json` |
 
-**Request Body:** Partial `OnboardingPreferences` — any subset of:
+**URL Parameter**
+
+| Name     | Type   | Description                       |
+| -------- | ------ | --------------------------------- |
+| `userId` | string | The authenticated user's `userId` |
+
+**Request Body** (Partial `OnboardingPayload` — send only the fields to update)
+
+> Same field names and transformations as the POST endpoint apply.
 
 ```json
 {
-  "interests": ["string"],
-  "vibe": 50,
-  "districts": ["string"],
-  "budget": "Low" | "Medium" | "High" | null
+  "interests": ["outdoor", "coffee"],
+  "vibe": 40,
+  "preferredDistricts": ["Maadi"],
+  "budgetRange": "high"
 }
 ```
 
-**Response `200 OK`:** Empty or updated preferences
+**Field Constraints** (same as POST — all fields optional for PATCH)
+
+| Field                | Type       | Required | Notes                                       |
+| -------------------- | ---------- | -------- | ------------------------------------------- |
+| `interests`          | `string[]` | No       | Replaces entire interests list if provided  |
+| `vibe`               | `number`   | No       | Integer `0–100`                             |
+| `preferredDistricts` | `string[]` | No       | Replaces entire districts list if provided  |
+| `budgetRange`        | `string`   | No       | `"low"` \| `"medium"` \| `"high"` \| `null` |
+
+**Response `200 OK`**
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": null,
+  "message": "Preferences updated successfully"
+}
+```
+
+**Error Responses**
+
+| Status | Condition                     |
+| ------ | ----------------------------- |
+| `400`  | Invalid field values          |
+| `401`  | Invalid or expired JWT        |
+| `403`  | `userId` does not match token |
+| `404`  | User not found                |
 
 ---
 

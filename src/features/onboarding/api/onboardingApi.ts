@@ -30,7 +30,7 @@ export const onboardingApi = {
    * Submits the initial onboarding preferences.
    */
   async submitPreferences(
-    userId: number,
+    userId: string,
     preferences: OnboardingPreferences,
   ): Promise<void> {
     const payload: OnboardingPayload = {
@@ -48,14 +48,23 @@ export const onboardingApi = {
   /**
    * PATCH /users/:userId/preferences
    * Updates preferences after the initial onboarding has been completed.
+   * Transforms frontend field names to the backend payload shape.
    */
   async updatePreferences(
-    userId: number,
+    userId: string,
     preferences: Partial<OnboardingPreferences>,
   ): Promise<void> {
+    const payload: Partial<OnboardingPayload> = {};
+    if (preferences.interests !== undefined)
+      payload.interests = preferences.interests;
+    if (preferences.vibe !== undefined) payload.vibe = preferences.vibe;
+    if (preferences.districts !== undefined)
+      payload.preferredDistricts = preferences.districts;
+    if (preferences.budget !== undefined)
+      payload.budgetRange = preferences.budget?.toLowerCase() ?? null;
     await axiosInstance.patch(
       API_ENDPOINTS.onboarding.updatePreferences(userId),
-      preferences,
+      payload,
     );
   },
 };
