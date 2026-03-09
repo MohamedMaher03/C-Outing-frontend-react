@@ -23,10 +23,11 @@ import type {
   RegisterRequest,
   RegisterResponse,
   VerifyEmailRequest,
+  VerifyEmailOtpResponse,
   ResendOtpRequest,
   AuthApiResponse,
 } from "../types";
-import type { User } from "@/types";
+import type { User, UserRole } from "@/types";
 
 // ── Session helpers (private) ────────────────────────────────
 
@@ -44,12 +45,24 @@ const clearSession = (): void => {
 
 export const authService = {
   /**
-   * Login — authenticates the user and persists the session.
+   * Login — maps the flat backend LoginApiData into a User object,
+   * persists the session, and returns the internal AuthApiResponse.
    */
   async login(payload: LoginRequest): Promise<AuthApiResponse> {
-    const response = await authApi.login(payload);
-    persistSession(response.token, response.user);
-    return response;
+    const raw = await authApi.login(payload);
+    const user: User = {
+      userId: raw.userId,
+      name: raw.name,
+      email: raw.email,
+      role: raw.role as UserRole,
+      age: 0,
+      preferences: [],
+      lastUpdated: new Date(),
+      totalInteractions: 0,
+      hasCompletedOnboarding: raw.hasCompletedOnboarding ?? false,
+    };
+    persistSession(raw.token, user);
+    return { token: raw.token, user };
   },
 
   /**
@@ -61,12 +74,14 @@ export const authService = {
   },
 
   /**
-   * Verify email — submits the OTP, receives a full auth session, and persists it.
+   * Verify email — validates the OTP against the backend.
+   * Returns the backend's success message string.
+   * No session is persisted; the user must log in after verification.
    */
-  async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
-    const response = await authApi.verifyEmail(payload);
-    persistSession(response.token, response.user);
-    return response;
+  async verifyEmail(
+    payload: VerifyEmailRequest,
+  ): Promise<VerifyEmailOtpResponse> {
+    return await authApi.verifyEmail(payload);
   },
 
   /**

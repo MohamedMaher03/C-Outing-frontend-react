@@ -16,8 +16,9 @@ import type {
   RegisterRequest,
   RegisterResponse,
   VerifyEmailRequest,
+  VerifyEmailOtpResponse,
   ResendOtpRequest,
-  AuthApiResponse,
+  LoginApiData,
 } from "../types";
 import type { User } from "@/types";
 import { AuthError } from "../errors";
@@ -25,7 +26,7 @@ import { AuthError } from "../errors";
 // ── Mock seed data ───────────────────────────────────────────
 
 const MOCK_USER: User = {
-  userId: 1,
+  userId: "00000000-0000-0000-0000-000000000001",
   name: "maher Smith",
   email: "jane@example.com",
   age: 28,
@@ -37,7 +38,7 @@ const MOCK_USER: User = {
 };
 
 const MOCK_ADMIN: User = {
-  userId: 99,
+  userId: "00000000-0000-0000-0000-000000000099",
   name: "Admin User",
   email: "admin@example.com",
   age: 35,
@@ -49,7 +50,7 @@ const MOCK_ADMIN: User = {
 };
 
 const MOCK_MODERATOR: User = {
-  userId: 50,
+  userId: "00000000-0000-0000-0000-000000000050",
   name: "Moderator User",
   email: "mod@example.com",
   age: 30,
@@ -90,7 +91,7 @@ export const authMock = {
    *   mod@example.com    → Moderator role
    *   (anything else)    → Regular user role
    */
-  async login(payload: LoginRequest): Promise<AuthApiResponse> {
+  async login(payload: LoginRequest): Promise<LoginApiData> {
     await delay(900);
 
     if (payload.password === "wrongpass") {
@@ -110,7 +111,10 @@ export const authMock = {
     return {
       userId: mockUser.userId,
       token: MOCK_TOKEN,
-      user: mockUser,
+      name: mockUser.name,
+      email: mockUser.email,
+      role: mockUser.role,
+      hasCompletedOnboarding: mockUser.hasCompletedOnboarding,
     };
   },
 
@@ -135,7 +139,7 @@ export const authMock = {
 
     const newUser: User = {
       ...MOCK_USER,
-      userId: Math.floor(Math.random() * 9000) + 100,
+      userId: `mock-${Math.floor(Math.random() * 9000) + 100}`,
       name: payload.name,
       email: payload.email,
       age: payload.age ?? 18,
@@ -149,7 +153,7 @@ export const authMock = {
     // Store for later retrieval by verifyEmail
     pendingVerifications.set(payload.email, newUser);
 
-    return { message: "OTP sent to your email" };
+    return "OTP sent to your email";
   },
 
   /**
@@ -159,31 +163,28 @@ export const authMock = {
    *
    * Use email "unregistered@example.com" to simulate a not-found error.
    */
-  async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
+  async verifyEmail(
+    payload: VerifyEmailRequest,
+  ): Promise<VerifyEmailOtpResponse> {
     await delay(900);
 
     if (payload.otp !== MOCK_OTP) {
       throw new AuthError("INVALID_OTP");
     }
 
-    const user = pendingVerifications.get(payload.email);
-    if (!user) {
-      // Fallback: create a user on the fly (handles edge cases in dev)
-      const fallbackUser: User = {
+    // Ensure user is queued (edge-case safety for dev)
+    if (!pendingVerifications.has(payload.email)) {
+      const fallback: User = {
         ...MOCK_USER,
         email: payload.email,
         hasCompletedOnboarding: false,
       };
-      return {
-        userId: fallbackUser.userId,
-        token: MOCK_TOKEN,
-        user: fallbackUser,
-      };
+      pendingVerifications.set(payload.email, fallback);
     }
 
     pendingVerifications.delete(payload.email);
 
-    return { userId: user.userId, token: MOCK_TOKEN, user };
+    return "Email verified successfully";
   },
 
   /**

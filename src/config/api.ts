@@ -20,10 +20,10 @@ export const API_ENDPOINTS = {
   // ── Users / Profile ──────────────────────────────────────────
   users: {
     getMe: "/users/me",
-    getProfile: (userId: number) => `/users/${userId}`,
-    updateProfile: (userId: number) => `/users/${userId}`,
-    getPreferences: (userId: number) => `/users/${userId}/preferences`,
-    updatePreferences: (userId: number) => `/users/${userId}/preferences`,
+    getProfile: (userId: string) => `/users/${userId}`,
+    updateProfile: (userId: string) => `/users/${userId}`,
+    getPreferences: (userId: string) => `/users/${userId}/preferences`,
+    updatePreferences: (userId: string) => `/users/${userId}/preferences`,
     // Public-user endpoints (used by features/users)
     getPublicProfile: (userId: string) => `/users/${userId}`,
     getReviews: (userId: string) => `/users/${userId}/reviews`,
@@ -31,13 +31,13 @@ export const API_ENDPOINTS = {
   },
 
   profile: {
-    uploadAvatar: (userId: number) => `/users/${userId}/avatar`,
-    getNotifications: (userId: number) => `/users/${userId}/notifications`,
-    updateNotifications: (userId: number) => `/users/${userId}/notifications`,
-    getPrivacy: (userId: number) => `/users/${userId}/privacy`,
-    updatePrivacy: (userId: number) => `/users/${userId}/privacy`,
-    downloadData: (userId: number) => `/users/${userId}/data/export`,
-    deleteAccount: (userId: number) => `/users/${userId}/account`,
+    uploadAvatar: (userId: string) => `/users/${userId}/avatar`,
+    getNotifications: (userId: string) => `/users/${userId}/notifications`,
+    updateNotifications: (userId: string) => `/users/${userId}/notifications`,
+    getPrivacy: (userId: string) => `/users/${userId}/privacy`,
+    updatePrivacy: (userId: string) => `/users/${userId}/privacy`,
+    downloadData: (userId: string) => `/users/${userId}/data/export`,
+    deleteAccount: (userId: string) => `/users/${userId}/account`,
   },
 
   // ── Home / Venues ────────────────────────────────────────────
@@ -45,7 +45,7 @@ export const API_ENDPOINTS = {
     // NOTE: curatedPlaces are personalized recommendations — userId is REQUIRED.
     // There is no generic /venues/curated endpoint; the backend computes
     // a ranked list from the user's preference vector.
-    curated: (userId: number) => `/recommendations/${userId}`,
+    curated: (userId: string) => `/recommendations/${userId}`,
     trending: "/venues/trending",
     topRated: "/venues/top-rated",
     toggleSave: (placeId: string) => `/venues/${placeId}/save`,
@@ -53,11 +53,11 @@ export const API_ENDPOINTS = {
 
   // ── Favorites ────────────────────────────────────────────────
   favorites: {
-    getAll: (userId: number) => `/users/${userId}/favorites`,
-    add: (userId: number) => `/users/${userId}/favorites`,
-    remove: (userId: number, placeId: string) =>
+    getAll: (userId: string) => `/users/${userId}/favorites`,
+    add: (userId: string) => `/users/${userId}/favorites`,
+    remove: (userId: string, placeId: string) =>
       `/users/${userId}/favorites/${placeId}`,
-    check: (userId: number, placeId: string) =>
+    check: (userId: string, placeId: string) =>
       `/users/${userId}/favorites/${placeId}/check`,
   },
 
@@ -65,8 +65,8 @@ export const API_ENDPOINTS = {
   // Re-uses users.updatePreferences for the actual save.
   // A dedicated key is provided so onboarding code reads naturally.
   onboarding: {
-    submitPreferences: (userId: number) => `/users/${userId}/preferences`,
-    updatePreferences: (userId: number) => `/users/${userId}/preferences`,
+    submitPreferences: (userId: string) => `/users/${userId}/preferences`,
+    updatePreferences: (userId: string) => `/users/${userId}/preferences`,
   },
 
   // ── Places / Detail ──────────────────────────────────────────
@@ -81,10 +81,10 @@ export const API_ENDPOINTS = {
 
   // ── Notifications (in-app feed) ────────────────────────────
   notifications: {
-    getAll: (userId: number) => `/users/${userId}/notifications`,
+    getAll: (userId: string) => `/users/${userId}/notifications`,
     markRead: (notificationId: string) =>
       `/notifications/${notificationId}/read`,
-    markAllRead: (userId: number) => `/users/${userId}/notifications/read-all`,
+    markAllRead: (userId: string) => `/users/${userId}/notifications/read-all`,
     delete: (notificationId: string) => `/notifications/${notificationId}`,
   },
 
@@ -98,8 +98,8 @@ export const API_ENDPOINTS = {
     getStats: "/admin/stats",
     getRecentActivity: "/admin/activity",
     getUsers: "/admin/users",
-    updateUserRole: (userId: number) => `/admin/users/${userId}/role`,
-    updateUserStatus: (userId: number) => `/admin/users/${userId}/status`,
+    updateUserRole: (userId: string) => `/admin/users/${userId}/role`,
+    updateUserStatus: (userId: string) => `/admin/users/${userId}/status`,
     getPlaces: "/admin/places",
     addPlace: "/admin/places",
     updatePlaceStatus: (placeId: string) => `/admin/places/${placeId}/status`,

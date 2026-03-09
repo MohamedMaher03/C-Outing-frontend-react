@@ -25,8 +25,9 @@ import type {
   RegisterRequest,
   RegisterResponse,
   VerifyEmailRequest,
+  VerifyEmailOtpResponse,
   ResendOtpRequest,
-  AuthApiResponse,
+  LoginApiData,
 } from "../types";
 import { normalizeAuthError } from "../errors";
 
@@ -38,9 +39,9 @@ export const authApi = {
    * The axiosInstance response interceptor unwraps the ApiResponse envelope,
    * so `data` here is already `AuthApiResponse` — no `.data.data` needed.
    */
-  async login(payload: LoginRequest): Promise<AuthApiResponse> {
+  async login(payload: LoginRequest): Promise<LoginApiData> {
     try {
-      const { data } = await axiosInstance.post<AuthApiResponse>(
+      const { data } = await axiosInstance.post<LoginApiData>(
         API_ENDPOINTS.auth.login,
         payload,
       );
@@ -72,9 +73,11 @@ export const authApi = {
    * Verifies the OTP sent to the user's email.
    * Returns a full auth session (token + user) on success.
    */
-  async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
+  async verifyEmail(
+    payload: VerifyEmailRequest,
+  ): Promise<VerifyEmailOtpResponse> {
     try {
-      const { data } = await axiosInstance.post<AuthApiResponse>(
+      const { data } = await axiosInstance.post<VerifyEmailOtpResponse>(
         API_ENDPOINTS.auth.verifyEmail,
         payload,
       );

@@ -105,7 +105,8 @@ export default function VerifyEmailPage() {
     if (!isComplete || isLoading) return;
     clearError();
     const success = await verifyOtp(email, otp);
-    if (success) navigate("/onboarding", { replace: true });
+    if (success)
+      navigate("/login", { replace: true, state: { verified: true } });
   };
 
   const handleResend = async () => {

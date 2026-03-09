@@ -98,6 +98,16 @@ function App() {
         />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
 
+        {/* Onboarding — protected but without AppLayout (full-screen experience) */}
+        <Route
+          path="/onboarding"
+          element={
+            <RoleBasedRoute allowedRoles={["user"]} redirectTo="/not-found">
+              <OnboardingPage />
+            </RoleBasedRoute>
+          }
+        />
+
         {/* App Routes with AppLayout - all require authentication */}
         {/* ── User Routes (ONLY user role) ───────────────────────── */}
 
@@ -109,7 +119,6 @@ function App() {
           }
         >
           <Route path="/" element={<HomePage />} />
-          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<EditProfilePage />} />
           <Route

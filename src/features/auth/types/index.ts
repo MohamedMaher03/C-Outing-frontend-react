@@ -25,10 +25,11 @@ export interface RegisterRequest {
   age?: number;
 }
 
-/** Shape the backend returns after a successful register (before email verification) */
-export interface RegisterResponse {
-  message: string;
-}
+/** Backend returns `data: "…"` string on successful registration */
+export type RegisterResponse = string;
+
+/** Backend returns `data: "…"` string on successful OTP verification */
+export type VerifyEmailOtpResponse = string;
 
 /** Payload sent to POST /verify-email */
 export interface VerifyEmailRequest {
@@ -41,9 +42,24 @@ export interface ResendOtpRequest {
   email: string;
 }
 
-/** Shape the backend returns after a successful login / verify-email */
+/**
+ * Raw flat shape returned by POST /login after the ApiResponse envelope
+ * is unwrapped by the axios interceptor.
+ */
+export interface LoginApiData {
+  token: string;
+  name: string;
+  email: string;
+  role: string;
+  userId: string;
+  hasCompletedOnboarding?: boolean;
+}
+
+/**
+ * Internal auth session shape passed between authService and AuthProvider.
+ * The service maps the raw backend response into this before returning.
+ */
 export interface AuthApiResponse {
-  userId: number;
   token: string;
   user: User;
 }

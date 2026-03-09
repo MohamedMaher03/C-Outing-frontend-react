@@ -61,13 +61,13 @@ export function AuthProvider({
   }, []);
 
   /**
-   * Verify email — validates the OTP, receives a session, and sets state.
+   * Verify email — validates the OTP. On success the backend returns a
+   * confirmation message; no session is issued here. The user must log
+   * in after verification.
    */
   const verifyEmail = useCallback(
     async (email: string, otp: string): Promise<void> => {
-      const response = await authService.verifyEmail({ email, otp });
-      setToken(response.token);
-      setUser(response.user);
+      await authService.verifyEmail({ email, otp });
     },
     [],
   );
