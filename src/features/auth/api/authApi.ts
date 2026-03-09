@@ -28,6 +28,8 @@ import type {
   VerifyEmailOtpResponse,
   ResendOtpRequest,
   LoginApiData,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
 } from "../types";
 import { normalizeAuthError } from "../errors";
 
@@ -106,6 +108,30 @@ export const authApi = {
   async logout(): Promise<void> {
     try {
       await axiosInstance.post(API_ENDPOINTS.auth.logout);
+    } catch (error) {
+      throw normalizeAuthError(error);
+    }
+  },
+
+  /**
+   * POST /forgot-password
+   * Sends an OTP to the given email for password reset.
+   */
+  async forgotPassword(payload: ForgotPasswordRequest): Promise<void> {
+    try {
+      await axiosInstance.post(API_ENDPOINTS.auth.forgotPassword, payload);
+    } catch (error) {
+      throw normalizeAuthError(error);
+    }
+  },
+
+  /**
+   * POST /reset-password
+   * Resets the password using the OTP sent to the email.
+   */
+  async resetPassword(payload: ResetPasswordRequest): Promise<void> {
+    try {
+      await axiosInstance.post(API_ENDPOINTS.auth.resetPassword, payload);
     } catch (error) {
       throw normalizeAuthError(error);
     }

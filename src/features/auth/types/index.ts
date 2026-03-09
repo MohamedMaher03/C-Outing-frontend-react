@@ -45,6 +45,18 @@ export interface ResendOtpRequest {
   email: string;
 }
 
+/** Payload sent to POST /forgot-password */
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+/** Payload sent to POST /reset-password */
+export interface ResetPasswordRequest {
+  email: string;
+  otp: string;
+  newPassword: string;
+}
+
 /**
  * Raw flat shape returned by POST /login after the ApiResponse envelope
  * is unwrapped by the axios interceptor.

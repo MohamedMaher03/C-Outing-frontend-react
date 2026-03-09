@@ -156,6 +156,7 @@ const LoginForm = () => {
                 <Label htmlFor="password">Password</Label>
                 <button
                   type="button"
+                  onClick={() => navigate("/forgot-password")}
                   className="text-xs text-secondary hover:text-secondary/80 font-medium transition-colors"
                 >
                   Forgot password?

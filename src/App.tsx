@@ -11,6 +11,8 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import LoginForm from "@/features/auth/components/LoginForm";
 import SignUpPage from "@/features/auth/pages/SignUpPage";
 import VerifyEmailPage from "@/features/auth/pages/VerifyEmailPage";
+import ForgotPasswordPage from "@/features/auth/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/features/auth/pages/ResetPasswordPage";
 import OnboardingPage from "@/features/onboarding/pages/OnboardingPage";
 import HomePage from "@/features/home/pages/HomePage";
 import FavoritesPage from "@/features/favorites/pages/FavoritesPage";
@@ -102,6 +104,15 @@ function App() {
           }
         />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute>
+              <ForgotPasswordPage />
+            </PublicRoute>
+          }
+        />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Onboarding — only for users who haven't completed it yet */}
         <Route

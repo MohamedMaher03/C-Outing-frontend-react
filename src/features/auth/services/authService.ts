@@ -25,6 +25,8 @@ import type {
   VerifyEmailRequest,
   ResendOtpRequest,
   AuthApiResponse,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
 } from "../types";
 import type { User, UserRole } from "@/types";
 
@@ -133,5 +135,19 @@ export const authService = {
    */
   updateStoredUser(user: User): void {
     localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+  },
+
+  /**
+   * Forgot password — sends an OTP to the given email for password reset.
+   */
+  async forgotPassword(payload: ForgotPasswordRequest): Promise<void> {
+    await authApi.forgotPassword(payload);
+  },
+
+  /**
+   * Reset password — validates the OTP and updates the password.
+   */
+  async resetPassword(payload: ResetPasswordRequest): Promise<void> {
+    await authApi.resetPassword(payload);
   },
 };

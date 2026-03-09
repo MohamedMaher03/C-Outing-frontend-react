@@ -18,6 +18,8 @@ import type {
   VerifyEmailRequest,
   ResendOtpRequest,
   LoginApiData,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
 } from "../types";
 import type { User } from "@/types";
 import { AuthError } from "../errors";
@@ -207,5 +209,34 @@ export const authMock = {
    */
   async logout(): Promise<void> {
     await delay(300);
+  },
+
+  /**
+   * Mock POST /forgot-password
+   * Use email "unknown@example.com" to simulate email-not-found error.
+   * Any other email succeeds and "sends" an OTP (always "123456" in mock).
+   */
+  async forgotPassword(payload: ForgotPasswordRequest): Promise<void> {
+    await delay(900);
+    if (payload.email === "unknown@example.com") {
+      throw new AuthError("EMAIL_NOT_FOUND");
+    }
+    // In mock the OTP is always MOCK_OTP — store email for reset
+    pendingVerifications.set(payload.email, {
+      ...MOCK_USER,
+      email: payload.email,
+    });
+  },
+
+  /**
+   * Mock POST /reset-password
+   * Use OTP "123456" for success. Any other OTP throws INVALID_RESET_OTP.
+   */
+  async resetPassword(payload: ResetPasswordRequest): Promise<void> {
+    await delay(900);
+    if (payload.otp !== MOCK_OTP) {
+      throw new AuthError("INVALID_RESET_OTP");
+    }
+    pendingVerifications.delete(payload.email);
   },
 };

@@ -18,6 +18,9 @@ export const AUTH_ERROR_MESSAGES = {
   SESSION_EXPIRED: "Your session has expired. Please log in again.",
   INVALID_OTP: "Invalid or expired code. Please check and try again.",
   OTP_EXPIRED: "Your verification code has expired. Please request a new one.",
+  EMAIL_NOT_FOUND: "No account found with this email address.",
+  INVALID_RESET_OTP: "Invalid or expired reset code. Please request a new one.",
+  PASSWORD_RESET_FAILED: "Password reset failed. Please try again.",
 } as const;
 
 export type AuthErrorKey = keyof typeof AUTH_ERROR_MESSAGES;

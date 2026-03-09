@@ -15,6 +15,8 @@ export const API_ENDPOINTS = {
     logout: "/logout",
     verifyEmail: "/verify-email",
     resendOtp: "/resend-otp",
+    forgotPassword: "/forgot-password",
+    resetPassword: "/reset-password",
   },
 
   // ── Users / Profile ──────────────────────────────────────────
