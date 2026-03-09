@@ -62,12 +62,14 @@ export function AuthProvider({
 
   /**
    * Verify email — validates the OTP. On success the backend returns a
-   * confirmation message; no session is issued here. The user must log
-   * in after verification.
+   * full auth session; we persist it and set user + token in state so
+   * the user is automatically logged in and redirected to onboarding.
    */
   const verifyEmail = useCallback(
     async (email: string, otp: string): Promise<void> => {
-      await authService.verifyEmail({ email, otp });
+      const response = await authService.verifyEmail({ email, otp });
+      setToken(response.token);
+      setUser(response.user);
     },
     [],
   );

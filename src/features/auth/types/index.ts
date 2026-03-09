@@ -28,8 +28,11 @@ export interface RegisterRequest {
 /** Backend returns `data: "…"` string on successful registration */
 export type RegisterResponse = string;
 
-/** Backend returns `data: "…"` string on successful OTP verification */
-export type VerifyEmailOtpResponse = string;
+/**
+ * Backend returns a full auth session (token + user) on successful OTP verification,
+ * identical in shape to the login response — so the user is auto-logged-in.
+ */
+export type VerifyEmailOtpResponse = LoginApiData;
 
 /** Payload sent to POST /verify-email */
 export interface VerifyEmailRequest {

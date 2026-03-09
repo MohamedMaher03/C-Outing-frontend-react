@@ -1,6 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
-import { ProtectedRoute, PublicRoute, RoleBasedRoute } from "@/routes";
+import {
+  ProtectedRoute,
+  PublicRoute,
+  RoleBasedRoute,
+  OnboardingRoute,
+} from "@/routes";
 import AppLayout from "@/components/layout/AppLayout";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import LoginForm from "@/features/auth/components/LoginForm";
@@ -98,13 +103,13 @@ function App() {
         />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-        {/* Onboarding — protected but without AppLayout (full-screen experience) */}
+        {/* Onboarding — only for users who haven't completed it yet */}
         <Route
           path="/onboarding"
           element={
-            <RoleBasedRoute allowedRoles={["user"]} redirectTo="/not-found">
+            <OnboardingRoute>
               <OnboardingPage />
-            </RoleBasedRoute>
+            </OnboardingRoute>
           }
         />
 

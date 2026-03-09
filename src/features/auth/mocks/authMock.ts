@@ -16,7 +16,6 @@ import type {
   RegisterRequest,
   RegisterResponse,
   VerifyEmailRequest,
-  VerifyEmailOtpResponse,
   ResendOtpRequest,
   LoginApiData,
 } from "../types";
@@ -161,30 +160,35 @@ export const authMock = {
    * Use OTP "123456" for a successful verification.
    * Any other code throws INVALID_OTP.
    *
-   * Use email "unregistered@example.com" to simulate a not-found error.
+   * Returns a full auth session (token + user) so the caller can
+   * auto-login the user and redirect directly to onboarding.
    */
-  async verifyEmail(
-    payload: VerifyEmailRequest,
-  ): Promise<VerifyEmailOtpResponse> {
+  async verifyEmail(payload: VerifyEmailRequest): Promise<LoginApiData> {
     await delay(900);
 
     if (payload.otp !== MOCK_OTP) {
       throw new AuthError("INVALID_OTP");
     }
 
-    // Ensure user is queued (edge-case safety for dev)
-    if (!pendingVerifications.has(payload.email)) {
-      const fallback: User = {
+    // Retrieve the user queued during register; fall back to a safe default
+    let user = pendingVerifications.get(payload.email);
+    if (!user) {
+      user = {
         ...MOCK_USER,
         email: payload.email,
         hasCompletedOnboarding: false,
       };
-      pendingVerifications.set(payload.email, fallback);
     }
-
     pendingVerifications.delete(payload.email);
 
-    return "Email verified successfully";
+    return {
+      userId: user.userId,
+      token: MOCK_TOKEN,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      hasCompletedOnboarding: user.hasCompletedOnboarding,
+    };
   },
 
   /**

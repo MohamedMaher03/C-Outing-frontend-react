@@ -23,7 +23,6 @@ import type {
   RegisterRequest,
   RegisterResponse,
   VerifyEmailRequest,
-  VerifyEmailOtpResponse,
   ResendOtpRequest,
   AuthApiResponse,
 } from "../types";
@@ -75,13 +74,25 @@ export const authService = {
 
   /**
    * Verify email — validates the OTP against the backend.
-   * Returns the backend's success message string.
-   * No session is persisted; the user must log in after verification.
+   * On success the backend returns a full auth session (same shape as login),
+   * so we build the User, persist the session, and return it.
+   * The user is now logged in and should be directed to onboarding.
    */
-  async verifyEmail(
-    payload: VerifyEmailRequest,
-  ): Promise<VerifyEmailOtpResponse> {
-    return await authApi.verifyEmail(payload);
+  async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
+    const raw = await authApi.verifyEmail(payload);
+    const user: User = {
+      userId: raw.userId,
+      name: raw.name,
+      email: raw.email,
+      role: raw.role as UserRole,
+      age: 0,
+      preferences: [],
+      lastUpdated: new Date(),
+      totalInteractions: 0,
+      hasCompletedOnboarding: raw.hasCompletedOnboarding ?? false,
+    };
+    persistSession(raw.token, user);
+    return { token: raw.token, user };
   },
 
   /**

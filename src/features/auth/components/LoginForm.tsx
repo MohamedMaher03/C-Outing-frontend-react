@@ -7,7 +7,7 @@ import { FormError } from "@/components/ui/form-error";
 import { FormField } from "./form/FormField";
 import logo from "@/assets/images/logo3.png";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { loginSchema } from "@/features/auth/validation/login.schema";
 import type { LoginFormData } from "@/features/auth/validation/login.schema";
@@ -18,9 +18,6 @@ import type { LoginField } from "../types";
 
 const LoginForm = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const isJustVerified =
-    (location.state as { verified?: boolean } | null)?.verified === true;
   const { loginUser, isLoading, error, clearError } = useLogin();
 
   const {
@@ -68,24 +65,6 @@ const LoginForm = () => {
               Discover the best places Cairo has to offer
             </p>
           </div>
-
-          {/* Email verified success banner */}
-          {isJustVerified && (
-            <div className="flex items-center gap-3 rounded-lg border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-              <svg
-                className="h-4 w-4 shrink-0"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Email verified! You can now sign in.
-            </div>
-          )}
 
           {/* Social Login */}
           <div className="grid grid-cols-1 gap-3">

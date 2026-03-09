@@ -64,3 +64,29 @@ export function PublicRoute({ children }: PublicRouteProps) {
 
   return children;
 }
+
+/**
+ * Onboarding Route Guard
+ * Allows only authenticated users with an incomplete onboarding.
+ * Users who already finished onboarding are sent straight to home.
+ */
+interface OnboardingRouteProps {
+  children: ReactNode;
+}
+
+export function OnboardingRoute({ children }: OnboardingRouteProps) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) return <PageLoading />;
+
+  // Not authenticated → redirect to login
+  if (!user) return <Navigate to="/login" replace />;
+
+  // Role not allowed on onboarding (admin/moderator have no onboarding)
+  if (user.role !== "user") return <Navigate to="/not-found" replace />;
+
+  // Already completed → send to home
+  if (user.hasCompletedOnboarding) return <Navigate to="/" replace />;
+
+  return children;
+}
