@@ -11,10 +11,6 @@ export interface User {
   userId: string;
   name: string;
   email: string;
-  age: number;
-  preferences: number[]; // Preference vector (e.g., [0.8, 0.5])
-  lastUpdated: Date;
-  totalInteractions: number;
   hasCompletedOnboarding: boolean;
   role: UserRole;
 }

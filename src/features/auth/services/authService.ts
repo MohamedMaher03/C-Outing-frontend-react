@@ -54,10 +54,6 @@ export const authService = {
       name: raw.name,
       email: raw.email,
       role: raw.role as UserRole,
-      age: 0,
-      preferences: [],
-      lastUpdated: new Date(),
-      totalInteractions: 0,
       hasCompletedOnboarding: raw.hasCompletedOnboarding ?? false,
     };
     persistSession(raw.token, user);
@@ -85,10 +81,6 @@ export const authService = {
       name: raw.name,
       email: raw.email,
       role: raw.role as UserRole,
-      age: 0,
-      preferences: [],
-      lastUpdated: new Date(),
-      totalInteractions: 0,
       hasCompletedOnboarding: raw.hasCompletedOnboarding ?? false,
     };
     persistSession(raw.token, user);
