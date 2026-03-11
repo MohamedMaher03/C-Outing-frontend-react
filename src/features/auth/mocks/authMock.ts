@@ -184,6 +184,9 @@ export const authMock = {
    */
   async resendOtp(_payload: ResendOtpRequest): Promise<void> {
     await delay(800);
+    if (_payload.email === "unregistered@example.com") {
+      throw new AuthError("EMAIL_NOT_FOUND");
+    }
     // In mock, resend always succeeds — just simulate the delay
   },
 
