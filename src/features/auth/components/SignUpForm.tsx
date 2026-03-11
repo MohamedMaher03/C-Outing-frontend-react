@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormError } from "@/components/ui/form-error";
 import { FormField } from "./form/FormField";
-import logo from "@/assets/images/logo2.png";
+import logo from "@/assets/images/logo3.png";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
 import { useNavigate } from "react-router-dom";
 import { useSignUp } from "@/features/auth/hooks/useSignUp";

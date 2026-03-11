@@ -3,7 +3,7 @@
  * Static configuration for login and sign-up forms.
  */
 
-import { User, Mail, Phone } from "lucide-react";
+import { User, Mail, Phone, Calendar } from "lucide-react";
 import type { LoginField, SignUpFieldConfig } from "../types";
 
 /** Field definitions for the login form */
@@ -38,5 +38,12 @@ export const SIGN_UP_FORM_FIELDS: SignUpFieldConfig[] = [
     placeholder: "+20 123 456 7890",
     type: "tel",
     Icon: Phone,
+  },
+  {
+    id: "dateOfBirth",
+    label: "Date of Birth",
+    placeholder: "",
+    type: "date",
+    Icon: Calendar,
   },
 ];

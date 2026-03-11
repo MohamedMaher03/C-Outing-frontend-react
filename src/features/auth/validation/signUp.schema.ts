@@ -18,6 +18,24 @@ export const signUpSchema = z
         "Please enter a valid phone number",
       ),
 
+    dateOfBirth: z
+      .string()
+      .min(1, "Date of birth is required")
+      .refine((val) => !isNaN(Date.parse(val)), "Please enter a valid date")
+      .refine((val) => {
+        const dob = new Date(val);
+        const today = new Date();
+        const age = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        const actualAge =
+          age - (m < 0 || (m === 0 && today.getDate() < dob.getDate()) ? 1 : 0);
+        return actualAge >= 13;
+      }, "You must be at least 13 years old")
+      .refine(
+        (val) => new Date(val) <= new Date(),
+        "Date of birth cannot be in the future",
+      ),
+
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
