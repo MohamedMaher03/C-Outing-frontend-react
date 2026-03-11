@@ -30,10 +30,6 @@ const MOCK_USER: User = {
   userId: "00000000-0000-0000-0000-000000000001",
   name: "maher Smith",
   email: "jane@example.com",
-  age: 28,
-  preferences: [0.9, 0.6, 0.4, 0.2],
-  lastUpdated: new Date(),
-  totalInteractions: 12,
   hasCompletedOnboarding: true,
   role: "user",
 };
@@ -42,10 +38,6 @@ const MOCK_ADMIN: User = {
   userId: "00000000-0000-0000-0000-000000000099",
   name: "Admin User",
   email: "admin@example.com",
-  age: 35,
-  preferences: [],
-  lastUpdated: new Date(),
-  totalInteractions: 0,
   hasCompletedOnboarding: true,
   role: "admin",
 };
@@ -54,10 +46,6 @@ const MOCK_MODERATOR: User = {
   userId: "00000000-0000-0000-0000-000000000050",
   name: "Moderator User",
   email: "mod@example.com",
-  age: 30,
-  preferences: [],
-  lastUpdated: new Date(),
-  totalInteractions: 0,
   hasCompletedOnboarding: true,
   role: "moderator",
 };
@@ -143,10 +131,6 @@ export const authMock = {
       userId: `mock-${Math.floor(Math.random() * 9000) + 100}`,
       name: payload.name,
       email: payload.email,
-      age: payload.age ?? 18,
-      preferences: [],
-      totalInteractions: 0,
-      lastUpdated: new Date(),
       hasCompletedOnboarding: false,
       role: "user",
     };
