@@ -15,6 +15,7 @@ import {
   deleteUserAccount,
 } from "@/features/profile/services/profileService";
 import type { PrivacySettings } from "@/features/profile/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UsePrivacyReturn {
   /** Current privacy toggle values */
@@ -65,11 +66,7 @@ export const usePrivacy = (): UsePrivacyReturn => {
         const data = await getPrivacySettings();
         setPrivacySettings(data);
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load privacy settings",
-        );
+        setError(getErrorMessage(err, "Failed to load privacy settings"));
       } finally {
         setLoading(false);
       }
@@ -88,9 +85,7 @@ export const usePrivacy = (): UsePrivacyReturn => {
       await updatePrivacySettings(privacySettings);
       navigate("/profile");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to save privacy settings",
-      );
+      setError(getErrorMessage(err, "Failed to save privacy settings"));
     } finally {
       setSaving(false);
     }
@@ -102,7 +97,7 @@ export const usePrivacy = (): UsePrivacyReturn => {
       setError(null);
       await requestDataDownload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to download data");
+      setError(getErrorMessage(err, "Failed to download data"));
     } finally {
       setDownloading(false);
     }
@@ -118,7 +113,7 @@ export const usePrivacy = (): UsePrivacyReturn => {
       localStorage.removeItem("authUser");
       navigate("/login");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete account");
+      setError(getErrorMessage(err, "Failed to delete account"));
     } finally {
       setDeleting(false);
     }

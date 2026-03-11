@@ -14,6 +14,7 @@ import {
   uploadAvatar,
 } from "@/features/profile/services/profileService";
 import type { EditProfileData } from "@/features/profile/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 /** Max file size: 5 MB */
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -78,7 +79,7 @@ export const useEditProfile = (): UseEditProfileReturn => {
           setAvatarPreview(data.avatar);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load profile");
+        setError(getErrorMessage(err, "Failed to load profile"));
       } finally {
         setLoading(false);
       }
@@ -155,7 +156,7 @@ export const useEditProfile = (): UseEditProfileReturn => {
       navigate("/profile");
     } catch (err) {
       setUploadingAvatar(false);
-      setError(err instanceof Error ? err.message : "Failed to save profile");
+      setError(getErrorMessage(err, "Failed to save profile"));
     } finally {
       setSaving(false);
     }

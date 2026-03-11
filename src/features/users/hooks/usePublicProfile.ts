@@ -13,6 +13,7 @@ import {
 } from "../services/userService";
 import type { PublicUserProfile, UserReviewActivity } from "../types";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UsePublicProfileReturn {
   profile: PublicUserProfile | null;
@@ -56,9 +57,7 @@ export const usePublicProfile = (userId: string): UsePublicProfileReturn => {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : "Failed to load profile",
-          );
+          setError(getErrorMessage(err, "Failed to load profile"));
         }
       } finally {
         if (!cancelled) setLoading(false);

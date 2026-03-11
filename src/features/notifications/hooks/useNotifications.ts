@@ -14,6 +14,7 @@ import {
 } from "@/features/notifications/services/notificationsService";
 import { useNotificationsCount } from "@/features/notifications/context/NotificationsCountContext";
 import type { Notification } from "@/features/notifications/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 export type NotificationFilterTab = "all" | "unread";
 
@@ -69,9 +70,7 @@ export const useNotifications = (): UseNotificationsReturn => {
       setNotifications(data.notifications);
       syncCount(data.unreadCount);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load notifications",
-      );
+      setError(getErrorMessage(err, "Failed to load notifications"));
     } finally {
       setLoading(false);
     }

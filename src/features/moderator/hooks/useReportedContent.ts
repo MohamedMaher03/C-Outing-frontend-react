@@ -9,11 +9,13 @@ import type {
   ReportedContent,
   ModeratorToast,
 } from "@/features/moderator/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UseReportedContentReturn {
   // State
   reports: ReportedContent[];
   loading: boolean;
+  error: string | null;
   search: string;
   statusFilter: string;
   typeFilter: string;
@@ -47,12 +49,15 @@ export const useReportedContent = (): UseReportedContentReturn => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ModeratorToast[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         const data = await moderatorService.getReportedContent();
         setReports(data);
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to load reported content"));
       } finally {
         setLoading(false);
       }
@@ -160,6 +165,7 @@ export const useReportedContent = (): UseReportedContentReturn => {
   return {
     reports,
     loading,
+    error,
     search,
     statusFilter,
     typeFilter,

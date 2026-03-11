@@ -25,6 +25,7 @@ import {
 import { homeService } from "@/features/home/services/homeService";
 import type { FilterType } from "@/features/home/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UseHomeReturn {
   // State
@@ -91,7 +92,7 @@ export const useHome = (): UseHomeReturn => {
       setRawTrending(trendingPlaces);
       setRawTopRated(topRatedPlaces);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load places");
+      setError(getErrorMessage(err, "Failed to load places"));
     } finally {
       setIsLoading(false);
     }

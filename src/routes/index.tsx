@@ -24,7 +24,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (!user) return <Navigate to="/login" replace />;
 
   // User authenticated but hasn't completed onboarding → redirect to /onboarding
-  if (!user.hasCompletedOnboarding && location.pathname !== "/onboarding") {
+  // Admin and moderator skip onboarding entirely
+  if (
+    user.role === "user" &&
+    !user.hasCompletedOnboarding &&
+    location.pathname !== "/onboarding"
+  ) {
     return <Navigate to="/onboarding" replace />;
   }
 

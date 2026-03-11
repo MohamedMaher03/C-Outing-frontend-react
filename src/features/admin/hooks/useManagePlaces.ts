@@ -12,6 +12,7 @@ import type {
   PlaceFormData,
   PlaceFormErrors,
 } from "@/features/admin/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 const EMPTY_FORM: PlaceFormData = {
   name: "",
@@ -31,6 +32,7 @@ interface UseManagePlacesReturn {
   places: AdminPlace[];
   categories: AdminCategory[];
   loading: boolean;
+  error: string | null;
 
   // Filter state
   search: string;
@@ -70,6 +72,7 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
   const [places, setPlaces] = useState<AdminPlace[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -88,6 +91,8 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
         ]);
         setPlaces(placesData);
         setCategories(catsData);
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to load places"));
       } finally {
         setLoading(false);
       }
@@ -190,6 +195,7 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     places,
     categories,
     loading,
+    error,
     search,
     statusFilter,
     filteredPlaces,

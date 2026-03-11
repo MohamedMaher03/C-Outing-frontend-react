@@ -11,6 +11,7 @@ import {
   signOut,
 } from "@/features/profile/services/profileService";
 import type { UserProfile, UserPreferences } from "@/features/profile/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UseProfileReturn {
   // State
@@ -76,7 +77,7 @@ export const useProfile = (): UseProfileReturn => {
       setSelectedDistricts(preferencesData.districts || []);
       setSelectedBudget(preferencesData.budget || "Medium");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load profile");
+      setError(getErrorMessage(err, "Failed to load profile"));
       console.error("Error fetching profile:", err);
     } finally {
       setLoading(false);
@@ -111,9 +112,7 @@ export const useProfile = (): UseProfileReturn => {
 
       setPreferences(updatedPreferences);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to save preferences",
-      );
+      setError(getErrorMessage(err, "Failed to save preferences"));
       console.error("Error saving preferences:", err);
       throw err;
     } finally {

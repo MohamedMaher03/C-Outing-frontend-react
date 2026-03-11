@@ -6,11 +6,13 @@
 import { useState, useEffect } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { AdminUser } from "@/features/admin/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UseManageUsersReturn {
   // State
   users: AdminUser[];
   loading: boolean;
+  error: string | null;
   search: string;
   roleFilter: string;
   actionMenu: number | null;
@@ -35,6 +37,7 @@ interface UseManageUsersReturn {
 export const useManageUsers = (): UseManageUsersReturn => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [actionMenu, setActionMenu] = useState<number | null>(null);
@@ -44,6 +47,8 @@ export const useManageUsers = (): UseManageUsersReturn => {
       try {
         const data = await adminService.getUsers();
         setUsers(data);
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to load users"));
       } finally {
         setLoading(false);
       }
@@ -84,6 +89,7 @@ export const useManageUsers = (): UseManageUsersReturn => {
   return {
     users,
     loading,
+    error,
     search,
     roleFilter,
     actionMenu,

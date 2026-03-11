@@ -6,11 +6,13 @@
 import { useState, useEffect } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { AdminCategory } from "@/features/admin/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UseManageCategoriesReturn {
   // State
   categories: AdminCategory[];
   loading: boolean;
+  error: string | null;
   editingId: string | null;
   editLabel: string;
   editIcon: string;
@@ -36,6 +38,7 @@ interface UseManageCategoriesReturn {
 export const useManageCategories = (): UseManageCategoriesReturn => {
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editIcon, setEditIcon] = useState<string>("Compass");
@@ -48,6 +51,8 @@ export const useManageCategories = (): UseManageCategoriesReturn => {
       try {
         const data = await adminService.getCategories();
         setCategories(data);
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to load categories"));
       } finally {
         setLoading(false);
       }
@@ -108,6 +113,7 @@ export const useManageCategories = (): UseManageCategoriesReturn => {
   return {
     categories,
     loading,
+    error,
     editingId,
     editLabel,
     editIcon,

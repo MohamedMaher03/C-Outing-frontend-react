@@ -15,8 +15,8 @@
  *   import { authMock as authApi } from "../mocks/authMock";
  */
 
-//import { authApi } from "../api/authApi";(WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
-import { authMock as authApi } from "../mocks/authMock";
+import { authApi } from "../api/authApi";
+// import { authMock as authApi } from "../mocks/authMock";
 import { AUTH_STORAGE_KEYS } from "../constants";
 import type {
   LoginRequest,
@@ -51,12 +51,15 @@ export const authService = {
    */
   async login(payload: LoginRequest): Promise<AuthApiResponse> {
     const raw = await authApi.login(payload);
+    const normalizedRole = (raw.role as string).toLowerCase() as UserRole;
     const user: User = {
       userId: raw.userId,
       name: raw.name,
       email: raw.email,
-      role: raw.role as UserRole,
-      hasCompletedOnboarding: raw.hasCompletedOnboarding ?? false,
+      role: normalizedRole,
+      // Admin and moderator skip onboarding; default to true if not provided
+      hasCompletedOnboarding:
+        raw.hasCompletedOnboarding ?? normalizedRole !== "user",
     };
     persistSession(raw.token, user);
     return { token: raw.token, user };
@@ -78,12 +81,14 @@ export const authService = {
    */
   async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
     const raw = await authApi.verifyEmail(payload);
+    const normalizedRole = (raw.role as string).toLowerCase() as UserRole;
     const user: User = {
       userId: raw.userId,
       name: raw.name,
       email: raw.email,
-      role: raw.role as UserRole,
-      hasCompletedOnboarding: raw.hasCompletedOnboarding ?? false,
+      role: normalizedRole,
+      hasCompletedOnboarding:
+        raw.hasCompletedOnboarding ?? normalizedRole !== "user",
     };
     persistSession(raw.token, user);
     return { token: raw.token, user };

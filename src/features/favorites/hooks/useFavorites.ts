@@ -9,6 +9,7 @@ import {
   toggleFavorite as toggleFavoriteService,
 } from "@/features/favorites/services/favoritesService";
 import type { FavoritePlace } from "@/features/favorites/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UseFavoritesReturn {
   // State
@@ -39,7 +40,7 @@ export const useFavorites = (): UseFavoritesReturn => {
       const data = await getFavorites();
       setFavorites(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load favorites");
+      setError(getErrorMessage(err, "Failed to load favorites"));
       console.error("Error fetching favorites:", err);
       setFavorites([]);
     } finally {

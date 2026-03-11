@@ -30,7 +30,8 @@ import type { ApiResponse } from "@/types";
 // ── Instance ─────────────────────────────────────────────────
 
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
+  // baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
+  baseURL: "https://dark-olva-tccd-a34be896.koyeb.app",
   timeout: 30_000,
   headers: {
     "Content-Type": "application/json",
@@ -56,18 +57,22 @@ axiosInstance.interceptors.request.use(
 
 axiosInstance.interceptors.response.use(
   // ── SUCCESS: unwrap the ApiResponse envelope ────────────────
-  // Mutate response.data from ApiResponse<T> → T so that callers
-  // can do `const { data } = await axiosInstance.get<T>(url)` and
-  // get T directly.  Non-envelope responses (e.g. blob downloads)
-  // are returned unchanged.
+  // The backend always wraps responses in ApiResponse<T>.
+  // On success=true  → strip the envelope, expose T directly.
+  // On success=false → the backend returned an application error on a 2xx
+  //                    HTTP status; reject with ApiError so hooks handle it
+  //                    the same way as a 4xx/5xx response.
   (response: AxiosResponse) => {
     const body = response.data as ApiResponse<unknown>;
-    if (
-      body !== null &&
-      typeof body === "object" &&
-      "success" in body &&
-      "data" in body
-    ) {
+    if (body !== null && typeof body === "object" && "success" in body) {
+      if (!body.success) {
+        return Promise.reject(
+          new ApiError(
+            body.message || "Request failed.",
+            body.statusCode ?? response.status,
+          ),
+        );
+      }
       // Replace the envelope with the inner payload.
       response.data = body.data;
     }
@@ -75,13 +80,13 @@ axiosInstance.interceptors.response.use(
   },
 
   // ── ERROR: standardize into ApiError ────────────────────────
-  // Extract message + errorCode from our standard error envelope
-  // (or fall back to axios defaults) and reject with a typed ApiError.
+  // The backend may embed its own statusCode inside the body that can
+  // differ from the HTTP transport code, so prefer body.statusCode.
   (error: AxiosError) => {
-    const status = error.response?.status;
+    const httpStatus = error.response?.status;
 
     // 401: clear stale session and redirect to login.
-    if (status === 401) {
+    if (httpStatus === 401) {
       localStorage.removeItem("authToken");
       localStorage.removeItem("authUser");
       if (!window.location.pathname.startsWith("/login")) {
@@ -89,14 +94,15 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    // Extract message from the standard envelope.
     const body = error.response?.data as
       | Partial<ApiResponse<never>>
       | undefined;
     const message =
       body?.message ?? error.message ?? "An unexpected error occurred.";
+    // Prefer the status code embedded in the backend body.
+    const statusCode = body?.statusCode ?? httpStatus;
 
-    return Promise.reject(new ApiError(message, status));
+    return Promise.reject(new ApiError(message, statusCode));
   },
 );
 

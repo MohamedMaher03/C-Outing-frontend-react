@@ -9,17 +9,20 @@ import type {
   ModeratorStats,
   ModerationAction,
 } from "@/features/moderator/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UseModeratorDashboardReturn {
   stats: ModeratorStats | null;
   actions: ModerationAction[];
   loading: boolean;
+  error: string | null;
 }
 
 export const useModeratorDashboard = (): UseModeratorDashboardReturn => {
   const [stats, setStats] = useState<ModeratorStats | null>(null);
   const [actions, setActions] = useState<ModerationAction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -30,6 +33,8 @@ export const useModeratorDashboard = (): UseModeratorDashboardReturn => {
         ]);
         setStats(s);
         setActions(a);
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to load dashboard data"));
       } finally {
         setLoading(false);
       }
@@ -37,5 +42,5 @@ export const useModeratorDashboard = (): UseModeratorDashboardReturn => {
     load();
   }, []);
 
-  return { stats, actions, loading };
+  return { stats, actions, loading, error };
 };

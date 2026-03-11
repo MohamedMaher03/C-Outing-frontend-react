@@ -10,13 +10,13 @@
 export const API_ENDPOINTS = {
   // ── Auth ─────────────────────────────────────────────────────
   auth: {
-    login: "/login",
-    register: "/register",
-    logout: "/logout",
-    verifyEmail: "/verify-email",
-    resendOtp: "/resend-otp",
-    forgotPassword: "/forgot-password",
-    resetPassword: "/reset-password",
+    login: "/api/v1/Auth/login",
+    register: "/api/v1/Auth/register",
+    logout: "/api/v1/Auth/logout",
+    verifyEmail: "/api/v1/Auth/verify-email",
+    resendOtp: "/api/v1/Auth/resend-otp",
+    forgotPassword: "/api/v1/Auth/forgot-password",
+    resetPassword: "/api/v1/Auth/reset-password",
   },
 
   // ── Users / Profile ──────────────────────────────────────────

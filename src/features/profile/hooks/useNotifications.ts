@@ -13,6 +13,7 @@ import {
   updateNotificationSettings,
 } from "@/features/profile/services/profileService";
 import type { NotificationSettings } from "@/features/profile/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UseNotificationsReturn {
   /** Current push notification toggles */
@@ -69,11 +70,7 @@ export const useNotifications = (): UseNotificationsReturn => {
         setPushNotifications(data.push);
         setEmailNotifications(data.email);
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load notification settings",
-        );
+        setError(getErrorMessage(err, "Failed to load notification settings"));
       } finally {
         setLoading(false);
       }
@@ -99,11 +96,7 @@ export const useNotifications = (): UseNotificationsReturn => {
       });
       navigate("/profile");
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to save notification settings",
-      );
+      setError(getErrorMessage(err, "Failed to save notification settings"));
     } finally {
       setSaving(false);
     }

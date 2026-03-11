@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { submitOnboardingPreferences } from "@/features/onboarding/services/onboardingService";
 import type { OnboardingPreferences } from "@/features/onboarding/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UseOnboardingReturn {
   // State
@@ -113,9 +114,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
       // Navigate to home page after successful submission
       navigate("/");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to submit preferences",
-      );
+      setError(getErrorMessage(err, "Failed to submit preferences"));
     } finally {
       setIsSubmitting(false);
     }

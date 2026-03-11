@@ -23,6 +23,7 @@ import {
   toggleFavorite,
   checkIsFavorite,
 } from "@/features/favorites/services/favoritesService";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UsePlaceDetailReturn {
   // State
@@ -101,9 +102,7 @@ export const usePlaceDetail = (
       setPlace(data);
       setIsFavorite(favoriteStatus);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load place details",
-      );
+      setError(getErrorMessage(err, "Failed to load place details"));
       console.error("Error fetching place details:", err);
     } finally {
       setLoading(false);

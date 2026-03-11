@@ -14,6 +14,7 @@ import type {
   ModeratePlaceFormErrors,
   ModeratePlaceToast,
 } from "@/features/moderator/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 const EMPTY_FORM: ModeratePlaceFormData = {
   name: "",
@@ -32,6 +33,7 @@ interface UseModeratePlacesReturn {
   places: AdminPlace[];
   categories: AdminCategory[];
   loading: boolean;
+  error: string | null;
 
   // Filter state
   search: string;
@@ -71,6 +73,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
   const [places, setPlaces] = useState<AdminPlace[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -89,6 +92,8 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
         ]);
         setPlaces(placesData);
         setCategories(catsData);
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to load places"));
       } finally {
         setLoading(false);
       }
@@ -200,6 +205,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     places,
     categories,
     loading,
+    error,
     search,
     statusFilter,
     filteredPlaces,

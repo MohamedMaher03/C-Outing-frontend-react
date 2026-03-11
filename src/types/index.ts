@@ -34,8 +34,8 @@ export interface ApiResponse<T> {
   success: boolean;
   /** HTTP status code mirrored by the backend inside the envelope. */
   statusCode?: number;
-  /** The actual payload.  Typed as `T` on success, `null` on error. */
-  data: T;
+  /** The actual payload.  `T` on success, `null` on error (matches C# `T?`). */
+  data: T | null;
   /** Human-readable message from the server (success or error). */
   message: string;
 }

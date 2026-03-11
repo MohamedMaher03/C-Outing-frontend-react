@@ -6,11 +6,13 @@
 import { useState, useEffect } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { AdminReview } from "@/features/admin/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UseManageReviewsReturn {
   // State
   reviews: AdminReview[];
   loading: boolean;
+  error: string | null;
   search: string;
   statusFilter: string;
   filteredReviews: AdminReview[];
@@ -30,6 +32,7 @@ interface UseManageReviewsReturn {
 export const useManageReviews = (): UseManageReviewsReturn => {
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -38,6 +41,8 @@ export const useManageReviews = (): UseManageReviewsReturn => {
       try {
         const data = await adminService.getReviews();
         setReviews(data);
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to load reviews"));
       } finally {
         setLoading(false);
       }
@@ -72,6 +77,7 @@ export const useManageReviews = (): UseManageReviewsReturn => {
   return {
     reviews,
     loading,
+    error,
     search,
     statusFilter,
     filteredReviews,

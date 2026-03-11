@@ -6,6 +6,7 @@
 import { useState, useEffect } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { SystemSettings } from "@/features/admin/types";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface UseSystemSettingsReturn {
   // State
@@ -13,6 +14,7 @@ interface UseSystemSettingsReturn {
   loading: boolean;
   saving: boolean;
   saved: boolean;
+  error: string | null;
 
   // Actions
   update: <K extends keyof SystemSettings>(
@@ -27,12 +29,15 @@ export const useSystemSettings = (): UseSystemSettingsReturn => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         const data = await adminService.getSettings();
         setSettings(data);
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to load settings"));
       } finally {
         setLoading(false);
       }
@@ -55,10 +60,12 @@ export const useSystemSettings = (): UseSystemSettingsReturn => {
       await adminService.updateSettings(settings);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to save settings"));
     } finally {
       setSaving(false);
     }
   };
 
-  return { settings, loading, saving, saved, update, handleSave };
+  return { settings, loading, saving, saved, error, update, handleSave };
 };
