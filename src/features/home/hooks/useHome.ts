@@ -144,11 +144,11 @@ export const useHome = (): UseHomeReturn => {
    * Apply all active client-side filters to a list.
    *
    * Order:
-   *   1. Search text
+   *   1. Search text (name, address, atmosphereTags)
    *   2. Category
    *   3. "top-rated" pill  → rating >= 4.5
    *   4. "open-now"  pill  → isOpen === true
-   *   5. "near-me"   pill  → sort by distance (can combine with others)
+   *   5. "near-me"   pill  → sort by proximity to Cairo centre
    */
   const applyFilters = useCallback(
     (list: Place[]): Place[] => {
@@ -160,8 +160,8 @@ export const useHome = (): UseHomeReturn => {
         result = result.filter(
           (p) =>
             p.name.toLowerCase().includes(q) ||
-            p.district.toLowerCase().includes(q) ||
-            p.tags.some((t) => t.toLowerCase().includes(q)),
+            p.address.toLowerCase().includes(q) ||
+            (p.atmosphereTags ?? []).some((t) => t.toLowerCase().includes(q)),
         );
       }
 
@@ -180,9 +180,18 @@ export const useHome = (): UseHomeReturn => {
         result = result.filter((p) => p.isOpen === true);
       }
       if (selectedFilters.includes("near-me")) {
-        result = result.sort(
-          (a, b) => parseFloat(a.distance) - parseFloat(b.distance),
-        );
+        // Sort by haversine distance from Cairo city centre (30.0444, 31.2357)
+        const CAIRO_LAT = 30.0444;
+        const CAIRO_LNG = 31.2357;
+        result = result.sort((a, b) => {
+          const distA =
+            Math.pow(a.latitude - CAIRO_LAT, 2) +
+            Math.pow(a.longitude - CAIRO_LNG, 2);
+          const distB =
+            Math.pow(b.latitude - CAIRO_LAT, 2) +
+            Math.pow(b.longitude - CAIRO_LNG, 2);
+          return distA - distB;
+        });
       }
 
       return result;

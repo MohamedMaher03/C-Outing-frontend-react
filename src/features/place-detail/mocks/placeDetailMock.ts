@@ -46,10 +46,7 @@ export const placeDetailMock = {
     const place = PLACES.find((p) => p.id === placeId);
     if (!place) throw new Error("Place not found");
 
-    return {
-      ...place,
-      openingHours: { open: "09:00 AM", close: "11:00 PM" },
-    };
+    return { ...place };
   },
 
   /**

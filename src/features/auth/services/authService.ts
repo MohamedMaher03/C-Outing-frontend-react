@@ -15,8 +15,8 @@
  *   import { authMock as authApi } from "../mocks/authMock";
  */
 
-import { authApi } from "../api/authApi";
-// import { authMock as authApi } from "../mocks/authMock";
+//import { authApi } from "../api/authApi";
+import { authMock as authApi } from "../mocks/authMock";
 import { AUTH_STORAGE_KEYS } from "../constants";
 import type {
   LoginRequest,

@@ -221,7 +221,7 @@ export const usePlaceDetail = (
     if (!place) return;
 
     window.open(
-      `https://www.google.com/maps?q=${place.lat},${place.lng}`,
+      `https://www.google.com/maps?q=${place.latitude},${place.longitude}`,
       "_blank",
     );
 

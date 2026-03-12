@@ -1,22 +1,58 @@
 export interface Place {
+  // Core venue metadata (scraped schema)
   id: string;
   name: string;
   category: string;
-  image: string;
-  rating: number;
-  reviewCount: number;
-  distance: string;
-  district: string;
+  latitude: number;
+  longitude: number;
+  address: string;
+
+  // Ratings & reviews
+  rating: number; // rating_stars
+  reviewCount: number; // rating_count (abbreviated display)
+  totalReviews?: number; // total_reviews (full count)
+
+  // Description & media
   description: string;
-  whyRecommend: string;
-  priceLevel: 1 | 2 | 3;
-  tags: string[];
+  image: string; // primary display image
+
+  // Contact & links
+  phone?: string;
+  website?: string;
+  menuUrl?: string;
+  bookingUrl?: string;
+
+  // Pricing
+  priceRange?: string; // e.g., "50–200 EGP"
+  priceLevel?:
+    | "price_cheapest"
+    | "cheap"
+    | "mid_range"
+    | "expensive"
+    | "luxury";
+
+  // Hours & open status
+  hours?: string; // e.g., "Daily 9:00 AM – 11:00 PM"
+  isOpen?: boolean; // derived for UI filter support
+
+  // Feature values — UI-friendly (derived from GNN features)
+  atmosphereTags?: string[]; // from atmosphere feature
+  socialBadges?: Array<
+    "Good for Solo" | "Good for Couples" | "Good for Groups"
+  >;
+  hasWifi?: boolean;
+  hasToilet?: boolean;
+  seatingType?: Array<"indoor" | "outdoor">;
+  parkingAvailable?: boolean;
+  accessibilityScore?: number; // 0–1; shown as badge if >= 0.7
+
+  // Menu summary
+  menuImagesCount?: number;
+  menuImagesUrls?: string[];
+
+  // App state
   isSaved?: boolean;
-  lat: number;
-  lng: number;
-  isOpen?: boolean;
-  openUntil?: string;
-  matchScore?: number; // AI recommendation match percentage
+  matchScore?: number; // AI recommendation match %
 }
 
 export interface Category {
@@ -224,20 +260,26 @@ export const PLACES: Place[] = [
     category: "Activities",
     image:
       "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=600&h=400&fit=crop",
+    latitude: 30.0561,
+    longitude: 31.2243,
+    address: "Zamalek Corniche, Zamalek, Cairo",
     rating: 4.8,
     reviewCount: 342,
-    distance: "2.3 km",
-    district: "Zamalek",
+    totalReviews: 342,
     description:
       "Traditional sailboat ride along the Nile with stunning sunset views of Cairo's skyline.",
-    whyRecommend:
-      "Based on your love for outdoor activities and the Nile. Sunsets here are unmatched — a quintessential Cairo experience.",
-    priceLevel: 2,
-    tags: ["Outdoor", "Romantic", "Scenic"],
-    lat: 30.0561,
-    lng: 31.2243,
+    priceRange: "100–200 EGP",
+    priceLevel: "mid_range",
+    hours: "Daily 10:00 AM – 10:00 PM",
     isOpen: true,
-    openUntil: "10:00 PM",
+    atmosphereTags: ["Romantic", "Scenic", "Outdoor"],
+    socialBadges: ["Good for Couples", "Good for Solo"],
+    hasWifi: false,
+    hasToilet: false,
+    seatingType: ["outdoor"],
+    parkingAvailable: false,
+    accessibilityScore: 0.4,
+    menuImagesCount: 0,
     matchScore: 97,
   },
   {
@@ -246,20 +288,26 @@ export const PLACES: Place[] = [
     category: "Food & Drink",
     image:
       "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&h=400&fit=crop",
+    latitude: 30.0609,
+    longitude: 31.2194,
+    address: "26 July St, Zamalek, Cairo",
     rating: 4.6,
     reviewCount: 1205,
-    distance: "1.1 km",
-    district: "Zamalek",
+    totalReviews: 1205,
     description:
       "Modern twist on classic Egyptian street food. Famous for their foul, falafel, and hawawshi.",
-    whyRecommend:
-      "You love street food — Zooba elevates local flavors with a modern, clean dining experience.",
-    priceLevel: 1,
-    tags: ["Street Food", "Casual", "Local"],
-    lat: 30.0609,
-    lng: 31.2194,
+    priceRange: "50–120 EGP",
+    priceLevel: "cheap",
+    hours: "Daily 8:00 AM – 12:00 AM",
     isOpen: true,
-    openUntil: "12:00 AM",
+    atmosphereTags: ["Casual", "Lively", "Local"],
+    socialBadges: ["Good for Solo", "Good for Groups"],
+    hasWifi: true,
+    hasToilet: true,
+    seatingType: ["indoor", "outdoor"],
+    parkingAvailable: false,
+    accessibilityScore: 0.8,
+    menuImagesCount: 12,
     matchScore: 92,
   },
   {
@@ -268,20 +316,26 @@ export const PLACES: Place[] = [
     category: "Culture",
     image:
       "https://images.unsplash.com/photo-1594608661623-aa0bd3a69d98?w=600&h=400&fit=crop",
+    latitude: 30.0444,
+    longitude: 31.2357,
+    address: "10 Nabrawy St, Downtown Cairo",
     rating: 4.5,
     reviewCount: 189,
-    distance: "3.7 km",
-    district: "Downtown",
+    totalReviews: 189,
     description:
       "Independent contemporary art space in the heart of Downtown Cairo.",
-    whyRecommend:
-      "A hidden gem for art lovers. Features rotating exhibitions from Cairo's vibrant contemporary art scene.",
-    priceLevel: 1,
-    tags: ["Art", "Culture", "Free Entry"],
-    lat: 30.0444,
-    lng: 31.2357,
+    priceRange: "Free",
+    priceLevel: "cheap",
+    hours: "Tue–Sun 10:00 AM – 8:00 PM",
     isOpen: true,
-    openUntil: "8:00 PM",
+    atmosphereTags: ["Artistic", "Quiet", "Cultural"],
+    socialBadges: ["Good for Solo", "Good for Couples"],
+    hasWifi: true,
+    hasToilet: true,
+    seatingType: ["indoor"],
+    parkingAvailable: false,
+    accessibilityScore: 0.7,
+    menuImagesCount: 0,
     matchScore: 85,
   },
   {
@@ -290,20 +344,26 @@ export const PLACES: Place[] = [
     category: "Work & Study",
     image:
       "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=400&fit=crop",
+    latitude: 30.0392,
+    longitude: 31.2385,
+    address: "16 Maamal El Sokkar St, Downtown Cairo",
     rating: 4.4,
     reviewCount: 567,
-    distance: "4.2 km",
-    district: "Downtown",
+    totalReviews: 567,
     description:
       "Cairo's premier innovation hub and co-working space in a historic campus.",
-    whyRecommend:
-      "Perfect for remote work. Great community, fast Wi-Fi, and a buzzing startup ecosystem.",
-    priceLevel: 2,
-    tags: ["Co-working", "Tech", "Community"],
-    lat: 30.0392,
-    lng: 31.2385,
+    priceRange: "150–400 EGP/day",
+    priceLevel: "mid_range",
+    hours: "Mon–Fri 8:00 AM – 11:00 PM",
     isOpen: true,
-    openUntil: "11:00 PM",
+    atmosphereTags: ["Productive", "Trendy", "Community"],
+    socialBadges: ["Good for Solo", "Good for Groups"],
+    hasWifi: true,
+    hasToilet: true,
+    seatingType: ["indoor"],
+    parkingAvailable: true,
+    accessibilityScore: 0.9,
+    menuImagesCount: 3,
     matchScore: 78,
   },
   {
@@ -312,20 +372,26 @@ export const PLACES: Place[] = [
     category: "Shopping",
     image:
       "https://images.unsplash.com/photo-1553913861-c0fddf2619ee?w=600&h=400&fit=crop",
+    latitude: 30.0477,
+    longitude: 31.2627,
+    address: "Khan el-Khalili, Islamic Cairo",
     rating: 4.3,
     reviewCount: 2340,
-    distance: "5.1 km",
-    district: "Old Cairo",
+    totalReviews: 2340,
     description:
       "Historic bazaar dating back to 1382. A labyrinth of shops selling everything from spices to souvenirs.",
-    whyRecommend:
-      "An unmissable Cairo experience. The atmosphere, history, and energy are unlike anything else.",
-    priceLevel: 1,
-    tags: ["Historical", "Shopping", "Iconic"],
-    lat: 30.0477,
-    lng: 31.2627,
+    priceRange: "Variable",
+    priceLevel: "price_cheapest",
+    hours: "Daily 9:00 AM – 11:00 PM",
     isOpen: false,
-    openUntil: "Closed",
+    atmosphereTags: ["Historic", "Vibrant", "Bustling"],
+    socialBadges: ["Good for Groups", "Good for Couples"],
+    hasWifi: false,
+    hasToilet: true,
+    seatingType: ["outdoor"],
+    parkingAvailable: false,
+    accessibilityScore: 0.3,
+    menuImagesCount: 0,
     matchScore: 88,
   },
   {
@@ -334,20 +400,26 @@ export const PLACES: Place[] = [
     category: "Nightlife",
     image:
       "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&h=400&fit=crop",
+    latitude: 30.0565,
+    longitude: 31.2045,
+    address: "197 26 July St, Agouza, Cairo",
     rating: 4.7,
     reviewCount: 890,
-    distance: "3.0 km",
-    district: "Agouza",
+    totalReviews: 890,
     description:
       "Legendary live music venue featuring jazz, electronic, and world music.",
-    whyRecommend:
-      "Cairo's best live music venue. If you love good music and a vibrant crowd, this is your spot.",
-    priceLevel: 2,
-    tags: ["Nightlife", "Live Music", "Iconic"],
-    lat: 30.0565,
-    lng: 31.2045,
+    priceRange: "200–400 EGP",
+    priceLevel: "expensive",
+    hours: "Daily 8:00 PM – 3:00 AM",
     isOpen: true,
-    openUntil: "3:00 AM",
+    atmosphereTags: ["Lively", "Musical", "Nightlife"],
+    socialBadges: ["Good for Couples", "Good for Groups"],
+    hasWifi: true,
+    hasToilet: true,
+    seatingType: ["indoor"],
+    parkingAvailable: true,
+    accessibilityScore: 0.6,
+    menuImagesCount: 8,
     matchScore: 94,
   },
   {
@@ -356,20 +428,26 @@ export const PLACES: Place[] = [
     category: "Parks",
     image:
       "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=600&h=400&fit=crop",
+    latitude: 30.0398,
+    longitude: 31.2628,
+    address: "Al-Azhar Park, Darb Al-Ahmar, Cairo",
     rating: 4.6,
     reviewCount: 1560,
-    distance: "4.8 km",
-    district: "Old Cairo",
+    totalReviews: 1560,
     description:
       "A 30-hectare park offering panoramic views of the Cairo skyline and historic mosques.",
-    whyRecommend:
-      "A green oasis in the city. Perfect for a peaceful walk, picnic, or catching the sunset over Old Cairo.",
-    priceLevel: 1,
-    tags: ["Parks", "Scenic", "Family-friendly"],
-    lat: 30.0398,
-    lng: 31.2628,
+    priceRange: "10–25 EGP",
+    priceLevel: "cheap",
+    hours: "Daily 9:00 AM – 10:00 PM",
     isOpen: true,
-    openUntil: "10:00 PM",
+    atmosphereTags: ["Serene", "Family-friendly", "Scenic"],
+    socialBadges: ["Good for Solo", "Good for Couples", "Good for Groups"],
+    hasWifi: false,
+    hasToilet: true,
+    seatingType: ["outdoor"],
+    parkingAvailable: true,
+    accessibilityScore: 0.8,
+    menuImagesCount: 0,
     matchScore: 81,
   },
   {
@@ -378,20 +456,26 @@ export const PLACES: Place[] = [
     category: "Food & Drink",
     image:
       "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&h=400&fit=crop",
+    latitude: 30.062,
+    longitude: 31.22,
+    address: "36 Taha Hussein St, Zamalek, Cairo",
     rating: 4.5,
     reviewCount: 430,
-    distance: "2.8 km",
-    district: "Zamalek",
+    totalReviews: 430,
     description:
       "Upscale rooftop dining with Nile views and a world-class cocktail menu.",
-    whyRecommend:
-      "Your interest in rooftop lounges makes this a perfect match. Stunning views and impeccable service.",
-    priceLevel: 3,
-    tags: ["Rooftop", "Fine Dining", "Nile View", "Late Night"],
-    lat: 30.062,
-    lng: 31.22,
+    priceRange: "400–800 EGP",
+    priceLevel: "luxury",
+    hours: "Daily 1:00 PM – 1:00 AM",
     isOpen: true,
-    openUntil: "1:00 AM",
+    atmosphereTags: ["Romantic", "Upscale", "Nile View"],
+    socialBadges: ["Good for Couples", "Good for Groups"],
+    hasWifi: true,
+    hasToilet: true,
+    seatingType: ["indoor", "outdoor"],
+    parkingAvailable: true,
+    accessibilityScore: 0.9,
+    menuImagesCount: 20,
     matchScore: 91,
   },
 ];

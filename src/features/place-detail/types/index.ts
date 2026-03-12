@@ -4,14 +4,11 @@
 
 import type { Place } from "@/mocks/mockData";
 
-/** Extended place data with additional detail-page fields */
+/**
+ * Extended place with detail-page-only fields.
+ * All venue metadata (phone, website, hours, etc.) lives on the base Place type.
+ */
 export interface PlaceDetail extends Place {
-  openingHours?: {
-    open: string;
-    close: string;
-  };
-  phoneNumber?: string;
-  website?: string;
   reviews?: Review[];
   similarPlaces?: Place[];
 }

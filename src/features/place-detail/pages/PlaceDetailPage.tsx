@@ -6,11 +6,20 @@ import {
   MapPin,
   ExternalLink,
   Heart,
-  DollarSign,
   MessageSquare,
   ThumbsUp,
   Globe,
   Flag,
+  Phone,
+  Clock,
+  Wifi,
+  Toilet,
+  ParkingSquare,
+  UtensilsCrossed,
+  CalendarCheck,
+  Users,
+  Accessibility,
+  Images,
 } from "lucide-react";
 import type { ReportPayload } from "@/features/place-detail/components/ReportReviewDialog";
 import { Button } from "@/components/ui/button";
@@ -23,6 +32,14 @@ import { SocialReviewCard } from "@/features/place-detail/components/SocialRevie
 import { ReviewSummarySection } from "@/features/place-detail/components/ReviewSummarySection";
 import { AddReviewForm } from "@/features/place-detail/components/AddReviewForm";
 import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleton";
+
+/** Maps price level string to dollar-sign display */
+const PRICE_SYMBOL: Record<string, string> = {
+  cheap: "$",
+  moderate: "$$",
+  expensive: "$$$",
+  luxury: "$$$$",
+};
 
 // ============ Main Page ============
 
@@ -225,27 +242,79 @@ const PlaceDetailPage = () => {
               {place.rating}
             </Badge>
           </div>
+
+          {/* Address row */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" />
-            <span>
-              {place.district} · {place.distance}
-            </span>
-            <span className="flex items-center gap-0.5 ml-2">
-              {Array.from({ length: place.priceLevel }).map((_, i) => (
-                <DollarSign key={i} className="h-3 w-3 text-secondary" />
-              ))}
-            </span>
+            <MapPin className="h-4 w-4 flex-shrink-0" />
+            <span>{place.address}</span>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {place.tags.map((tag) => (
-              <span
-                key={tag}
-                className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium"
-              >
-                {tag}
+
+          {/* Price + hours */}
+          <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground">
+            {place.priceLevel && (
+              <span className="font-semibold text-secondary">
+                {PRICE_SYMBOL[place.priceLevel]}
+                {place.priceRange && (
+                  <span className="text-muted-foreground font-normal ml-1">
+                    · {place.priceRange}
+                  </span>
+                )}
               </span>
-            ))}
+            )}
+            {place.hours && (
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                {place.hours}
+              </span>
+            )}
+            {place.isOpen !== undefined && (
+              <span
+                className={
+                  place.isOpen
+                    ? "text-emerald-600 font-semibold"
+                    : "text-muted-foreground"
+                }
+              >
+                {place.isOpen ? "Open Now" : "Closed"}
+              </span>
+            )}
           </div>
+
+          {/* Atmosphere tags */}
+          {(place.atmosphereTags ?? []).length > 0 && (
+            <div className="flex gap-2 flex-wrap pt-1">
+              {place.atmosphereTags!.map((tag) => (
+                <span
+                  key={tag}
+                  className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Social badges */}
+          {(place.socialBadges ?? []).length > 0 && (
+            <div className="flex gap-2 flex-wrap">
+              {place.socialBadges!.map((badge) => (
+                <span
+                  key={badge}
+                  className="text-xs px-2.5 py-1 rounded-full bg-primary/8 text-primary border border-primary/20 font-medium flex items-center gap-1"
+                >
+                  <Users className="h-3 w-3" />
+                  {badge}
+                </span>
+              ))}
+              {place.accessibilityScore !== undefined &&
+                place.accessibilityScore >= 0.7 && (
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200 font-medium flex items-center gap-1">
+                    <Accessibility className="h-3 w-3" />
+                    Accessible
+                  </span>
+                )}
+            </div>
+          )}
         </div>
 
         {/* About */}
@@ -258,15 +327,119 @@ const PlaceDetailPage = () => {
           </p>
         </div>
 
-        {/* Why We Recommend */}
-        <div className="bg-secondary/5 border border-secondary/20 rounded-xl p-4 space-y-1">
-          <h2 className="text-sm font-semibold text-secondary flex items-center gap-1.5">
-            ✦ Why We Recommend This
-          </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {place.whyRecommend}
-          </p>
-        </div>
+        {/* Contact & Links */}
+        {(place.phone || place.website || place.bookingUrl) && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+              Contact
+            </h2>
+            <div className="flex flex-col gap-2">
+              {place.phone && (
+                <a
+                  href={`tel:${place.phone}`}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Phone className="h-4 w-4 text-secondary flex-shrink-0" />
+                  {place.phone}
+                </a>
+              )}
+              {place.website && (
+                <a
+                  href={place.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-secondary hover:underline"
+                >
+                  <Globe className="h-4 w-4 flex-shrink-0" />
+                  Visit Website
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+              {place.bookingUrl && (
+                <a
+                  href={place.bookingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-secondary hover:underline"
+                >
+                  <CalendarCheck className="h-4 w-4 flex-shrink-0" />
+                  Book a Table
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Menu */}
+        {(place.menuUrl || (place.menuImagesCount ?? 0) > 0) && (
+          <div className="bg-muted/40 border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <UtensilsCrossed className="h-5 w-5 text-secondary flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Menu</p>
+                {(place.menuImagesCount ?? 0) > 0 && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <Images className="h-3 w-3" />
+                    {place.menuImagesCount} menu photo
+                    {place.menuImagesCount! > 1 ? "s" : ""} available
+                  </p>
+                )}
+              </div>
+            </div>
+            {place.menuUrl && (
+              <a
+                href={place.menuUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-primary text-xs font-semibold rounded-lg hover:bg-secondary/90 transition-colors flex-shrink-0"
+              >
+                View Menu
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Facilities */}
+        {(place.hasWifi ||
+          place.hasToilet ||
+          place.seatingType ||
+          place.parkingAvailable) && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+              Facilities
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {place.hasWifi && (
+                <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium">
+                  <Wifi className="h-3.5 w-3.5" />
+                  Free Wi-Fi
+                </span>
+              )}
+              {place.hasToilet && (
+                <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-green-50 text-green-700 border border-green-200 font-medium">
+                  <Toilet className="h-3.5 w-3.5" />
+                  Restrooms
+                </span>
+              )}
+              {place.parkingAvailable && (
+                <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-medium">
+                  <ParkingSquare className="h-3.5 w-3.5" />
+                  Parking
+                </span>
+              )}
+              {(place.seatingType ?? []).map((s) => (
+                <span
+                  key={s}
+                  className="text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground border border-border font-medium capitalize"
+                >
+                  {s} seating
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* AI Review Summary */}
         <ReviewSummarySection

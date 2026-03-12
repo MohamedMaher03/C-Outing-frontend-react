@@ -1,7 +1,15 @@
-import { Heart, MapPin, Star, Clock } from "lucide-react";
+import { Heart, MapPin, Star, Clock, Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { PlaceCardProps } from "@/features/home/types";
+
+/** Maps price level to dollar-sign shorthand */
+const PRICE_SYMBOL: Record<string, string> = {
+  cheap: "$",
+  moderate: "$$",
+  expensive: "$$$",
+  luxury: "$$$$",
+};
 
 const PlaceCard = ({
   place,
@@ -83,9 +91,16 @@ const PlaceCard = ({
           <Star className="h-3.5 w-3.5 fill-secondary text-secondary" />
           {place.rating}
           <span className="text-muted-foreground font-normal ml-0.5">
-            ({place.reviewCount})
+            ({place.reviewCount.toLocaleString()})
           </span>
         </Badge>
+
+        {/* Wi-Fi badge */}
+        {place.hasWifi && (
+          <Badge className="absolute bottom-3 right-3 bg-white/90 text-foreground backdrop-blur-md border-0 gap-1 shadow-md px-2 py-1">
+            <Wifi className="h-3 w-3 text-blue-500" />
+          </Badge>
+        )}
       </div>
 
       {/* Content */}
@@ -93,28 +108,30 @@ const PlaceCard = ({
         <h3 className="font-bold text-foreground text-sm leading-tight line-clamp-1 group-hover:text-secondary transition-colors">
           {place.name}
         </h3>
+
+        {/* Address row */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-xs min-w-0">
             <MapPin className="h-3 w-3 flex-shrink-0" />
-            <span className="truncate">
-              {place.distance} · {place.district}
-            </span>
+            <span className="truncate">{place.address}</span>
           </div>
           {place.isOpen !== undefined && (
             <div
               className={cn(
-                "flex items-center gap-1 text-[10px] font-semibold",
+                "flex items-center gap-1 text-[10px] font-semibold flex-shrink-0 ml-1",
                 place.isOpen ? "text-emerald-600" : "text-muted-foreground",
               )}
             >
               <Clock className="h-3 w-3" />
-              {place.isOpen ? `Open · ${place.openUntil}` : "Closed"}
+              {place.isOpen ? "Open" : "Closed"}
             </div>
           )}
         </div>
+
+        {/* Tags & price */}
         <div className="flex items-center gap-1.5 pt-0.5">
           <div className="flex gap-1.5 overflow-hidden flex-1 min-w-0">
-            {place.tags.slice(0, 3).map((tag) => (
+            {(place.atmosphereTags ?? []).slice(0, 2).map((tag) => (
               <span
                 key={tag}
                 className="text-[10px] px-2.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground font-medium border border-border/40 flex-shrink-0"
@@ -124,9 +141,11 @@ const PlaceCard = ({
             ))}
           </div>
           {/* Price Level */}
-          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary font-bold border border-secondary/20 flex-shrink-0 ml-auto">
-            {"$".repeat(place.priceLevel)}
-          </span>
+          {place.priceLevel && (
+            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary font-bold border border-secondary/20 flex-shrink-0 ml-auto">
+              {PRICE_SYMBOL[place.priceLevel] ?? "?"}
+            </span>
+          )}
         </div>
       </div>
     </div>
