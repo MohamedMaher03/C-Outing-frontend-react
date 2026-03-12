@@ -26,7 +26,7 @@ export const homeApi = {
    * curatedPlaces MUST carry a userId because the backend ranks them using
    * the user's preference vector.  Trending and top-rated are global lists.
    */
-  async fetchHomePageData(userId: number): Promise<HomePageData> {
+  async fetchHomePageData(userId: string): Promise<HomePageData> {
     const [curated, trending, topRated] = await Promise.all([
       axiosInstance.get<Place[]>(API_ENDPOINTS.home.curated(userId)),
       axiosInstance.get<Place[]>(API_ENDPOINTS.home.trending),
@@ -47,5 +47,17 @@ export const homeApi = {
     await axiosInstance.post(API_ENDPOINTS.home.toggleSave(placeId), {
       isSaved,
     });
+  },
+
+  /**
+   * GET /venues/mood/:moodId
+   * Returns places that match the given mood (e.g. "chill", "romantic").
+   * The backend applies a mood-to-attribute mapping and returns a ranked list.
+   */
+  async fetchPlacesByMood(moodId: string): Promise<Place[]> {
+    const response = await axiosInstance.get<Place[]>(
+      API_ENDPOINTS.home.moodPlaces(moodId),
+    );
+    return response.data;
   },
 };

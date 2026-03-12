@@ -35,10 +35,11 @@ import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleto
 
 /** Maps price level string to dollar-sign display */
 const PRICE_SYMBOL: Record<string, string> = {
-  cheap: "$",
-  moderate: "$$",
-  expensive: "$$$",
-  luxury: "$$$$",
+  price_cheapest: "$",
+  cheap: "$$",
+  mid_range: "$$$",
+  expensive: "$$$$",
+  luxury: "$$$$$",
 };
 
 // ============ Main Page ============

@@ -269,7 +269,7 @@ export const PLACES: Place[] = [
     description:
       "Traditional sailboat ride along the Nile with stunning sunset views of Cairo's skyline.",
     priceRange: "100–200 EGP",
-    priceLevel: "mid_range",
+    priceLevel: "luxury",
     hours: "Daily 10:00 AM – 10:00 PM",
     isOpen: true,
     atmosphereTags: ["Romantic", "Scenic", "Outdoor"],

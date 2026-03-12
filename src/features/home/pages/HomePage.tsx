@@ -37,6 +37,8 @@ const HomePage = () => {
     curatedPlaces,
     topRatedPlaces,
     trendingPlaces,
+    moodPlaces,
+    isMoodLoading,
     toggleSave,
     isLoading,
     error,
@@ -220,6 +222,81 @@ const HomePage = () => {
                 })}
               </div>
             </section>
+
+            {/* ── Mood Picks ── */}
+            {selectedMood && (
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-secondary/15">
+                        {(() => {
+                          const mood = moodOptions.find(
+                            (m) => m.id === selectedMood,
+                          );
+                          const MoodIcon = mood
+                            ? (MOOD_ICON_MAP[mood.icon] ?? Sparkles)
+                            : Sparkles;
+                          return (
+                            <MoodIcon className="h-5 w-5 text-secondary" />
+                          );
+                        })()}
+                      </div>
+                      {moodOptions.find((m) => m.id === selectedMood)?.label ??
+                        "Mood Picks"}
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-1 ml-10">
+                      {moodOptions.find((m) => m.id === selectedMood)
+                        ?.description ?? "Places that match your vibe"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedMood(null)}
+                    className="text-xs text-muted-foreground font-semibold hover:text-foreground transition-colors"
+                  >
+                    Clear mood
+                  </button>
+                </div>
+
+                {isMoodLoading ? (
+                  <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
+                      />
+                    ))}
+                  </div>
+                ) : moodPlaces.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-border/60 bg-muted/30">
+                    <span className="text-3xl mb-3">🔍</span>
+                    <p className="font-semibold text-foreground">
+                      No spots found for this mood
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Try a different vibe!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide">
+                    {moodPlaces.map((place, i) => (
+                      <div
+                        key={place.id}
+                        className="animate-slide-in-right"
+                        style={{ animationDelay: `${i * 60}ms` }}
+                      >
+                        <PlaceCard
+                          place={place}
+                          variant="horizontal"
+                          onToggleSave={toggleSave}
+                          onClick={(id) => navigate(`/venue/${id}`)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
 
             {/* ── Curated For You ── */}
             <section className="space-y-4">

@@ -43,6 +43,10 @@ interface UseHomeReturn {
   curatedPlaces: Place[];
   topRatedPlaces: Place[];
   trendingPlaces: Place[];
+  /** Places returned by the mood-based recommendation endpoint. */
+  moodPlaces: Place[];
+  /** True while the mood-based fetch is in-flight. */
+  isMoodLoading: boolean;
 
   // Static data
   categories: typeof CATEGORIES;
@@ -68,6 +72,8 @@ export const useHome = (): UseHomeReturn => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [moodPlaces, setMoodPlaces] = useState<Place[]>([]);
+  const [isMoodLoading, setIsMoodLoading] = useState(false);
 
   // Raw backend-provided sections (source-of-truth ordering / curation)
   const [rawCurated, setRawCurated] = useState<Place[]>([]);
@@ -79,6 +85,33 @@ export const useHome = (): UseHomeReturn => {
       loadPlaces();
     }
   }, [user?.userId]);
+
+  /**
+   * Whenever selectedMood changes, fetch mood-matched places from the backend.
+   * Clearing the mood (null) resets the list immediately without an API call.
+   */
+  useEffect(() => {
+    if (!selectedMood) {
+      setMoodPlaces([]);
+      return;
+    }
+    let cancelled = false;
+    const fetchMoodPlaces = async () => {
+      setIsMoodLoading(true);
+      try {
+        const places = await homeService.fetchPlacesByMood(selectedMood);
+        if (!cancelled) setMoodPlaces(places);
+      } catch (err) {
+        if (!cancelled) console.error("Failed to fetch mood places:", err);
+      } finally {
+        if (!cancelled) setIsMoodLoading(false);
+      }
+    };
+    fetchMoodPlaces();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedMood]);
 
   const loadPlaces = async () => {
     if (!user) return;
@@ -229,6 +262,8 @@ export const useHome = (): UseHomeReturn => {
     curatedPlaces,
     topRatedPlaces,
     trendingPlaces,
+    moodPlaces,
+    isMoodLoading,
 
     // Static data
     categories: CATEGORIES,

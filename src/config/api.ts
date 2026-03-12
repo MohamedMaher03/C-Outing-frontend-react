@@ -51,6 +51,9 @@ export const API_ENDPOINTS = {
     trending: "/venues/trending",
     topRated: "/venues/top-rated",
     toggleSave: (placeId: string) => `/venues/${placeId}/save`,
+    // Returns places filtered by mood (e.g., "chill", "romantic").
+    // The backend applies its own mood-to-attribute mapping.
+    moodPlaces: (moodId: string) => `/venues/mood/${moodId}`,
   },
 
   // ── Favorites ────────────────────────────────────────────────
