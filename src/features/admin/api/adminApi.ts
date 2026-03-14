@@ -63,7 +63,7 @@ export const adminApi = {
    * Updates a user's role.
    */
   async updateUserRole(
-    userId: number,
+    userId: string,
     role: "user" | "moderator" | "admin",
   ): Promise<void> {
     await axiosInstance.patch(API_ENDPOINTS.admin.updateUserRole(userId), {
@@ -76,7 +76,7 @@ export const adminApi = {
    * Updates a user's account status.
    */
   async updateUserStatus(
-    userId: number,
+    userId: string,
     status: "active" | "banned" | "suspended",
   ): Promise<void> {
     await axiosInstance.patch(API_ENDPOINTS.admin.updateUserStatus(userId), {

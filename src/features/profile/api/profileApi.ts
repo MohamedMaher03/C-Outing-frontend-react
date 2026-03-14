@@ -29,7 +29,7 @@ import type {
 export const profileApi = {
   // ── Profile ────────────────────────────────────────────────
 
-  async getProfile(userId: number): Promise<UserProfile> {
+  async getProfile(userId: string): Promise<UserProfile> {
     const { data } = await axiosInstance.get<UserProfile>(
       API_ENDPOINTS.users.getProfile(userId),
     );
@@ -37,7 +37,7 @@ export const profileApi = {
   },
 
   async updateProfile(
-    userId: number,
+    userId: string,
     payload: Partial<EditProfileData>,
   ): Promise<UserProfile> {
     const { data } = await axiosInstance.put<UserProfile>(
@@ -50,7 +50,7 @@ export const profileApi = {
   // ── Avatar ─────────────────────────────────────────────────
 
   async uploadAvatar(
-    userId: number,
+    userId: string,
     file: File,
   ): Promise<{ avatarUrl: string }> {
     const formData = new FormData();
@@ -65,7 +65,7 @@ export const profileApi = {
 
   // ── Preferences ────────────────────────────────────────────
 
-  async getPreferences(userId: number): Promise<UserPreferences> {
+  async getPreferences(userId: string): Promise<UserPreferences> {
     const { data } = await axiosInstance.get<UserPreferences>(
       API_ENDPOINTS.users.getPreferences(userId),
     );
@@ -73,7 +73,7 @@ export const profileApi = {
   },
 
   async updatePreferences(
-    userId: number,
+    userId: string,
     payload: UpdatePreferencesRequest,
   ): Promise<UserPreferences> {
     const { data } = await axiosInstance.put<UserPreferences>(
@@ -85,7 +85,7 @@ export const profileApi = {
 
   // ── Notifications ──────────────────────────────────────────
 
-  async getNotifications(userId: number): Promise<NotificationSettings> {
+  async getNotifications(userId: string): Promise<NotificationSettings> {
     const { data } = await axiosInstance.get<NotificationSettings>(
       API_ENDPOINTS.profile.getNotifications(userId),
     );
@@ -93,7 +93,7 @@ export const profileApi = {
   },
 
   async updateNotifications(
-    userId: number,
+    userId: string,
     payload: NotificationSettings,
   ): Promise<NotificationSettings> {
     const { data } = await axiosInstance.put<NotificationSettings>(
@@ -105,7 +105,7 @@ export const profileApi = {
 
   // ── Privacy ────────────────────────────────────────────────
 
-  async getPrivacy(userId: number): Promise<PrivacySettings> {
+  async getPrivacy(userId: string): Promise<PrivacySettings> {
     const { data } = await axiosInstance.get<PrivacySettings>(
       API_ENDPOINTS.profile.getPrivacy(userId),
     );
@@ -113,7 +113,7 @@ export const profileApi = {
   },
 
   async updatePrivacy(
-    userId: number,
+    userId: string,
     payload: PrivacySettings,
   ): Promise<PrivacySettings> {
     const { data } = await axiosInstance.put<PrivacySettings>(
@@ -125,7 +125,7 @@ export const profileApi = {
 
   // ── Account Management ─────────────────────────────────────
 
-  async downloadData(userId: number): Promise<Blob> {
+  async downloadData(userId: string): Promise<Blob> {
     const { data } = await axiosInstance.get<Blob>(
       API_ENDPOINTS.profile.downloadData(userId),
       { responseType: "blob" },
@@ -133,7 +133,7 @@ export const profileApi = {
     return data;
   },
 
-  async deleteAccount(userId: number): Promise<void> {
+  async deleteAccount(userId: string): Promise<void> {
     await axiosInstance.delete(API_ENDPOINTS.profile.deleteAccount(userId));
   },
 };

@@ -20,7 +20,7 @@ import type {
 } from "../types";
 
 // Placeholder — replace with the real user id from auth context when backend is live
-const CURRENT_USER_ID = 1;
+const CURRENT_USER_ID = "1";
 
 export const notificationsApi = {
   /**
