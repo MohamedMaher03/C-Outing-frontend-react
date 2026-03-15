@@ -14,7 +14,14 @@
 
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
-import type { HomePageData, HomePlace } from "../types";
+import type {
+  HomePageData,
+  HomePlace,
+  VenueByDistrictParams,
+  VenueByPriceRangeParams,
+  VenueByTypeParams,
+  VenueTopRatedInAreaParams,
+} from "../types";
 
 export const homeApi = {
   /**
@@ -56,6 +63,55 @@ export const homeApi = {
   async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
     const response = await axiosInstance.get<HomePlace[]>(
       API_ENDPOINTS.home.moodPlaces(moodId),
+    );
+    return response.data;
+  },
+
+  /** GET /api/v1/Venue/district/{district} */
+  async fetchVenuesByDistrict(
+    params: VenueByDistrictParams,
+  ): Promise<HomePlace[]> {
+    const response = await axiosInstance.get<HomePlace[]>(
+      API_ENDPOINTS.home.venuesByDistrict(params.district),
+    );
+    return response.data;
+  },
+
+  /** GET /api/v1/Venue/type/{type} */
+  async fetchVenuesByType(params: VenueByTypeParams): Promise<HomePlace[]> {
+    const response = await axiosInstance.get<HomePlace[]>(
+      API_ENDPOINTS.home.venuesByType(params.type),
+    );
+    return response.data;
+  },
+
+  /** GET /api/v1/Venue/price-range/{priceRange} */
+  async fetchVenuesByPriceRange(
+    params: VenueByPriceRangeParams,
+  ): Promise<HomePlace[]> {
+    const response = await axiosInstance.get<HomePlace[]>(
+      API_ENDPOINTS.home.venuesByPriceRange(params.priceRange),
+    );
+    return response.data;
+  },
+
+  /** GET /api/v1/Venue/top-rated */
+  async fetchVenueTopRated(): Promise<HomePlace[]> {
+    const response = await axiosInstance.get<HomePlace[]>(
+      API_ENDPOINTS.home.venueTopRated,
+    );
+    return response.data;
+  },
+
+  /** GET /api/v1/Venue/top-rated-in-area?area={area} */
+  async fetchVenueTopRatedInArea(
+    params: VenueTopRatedInAreaParams,
+  ): Promise<HomePlace[]> {
+    const response = await axiosInstance.get<HomePlace[]>(
+      API_ENDPOINTS.home.venueTopRatedInArea,
+      {
+        params: { area: params.area },
+      },
     );
     return response.data;
   },

@@ -54,6 +54,16 @@ export const API_ENDPOINTS = {
     // Returns places filtered by mood (e.g., "chill", "romantic").
     // The backend applies its own mood-to-attribute mapping.
     moodPlaces: (moodId: string) => `/venues/mood/${moodId}`,
+
+    // Venue discovery endpoints (standard envelope: ApiResponse<HomePlace[]>)
+    venuesByDistrict: (district: string) =>
+      `/api/v1/Venue/district/${encodeURIComponent(district)}`,
+    venuesByType: (type: string) =>
+      `/api/v1/Venue/type/${encodeURIComponent(type)}`,
+    venuesByPriceRange: (priceRange: string) =>
+      `/api/v1/Venue/price-range/${encodeURIComponent(priceRange)}`,
+    venueTopRated: "/api/v1/Venue/top-rated",
+    venueTopRatedInArea: "/api/v1/Venue/top-rated-in-area",
   },
 
   // ── Favorites ────────────────────────────────────────────────

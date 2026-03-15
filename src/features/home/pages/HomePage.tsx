@@ -12,12 +12,15 @@ import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Input } from "@/components/ui/input";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { useHome } from "@/features/home/hooks/useHome";
+import { useHome } from "@/features/home/hooks/useHomeHook";
 import {
   FILTER_OPTIONS,
   CATEGORY_ICON_MAP,
+  DISCOVERY_SOURCE_OPTIONS,
   MOOD_ICON_MAP,
+  VENUE_PRICE_RANGE_OPTIONS,
 } from "@/features/home/mocks";
+import type { VenuePriceRange } from "@/features/home/types";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
 
 const HomePage = () => {
@@ -33,6 +36,23 @@ const HomePage = () => {
     setSelectedMood,
     selectedCategory,
     setSelectedCategory,
+    selectedDistrict,
+    setSelectedDistrict,
+    selectedVenueType,
+    setSelectedVenueType,
+    selectedPriceRange,
+    setSelectedPriceRange,
+    selectedArea,
+    setSelectedArea,
+    activeDiscoverySource,
+    setActiveDiscoverySource,
+    discoveryPlaces,
+    isDiscoveryLoading,
+    discoveryError,
+    globalTopRatedVenues,
+    topRatedInAreaVenues,
+    isGlobalTopRatedLoading,
+    isTopRatedInAreaLoading,
     filteredPlaces,
     curatedPlaces,
     topRatedPlaces,
@@ -47,6 +67,25 @@ const HomePage = () => {
     trendingTags,
     popularDistricts,
   } = useHome();
+
+  const typeDiscoveryOptions = categories.map((category) => ({
+    id: category.id,
+    label: category.label,
+  }));
+
+  const showDiscoverySkeleton =
+    isDiscoveryLoading ||
+    (activeDiscoverySource === "top-rated" && isGlobalTopRatedLoading) ||
+    (activeDiscoverySource === "top-rated-area" && isTopRatedInAreaLoading);
+
+  const discoveryResultCount = discoveryPlaces.length;
+
+  const handlePriceRangeSelect = (priceRange: VenuePriceRange) => {
+    setSelectedPriceRange(
+      selectedPriceRange === priceRange ? null : priceRange,
+    );
+    setActiveDiscoverySource("price-range");
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -220,6 +259,233 @@ const HomePage = () => {
                     </button>
                   );
                 })}
+              </div>
+            </section>
+
+            {/* ── Venue Discovery Studio (New Endpoints) ── */}
+            <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/30 p-5 sm:p-6 shadow-sm">
+              <div className="absolute -top-20 -right-16 h-52 w-52 rounded-full bg-secondary/15 blur-3xl" />
+              <div className="absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-orange-200/20 blur-3xl" />
+
+              <div className="relative z-10 space-y-5">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-black tracking-tight text-foreground flex items-center gap-2">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/20 text-secondary">
+                        <Compass className="h-4 w-4" />
+                      </span>
+                      Venue Discovery Studio
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Explore live venue slices by district, type, budget, and
+                      rating intelligence.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="rounded-full bg-foreground text-white px-3 py-1 font-semibold">
+                      Top Rated: {globalTopRatedVenues.length}
+                    </span>
+                    <span className="rounded-full bg-white/80 border border-border/70 px-3 py-1 font-semibold text-foreground">
+                      {selectedArea}: {topRatedInAreaVenues.length}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {DISCOVERY_SOURCE_OPTIONS.map((source) => {
+                    const Icon = source.icon;
+                    const isActive = activeDiscoverySource === source.id;
+                    return (
+                      <button
+                        key={source.id}
+                        onClick={() => setActiveDiscoverySource(source.id)}
+                        className={`group rounded-2xl border px-3 py-2.5 text-left transition-all duration-200 ${
+                          isActive
+                            ? "border-secondary/60 bg-secondary/15 shadow-md"
+                            : "border-border/60 bg-white/80 hover:border-secondary/30 hover:bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${
+                              isActive
+                                ? "bg-secondary/20 text-secondary"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <span className="text-xs font-semibold text-foreground leading-tight">
+                            {source.label}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {activeDiscoverySource === "district" && (
+                  <div className="flex flex-wrap gap-2">
+                    {popularDistricts.map((district) => {
+                      const isActive = selectedDistrict === district.name;
+                      return (
+                        <button
+                          key={district.id}
+                          onClick={() => {
+                            setSelectedDistrict(
+                              isActive ? null : district.name,
+                            );
+                            setActiveDiscoverySource("district");
+                          }}
+                          className={`rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+                            isActive
+                              ? "bg-foreground text-white shadow-md"
+                              : "bg-white border border-border/70 text-foreground hover:border-foreground/30"
+                          }`}
+                        >
+                          {district.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {activeDiscoverySource === "type" && (
+                  <div className="flex flex-wrap gap-2">
+                    {typeDiscoveryOptions.map((option) => {
+                      const isActive = selectedVenueType === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          onClick={() => {
+                            setSelectedVenueType(isActive ? null : option.id);
+                            setActiveDiscoverySource("type");
+                          }}
+                          className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
+                            isActive
+                              ? "bg-secondary text-primary shadow-md"
+                              : "bg-white border border-border/70 text-foreground hover:border-secondary/40"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {activeDiscoverySource === "price-range" && (
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {VENUE_PRICE_RANGE_OPTIONS.map((option) => {
+                      const isActive = selectedPriceRange === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          onClick={() => handlePriceRangeSelect(option.id)}
+                          className={`rounded-2xl border px-3 py-3 text-left transition-all ${
+                            isActive
+                              ? "border-secondary/60 bg-secondary/10 shadow-md"
+                              : "border-border/60 bg-white hover:border-secondary/40"
+                          }`}
+                        >
+                          <p className="text-sm font-black tracking-tight text-foreground">
+                            {option.label}
+                          </p>
+                          <p className="text-[11px] font-medium text-muted-foreground">
+                            {option.caption}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {activeDiscoverySource === "top-rated-area" && (
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+                      Select Area
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {popularDistricts.map((district) => {
+                        const isActive = selectedArea === district.name;
+                        return (
+                          <button
+                            key={`${district.id}-area`}
+                            onClick={() => {
+                              setSelectedArea(district.name);
+                              setActiveDiscoverySource("top-rated-area");
+                            }}
+                            className={`rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+                              isActive
+                                ? "bg-secondary text-primary"
+                                : "bg-white border border-border/70 text-foreground hover:border-secondary/40"
+                            }`}
+                          >
+                            {district.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-foreground">
+                      {discoveryResultCount} venue
+                      {discoveryResultCount === 1 ? "" : "s"} found
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Source: {activeDiscoverySource.replace("-", " ")}
+                    </p>
+                  </div>
+
+                  {showDiscoverySkeleton ? (
+                    <div className="flex gap-4 overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : discoveryError ? (
+                    <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
+                      <p className="text-sm font-semibold text-destructive">
+                        Could not load discovery venues
+                      </p>
+                      <p className="text-xs text-destructive/80 mt-1">
+                        {discoveryError}
+                      </p>
+                    </div>
+                  ) : discoveryPlaces.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-border/70 bg-white/70 px-4 py-8 text-center">
+                      <p className="font-semibold text-foreground">
+                        No venues for this filter yet
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Try another district, type, or budget range.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex gap-4 overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
+                      {discoveryPlaces.map((place, i) => (
+                        <div
+                          key={`${activeDiscoverySource}-${place.id}`}
+                          className="animate-slide-in-right"
+                          style={{ animationDelay: `${i * 45}ms` }}
+                        >
+                          <PlaceCard
+                            place={place}
+                            variant="horizontal"
+                            onToggleSave={toggleSave}
+                            onClick={(id) => navigate(`/venue/${id}`)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </section>
 

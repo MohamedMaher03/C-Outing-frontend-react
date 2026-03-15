@@ -17,7 +17,14 @@
 
 // import { homeApi } from "../api/homeApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
 import { homeMock as homeApi } from "../mocks/homeMock";
-import type { HomePageData, HomePlace } from "@/features/home/types";
+import type {
+  HomePageData,
+  HomePlace,
+  VenueByDistrictParams,
+  VenueByPriceRangeParams,
+  VenueByTypeParams,
+  VenueTopRatedInAreaParams,
+} from "@/features/home/types";
 
 // ── Home Service ─────────────────────────────────────────────
 
@@ -62,6 +69,57 @@ export const homeService = {
     } catch (error) {
       console.error("Error fetching places by mood:", error);
       throw new Error("Failed to fetch mood-based places");
+    }
+  },
+
+  async fetchVenuesByDistrict(
+    params: VenueByDistrictParams,
+  ): Promise<HomePlace[]> {
+    try {
+      return await homeApi.fetchVenuesByDistrict(params);
+    } catch (error) {
+      console.error("Error fetching venues by district:", error);
+      throw new Error("Failed to fetch venues by district");
+    }
+  },
+
+  async fetchVenuesByType(params: VenueByTypeParams): Promise<HomePlace[]> {
+    try {
+      return await homeApi.fetchVenuesByType(params);
+    } catch (error) {
+      console.error("Error fetching venues by type:", error);
+      throw new Error("Failed to fetch venues by type");
+    }
+  },
+
+  async fetchVenuesByPriceRange(
+    params: VenueByPriceRangeParams,
+  ): Promise<HomePlace[]> {
+    try {
+      return await homeApi.fetchVenuesByPriceRange(params);
+    } catch (error) {
+      console.error("Error fetching venues by price range:", error);
+      throw new Error("Failed to fetch venues by price range");
+    }
+  },
+
+  async fetchVenueTopRated(): Promise<HomePlace[]> {
+    try {
+      return await homeApi.fetchVenueTopRated();
+    } catch (error) {
+      console.error("Error fetching top-rated venues:", error);
+      throw new Error("Failed to fetch top-rated venues");
+    }
+  },
+
+  async fetchVenueTopRatedInArea(
+    params: VenueTopRatedInAreaParams,
+  ): Promise<HomePlace[]> {
+    try {
+      return await homeApi.fetchVenueTopRatedInArea(params);
+    } catch (error) {
+      console.error("Error fetching top-rated venues in area:", error);
+      throw new Error("Failed to fetch top-rated venues in area");
     }
   },
 };

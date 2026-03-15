@@ -21,8 +21,12 @@ import {
   Mountain,
   Users,
   Binoculars,
+  MapPin,
+  Tags,
+  BadgeDollarSign,
+  AreaChart,
 } from "lucide-react";
-import type { FilterType } from "../types";
+import type { DiscoverySource, FilterType, VenuePriceRange } from "../types";
 
 // Re-export mock API for convenient access
 export { homeMock } from "./homeMock";
@@ -40,6 +44,54 @@ export const FILTER_OPTIONS: FilterOption[] = [
   { id: "top-rated", label: "Top Rated", icon: TrendingUp },
   { id: "near-me", label: "Near Me", icon: Navigation },
   { id: "open-now", label: "Open Now", icon: Clock },
+];
+
+export interface DiscoverySourceOption {
+  id: DiscoverySource;
+  label: string;
+  icon: LucideIcon;
+}
+
+export const DISCOVERY_SOURCE_OPTIONS: DiscoverySourceOption[] = [
+  { id: "district", label: "District", icon: MapPin },
+  { id: "type", label: "Venue Type", icon: Tags },
+  { id: "price-range", label: "Price Range", icon: BadgeDollarSign },
+  { id: "top-rated", label: "Top Rated", icon: TrendingUp },
+  { id: "top-rated-area", label: "Top Rated In Area", icon: AreaChart },
+];
+
+export interface VenuePriceRangeOption {
+  id: VenuePriceRange;
+  label: string;
+  caption: string;
+}
+
+export const VENUE_PRICE_RANGE_OPTIONS: VenuePriceRangeOption[] = [
+  {
+    id: "price_cheapest",
+    label: "$",
+    caption: "Cheapest",
+  },
+  {
+    id: "cheap",
+    label: "$$",
+    caption: "Budget",
+  },
+  {
+    id: "mid_range",
+    label: "$$$",
+    caption: "Mid Range",
+  },
+  {
+    id: "expensive",
+    label: "$$$$",
+    caption: "Premium",
+  },
+  {
+    id: "luxury",
+    label: "$$$$$",
+    caption: "Luxury",
+  },
 ];
 
 // ============ Icon Maps ============

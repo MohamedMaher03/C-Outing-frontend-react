@@ -12,12 +12,40 @@
  */
 
 import { PLACES } from "@/mocks/mockData";
-import type { HomePageData, HomePlace } from "../types";
+import type {
+  HomePageData,
+  HomePlace,
+  VenueByDistrictParams,
+  VenueByPriceRangeParams,
+  VenueByTypeParams,
+  VenueTopRatedInAreaParams,
+} from "../types";
 
 // ── Helper ───────────────────────────────────────────────────
 
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
+
+const normalizedPlaces = (): HomePlace[] =>
+  PLACES.map((p) => ({ ...p, isSaved: p.isSaved ?? false }));
+
+const byDistrict = (district: string) => {
+  const q = district.trim().toLowerCase();
+  return normalizedPlaces().filter((p) => p.address.toLowerCase().includes(q));
+};
+
+const byType = (type: string) => {
+  const q = type.trim().toLowerCase();
+  return normalizedPlaces().filter((p) => p.category.toLowerCase().includes(q));
+};
+
+const byPriceRange = (priceRange: VenueByPriceRangeParams["priceRange"]) =>
+  normalizedPlaces().filter((p) => p.priceLevel === priceRange);
+
+const sortByTopRated = (list: HomePlace[]) =>
+  [...list].sort(
+    (a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount,
+  );
 
 /**
  * Maps each mood ID to a predicate that decides whether a Place fits.
@@ -74,7 +102,7 @@ export const homeMock = {
     await delay(800);
     console.log(`[Mock] Fetching home page data for user ${userId}`);
 
-    const all: HomePlace[] = PLACES.map((p) => ({ ...p, isSaved: false }));
+    const all: HomePlace[] = normalizedPlaces();
 
     // Curated = personalized — sorted by matchScore (proxy for recommendation rank)
     const curatedPlaces = [...all]
@@ -114,6 +142,42 @@ export const homeMock = {
     return [...PLACES]
       .filter(filter)
       .sort((a, b) => b.rating - a.rating)
-      .map((p) => ({ ...p, isSaved: false }));
+      .map((p) => ({ ...p, isSaved: p.isSaved ?? false }));
+  },
+
+  async fetchVenuesByDistrict(
+    params: VenueByDistrictParams,
+  ): Promise<HomePlace[]> {
+    await delay(700);
+    console.log(`[Mock] Fetching venues in district: ${params.district}`);
+    return sortByTopRated(byDistrict(params.district));
+  },
+
+  async fetchVenuesByType(params: VenueByTypeParams): Promise<HomePlace[]> {
+    await delay(700);
+    console.log(`[Mock] Fetching venues by type: ${params.type}`);
+    return sortByTopRated(byType(params.type));
+  },
+
+  async fetchVenuesByPriceRange(
+    params: VenueByPriceRangeParams,
+  ): Promise<HomePlace[]> {
+    await delay(700);
+    console.log(`[Mock] Fetching venues by price range: ${params.priceRange}`);
+    return sortByTopRated(byPriceRange(params.priceRange));
+  },
+
+  async fetchVenueTopRated(): Promise<HomePlace[]> {
+    await delay(600);
+    console.log("[Mock] Fetching top-rated venues");
+    return sortByTopRated(normalizedPlaces()).slice(0, 8);
+  },
+
+  async fetchVenueTopRatedInArea(
+    params: VenueTopRatedInAreaParams,
+  ): Promise<HomePlace[]> {
+    await delay(650);
+    console.log(`[Mock] Fetching top-rated venues in area: ${params.area}`);
+    return sortByTopRated(byDistrict(params.area)).slice(0, 8);
   },
 };
