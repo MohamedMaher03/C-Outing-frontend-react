@@ -5,10 +5,11 @@ import type { PlaceCardProps } from "@/features/home/types";
 
 /** Maps price level to dollar-sign shorthand */
 const PRICE_SYMBOL: Record<string, string> = {
-  cheap: "$",
-  moderate: "$$",
-  expensive: "$$$",
-  luxury: "$$$$",
+  price_cheapest: "$",
+  cheap: "$$",
+  mid_range: "$$$",
+  expensive: "$$$$",
+  luxury: "$$$$$",
 };
 
 const PlaceCard = ({

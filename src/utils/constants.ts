@@ -18,7 +18,13 @@ export const VENUE_CATEGORIES = [
 ];
 
 // Budget Levels
-export const BUDGET_LEVELS = ["low", "medium", "high"] as const;
+export const BUDGET_LEVELS = [
+  "price_cheapest",
+  "cheap",
+  "mid_range",
+  "expensive",
+  "luxury",
+] as const;
 
 // Moods
 export const MOODS = ["relaxed", "energetic", "social", "romantic"] as const;

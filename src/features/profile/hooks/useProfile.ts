@@ -11,6 +11,7 @@ import {
   signOut,
 } from "@/features/profile/services/profileService";
 import type { UserProfile, UserPreferences } from "@/features/profile/types";
+import type { PriceLevel } from "@/features/admin/types";
 import { getErrorMessage } from "@/utils/apiError";
 
 interface UseProfileReturn {
@@ -25,13 +26,13 @@ interface UseProfileReturn {
   selectedInterests: string[];
   vibe: number[];
   selectedDistricts: string[];
-  selectedBudget: "Low" | "Medium" | "High";
+  selectedBudget: PriceLevel;
 
   // Actions
   toggleInterest: (id: string) => void;
   setVibe: (value: number[]) => void;
   toggleDistrict: (district: string) => void;
-  setSelectedBudget: (budget: "Low" | "Medium" | "High") => void;
+  setSelectedBudget: (budget: PriceLevel) => void;
   savePreferences: () => Promise<void>;
   handleSignOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -48,9 +49,7 @@ export const useProfile = (): UseProfileReturn => {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [vibe, setVibe] = useState<number[]>([50]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
-  const [selectedBudget, setSelectedBudget] = useState<
-    "Low" | "Medium" | "High"
-  >("Medium");
+  const [selectedBudget, setSelectedBudget] = useState<PriceLevel>("mid_range");
 
   // Fetch profile and preferences on mount
   useEffect(() => {
@@ -75,7 +74,7 @@ export const useProfile = (): UseProfileReturn => {
       setSelectedInterests(preferencesData.interests || []);
       setVibe([preferencesData.vibe || 50]);
       setSelectedDistricts(preferencesData.districts || []);
-      setSelectedBudget(preferencesData.budget || "Medium");
+      setSelectedBudget(preferencesData.budget || "mid_range");
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load profile"));
       console.error("Error fetching profile:", err);

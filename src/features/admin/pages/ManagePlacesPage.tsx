@@ -42,6 +42,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useManagePlaces } from "@/features/admin/hooks/useManagePlaces";
+import type { PriceLevel } from "@/features/admin/types";
 import { DISTRICTS } from "@/mocks/mockData";
 
 // ── Constants ─────────────────────────────────────────────────
@@ -73,6 +74,14 @@ const COMMON_TAGS = [
   "Budget Friendly",
   "Pet Friendly",
   "Instagrammable",
+];
+
+const PRICE_LEVEL_OPTIONS: Array<{ value: PriceLevel; signs: number }> = [
+  { value: "price_cheapest", signs: 1 },
+  { value: "cheap", signs: 2 },
+  { value: "mid_range", signs: 3 },
+  { value: "expensive", signs: 4 },
+  { value: "luxury", signs: 5 },
 ];
 
 // ── Config ────────────────────────────────────────────────────
@@ -111,7 +120,7 @@ const EMPTY_FORM = {
   district: "",
   description: "",
   whyRecommend: "",
-  priceLevel: 2 as 1 | 2 | 3,
+  priceLevel: "mid_range" as PriceLevel,
   tags: [] as string[],
   image: "",
   phone: "",
@@ -294,19 +303,21 @@ const ManagePlacesPage = () => {
             <div className="space-y-1.5">
               <Label>Price Level</Label>
               <div className="flex gap-2">
-                {([1, 2, 3] as const).map((lvl) => (
+                {PRICE_LEVEL_OPTIONS.map((lvl) => (
                   <button
-                    key={lvl}
+                    key={lvl.value}
                     type="button"
-                    onClick={() => setForm((p) => ({ ...p, priceLevel: lvl }))}
+                    onClick={() =>
+                      setForm((p) => ({ ...p, priceLevel: lvl.value }))
+                    }
                     className={cn(
                       "flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
-                      form.priceLevel === lvl
+                      form.priceLevel === lvl.value
                         ? "bg-secondary text-secondary-foreground border-secondary"
                         : "border-border text-muted-foreground hover:border-secondary/50",
                     )}
                   >
-                    {Array.from({ length: lvl }).map((_, i) => (
+                    {Array.from({ length: lvl.signs }).map((_, i) => (
                       <DollarSign key={i} className="h-3.5 w-3.5" />
                     ))}
                   </button>

@@ -37,7 +37,7 @@ export const onboardingApi = {
       interests: preferences.interests,
       vibe: preferences.vibe,
       preferredDistricts: preferences.districts,
-      budgetRange: preferences.budget?.toLowerCase() ?? null,
+      budgetRange: preferences.budget ?? null,
     };
     await axiosInstance.post(
       API_ENDPOINTS.onboarding.submitPreferences(userId),
@@ -61,7 +61,7 @@ export const onboardingApi = {
     if (preferences.districts !== undefined)
       payload.preferredDistricts = preferences.districts;
     if (preferences.budget !== undefined)
-      payload.budgetRange = preferences.budget?.toLowerCase() ?? null;
+      payload.budgetRange = preferences.budget ?? null;
     await axiosInstance.patch(
       API_ENDPOINTS.onboarding.updatePreferences(userId),
       payload,

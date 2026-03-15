@@ -21,7 +21,7 @@ const EMPTY_FORM: ModeratePlaceFormData = {
   category: "",
   district: "",
   description: "",
-  priceLevel: 2,
+  priceLevel: "mid_range",
   tags: [],
   image: "",
   phone: "",

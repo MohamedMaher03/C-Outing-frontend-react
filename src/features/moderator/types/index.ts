@@ -2,6 +2,8 @@
  * Moderator Feature — Type Definitions
  */
 
+import type { PriceLevel } from "@/features/admin/types";
+
 export interface ModeratorStats {
   pendingReviews: number;
   flaggedPlaces: number;
@@ -59,7 +61,7 @@ export interface ModeratePlaceFormData {
   category: string;
   district: string;
   description: string;
-  priceLevel: 1 | 2 | 3;
+  priceLevel: PriceLevel;
   tags: string[];
   image: string;
   phone: string;

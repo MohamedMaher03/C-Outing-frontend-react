@@ -13,6 +13,13 @@ export interface AdminStats {
   resolvedReportsThisWeek: number;
 }
 
+export type PriceLevel =
+  | "price_cheapest"
+  | "cheap"
+  | "mid_range"
+  | "expensive"
+  | "luxury";
+
 export interface AdminUser {
   userId: number;
   name: string;
@@ -39,7 +46,7 @@ export interface AdminPlace {
   tags?: string[];
   description?: string;
   whyRecommend?: string;
-  priceLevel?: 1 | 2 | 3;
+  priceLevel?: PriceLevel;
   phone?: string;
   website?: string;
 }
@@ -101,7 +108,7 @@ export interface PlaceFormData {
   district: string;
   description: string;
   whyRecommend: string;
-  priceLevel: 1 | 2 | 3;
+  priceLevel: PriceLevel;
   tags: string[];
   image: string;
   phone: string;
@@ -142,7 +149,7 @@ export interface AdminPlace {
   tags?: string[];
   description?: string;
   whyRecommend?: string;
-  priceLevel?: 1 | 2 | 3;
+  priceLevel?: PriceLevel;
   phone?: string;
   website?: string;
 }

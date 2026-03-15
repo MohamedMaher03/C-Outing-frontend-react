@@ -17,12 +17,19 @@ import {
   Music,
   Building2,
 } from "lucide-react";
+import type { PriceLevel } from "@/features/admin/types";
 
 /** Step labels displayed in the progress bar */
 export const ONBOARDING_STEPS = ["Interests", "Vibe", "Areas", "Budget"];
 
 /** Budget options for the final onboarding step */
-export const BUDGET_OPTIONS = ["Low", "Medium", "High"] as const;
+export const BUDGET_OPTIONS: Array<{ value: PriceLevel; label: string }> = [
+  { value: "price_cheapest", label: "Cheapest ($)" },
+  { value: "cheap", label: "Cheap ($$)" },
+  { value: "mid_range", label: "Mid Range ($$$)" },
+  { value: "expensive", label: "Expensive ($$$$)" },
+  { value: "luxury", label: "Luxury ($$$$$)" },
+];
 
 /** Maps interest icon names to Lucide icon components */
 export const INTEREST_ICON_MAP: Record<string, LucideIcon> = {

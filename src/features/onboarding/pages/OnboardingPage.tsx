@@ -213,19 +213,19 @@ const OnboardingPage = () => {
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-center gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md mx-auto">
                     {BUDGET_OPTIONS.map((b) => (
                       <button
-                        key={b}
-                        onClick={() => setBudget(b)}
+                        key={b.value}
+                        onClick={() => setBudget(b.value)}
                         className={cn(
-                          "px-6 py-3 rounded-xl text-sm font-medium border transition-all duration-200",
-                          budget === b
+                          "w-full px-4 py-2.5 rounded-xl text-sm text-center whitespace-normal break-words font-medium border transition-all duration-200",
+                          budget === b.value
                             ? "border-secondary bg-secondary/15 text-secondary"
                             : "border-border bg-card text-muted-foreground hover:border-secondary/40",
                         )}
                       >
-                        {b}
+                        {b.label}
                       </button>
                     ))}
                   </div>

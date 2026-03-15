@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { submitOnboardingPreferences } from "@/features/onboarding/services/onboardingService";
 import type { OnboardingPreferences } from "@/features/onboarding/types";
+import type { PriceLevel } from "@/features/admin/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getErrorMessage } from "@/utils/apiError";
 
@@ -17,7 +18,7 @@ interface UseOnboardingReturn {
   selectedInterests: string[];
   vibe: number[];
   selectedDistricts: string[];
-  budget: string | null;
+  budget: PriceLevel | null;
   isSubmitting: boolean;
   error: string | null;
 
@@ -28,7 +29,7 @@ interface UseOnboardingReturn {
   toggleInterest: (id: string) => void;
   setVibe: (value: number[]) => void;
   toggleDistrict: (district: string) => void;
-  setBudget: (budget: string) => void;
+  setBudget: (budget: PriceLevel) => void;
   goToNextStep: () => void;
   goToPreviousStep: () => void;
   handleComplete: () => Promise<void>;
@@ -46,7 +47,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [vibe, setVibe] = useState([50]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
-  const [budget, setBudget] = useState<string | null>(null);
+  const [budget, setBudget] = useState<PriceLevel | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,7 +103,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
         interests: selectedInterests,
         vibe: vibe[0],
         districts: selectedDistricts,
-        budget: budget as "Low" | "Medium" | "High" | null,
+        budget,
       };
 
       await submitOnboardingPreferences(user.userId, preferences);

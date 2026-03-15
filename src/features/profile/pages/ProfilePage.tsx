@@ -7,7 +7,17 @@ import { cn } from "@/lib/utils";
 import { INTERESTS, DISTRICTS } from "@/mocks/mockData";
 import { useProfile } from "@/features/profile/hooks/useProfile";
 import { INTEREST_ICON_MAP } from "@/features/profile/mocks";
+import type { PriceLevel } from "@/features/admin/types";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+
+const BUDGET_OPTIONS: Array<{ value: PriceLevel; label: string }> = [
+  { value: "price_cheapest", label: "Cheapest ($)" },
+  { value: "cheap", label: "Cheap ($$)" },
+  { value: "mid_range", label: "Mid Range ($$$)" },
+  { value: "expensive", label: "Expensive ($$$$)" },
+  { value: "luxury", label: "Luxury ($$$$$)" },
+];
+
 const ProfilePage = () => {
   const navigate = useNavigate();
   const {
@@ -179,21 +189,19 @@ const ProfilePage = () => {
               Budget
             </h3>
             <div className="flex flex-wrap gap-2">
-              {["Low", "Medium", "High"].map((d) => {
+              {BUDGET_OPTIONS.map((d) => {
                 return (
                   <button
-                    key={d}
-                    onClick={() =>
-                      setSelectedBudget(d as "Low" | "Medium" | "High")
-                    }
+                    key={d.value}
+                    onClick={() => setSelectedBudget(d.value)}
                     className={cn(
                       "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
-                      selectedBudget === d
+                      selectedBudget === d.value
                         ? "border-secondary bg-secondary/10 text-foreground"
                         : "border-border bg-card text-muted-foreground hover:border-secondary/40",
                     )}
                   >
-                    {d}
+                    {d.label}
                   </button>
                 );
               })}

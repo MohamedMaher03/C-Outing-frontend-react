@@ -2,6 +2,8 @@
  * Profile Feature — Type Definitions
  */
 
+import type { PriceLevel } from "@/features/admin/types";
+
 export interface UserProfile {
   userId: number;
   name: string;
@@ -14,14 +16,14 @@ export interface UserPreferences {
   interests: string[];
   vibe: number;
   districts: string[];
-  budget: "Low" | "Medium" | "High";
+  budget: PriceLevel;
 }
 
 export interface UpdatePreferencesRequest {
   interests?: string[];
   vibe?: number;
   districts?: string[];
-  budget?: "Low" | "Medium" | "High";
+  budget?: PriceLevel;
 }
 
 /** Data shape used by EditProfilePage */

@@ -20,7 +20,7 @@ const EMPTY_FORM: PlaceFormData = {
   district: "",
   description: "",
   whyRecommend: "",
-  priceLevel: 2,
+  priceLevel: "mid_range",
   tags: [],
   image: "",
   phone: "",
