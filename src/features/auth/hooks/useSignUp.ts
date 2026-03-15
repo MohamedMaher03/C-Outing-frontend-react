@@ -11,8 +11,7 @@
 
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { AUTH_ERROR_MESSAGES } from "../constants";
-import { AuthError } from "../errors";
+import { getAuthErrorMessage } from "../errors";
 import type { SignUpFormData } from "../validation/signUp.schema";
 
 interface UseSignUpReturn {
@@ -38,13 +37,12 @@ export const useSignUp = (): UseSignUpReturn => {
         name: data.fullName,
         email: data.email,
         password: data.password,
-        phone: data.phone,
+        phoneNumber: data.phone,
         dateOfBirth: data.dateOfBirth,
       });
       return true;
     } catch (err) {
-      const code = err instanceof AuthError ? err.code : "UNKNOWN_ERROR";
-      setError(AUTH_ERROR_MESSAGES[code] ?? AUTH_ERROR_MESSAGES.UNKNOWN_ERROR);
+      setError(getAuthErrorMessage(err));
       return false;
     } finally {
       setIsLoading(false);

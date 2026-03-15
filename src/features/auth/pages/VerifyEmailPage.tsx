@@ -260,14 +260,6 @@ export default function VerifyEmailPage() {
               ))}
             </div>
 
-            {/* Dev Hint */}
-            <p className="text-center text-xs text-muted-foreground/60">
-              Development mode — use code{" "}
-              <span className="font-mono font-semibold text-accent/80">
-                123456
-              </span>
-            </p>
-
             {/* Submit Button */}
             <Button
               type="submit"

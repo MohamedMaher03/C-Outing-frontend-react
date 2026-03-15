@@ -139,7 +139,7 @@ export const authMock = {
       throw new AuthError("EMAIL_ALREADY_EXISTS");
     }
 
-    if (payload.phone === "0000000000") {
+    if (payload.phoneNumber === "0000000000") {
       throw new AuthError("PHONE_ALREADY_EXISTS");
     }
 

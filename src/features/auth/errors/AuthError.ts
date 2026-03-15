@@ -21,6 +21,7 @@
  */
 
 import type { AuthErrorCode } from "../constants";
+import type { ValidationErrors } from "@/utils/apiError";
 
 export class AuthError extends Error {
   /** Error code that maps 1-to-1 with AUTH_ERROR_MESSAGES keys */
@@ -32,11 +33,20 @@ export class AuthError extends Error {
    */
   public readonly statusCode?: number;
 
-  constructor(code: AuthErrorCode, message?: string, statusCode?: number) {
+  /** Field-level validation errors, if provided by backend. */
+  public readonly validationErrors?: ValidationErrors;
+
+  constructor(
+    code: AuthErrorCode,
+    message?: string,
+    statusCode?: number,
+    validationErrors?: ValidationErrors,
+  ) {
     super(message ?? code);
     this.name = "AuthError";
     this.code = code;
     this.statusCode = statusCode;
+    this.validationErrors = validationErrors;
 
     // Fix prototype chain for instanceof checks (TS class extending builtins)
     Object.setPrototypeOf(this, AuthError.prototype);

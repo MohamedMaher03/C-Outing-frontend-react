@@ -11,8 +11,7 @@
 
 import { useState } from "react";
 import { authService } from "../services/authService";
-import { AUTH_ERROR_MESSAGES } from "../constants";
-import { AuthError } from "../errors";
+import { getAuthErrorMessage } from "../errors";
 import type { ResetPasswordFormData } from "../validation/resetPassword.schema";
 
 interface UseResetPasswordReturn {
@@ -42,8 +41,7 @@ export const useResetPassword = (): UseResetPasswordReturn => {
       });
       return true;
     } catch (err) {
-      const code = err instanceof AuthError ? err.code : "UNKNOWN_ERROR";
-      setError(AUTH_ERROR_MESSAGES[code] ?? AUTH_ERROR_MESSAGES.UNKNOWN_ERROR);
+      setError(getAuthErrorMessage(err));
       return false;
     } finally {
       setIsLoading(false);

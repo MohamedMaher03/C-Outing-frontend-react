@@ -304,12 +304,6 @@ export default function ResetPasswordPage() {
                 )}
               />
               <FormError message={errors.otp?.message} />
-              <p className="text-center text-xs text-muted-foreground/60">
-                Development mode — use{" "}
-                <span className="font-mono font-semibold text-accent/80">
-                  123456
-                </span>
-              </p>
             </div>
 
             {/* New Password */}

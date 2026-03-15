@@ -24,7 +24,12 @@ import type {
   AxiosError,
   InternalAxiosRequestConfig,
 } from "axios";
-import { ApiError } from "@/utils/apiError";
+import {
+  ApiError,
+  extractBackendErrorMessage,
+  extractBackendStatusCode,
+  extractValidationErrors,
+} from "@/utils/apiError";
 import type { ApiResponse } from "@/types";
 
 // ── Instance ─────────────────────────────────────────────────
@@ -38,6 +43,14 @@ const axiosInstance: AxiosInstance = axios.create({
     Accept: "application/json",
   },
 });
+
+const AUTH_FLOW_PATHS = new Set([
+  "/login",
+  "/register",
+  "/verify-email",
+  "/forgot-password",
+  "/reset-password",
+]);
 
 // ── Request Interceptor ──────────────────────────────────────
 // Attach the stored JWT bearer token to every outgoing request.
@@ -66,10 +79,17 @@ axiosInstance.interceptors.response.use(
     const body = response.data as ApiResponse<unknown>;
     if (body !== null && typeof body === "object" && "success" in body) {
       if (!body.success) {
+        const validationErrors = extractValidationErrors(body);
         return Promise.reject(
           new ApiError(
-            body.message || "Request failed.",
-            body.statusCode ?? response.status,
+            extractBackendErrorMessage(body) ??
+              body.message ??
+              "Request failed.",
+            extractBackendStatusCode(body) ?? response.status,
+            {
+              details: body,
+              validationErrors,
+            },
           ),
         );
       }
@@ -89,20 +109,27 @@ axiosInstance.interceptors.response.use(
     if (httpStatus === 401) {
       localStorage.removeItem("authToken");
       localStorage.removeItem("authUser");
-      if (!window.location.pathname.startsWith("/login")) {
+      const isInAuthFlow = AUTH_FLOW_PATHS.has(window.location.pathname);
+      if (!isInAuthFlow) {
         window.location.href = "/login";
       }
     }
 
-    const body = error.response?.data as
-      | Partial<ApiResponse<never>>
-      | undefined;
+    const body = error.response?.data;
+    const validationErrors = extractValidationErrors(body);
     const message =
-      body?.message ?? error.message ?? "An unexpected error occurred.";
+      extractBackendErrorMessage(body) ??
+      error.message ??
+      "An unexpected error occurred.";
     // Prefer the status code embedded in the backend body.
-    const statusCode = body?.statusCode ?? httpStatus;
+    const statusCode = extractBackendStatusCode(body) ?? httpStatus;
 
-    return Promise.reject(new ApiError(message, statusCode));
+    return Promise.reject(
+      new ApiError(message, statusCode, {
+        details: body,
+        validationErrors,
+      }),
+    );
   },
 );
 

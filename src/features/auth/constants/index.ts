@@ -21,6 +21,7 @@ export const AUTH_ERROR_MESSAGES = {
   EMAIL_NOT_FOUND: "No account found with this email address.",
   INVALID_RESET_OTP: "Invalid or expired reset code. Please request a new one.",
   PASSWORD_RESET_FAILED: "Password reset failed. Please try again.",
+  VALIDATION_ERROR: "Please review your input and try again.",
 } as const;
 
 export type AuthErrorKey = keyof typeof AUTH_ERROR_MESSAGES;

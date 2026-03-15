@@ -14,7 +14,7 @@ export const API_ENDPOINTS = {
     register: "/api/v1/Auth/register",
     logout: "/api/v1/Auth/logout",
     verifyEmail: "/api/v1/Auth/verify-email",
-    resendOtp: "/api/v1/Auth/resend-otp",
+    resendOtp: "/api/v1/Auth/resend-reset-password-otp",
     forgotPassword: "/api/v1/Auth/forgot-password",
     resetPassword: "/api/v1/Auth/reset-password",
   },

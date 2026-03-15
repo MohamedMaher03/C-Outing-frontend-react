@@ -12,7 +12,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { AUTH_ERROR_MESSAGES } from "../constants";
+import { getAuthErrorMessage } from "../errors";
 
 interface UseLogoutReturn {
   logoutUser: () => Promise<void>;
@@ -33,8 +33,8 @@ export const useLogout = (): UseLogoutReturn => {
     try {
       await logout();
       navigate("/login", { replace: true });
-    } catch {
-      setError(AUTH_ERROR_MESSAGES.UNKNOWN_ERROR);
+    } catch (err) {
+      setError(getAuthErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

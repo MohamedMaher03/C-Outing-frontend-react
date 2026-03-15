@@ -21,9 +21,8 @@ export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
-  phone: string;
+  phoneNumber: string;
   dateOfBirth: string;
-  age?: number;
 }
 
 /** Backend returns `data: "…"` string on successful registration */

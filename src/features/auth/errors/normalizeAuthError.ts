@@ -18,7 +18,7 @@
  */
 
 import { AuthError } from "./AuthError";
-import { isApiError } from "@/utils/apiError";
+import { isApiError, getFirstValidationErrorMessage } from "@/utils/apiError";
 import type { AuthErrorCode } from "../constants";
 
 const HTTP_STATUS_TO_AUTH_CODE: Partial<Record<number, AuthErrorCode>> = {
@@ -29,20 +29,40 @@ const HTTP_STATUS_TO_AUTH_CODE: Partial<Record<number, AuthErrorCode>> = {
   422: "INVALID_CREDENTIALS",
 };
 
+const isTransportStatusMessage = (message?: string): boolean =>
+  typeof message === "string" &&
+  /^Request failed with status code \d+$/i.test(message);
+
 export function normalizeAuthError(error: unknown): AuthError {
   // 1. Already an AuthError — pass through.
   if (error instanceof AuthError) return error;
 
   // 2. ApiError thrown by the axios interceptor.
   if (isApiError(error)) {
-    const { statusCode, message } = error;
+    const { statusCode, message, validationErrors } = error;
+
+    const validationMessage = getFirstValidationErrorMessage(validationErrors);
+    if (validationMessage) {
+      return new AuthError(
+        "VALIDATION_ERROR",
+        validationMessage,
+        statusCode,
+        validationErrors,
+      );
+    }
+
     const mapped =
       statusCode !== undefined
         ? HTTP_STATUS_TO_AUTH_CODE[statusCode]
         : undefined;
     const code: AuthErrorCode =
       mapped ?? (statusCode === undefined ? "NETWORK_ERROR" : "UNKNOWN_ERROR");
-    return new AuthError(code, message, statusCode);
+
+    const normalizedMessage = isTransportStatusMessage(message)
+      ? undefined
+      : message;
+
+    return new AuthError(code, normalizedMessage, statusCode, validationErrors);
   }
 
   // 3. Network failure or unexpected non-ApiError.

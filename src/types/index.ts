@@ -38,6 +38,12 @@ export interface ApiResponse<T> {
   data: T | null;
   /** Human-readable message from the server (success or error). */
   message: string;
+  /** Optional title used by validation/problem-details style errors. */
+  title?: string;
+  /** Optional HTTP status mirror used by problem-details responses. */
+  status?: number;
+  /** Optional field-level validation errors keyed by backend field name. */
+  errors?: Record<string, string[]>;
 }
 
 // ============ Paginated Response ============
