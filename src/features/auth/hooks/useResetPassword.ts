@@ -16,6 +16,7 @@ import type { ResetPasswordFormData } from "../validation/resetPassword.schema";
 
 interface UseResetPasswordReturn {
   resetPassword: (data: ResetPasswordFormData) => Promise<boolean>;
+  resendResetOtp: (email: string) => Promise<boolean>;
   isLoading: boolean;
   error: string | null;
   clearError: () => void;
@@ -48,5 +49,20 @@ export const useResetPassword = (): UseResetPasswordReturn => {
     }
   };
 
-  return { resetPassword, isLoading, error, clearError };
+  const resendResetOtp = async (email: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await authService.resendOtp({ email });
+      return true;
+    } catch (err) {
+      setError(getAuthErrorMessage(err));
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { resetPassword, resendResetOtp, isLoading, error, clearError };
 };

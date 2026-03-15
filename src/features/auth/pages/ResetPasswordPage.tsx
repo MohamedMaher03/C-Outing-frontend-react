@@ -36,7 +36,8 @@ export default function ResetPasswordPage() {
   const location = useLocation();
   const email = (location.state as { email?: string } | null)?.email ?? "";
 
-  const { resetPassword, isLoading, error, clearError } = useResetPassword();
+  const { resetPassword, resendResetOtp, isLoading, error, clearError } =
+    useResetPassword();
 
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [showPassword, setShowPassword] = useState(false);
@@ -381,8 +382,11 @@ export default function ResetPasswordPage() {
             Didn't receive a code?{" "}
             <button
               type="button"
-              onClick={() => navigate("/forgot-password")}
+              onClick={() => {
+                void resendResetOtp(email);
+              }}
               className="font-medium text-accent hover:text-accent/80 transition-colors"
+              disabled={isLoading}
             >
               Request a new one
             </button>

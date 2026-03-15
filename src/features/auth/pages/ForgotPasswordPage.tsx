@@ -22,7 +22,6 @@ export default function ForgotPasswordPage() {
   const {
     register,
     handleSubmit,
-    getValues,
     formState: { errors },
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -146,22 +145,6 @@ export default function ForgotPasswordPage() {
               )}
             </Button>
           </form>
-
-          {/* Footer */}
-          <p className="text-center text-sm text-muted-foreground">
-            Already have a reset code?{" "}
-            <button
-              type="button"
-              onClick={() =>
-                navigate("/reset-password", {
-                  state: { email: getValues("email") },
-                })
-              }
-              className="font-medium text-accent hover:text-accent/80 transition-colors"
-            >
-              Enter it here
-            </button>
-          </p>
         </div>
       </div>
     </div>
