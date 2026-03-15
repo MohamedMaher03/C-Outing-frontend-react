@@ -15,8 +15,8 @@
  *   import { authMock as authApi } from "../mocks/authMock";
  */
 
-//import { authApi } from "../api/authApi";
-import { authMock as authApi } from "../mocks/authMock";
+import { authApi } from "../api/authApi";
+//import { authMock as authApi } from "../mocks/authMock";
 import { AUTH_STORAGE_KEYS } from "../constants";
 import type {
   LoginRequest,
@@ -28,7 +28,8 @@ import type {
   ForgotPasswordRequest,
   ResetPasswordRequest,
 } from "../types";
-import type { User, UserRole } from "@/types";
+import type { User } from "@/types";
+import { buildUserFromAuthToken } from "./jwtClaims";
 
 // ── Session helpers (private) ────────────────────────────────
 
@@ -46,21 +47,12 @@ const clearSession = (): void => {
 
 export const authService = {
   /**
-   * Login — maps the flat backend LoginApiData into a User object,
+   * Login — extracts user claims from JWT,
    * persists the session, and returns the internal AuthApiResponse.
    */
   async login(payload: LoginRequest): Promise<AuthApiResponse> {
     const raw = await authApi.login(payload);
-    const normalizedRole = (raw.role as string).toLowerCase() as UserRole;
-    const user: User = {
-      userId: raw.userId,
-      name: raw.name,
-      email: raw.email,
-      role: normalizedRole,
-      // Admin and moderator skip onboarding; default to true if not provided
-      hasCompletedOnboarding:
-        raw.hasCompletedOnboarding ?? normalizedRole !== "user",
-    };
+    const user: User = buildUserFromAuthToken(raw);
     persistSession(raw.token, user);
     return { token: raw.token, user };
   },
@@ -75,21 +67,13 @@ export const authService = {
 
   /**
    * Verify email — validates the OTP against the backend.
-   * On success the backend returns a full auth session (same shape as login),
-   * so we build the User, persist the session, and return it.
+   * On success the backend returns a token payload (same shape as login),
+   * so we derive User claims from the token, persist the session, and return it.
    * The user is now logged in and should be directed to onboarding.
    */
   async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
     const raw = await authApi.verifyEmail(payload);
-    const normalizedRole = (raw.role as string).toLowerCase() as UserRole;
-    const user: User = {
-      userId: raw.userId,
-      name: raw.name,
-      email: raw.email,
-      role: normalizedRole,
-      hasCompletedOnboarding:
-        raw.hasCompletedOnboarding ?? normalizedRole !== "user",
-    };
+    const user: User = buildUserFromAuthToken(raw);
     persistSession(raw.token, user);
     return { token: raw.token, user };
   },

@@ -30,10 +30,10 @@ export interface RegisterRequest {
 export type RegisterResponse = string;
 
 /**
- * Backend returns a full auth session (token + user) on successful OTP verification,
- * identical in shape to the login response — so the user is auto-logged-in.
+ * Backend returns a token-based auth payload on successful OTP verification,
+ * identical in shape to the login response.
  */
-export type VerifyEmailOtpResponse = LoginApiData;
+export type VerifyEmailOtpResponse = AuthTokenApiData;
 
 /** Payload sent to POST /verify-email */
 export interface VerifyEmailRequest {
@@ -59,15 +59,11 @@ export interface ResetPasswordRequest {
 }
 
 /**
- * Raw flat shape returned by POST /login after the ApiResponse envelope
- * is unwrapped by the axios interceptor.
+ * Raw shape returned by auth endpoints (e.g. login / verify-email) after
+ * the ApiResponse envelope is unwrapped by the axios interceptor.
  */
-export interface LoginApiData {
+export interface AuthTokenApiData {
   token: string;
-  name: string;
-  email: string;
-  role: string;
-  userId: string;
   hasCompletedOnboarding?: boolean;
 }
 

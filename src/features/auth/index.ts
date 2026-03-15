@@ -51,7 +51,7 @@ export type {
   LoginRequest,
   RegisterRequest,
   RegisterResponse,
-  LoginApiData,
+  AuthTokenApiData,
   VerifyEmailRequest,
   VerifyEmailOtpResponse,
   ResendOtpRequest,

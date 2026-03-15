@@ -17,7 +17,7 @@ import type {
   RegisterResponse,
   VerifyEmailRequest,
   ResendOtpRequest,
-  LoginApiData,
+  AuthTokenApiData,
   ForgotPasswordRequest,
   ResetPasswordRequest,
 } from "../types";
@@ -50,8 +50,29 @@ const MOCK_MODERATOR: User = {
   role: "moderator",
 };
 
-const MOCK_TOKEN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.bW9ja19wYXlsb2Fk.mock_signature";
+const encodeBase64Url = (value: string): string =>
+  btoa(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+
+const createMockToken = (user: User): string => {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "HS256", typ: "JWT" };
+  const payload = {
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier":
+      user.userId,
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress":
+      user.email,
+    "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name": user.name,
+    "http://schemas.microsoft.com/ws/2008/06/identity/claims/role": user.role,
+    exp: now + 60 * 60,
+    iat: now,
+  };
+
+  return [
+    encodeBase64Url(JSON.stringify(header)),
+    encodeBase64Url(JSON.stringify(payload)),
+    "mock_signature",
+  ].join(".");
+};
 
 /** Mock OTP used during development — any other OTP will fail. */
 const MOCK_OTP = "123456";
@@ -80,7 +101,7 @@ export const authMock = {
    *   mod@example.com    → Moderator role
    *   (anything else)    → Regular user role
    */
-  async login(payload: LoginRequest): Promise<LoginApiData> {
+  async login(payload: LoginRequest): Promise<AuthTokenApiData> {
     await delay(900);
 
     if (payload.password === "wrongpass") {
@@ -98,11 +119,7 @@ export const authMock = {
     }
 
     return {
-      userId: mockUser.userId,
-      token: MOCK_TOKEN,
-      name: mockUser.name,
-      email: mockUser.email,
-      role: mockUser.role,
+      token: createMockToken(mockUser),
       hasCompletedOnboarding: mockUser.hasCompletedOnboarding,
     };
   },
@@ -149,7 +166,7 @@ export const authMock = {
    * Returns a full auth session (token + user) so the caller can
    * auto-login the user and redirect directly to onboarding.
    */
-  async verifyEmail(payload: VerifyEmailRequest): Promise<LoginApiData> {
+  async verifyEmail(payload: VerifyEmailRequest): Promise<AuthTokenApiData> {
     await delay(900);
 
     if (payload.otp !== MOCK_OTP) {
@@ -168,11 +185,7 @@ export const authMock = {
     pendingVerifications.delete(payload.email);
 
     return {
-      userId: user.userId,
-      token: MOCK_TOKEN,
-      name: user.name,
-      email: user.email,
-      role: user.role,
+      token: createMockToken(user),
       hasCompletedOnboarding: user.hasCompletedOnboarding,
     };
   },

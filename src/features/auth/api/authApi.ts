@@ -27,7 +27,7 @@ import type {
   VerifyEmailRequest,
   VerifyEmailOtpResponse,
   ResendOtpRequest,
-  LoginApiData,
+  AuthTokenApiData,
   ForgotPasswordRequest,
   ResetPasswordRequest,
 } from "../types";
@@ -36,14 +36,14 @@ import { normalizeAuthError } from "../errors";
 export const authApi = {
   /**
    * POST /users/login
-   * Authenticates with email + password, returns token + user.
+   * Authenticates with email + password, returns token payload.
    *
    * The axiosInstance response interceptor unwraps the ApiResponse envelope,
-   * so `data` here is already `AuthApiResponse` — no `.data.data` needed.
+   * so `data` here is already the endpoint payload — no `.data.data` needed.
    */
-  async login(payload: LoginRequest): Promise<LoginApiData> {
+  async login(payload: LoginRequest): Promise<AuthTokenApiData> {
     try {
-      const { data } = await axiosInstance.post<LoginApiData>(
+      const { data } = await axiosInstance.post<AuthTokenApiData>(
         API_ENDPOINTS.auth.login,
         payload,
       );
@@ -74,7 +74,7 @@ export const authApi = {
   /**
    * POST /verify-email
    * Verifies the OTP sent to the user's email.
-   * Returns a full auth session (token + user) on success.
+   * Returns the same token payload shape as login on success.
    */
   async verifyEmail(
     payload: VerifyEmailRequest,
