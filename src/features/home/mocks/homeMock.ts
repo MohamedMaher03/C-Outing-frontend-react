@@ -92,7 +92,6 @@ export const homeMock = {
   /**
    * Mock GET /recommendations/:userId  (curated)
    * Mock GET /venues/trending
-   * Mock GET /venues/top-rated
    *
    * userId is accepted so the mock interface matches the real API.
    * In production the backend sorts by the user's preference vector;
@@ -114,10 +113,7 @@ export const homeMock = {
       .sort((a, b) => b.reviewCount - a.reviewCount)
       .slice(0, 6);
 
-    // Top-rated = global — same for every user
-    const topRatedPlaces = [...all].sort((a, b) => b.rating - a.rating);
-
-    return { curatedPlaces, trendingPlaces, topRatedPlaces };
+    return { curatedPlaces, trendingPlaces };
   },
 
   /**

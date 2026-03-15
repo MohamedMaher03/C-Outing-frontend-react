@@ -1,13 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import {
-  Search,
-  MapPin,
-  ChevronRight,
-  Flame,
-  Star,
-  Compass,
-  Sparkles,
-} from "lucide-react";
+import { Search, ChevronRight, Flame, Compass, Sparkles } from "lucide-react";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Input } from "@/components/ui/input";
 import PlaceCard from "@/features/home/components/PlaceCard";
@@ -15,7 +7,6 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { useHome } from "@/features/home/hooks/useHomeHook";
 import {
   FILTER_OPTIONS,
-  CATEGORY_ICON_MAP,
   DISCOVERY_SOURCE_OPTIONS,
   MOOD_ICON_MAP,
   VENUE_PRICE_RANGE_OPTIONS,
@@ -34,8 +25,6 @@ const HomePage = () => {
     toggleFilter,
     selectedMood,
     setSelectedMood,
-    selectedCategory,
-    setSelectedCategory,
     selectedDistrict,
     setSelectedDistrict,
     selectedVenueType,
@@ -53,9 +42,7 @@ const HomePage = () => {
     topRatedInAreaVenues,
     isGlobalTopRatedLoading,
     isTopRatedInAreaLoading,
-    filteredPlaces,
     curatedPlaces,
-    topRatedPlaces,
     trendingPlaces,
     moodPlaces,
     isMoodLoading,
@@ -196,72 +183,6 @@ const HomePage = () => {
         <div className="flex gap-8 items-start">
           {/* ── LEFT: Main Feed ── */}
           <div className="flex-1 min-w-0 space-y-12">
-            {/* ── Category Quick Access ── */}
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-foreground">
-                  Browse Categories
-                </h2>
-                {selectedCategory && (
-                  <button
-                    onClick={() => setSelectedCategory(null)}
-                    className="text-xs text-secondary font-semibold hover:underline"
-                  >
-                    Clear filter
-                  </button>
-                )}
-              </div>
-              <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
-                {categories.map((cat) => {
-                  const isActive = selectedCategory === cat.id;
-                  const CatIcon = CATEGORY_ICON_MAP[cat.icon] ?? Compass;
-
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() =>
-                        setSelectedCategory(isActive ? null : cat.id)
-                      }
-                      className={`group flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-200 border ${
-                        isActive
-                          ? "bg-foreground border-foreground shadow-lg scale-105"
-                          : "bg-background border-border/60 hover:border-foreground/40 hover:shadow-md hover:scale-105"
-                      }`}
-                    >
-                      <div
-                        className={`flex items-center justify-center w-9 h-9 rounded-xl transition-colors duration-200 ${
-                          isActive
-                            ? "bg-white/15"
-                            : "bg-muted group-hover:bg-foreground/8"
-                        }`}
-                      >
-                        <CatIcon
-                          className={`h-5 w-5 transition-colors duration-200 ${
-                            isActive ? "text-white" : "text-foreground"
-                          }`}
-                          strokeWidth={1.75}
-                        />
-                      </div>
-                      <span
-                        className={`text-[10px] font-semibold whitespace-nowrap leading-tight transition-colors duration-200 ${
-                          isActive ? "text-white" : "text-foreground"
-                        }`}
-                      >
-                        {cat.label}
-                      </span>
-                      <span
-                        className={`text-[9px] transition-colors duration-200 ${
-                          isActive ? "text-white/60" : "text-muted-foreground"
-                        }`}
-                      >
-                        {cat.count} spots
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-
             {/* ── Venue Discovery Studio (New Endpoints) ── */}
             <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/30 p-5 sm:p-6 shadow-sm">
               <div className="absolute -top-20 -right-16 h-52 w-52 rounded-full bg-secondary/15 blur-3xl" />
@@ -600,46 +521,6 @@ const HomePage = () => {
               </div>
             </section>
 
-            {/* ── Popular Districts ── */}
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-secondary" />
-                    Popular Districts
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-0.5 ml-7">
-                    Explore Cairo's hottest neighborhoods
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-                {popularDistricts.map((district) => (
-                  <button
-                    key={district.id}
-                    onClick={() => setSearch(district.name)}
-                    className="relative flex-shrink-0 w-[140px] h-[100px] rounded-2xl overflow-hidden group/district"
-                  >
-                    <img
-                      src={district.image}
-                      alt={district.name}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover/district:scale-110"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/30 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <p className="text-white text-sm font-bold leading-tight">
-                        {district.name}
-                      </p>
-                      <p className="text-white/70 text-[10px]">
-                        {district.placeCount} places
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </section>
-
             {/* ── Trending Now ── */}
             {trendingPlaces.length > 0 && (
               <section className="space-y-4">
@@ -672,34 +553,6 @@ const HomePage = () => {
                 </div>
               </section>
             )}
-
-            {/* ── Top Rated Grid ── */}
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-secondary/15">
-                      <Star className="h-5 w-5 text-secondary fill-secondary" />
-                    </div>
-                    Top Rated in Cairo
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1 ml-10">
-                    {filteredPlaces.length} venues match your criteria
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {topRatedPlaces.map((place) => (
-                  <PlaceCard
-                    key={place.id}
-                    place={place}
-                    variant="grid"
-                    onToggleSave={toggleSave}
-                    onClick={(id) => navigate(`/venue/${id}`)}
-                  />
-                ))}
-              </div>
-            </section>
           </div>
 
           {/* ── RIGHT SIDEBAR ── */}

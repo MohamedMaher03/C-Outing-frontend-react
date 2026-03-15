@@ -25,7 +25,6 @@ interface UseHomeReturn {
   search: string;
   selectedFilters: FilterType[];
   selectedMood: string | null;
-  selectedCategory: string | null;
   isLoading: boolean;
   error: string | null;
 
@@ -45,9 +44,7 @@ interface UseHomeReturn {
   topRatedInAreaError: string | null;
 
   // Computed / filtered data
-  filteredPlaces: HomePlace[];
   curatedPlaces: HomePlace[];
-  topRatedPlaces: HomePlace[];
   trendingPlaces: HomePlace[];
   moodPlaces: HomePlace[];
   isMoodLoading: boolean;
@@ -62,7 +59,6 @@ interface UseHomeReturn {
   setSearch: (search: string) => void;
   toggleFilter: (filter: FilterType) => void;
   setSelectedMood: (mood: string | null) => void;
-  setSelectedCategory: (category: string | null) => void;
   setSelectedDistrict: (district: string | null) => void;
   setSelectedVenueType: (type: string | null) => void;
   setSelectedPriceRange: (priceRange: VenuePriceRange | null) => void;
@@ -77,14 +73,15 @@ export const useHome = (): UseHomeReturn => {
   const [search, setSearch] = useState("");
   const [selectedFilters, setSelectedFilters] = useState<FilterType[]>([]);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [moodPlaces, setMoodPlaces] = useState<HomePlace[]>([]);
   const [isMoodLoading, setIsMoodLoading] = useState(false);
 
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
-  const [selectedVenueType, setSelectedVenueType] = useState<string | null>(null);
+  const [selectedVenueType, setSelectedVenueType] = useState<string | null>(
+    null,
+  );
   const [selectedPriceRange, setSelectedPriceRange] =
     useState<VenuePriceRange | null>(null);
   const [selectedArea, setSelectedArea] = useState<string>(
@@ -101,8 +98,7 @@ export const useHome = (): UseHomeReturn => {
   const [topRatedInAreaVenues, setTopRatedInAreaVenues] = useState<HomePlace[]>(
     [],
   );
-  const [isGlobalTopRatedLoading, setIsGlobalTopRatedLoading] =
-    useState(false);
+  const [isGlobalTopRatedLoading, setIsGlobalTopRatedLoading] = useState(false);
   const [isTopRatedInAreaLoading, setIsTopRatedInAreaLoading] = useState(false);
   const [topRatedInAreaError, setTopRatedInAreaError] = useState<string | null>(
     null,
@@ -110,7 +106,6 @@ export const useHome = (): UseHomeReturn => {
 
   const [rawCurated, setRawCurated] = useState<HomePlace[]>([]);
   const [rawTrending, setRawTrending] = useState<HomePlace[]>([]);
-  const [rawTopRated, setRawTopRated] = useState<HomePlace[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -156,7 +151,9 @@ export const useHome = (): UseHomeReturn => {
         }
       } catch (err) {
         if (!cancelled && activeDiscoverySource === "top-rated") {
-          setDiscoveryError(getErrorMessage(err, "Failed to load top-rated venues"));
+          setDiscoveryError(
+            getErrorMessage(err, "Failed to load top-rated venues"),
+          );
         }
       } finally {
         if (!cancelled) setIsGlobalTopRatedLoading(false);
@@ -187,7 +184,9 @@ export const useHome = (): UseHomeReturn => {
         if (!cancelled) setDiscoveryPlaces(places);
       } catch (err) {
         if (!cancelled) {
-          setDiscoveryError(getErrorMessage(err, "Failed to load district venues"));
+          setDiscoveryError(
+            getErrorMessage(err, "Failed to load district venues"),
+          );
         }
       } finally {
         if (!cancelled) setIsDiscoveryLoading(false);
@@ -323,11 +322,10 @@ export const useHome = (): UseHomeReturn => {
     try {
       setIsLoading(true);
       setError(null);
-      const { curatedPlaces, trendingPlaces, topRatedPlaces } =
+      const { curatedPlaces, trendingPlaces } =
         await homeService.fetchHomePageData(user.userId);
       setRawCurated(curatedPlaces);
       setRawTrending(trendingPlaces);
-      setRawTopRated(topRatedPlaces);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load places"));
     } finally {
@@ -352,8 +350,7 @@ export const useHome = (): UseHomeReturn => {
       try {
         const place =
           rawCurated.find((p) => p.id === id) ||
-          rawTrending.find((p) => p.id === id) ||
-          rawTopRated.find((p) => p.id === id);
+          rawTrending.find((p) => p.id === id);
 
         if (!place) return;
 
@@ -364,7 +361,6 @@ export const useHome = (): UseHomeReturn => {
 
         setRawCurated((prev) => toggle(prev));
         setRawTrending((prev) => toggle(prev));
-        setRawTopRated((prev) => toggle(prev));
 
         setDiscoveryPlaces((prev) => toggle(prev));
         setGlobalTopRatedVenues((prev) => toggle(prev));
@@ -374,7 +370,7 @@ export const useHome = (): UseHomeReturn => {
         console.error("Failed to toggle save", toggleError);
       }
     },
-    [rawCurated, rawTrending, rawTopRated],
+    [rawCurated, rawTrending],
   );
 
   const applyFilters = useCallback(
@@ -388,12 +384,6 @@ export const useHome = (): UseHomeReturn => {
             p.name.toLowerCase().includes(q) ||
             p.address.toLowerCase().includes(q) ||
             (p.atmosphereTags ?? []).some((t) => t.toLowerCase().includes(q)),
-        );
-      }
-
-      if (selectedCategory) {
-        result = result.filter((p) =>
-          p.category.toLowerCase().includes(selectedCategory.toLowerCase()),
         );
       }
 
@@ -419,7 +409,7 @@ export const useHome = (): UseHomeReturn => {
 
       return result;
     },
-    [search, selectedCategory, selectedFilters],
+    [search, selectedFilters],
   );
 
   const curatedPlaces = useMemo(
@@ -430,18 +420,10 @@ export const useHome = (): UseHomeReturn => {
     () => applyFilters(rawTrending),
     [rawTrending, applyFilters],
   );
-  const topRatedPlaces = useMemo(
-    () => applyFilters(rawTopRated),
-    [rawTopRated, applyFilters],
-  );
-
-  const filteredPlaces = topRatedPlaces;
-
   return {
     search,
     selectedFilters,
     selectedMood,
-    selectedCategory,
     isLoading,
     error,
 
@@ -459,9 +441,7 @@ export const useHome = (): UseHomeReturn => {
     isTopRatedInAreaLoading,
     topRatedInAreaError,
 
-    filteredPlaces,
     curatedPlaces,
-    topRatedPlaces,
     trendingPlaces,
     moodPlaces,
     isMoodLoading,
@@ -474,7 +454,6 @@ export const useHome = (): UseHomeReturn => {
     setSearch,
     toggleFilter,
     setSelectedMood,
-    setSelectedCategory,
     setSelectedDistrict,
     setSelectedVenueType,
     setSelectedPriceRange,

@@ -34,7 +34,7 @@ export const homeService = {
    *
    * @param userId - Required. curatedPlaces are personalized recommendations
    *                 computed from the user's preference vector by the backend.
-   *                 trending and topRated are global, but the call is batched
+   *                 trending is global, and the call is batched
    *                 together for a single loading state.
    */
   async fetchHomePageData(userId: string): Promise<HomePageData> {

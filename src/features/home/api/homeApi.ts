@@ -27,21 +27,18 @@ export const homeApi = {
   /**
    * GET /recommendations/:userId  (curated — personalized)
    * GET /venues/trending           (same for all users)
-   * GET /venues/top-rated          (same for all users)
    *
    * curatedPlaces MUST carry a userId because the backend ranks them using
-   * the user's preference vector.  Trending and top-rated are global lists.
+   * the user's preference vector.
    */
   async fetchHomePageData(userId: string): Promise<HomePageData> {
-    const [curated, trending, topRated] = await Promise.all([
+    const [curated, trending] = await Promise.all([
       axiosInstance.get<HomePlace[]>(API_ENDPOINTS.home.curated(userId)),
       axiosInstance.get<HomePlace[]>(API_ENDPOINTS.home.trending),
-      axiosInstance.get<HomePlace[]>(API_ENDPOINTS.home.topRated),
     ]);
     return {
       curatedPlaces: curated.data,
       trendingPlaces: trending.data,
-      topRatedPlaces: topRated.data,
     };
   },
 

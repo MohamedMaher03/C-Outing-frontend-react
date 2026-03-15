@@ -49,7 +49,6 @@ export const API_ENDPOINTS = {
     // a ranked list from the user's preference vector.
     curated: (userId: string) => `/recommendations/${userId}`,
     trending: "/venues/trending",
-    topRated: "/venues/top-rated",
     toggleSave: (placeId: string) => `/venues/${placeId}/save`,
     // Returns places filtered by mood (e.g., "chill", "romantic").
     // The backend applies its own mood-to-attribute mapping.

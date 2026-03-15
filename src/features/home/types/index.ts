@@ -54,7 +54,6 @@ export type HomePlace = Pick<
 export interface HomePageData {
   curatedPlaces: HomePlace[];
   trendingPlaces: HomePlace[];
-  topRatedPlaces: HomePlace[];
 }
 
 export interface VenueByDistrictParams {
