@@ -12,8 +12,7 @@
  */
 
 import { PLACES } from "@/mocks/mockData";
-import type { Place } from "@/mocks/mockData";
-import type { HomePageData } from "../types";
+import type { HomePageData, HomePlace } from "../types";
 
 // ── Helper ───────────────────────────────────────────────────
 
@@ -31,7 +30,7 @@ const delay = (ms: number): Promise<void> =>
  *   explore   → cultural, historic, artistic, or trendy spots
  *   foodie    → food & drink category venues
  */
-const MOOD_FILTER_MAP: Record<string, (p: Place) => boolean> = {
+const MOOD_FILTER_MAP: Record<string, (p: HomePlace) => boolean> = {
   chill: (p) =>
     (p.atmosphereTags ?? []).some((t) =>
       ["Quiet", "Serene", "Relaxed", "Peaceful", "Scenic"].includes(t),
@@ -75,7 +74,7 @@ export const homeMock = {
     await delay(800);
     console.log(`[Mock] Fetching home page data for user ${userId}`);
 
-    const all = PLACES.map((p) => ({ ...p, isSaved: false }));
+    const all: HomePlace[] = PLACES.map((p) => ({ ...p, isSaved: false }));
 
     // Curated = personalized — sorted by matchScore (proxy for recommendation rank)
     const curatedPlaces = [...all]
@@ -107,7 +106,7 @@ export const homeMock = {
    * Filters PLACES using MOOD_FILTER_MAP and returns matches.
    * Sorted by rating (desc) so the best picks always surface first.
    */
-  async fetchPlacesByMood(moodId: string): Promise<Place[]> {
+  async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
     await delay(2500);
     console.log(`[Mock] Fetching places for mood: ${moodId}`);
     const filter = MOOD_FILTER_MAP[moodId];

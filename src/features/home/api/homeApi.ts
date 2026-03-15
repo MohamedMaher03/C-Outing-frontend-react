@@ -14,8 +14,7 @@
 
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
-import type { Place } from "@/mocks/mockData";
-import type { HomePageData } from "../types";
+import type { HomePageData, HomePlace } from "../types";
 
 export const homeApi = {
   /**
@@ -28,9 +27,9 @@ export const homeApi = {
    */
   async fetchHomePageData(userId: string): Promise<HomePageData> {
     const [curated, trending, topRated] = await Promise.all([
-      axiosInstance.get<Place[]>(API_ENDPOINTS.home.curated(userId)),
-      axiosInstance.get<Place[]>(API_ENDPOINTS.home.trending),
-      axiosInstance.get<Place[]>(API_ENDPOINTS.home.topRated),
+      axiosInstance.get<HomePlace[]>(API_ENDPOINTS.home.curated(userId)),
+      axiosInstance.get<HomePlace[]>(API_ENDPOINTS.home.trending),
+      axiosInstance.get<HomePlace[]>(API_ENDPOINTS.home.topRated),
     ]);
     return {
       curatedPlaces: curated.data,
@@ -54,8 +53,8 @@ export const homeApi = {
    * Returns places that match the given mood (e.g. "chill", "romantic").
    * The backend applies a mood-to-attribute mapping and returns a ranked list.
    */
-  async fetchPlacesByMood(moodId: string): Promise<Place[]> {
-    const response = await axiosInstance.get<Place[]>(
+  async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
+    const response = await axiosInstance.get<HomePlace[]>(
       API_ENDPOINTS.home.moodPlaces(moodId),
     );
     return response.data;

@@ -15,7 +15,6 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import type { Place } from "@/mocks/mockData";
 import {
   CATEGORIES,
   MOOD_OPTIONS,
@@ -23,7 +22,7 @@ import {
   POPULAR_DISTRICTS,
 } from "@/mocks/mockData";
 import { homeService } from "@/features/home/services/homeService";
-import type { FilterType } from "@/features/home/types";
+import type { FilterType, HomePlace } from "@/features/home/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getErrorMessage } from "@/utils/apiError";
 
@@ -39,12 +38,12 @@ interface UseHomeReturn {
 
   // Computed / filtered data
   /** Same as filteredTopRated — used for the "X venues match" count. */
-  filteredPlaces: Place[];
-  curatedPlaces: Place[];
-  topRatedPlaces: Place[];
-  trendingPlaces: Place[];
+  filteredPlaces: HomePlace[];
+  curatedPlaces: HomePlace[];
+  topRatedPlaces: HomePlace[];
+  trendingPlaces: HomePlace[];
   /** Places returned by the mood-based recommendation endpoint. */
-  moodPlaces: Place[];
+  moodPlaces: HomePlace[];
   /** True while the mood-based fetch is in-flight. */
   isMoodLoading: boolean;
 
@@ -72,13 +71,13 @@ export const useHome = (): UseHomeReturn => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [moodPlaces, setMoodPlaces] = useState<Place[]>([]);
+  const [moodPlaces, setMoodPlaces] = useState<HomePlace[]>([]);
   const [isMoodLoading, setIsMoodLoading] = useState(false);
 
   // Raw backend-provided sections (source-of-truth ordering / curation)
-  const [rawCurated, setRawCurated] = useState<Place[]>([]);
-  const [rawTrending, setRawTrending] = useState<Place[]>([]);
-  const [rawTopRated, setRawTopRated] = useState<Place[]>([]);
+  const [rawCurated, setRawCurated] = useState<HomePlace[]>([]);
+  const [rawTrending, setRawTrending] = useState<HomePlace[]>([]);
+  const [rawTopRated, setRawTopRated] = useState<HomePlace[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -161,7 +160,7 @@ export const useHome = (): UseHomeReturn => {
 
         await homeService.togglePlaceSave(id, !place.isSaved);
 
-        const toggle = (list: Place[]) =>
+        const toggle = (list: HomePlace[]) =>
           list.map((p) => (p.id === id ? { ...p, isSaved: !p.isSaved } : p));
 
         setRawCurated((prev) => toggle(prev));
@@ -184,7 +183,7 @@ export const useHome = (): UseHomeReturn => {
    *   5. "near-me"   pill  → sort by proximity to Cairo centre
    */
   const applyFilters = useCallback(
-    (list: Place[]): Place[] => {
+    (list: HomePlace[]): HomePlace[] => {
       let result = [...list];
 
       // Search

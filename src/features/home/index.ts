@@ -9,7 +9,12 @@ export { default as PlaceCard } from "./components/PlaceCard";
 export { useHome } from "./hooks/useHome";
 
 // Types
-export type { FilterType, HomePageData, PlaceCardProps } from "./types";
+export type {
+  FilterType,
+  HomePageData,
+  HomePlace,
+  PlaceCardProps,
+} from "./types";
 
 // API layer (exposed for advanced usage / testing)
 export { homeApi } from "./api/homeApi";

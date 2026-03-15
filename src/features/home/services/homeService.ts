@@ -17,8 +17,7 @@
 
 // import { homeApi } from "../api/homeApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
 import { homeMock as homeApi } from "../mocks/homeMock";
-import type { HomePageData } from "@/features/home/types";
-import type { Place } from "@/mocks/mockData";
+import type { HomePageData, HomePlace } from "@/features/home/types";
 
 // ── Home Service ─────────────────────────────────────────────
 
@@ -55,9 +54,9 @@ export const homeService = {
   /**
    * Fetch places that match a given mood.
    * @param moodId - One of: "chill" | "adventure" | "romantic" | "social" | "explore" | "foodie"
-   * Expected response: Place[] sorted by relevance/rating (backend-ranked).
+   * Expected response: HomePlace[] sorted by relevance/rating (backend-ranked).
    */
-  async fetchPlacesByMood(moodId: string): Promise<Place[]> {
+  async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
     try {
       return await homeApi.fetchPlacesByMood(moodId);
     } catch (error) {
