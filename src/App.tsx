@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import "./App.css";
 import {
   ProtectedRoute,
@@ -20,7 +25,6 @@ import PlaceDetailPage from "@/features/place-detail/pages/PlaceDetailPage";
 import ProfilePage from "@/features/profile/pages/ProfilePage";
 import EditProfilePage from "@/features/profile/pages/EditProfilePage";
 import NotificationsPage from "@/features/profile/pages/NotificationsPage";
-import NotificationsFeedPage from "@/features/notifications/pages/NotificationsPage";
 import PrivacyPage from "@/features/profile/pages/PrivacyPage";
 import HelpSupportPage from "@/features/profile/pages/HelpSupportPage";
 import PublicProfilePage from "@/features/users/pages/PublicProfilePage";
@@ -144,7 +148,7 @@ function App() {
           <Route path="/profile/privacy" element={<PrivacyPage />} />
           <Route path="/profile/help" element={<HelpSupportPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
-          <Route path="/notifications" element={<NotificationsFeedPage />} />
+          <Route path="/notifications" element={<Navigate to="/" replace />} />
         </Route>
 
         {/* ── Protected Routes (ANY authenticated user) ──────────────────────────── */}

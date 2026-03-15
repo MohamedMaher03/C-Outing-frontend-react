@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Home, Heart, User, LogOut, Bell } from "lucide-react";
+import { Home, Heart, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -10,7 +10,6 @@ import logo from "@/assets/images/logo3.png";
 const NAV_ITEMS = [
   { path: "/", label: "Home", icon: Home },
   { path: "/favorites", label: "Saved", icon: Heart },
-  { path: "/notifications", label: "Notifications", icon: Bell },
   { path: "/profile", label: "Profile", icon: User },
 ];
 
@@ -39,26 +38,24 @@ const AppLayout = () => {
             </span>
           </div>
           <nav className="flex items-center gap-1">
-            {NAV_ITEMS.filter((item) => item.path !== "/notifications").map(
-              (item) => {
-                const active = location.pathname === item.path;
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                      active
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </button>
-                );
-              },
-            )}
+            {NAV_ITEMS.map((item) => {
+              const active = location.pathname === item.path;
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                    active
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </button>
+              );
+            })}
             {/* Notification bell with unread badge */}
             <NotificationBell />
             {/* Logout Button */}
@@ -108,6 +105,7 @@ const AppLayout = () => {
                 </button>
               );
             })}
+            <NotificationBell mobile />
             {/* Mobile Logout Button */}
             <button
               onClick={handleLogout}
