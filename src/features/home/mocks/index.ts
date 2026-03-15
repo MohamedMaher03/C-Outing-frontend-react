@@ -9,6 +9,8 @@ import {
   TrendingUp,
   Navigation,
   Clock,
+  Bookmark,
+  Wifi,
   UtensilsCrossed,
   Moon,
   Palette,
@@ -41,9 +43,10 @@ export interface FilterOption {
 
 export const FILTER_OPTIONS: FilterOption[] = [
   { id: "all", label: "All", icon: Sparkles },
-  { id: "top-rated", label: "Top Rated", icon: TrendingUp },
   { id: "near-me", label: "Near Me", icon: Navigation },
   { id: "open-now", label: "Open Now", icon: Clock },
+  { id: "saved", label: "Saved", icon: Bookmark },
+  { id: "has-wifi", label: "Wi-Fi", icon: Wifi },
 ];
 
 export interface DiscoverySourceOption {

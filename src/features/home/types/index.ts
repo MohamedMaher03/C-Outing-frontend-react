@@ -10,7 +10,7 @@ import type {
 } from "@/mocks/mockData";
 
 /** Active filter pill identifiers */
-export type FilterType = "all" | "top-rated" | "near-me" | "open-now";
+export type FilterType = "all" | "near-me" | "open-now" | "saved" | "has-wifi";
 
 /** Canonical backend budget bands used by Venue/price-range. */
 export type VenuePriceRange =

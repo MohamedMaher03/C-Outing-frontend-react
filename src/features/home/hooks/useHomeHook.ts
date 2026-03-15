@@ -387,11 +387,14 @@ export const useHome = (): UseHomeReturn => {
         );
       }
 
-      if (selectedFilters.includes("top-rated")) {
-        result = result.filter((p) => p.rating >= 4.5);
-      }
       if (selectedFilters.includes("open-now")) {
         result = result.filter((p) => p.isOpen === true);
+      }
+      if (selectedFilters.includes("saved")) {
+        result = result.filter((p) => p.isSaved === true);
+      }
+      if (selectedFilters.includes("has-wifi")) {
+        result = result.filter((p) => p.hasWifi === true);
       }
       if (selectedFilters.includes("near-me")) {
         const CAIRO_LAT = 30.0444;
@@ -420,6 +423,11 @@ export const useHome = (): UseHomeReturn => {
     () => applyFilters(rawTrending),
     [rawTrending, applyFilters],
   );
+  const filteredDiscoveryPlaces = useMemo(
+    () => applyFilters(discoveryPlaces),
+    [discoveryPlaces, applyFilters],
+  );
+
   return {
     search,
     selectedFilters,
@@ -432,7 +440,7 @@ export const useHome = (): UseHomeReturn => {
     selectedPriceRange,
     selectedArea,
     activeDiscoverySource,
-    discoveryPlaces,
+    discoveryPlaces: filteredDiscoveryPlaces,
     discoveryError,
     isDiscoveryLoading,
     globalTopRatedVenues,
