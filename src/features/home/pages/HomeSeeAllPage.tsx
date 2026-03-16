@@ -1,17 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, Flame, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
-import { homeService } from "@/features/home/services/homeService";
-import { useUserLocation } from "@/features/home/hooks/useUserLocation";
-import type {
-  HomePlace,
-  HomeRecommendationCollection,
-} from "@/features/home/types";
-import { getErrorMessage } from "@/utils/apiError";
+import { useHomeSeeAll } from "@/features/home/hooks/useHomeSeeAll";
+import type { HomeRecommendationCollection } from "@/features/home/types";
 
 const COLLECTION_META: Record<
   HomeRecommendationCollection,
@@ -42,50 +36,16 @@ const COUNT_OPTIONS = [10, 20, 30];
 const HomeSeeAllPage = () => {
   const navigate = useNavigate();
   const { collection } = useParams<{ collection: string }>();
-  const [places, setPlaces] = useState<HomePlace[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [count, setCount] = useState<number>(20);
-  const userLocation = useUserLocation();
-  const requestUserLocation = userLocation.requestLocation;
-
-  const safeCollection = useMemo<HomeRecommendationCollection | null>(() => {
-    if (collection === "curated" || collection === "trending") {
-      return collection;
-    }
-    return null;
-  }, [collection]);
-
-  useEffect(() => {
-    if (!safeCollection) return;
-
-    let cancelled = false;
-    const fetchPlaces = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const data =
-          safeCollection === "curated"
-            ? await homeService.fetchPersonalizedRecommendations({ count })
-            : await homeService.fetchTrendingRecommendations({ count });
-
-        if (!cancelled) {
-          setPlaces(data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(getErrorMessage(err, "Failed to load recommendations"));
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    fetchPlaces();
-    return () => {
-      cancelled = true;
-    };
-  }, [safeCollection, count]);
+  const {
+    safeCollection,
+    places,
+    isLoading,
+    error,
+    count,
+    setCount,
+    userLocation,
+    requestUserLocation,
+  } = useHomeSeeAll({ collection });
 
   if (!safeCollection) {
     return (
