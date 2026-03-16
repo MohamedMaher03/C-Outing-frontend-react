@@ -92,13 +92,19 @@ export const homeApi = {
   },
 
   /**
-   * POST /venues/:placeId/save
-   * Toggles the saved/bookmark status for a place.
+   * Uses Favorites endpoints to toggle the saved/bookmark status.
+   * POST   /api/v1/Favorite          (save)
+   * DELETE /api/v1/Favorite/{venueId} (unsave)
    */
   async togglePlaceSave(placeId: string, isSaved: boolean): Promise<void> {
-    await axiosInstance.post(API_ENDPOINTS.home.toggleSave(placeId), {
-      isSaved,
-    });
+    if (isSaved) {
+      await axiosInstance.post(API_ENDPOINTS.favorites.add, {
+        venueId: placeId,
+      });
+      return;
+    }
+
+    await axiosInstance.delete(API_ENDPOINTS.favorites.remove(placeId));
   },
 
   /**

@@ -72,12 +72,10 @@ export const API_ENDPOINTS = {
   },
   // ── Favorites ────────────────────────────────────────────────
   favorites: {
-    getAll: (userId: string) => `/users/${userId}/favorites`,
-    add: (userId: string) => `/users/${userId}/favorites`,
-    remove: (userId: string, placeId: string) =>
-      `/users/${userId}/favorites/${placeId}`,
-    check: (userId: string, placeId: string) =>
-      `/users/${userId}/favorites/${placeId}/check`,
+    getAll: "/api/v1/Favorite",
+    add: "/api/v1/Favorite",
+    remove: (venueId: string) => `/api/v1/Favorite/${venueId}`,
+    check: (venueId: string) => `/api/v1/Favorite/check/${venueId}`,
   },
 
   // ── Onboarding (preferences submission) ──────────────────────

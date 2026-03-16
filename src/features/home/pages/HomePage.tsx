@@ -25,7 +25,7 @@ import cairoBg from "@/assets/images/cairo-bg.jpg";
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user } = useAuth();
 
   const {
     search,
@@ -133,8 +133,6 @@ const HomePage = () => {
   const userName = user?.name?.split(" ")[0] || "Explorer";
 
   if (isLoading) {
-    console.log("Login User Token:", token);
-
     return (
       <PageLoading
         text="Discovering Cairo"

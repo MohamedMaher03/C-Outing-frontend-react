@@ -10,7 +10,6 @@ import type { FavoritePlace } from "../types";
 export const createInitialFavorites = (): FavoritePlace[] =>
   PLACES.slice(0, 3).map((place) => ({
     ...place,
-    savedAt: new Date(),
     isSaved: true,
   }));
 

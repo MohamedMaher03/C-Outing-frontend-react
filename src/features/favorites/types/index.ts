@@ -2,16 +2,15 @@
  * Favorites Feature — Type Definitions
  */
 
-import type { Place } from "@/mocks/mockData";
+import type { HomePlace } from "@/features/home/types";
 
-/** A place that has been saved/favorited by the user */
-export interface FavoritePlace extends Place {
-  savedAt: Date;
-}
+/**
+ * Backend returns HomePlace items for favorites list endpoints.
+ */
+export type FavoritePlace = HomePlace;
 
-/** Response shape from toggling a favorite */
-export interface ToggleFavoriteResponse {
-  success: boolean;
-  isFavorite: boolean;
-  message?: string;
+/** Query params used by GET /api/v1/Favorite */
+export interface FavoriteListParams {
+  page?: number;
+  pageSize?: number;
 }

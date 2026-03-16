@@ -16,6 +16,12 @@ interface UseFavoritesReturn {
   favorites: FavoritePlace[];
   loading: boolean;
   error: string | null;
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
 
   // Actions
   toggleSave: (placeId: string) => Promise<void>;
@@ -26,6 +32,12 @@ export const useFavorites = (): UseFavoritesReturn => {
   const [favorites, setFavorites] = useState<FavoritePlace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(false);
 
   // Fetch favorites on mount
   useEffect(() => {
@@ -37,12 +49,22 @@ export const useFavorites = (): UseFavoritesReturn => {
       setLoading(true);
       setError(null);
 
-      const data = await getFavorites();
-      setFavorites(data);
+      const data = await getFavorites({ page: 1, pageSize });
+      setFavorites(data.items);
+      setPageIndex(data.pageIndex);
+      setTotalCount(data.totalCount);
+      setTotalPages(data.totalPages);
+      setHasPreviousPage(data.hasPreviousPage);
+      setHasNextPage(data.hasNextPage);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load favorites"));
       console.error("Error fetching favorites:", err);
       setFavorites([]);
+      setPageIndex(1);
+      setTotalCount(0);
+      setTotalPages(0);
+      setHasPreviousPage(false);
+      setHasNextPage(false);
     } finally {
       setLoading(false);
     }
@@ -78,6 +100,12 @@ export const useFavorites = (): UseFavoritesReturn => {
     favorites,
     loading,
     error,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
     toggleSave,
     refreshFavorites,
   };

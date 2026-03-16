@@ -15,11 +15,11 @@
  *   import { favoritesMock as favoritesApi } from "../mocks/favoritesMock";
  */
 
-// import { favoritesApi } from "../api/favoritesApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
-import { favoritesMock as favoritesApi } from "../mocks/favoritesMock";
+import type { PaginatedResponse } from "@/types";
+import { favoritesApi } from "../api/favoritesApi";
 import type {
+  FavoriteListParams,
   FavoritePlace,
-  ToggleFavoriteResponse,
 } from "@/features/favorites/types";
 
 // ── Favorites Service ────────────────────────────────────────
@@ -28,9 +28,11 @@ export const favoritesService = {
   /**
    * Fetch all saved places for the current user.
    */
-  async getFavorites(): Promise<FavoritePlace[]> {
+  async getFavorites(
+    params?: FavoriteListParams,
+  ): Promise<PaginatedResponse<FavoritePlace>> {
     try {
-      return await favoritesApi.getFavorites();
+      return await favoritesApi.getFavorites(params);
     } catch (error) {
       console.error("Error fetching favorites:", error);
       throw new Error("Failed to load favorites");
@@ -40,9 +42,9 @@ export const favoritesService = {
   /**
    * Add a place to favorites.
    */
-  async addToFavorites(placeId: string): Promise<ToggleFavoriteResponse> {
+  async addToFavorites(placeId: string): Promise<void> {
     try {
-      return await favoritesApi.addToFavorites(placeId);
+      await favoritesApi.addToFavorites(placeId);
     } catch (error) {
       console.error("Error adding to favorites:", error);
       throw new Error("Failed to add to favorites");
@@ -52,9 +54,9 @@ export const favoritesService = {
   /**
    * Remove a place from favorites.
    */
-  async removeFromFavorites(placeId: string): Promise<ToggleFavoriteResponse> {
+  async removeFromFavorites(placeId: string): Promise<void> {
     try {
-      return await favoritesApi.removeFromFavorites(placeId);
+      await favoritesApi.removeFromFavorites(placeId);
     } catch (error) {
       console.error("Error removing from favorites:", error);
       throw new Error("Failed to remove from favorites");
@@ -64,14 +66,11 @@ export const favoritesService = {
   /**
    * Toggle favorite status for a place.
    */
-  async toggleFavorite(
-    placeId: string,
-    isFavorite: boolean,
-  ): Promise<ToggleFavoriteResponse> {
+  async toggleFavorite(placeId: string, isFavorite: boolean): Promise<void> {
     if (isFavorite) {
-      return this.removeFromFavorites(placeId);
+      await this.removeFromFavorites(placeId);
     } else {
-      return this.addToFavorites(placeId);
+      await this.addToFavorites(placeId);
     }
   },
 

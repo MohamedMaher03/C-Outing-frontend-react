@@ -11,7 +11,8 @@
  */
 
 import { PLACES } from "@/mocks/mockData";
-import type { FavoritePlace, ToggleFavoriteResponse } from "../types";
+import type { PaginatedResponse } from "@/types";
+import type { FavoriteListParams, FavoritePlace } from "../types";
 import { createInitialFavorites } from "./index";
 
 // ── In-memory mock store ─────────────────────────────────────
@@ -28,38 +29,53 @@ const delay = (ms: number): Promise<void> =>
 
 export const favoritesMock = {
   /**
-   * Mock GET /users/:userId/favorites
+   * Mock GET /api/v1/Favorite
    */
-  async getFavorites(): Promise<FavoritePlace[]> {
+  async getFavorites(
+    params?: FavoriteListParams,
+  ): Promise<PaginatedResponse<FavoritePlace>> {
     await delay(5000);
-    return [...mockFavorites];
+
+    const page = Math.max(1, params?.page ?? 1);
+    const pageSize = Math.max(1, params?.pageSize ?? 10);
+    const totalCount = mockFavorites.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const start = (page - 1) * pageSize;
+    const items = mockFavorites.slice(start, start + pageSize);
+
+    return {
+      items,
+      pageIndex: page,
+      pageSize,
+      totalCount,
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages,
+    };
   },
 
   /**
-   * Mock POST /users/:userId/favorites
+   * Mock POST /api/v1/Favorite
    */
-  async addToFavorites(placeId: string): Promise<ToggleFavoriteResponse> {
+  async addToFavorites(placeId: string): Promise<void> {
     await delay(900);
 
     const place = PLACES.find((p) => p.id === placeId);
     if (place && !mockFavorites.find((f) => f.id === placeId)) {
-      mockFavorites.push({ ...place, savedAt: new Date(), isSaved: true });
+      mockFavorites.push({ ...place, isSaved: true });
     }
-
-    return { success: true, isFavorite: true };
   },
 
   /**
-   * Mock DELETE /users/:userId/favorites/:placeId
+   * Mock DELETE /api/v1/Favorite/{venueId}
    */
-  async removeFromFavorites(placeId: string): Promise<ToggleFavoriteResponse> {
+  async removeFromFavorites(placeId: string): Promise<void> {
     await delay(300);
     mockFavorites = mockFavorites.filter((f) => f.id !== placeId);
-    return { success: true, isFavorite: false };
   },
 
   /**
-   * Mock GET /users/:userId/favorites/:placeId/check
+   * Mock GET /api/v1/Favorite/check/{venueId}
    */
   async checkIsFavorite(placeId: string): Promise<boolean> {
     await delay(200);

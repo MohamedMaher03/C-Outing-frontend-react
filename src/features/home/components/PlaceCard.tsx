@@ -21,7 +21,10 @@ const PlaceCard = ({
   onClick,
 }: PlaceCardProps) => {
   const isHorizontal = variant === "horizontal";
-  const isTopRated = place.rating >= 4.7;
+  const rating = typeof place.rating === "number" ? place.rating : 0;
+  const reviewCount =
+    typeof place.reviewCount === "number" ? place.reviewCount : 0;
+  const isTopRated = rating >= 4.7;
   const distanceState = getDistanceDisplayState(
     userLocation,
     place.latitude,
@@ -48,7 +51,7 @@ const PlaceCard = ({
       onClick={() => onClick?.(place.id)}
       role="button"
       tabIndex={0}
-      aria-label={`View ${place.name} — rated ${place.rating}`}
+      aria-label={`View ${place.name} — rated ${rating}`}
       onKeyDown={(e) => e.key === "Enter" && onClick?.(place.id)}
       className={cn(
         "group relative bg-white rounded-2xl border border-border/60 overflow-hidden cursor-pointer",
@@ -112,9 +115,9 @@ const PlaceCard = ({
         {/* Rating Badge */}
         <Badge className="absolute bottom-3 left-3 bg-white/95 text-foreground backdrop-blur-md border-0 gap-1 font-bold shadow-md px-2.5 py-1">
           <Star className="h-3.5 w-3.5 fill-secondary text-secondary" />
-          {place.rating}
+          {rating}
           <span className="text-muted-foreground font-normal ml-0.5">
-            ({place.reviewCount.toLocaleString()})
+            ({reviewCount.toLocaleString()})
           </span>
         </Badge>
 

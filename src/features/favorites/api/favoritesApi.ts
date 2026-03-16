@@ -14,54 +14,54 @@
 
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
-import type { FavoritePlace, ToggleFavoriteResponse } from "../types";
-
-// Placeholder — replace with the real user id from auth context when backend is live
-const CURRENT_USER_ID = "1";
+import type { PaginatedResponse } from "@/types";
+import type { FavoriteListParams, FavoritePlace } from "../types";
 
 export const favoritesApi = {
   /**
-   * GET /users/:userId/favorites
-   * Returns all saved/favorited places for the current user.
+   * GET /api/v1/Favorite?page={page}&pageSize={pageSize}
+   * Returns paginated saved venues for the current user.
    */
-  async getFavorites(): Promise<FavoritePlace[]> {
-    const { data } = await axiosInstance.get<FavoritePlace[]>(
-      API_ENDPOINTS.favorites.getAll(CURRENT_USER_ID),
+  async getFavorites(
+    params?: FavoriteListParams,
+  ): Promise<PaginatedResponse<FavoritePlace>> {
+    const { data } = await axiosInstance.get<PaginatedResponse<FavoritePlace>>(
+      API_ENDPOINTS.favorites.getAll,
+      {
+        params: {
+          page: params?.page ?? 1,
+          pageSize: params?.pageSize ?? 10,
+        },
+      },
     );
     return data;
   },
 
   /**
-   * POST /users/:userId/favorites
-   * Adds a place to the user's favorites.
+   * POST /api/v1/Favorite
+   * Body: { venueId: string }
    */
-  async addToFavorites(placeId: string): Promise<ToggleFavoriteResponse> {
-    const { data } = await axiosInstance.post<ToggleFavoriteResponse>(
-      API_ENDPOINTS.favorites.add(CURRENT_USER_ID),
-      { placeId },
-    );
-    return data;
+  async addToFavorites(venueId: string): Promise<void> {
+    await axiosInstance.post(API_ENDPOINTS.favorites.add, {
+      venueId,
+    });
   },
 
   /**
-   * DELETE /users/:userId/favorites/:placeId
-   * Removes a place from the user's favorites.
+   * DELETE /api/v1/Favorite/{venueId}
    */
-  async removeFromFavorites(placeId: string): Promise<ToggleFavoriteResponse> {
-    const { data } = await axiosInstance.delete<ToggleFavoriteResponse>(
-      API_ENDPOINTS.favorites.remove(CURRENT_USER_ID, placeId),
-    );
-    return data;
+  async removeFromFavorites(venueId: string): Promise<void> {
+    await axiosInstance.delete(API_ENDPOINTS.favorites.remove(venueId));
   },
 
   /**
-   * GET /users/:userId/favorites/:placeId/check
-   * Checks whether a place is in the user's favorites.
+   * GET /api/v1/Favorite/check/{venueId}
+   * Returns ApiResponse<boolean> (interceptor unwraps to boolean)
    */
-  async checkIsFavorite(placeId: string): Promise<boolean> {
-    const { data } = await axiosInstance.get<{ isFavorite: boolean }>(
-      API_ENDPOINTS.favorites.check(CURRENT_USER_ID, placeId),
+  async checkIsFavorite(venueId: string): Promise<boolean> {
+    const { data } = await axiosInstance.get<boolean>(
+      API_ENDPOINTS.favorites.check(venueId),
     );
-    return data.isFavorite;
+    return data;
   },
 };
