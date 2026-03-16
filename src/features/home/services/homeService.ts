@@ -14,8 +14,8 @@
  * 🔧 To use mocks during development, swap the import:
  *   import { homeMock as homeApi } from "../mocks/homeMock";
  */
-
-import { homeMock as homeApi } from "../mocks/homeMock";
+import { homeApi } from "../api/homeApi";
+//import { homeMock as homeApi } from "../mocks/homeMock";
 import type {
   HomePageData,
   HomePlace,

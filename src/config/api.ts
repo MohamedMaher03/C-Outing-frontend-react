@@ -100,11 +100,13 @@ export const API_ENDPOINTS = {
 
   // ── Notifications (in-app feed) ────────────────────────────
   notifications: {
-    getAll: (userId: string) => `/users/${userId}/notifications`,
+    getAll: (userId: string) => `/api/v1/users/${userId}/notifications`,
     markRead: (notificationId: string) =>
-      `/notifications/${notificationId}/read`,
-    markAllRead: (userId: string) => `/users/${userId}/notifications/read-all`,
-    delete: (notificationId: string) => `/notifications/${notificationId}`,
+      `/api/v1/notifications/${notificationId}/read`,
+    markAllRead: (userId: string) =>
+      `/api/v1/users/${userId}/notifications/read-all`,
+    delete: (notificationId: string) =>
+      `/api/v1/notifications/${notificationId}`,
   },
 
   // ── Interactions ─────────────────────────────────────────────
