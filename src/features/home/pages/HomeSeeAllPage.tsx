@@ -4,7 +4,9 @@ import { ChevronLeft, Flame, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import PlaceCard from "@/features/home/components/PlaceCard";
+import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
 import { homeService } from "@/features/home/services/homeService";
+import { useUserLocation } from "@/features/home/hooks/useUserLocation";
 import type {
   HomePlace,
   HomeRecommendationCollection,
@@ -44,6 +46,8 @@ const HomeSeeAllPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [count, setCount] = useState<number>(20);
+  const userLocation = useUserLocation();
+  const requestUserLocation = userLocation.requestLocation;
 
   const safeCollection = useMemo<HomeRecommendationCollection | null>(() => {
     if (collection === "curated" || collection === "trending") {
@@ -149,6 +153,11 @@ const HomeSeeAllPage = () => {
           </div>
         </div>
 
+        <LocationPermissionBanner
+          userLocation={userLocation}
+          onEnableLocation={requestUserLocation}
+        />
+
         {error ? (
           <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
             <p className="text-sm font-semibold text-destructive">
@@ -170,6 +179,7 @@ const HomeSeeAllPage = () => {
                 key={place.id}
                 place={place}
                 variant="grid"
+                userLocation={userLocation}
                 onClick={(id) => navigate(`/venue/${id}`)}
               />
             ))}

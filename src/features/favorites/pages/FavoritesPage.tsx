@@ -1,12 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { Heart } from "lucide-react";
 import PlaceCard from "@/features/home/components/PlaceCard";
+import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
 import { useFavorites } from "@/features/favorites/hooks/useFavorites";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useUserLocation } from "@/features/home/hooks/useUserLocation";
 
 const FavoritesPage = () => {
   const navigate = useNavigate();
   const { favorites, loading, error, toggleSave } = useFavorites();
+  const userLocation = useUserLocation();
+  const requestUserLocation = userLocation.requestLocation;
 
   const handleToggleSave = async (id: string) => {
     try {
@@ -45,6 +49,11 @@ const FavoritesPage = () => {
         </p>
       </div>
 
+      <LocationPermissionBanner
+        userLocation={userLocation}
+        onEnableLocation={requestUserLocation}
+      />
+
       {favorites.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-2">
           <Heart className="h-12 w-12 text-muted-foreground/30" />
@@ -59,6 +68,7 @@ const FavoritesPage = () => {
             <PlaceCard
               key={place.id}
               place={{ ...place, isSaved: true }}
+              userLocation={userLocation}
               onToggleSave={handleToggleSave}
               onClick={(id) => navigate(`/venue/${id}`)}
             />

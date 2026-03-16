@@ -11,6 +11,7 @@ import {
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Input } from "@/components/ui/input";
 import PlaceCard from "@/features/home/components/PlaceCard";
+import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useHome } from "@/features/home/hooks/useHomeHook";
 import {
@@ -54,12 +55,14 @@ const HomePage = () => {
     trendingPlaces,
     moodPlaces,
     isMoodLoading,
+    userLocation,
     selectedSimilarSeedId,
     similarSeedPlaces,
     similarPlaces,
     isSimilarLoading,
     similarError,
     selectPlaceForSimilar,
+    requestUserLocation,
     toggleSave,
     isLoading,
     error,
@@ -222,6 +225,14 @@ const HomePage = () => {
             })}
           </div>
         </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 pt-4">
+        <LocationPermissionBanner
+          userLocation={userLocation}
+          onEnableLocation={requestUserLocation}
+          className="animate-fade-in-up"
+        />
       </div>
 
       {/* ====== MAIN CONTENT: TWO-COLUMN LAYOUT ====== */}
@@ -445,6 +456,7 @@ const HomePage = () => {
                           <PlaceCard
                             place={place}
                             variant="horizontal"
+                            userLocation={userLocation}
                             onToggleSave={toggleSave}
                             onClick={(id) => navigate(`/venue/${id}`)}
                           />
@@ -521,6 +533,7 @@ const HomePage = () => {
                         <PlaceCard
                           place={place}
                           variant="horizontal"
+                          userLocation={userLocation}
                           onToggleSave={toggleSave}
                           onClick={(id) => navigate(`/venue/${id}`)}
                         />
@@ -562,6 +575,7 @@ const HomePage = () => {
                     <PlaceCard
                       place={place}
                       variant="horizontal"
+                      userLocation={userLocation}
                       onToggleSave={toggleSave}
                       onClick={(id) => navigate(`/venue/${id}`)}
                     />
@@ -598,6 +612,7 @@ const HomePage = () => {
                       key={place.id}
                       place={place}
                       variant="horizontal"
+                      userLocation={userLocation}
                       onToggleSave={toggleSave}
                       onClick={(id) => navigate(`/venue/${id}`)}
                     />
@@ -742,6 +757,7 @@ const HomePage = () => {
                         <PlaceCard
                           place={place}
                           variant="horizontal"
+                          userLocation={userLocation}
                           onToggleSave={toggleSave}
                           onClick={(id) => navigate(`/venue/${id}`)}
                         />

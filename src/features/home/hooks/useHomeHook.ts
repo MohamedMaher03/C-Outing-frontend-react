@@ -15,10 +15,13 @@ import type {
   DiscoverySource,
   FilterType,
   HomePlace,
+  UserLocationState,
   VenuePriceRange,
 } from "@/features/home/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getErrorMessage } from "@/utils/apiError";
+import { useUserLocation } from "@/features/home/hooks/useUserLocation";
+import { calculateDistanceKm } from "@/features/home/utils/distance";
 
 interface UseHomeReturn {
   // State
@@ -53,6 +56,7 @@ interface UseHomeReturn {
   trendingPlaces: HomePlace[];
   moodPlaces: HomePlace[];
   isMoodLoading: boolean;
+  userLocation: UserLocationState;
 
   // Static data
   categories: typeof CATEGORIES;
@@ -70,12 +74,14 @@ interface UseHomeReturn {
   setSelectedArea: (area: string) => void;
   setActiveDiscoverySource: (source: DiscoverySource) => void;
   selectPlaceForSimilar: (placeId: string | null) => void;
+  requestUserLocation: () => void;
   toggleSave: (id: string) => void;
   reloadPlaces: () => Promise<void>;
 }
 
 export const useHome = (): UseHomeReturn => {
   const { user } = useAuth();
+  const userLocation = useUserLocation();
   const [search, setSearch] = useState("");
   const [selectedFilters, setSelectedFilters] = useState<FilterType[]>([]);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
@@ -460,22 +466,29 @@ export const useHome = (): UseHomeReturn => {
         result = result.filter((p) => p.hasWifi === true);
       }
       if (selectedFilters.includes("near-me")) {
-        const CAIRO_LAT = 30.0444;
-        const CAIRO_LNG = 31.2357;
-        result = result.sort((a, b) => {
-          const distA =
-            Math.pow(a.latitude - CAIRO_LAT, 2) +
-            Math.pow(a.longitude - CAIRO_LNG, 2);
-          const distB =
-            Math.pow(b.latitude - CAIRO_LAT, 2) +
-            Math.pow(b.longitude - CAIRO_LNG, 2);
-          return distA - distB;
-        });
+        if (userLocation.status === "granted" && userLocation.coordinates) {
+          const { latitude, longitude } = userLocation.coordinates;
+          result = result.sort((a, b) => {
+            const distA = calculateDistanceKm(
+              latitude,
+              longitude,
+              a.latitude,
+              a.longitude,
+            );
+            const distB = calculateDistanceKm(
+              latitude,
+              longitude,
+              b.latitude,
+              b.longitude,
+            );
+            return distA - distB;
+          });
+        }
       }
 
       return result;
     },
-    [search, selectedFilters],
+    [search, selectedFilters, userLocation],
   );
 
   const curatedPlaces = useMemo(
@@ -521,6 +534,7 @@ export const useHome = (): UseHomeReturn => {
     trendingPlaces,
     moodPlaces,
     isMoodLoading,
+    userLocation,
 
     categories: CATEGORIES,
     moodOptions: MOOD_OPTIONS,
@@ -536,6 +550,7 @@ export const useHome = (): UseHomeReturn => {
     setSelectedArea,
     setActiveDiscoverySource,
     selectPlaceForSimilar: setSelectedSimilarSeedId,
+    requestUserLocation: userLocation.requestLocation,
     toggleSave,
     reloadPlaces: loadPlaces,
   };

@@ -7,6 +7,7 @@ export { default as PlaceCard } from "./components/PlaceCard";
 
 // Hooks
 export { useHome } from "./hooks/useHomeHook";
+export { useUserLocation } from "./hooks/useUserLocation";
 
 // Types
 export type {
@@ -18,6 +19,9 @@ export type {
   HomeRecommendationsQuery,
   PlaceCardProps,
   SimilarRecommendationsParams,
+  UserLocationCoordinates,
+  UserLocationState,
+  UserLocationStatus,
   VenueByDistrictParams,
   VenueByPriceRangeParams,
   VenueByTypeParams,
@@ -36,6 +40,7 @@ export {
   DISCOVERY_SOURCE_OPTIONS,
   FILTER_OPTIONS,
   CATEGORY_ICON_MAP,
+  LOCATION_DISTANCE_MOCK_CASES,
   MOOD_ICON_MAP,
   VENUE_PRICE_RANGE_OPTIONS,
   homeMock,

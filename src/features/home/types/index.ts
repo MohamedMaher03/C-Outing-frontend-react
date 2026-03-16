@@ -27,6 +27,29 @@ export type DiscoverySource =
   | "top-rated"
   | "top-rated-area";
 
+export interface UserLocationCoordinates {
+  latitude: number;
+  longitude: number;
+  accuracyMeters?: number;
+}
+
+export type UserLocationStatus =
+  | "idle"
+  | "loading"
+  | "granted"
+  | "denied"
+  | "unsupported"
+  | "unavailable"
+  | "error";
+
+export interface UserLocationState {
+  status: UserLocationStatus;
+  coordinates: UserLocationCoordinates | null;
+  message: string | null;
+  errorCode: number | null;
+  requestLocation: () => void;
+}
+
 /**
  * Lightweight venue shape used by the homepage lists/cards.
  * Keep rich venue metadata on the base Place model for detail pages.
@@ -86,6 +109,7 @@ export interface VenueTopRatedInAreaParams {
 export interface PlaceCardProps {
   place: HomePlace;
   variant?: "horizontal" | "grid";
+  userLocation?: UserLocationState | null;
   onToggleSave?: (id: string) => void;
   onClick?: (id: string) => void;
 }

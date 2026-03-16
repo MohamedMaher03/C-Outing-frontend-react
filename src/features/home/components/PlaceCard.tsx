@@ -1,7 +1,8 @@
-import { Heart, MapPin, Star, Clock, Wifi } from "lucide-react";
+import { Heart, MapPin, Star, Clock, Wifi, Navigation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { PlaceCardProps } from "@/features/home/types";
+import { getDistanceDisplayState } from "@/features/home/utils/distance";
 
 /** Maps price level to dollar-sign shorthand */
 const PRICE_SYMBOL: Record<string, string> = {
@@ -15,11 +16,32 @@ const PRICE_SYMBOL: Record<string, string> = {
 const PlaceCard = ({
   place,
   variant = "grid",
+  userLocation,
   onToggleSave,
   onClick,
 }: PlaceCardProps) => {
   const isHorizontal = variant === "horizontal";
   const isTopRated = place.rating >= 4.7;
+  const distanceState = getDistanceDisplayState(
+    userLocation,
+    place.latitude,
+    place.longitude,
+  );
+
+  const distanceClassName = cn(
+    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+    distanceState.kind === "distance" &&
+      "border-emerald-200 bg-emerald-50 text-emerald-700",
+    distanceState.kind === "locating" &&
+      "border-slate-200 bg-slate-50 text-slate-600",
+    distanceState.kind === "permission-denied" &&
+      "border-amber-200 bg-amber-50 text-amber-700",
+    (distanceState.kind === "unsupported" ||
+      distanceState.kind === "position-unavailable" ||
+      distanceState.kind === "error" ||
+      distanceState.kind === "place-coordinates-missing") &&
+      "border-border bg-muted/60 text-muted-foreground",
+  );
 
   return (
     <div
@@ -127,6 +149,11 @@ const PlaceCard = ({
               {place.isOpen ? "Open" : "Closed"}
             </div>
           )}
+        </div>
+
+        <div className={distanceClassName} aria-live="polite">
+          <Navigation className="h-3 w-3" />
+          <span>{distanceState.text}</span>
         </div>
 
         {/* Tags & price */}

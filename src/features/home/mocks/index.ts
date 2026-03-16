@@ -32,6 +32,7 @@ import type { DiscoverySource, FilterType, VenuePriceRange } from "../types";
 
 // Re-export mock API for convenient access
 export { homeMock } from "./homeMock";
+export { LOCATION_DISTANCE_MOCK_CASES } from "./locationDistanceCases";
 
 // ============ Filter Pills ============
 
