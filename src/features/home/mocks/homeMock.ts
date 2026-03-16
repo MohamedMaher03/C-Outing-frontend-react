@@ -108,7 +108,9 @@ export const homeMock = {
    * In production the backend sorts by the user's preference vector;
    * here we approximate with matchScore as a stand-in.
    */
-  async fetchHomePageData(params?: HomeRecommendationsQuery): Promise<HomePageData> {
+  async fetchHomePageData(
+    params?: HomeRecommendationsQuery,
+  ): Promise<HomePageData> {
     await delay(800);
     console.log(`[Mock] Fetching home page data`);
 

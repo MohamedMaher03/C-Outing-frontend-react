@@ -33,7 +33,9 @@ export const homeApi = {
    * curatedPlaces MUST carry a userId because the backend ranks them using
    * the user's preference vector.
    */
-  async fetchHomePageData(params?: HomeRecommendationsQuery): Promise<HomePageData> {
+  async fetchHomePageData(
+    params?: HomeRecommendationsQuery,
+  ): Promise<HomePageData> {
     const count = params?.count;
     const [curated, trending] = await Promise.all([
       axiosInstance.get<HomePlace[]>(API_ENDPOINTS.recommendations.curated, {

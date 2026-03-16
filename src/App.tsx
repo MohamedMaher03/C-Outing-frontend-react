@@ -140,7 +140,10 @@ function App() {
           }
         >
           <Route path="/" element={<HomePage />} />
-          <Route path="/home/see-all/:collection" element={<HomeSeeAllPage />} />
+          <Route
+            path="/home/see-all/:collection"
+            element={<HomeSeeAllPage />}
+          />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<EditProfilePage />} />
           <Route
