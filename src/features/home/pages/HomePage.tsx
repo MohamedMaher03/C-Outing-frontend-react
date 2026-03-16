@@ -1,5 +1,13 @@
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronRight, Flame, Compass, Sparkles } from "lucide-react";
+import {
+  Search,
+  ChevronRight,
+  Flame,
+  Compass,
+  Sparkles,
+  WandSparkles,
+} from "lucide-react";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Input } from "@/components/ui/input";
 import PlaceCard from "@/features/home/components/PlaceCard";
@@ -46,6 +54,12 @@ const HomePage = () => {
     trendingPlaces,
     moodPlaces,
     isMoodLoading,
+    selectedSimilarSeedId,
+    similarSeedPlaces,
+    similarPlaces,
+    isSimilarLoading,
+    similarError,
+    selectPlaceForSimilar,
     toggleSave,
     isLoading,
     error,
@@ -66,6 +80,38 @@ const HomePage = () => {
     (activeDiscoverySource === "top-rated-area" && isTopRatedInAreaLoading);
 
   const discoveryResultCount = discoveryPlaces.length;
+  const [similarSearchInput, setSimilarSearchInput] = useState("");
+  const [isSimilarInputFocused, setIsSimilarInputFocused] = useState(false);
+
+  const similarSeedOptions = similarSeedPlaces;
+
+  const selectedSimilarSeedPlace =
+    similarSeedOptions.find((place) => place.id === selectedSimilarSeedId) ??
+    null;
+
+  const similarSearchResults = useMemo(() => {
+    const query = similarSearchInput.trim().toLowerCase();
+    if (!query) {
+      return similarSeedOptions.slice(0, 8);
+    }
+
+    return similarSeedOptions
+      .filter((place) => {
+        const tags = (place.atmosphereTags ?? []).join(" ").toLowerCase();
+        return (
+          place.name.toLowerCase().includes(query) ||
+          place.address.toLowerCase().includes(query) ||
+          place.category.toLowerCase().includes(query) ||
+          tags.includes(query)
+        );
+      })
+      .slice(0, 8);
+  }, [similarSearchInput, similarSeedOptions]);
+
+  const showSimilarSuggestions =
+    isSimilarInputFocused ||
+    (similarSearchInput.trim().length > 0 &&
+      similarSearchInput !== selectedSimilarSeedPlace?.name);
 
   const handlePriceRangeSelect = (priceRange: VenuePriceRange) => {
     setSelectedPriceRange(
@@ -499,7 +545,10 @@ const HomePage = () => {
                     AI-powered picks based on your preferences
                   </p>
                 </div>
-                <button className="text-xs text-secondary font-semibold flex items-center gap-0.5 hover:gap-1.5 transition-all">
+                <button
+                  onClick={() => navigate("/home/see-all/curated")}
+                  className="text-xs text-secondary font-semibold flex items-center gap-0.5 hover:gap-1.5 transition-all"
+                >
                   See all <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -536,7 +585,10 @@ const HomePage = () => {
                       Most popular this week in Cairo
                     </p>
                   </div>
-                  <button className="text-xs text-secondary font-semibold flex items-center gap-0.5 hover:gap-1.5 transition-all">
+                  <button
+                    onClick={() => navigate("/home/see-all/trending")}
+                    className="text-xs text-secondary font-semibold flex items-center gap-0.5 hover:gap-1.5 transition-all"
+                  >
                     See all <ChevronRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -553,6 +605,152 @@ const HomePage = () => {
                 </div>
               </section>
             )}
+
+            {/* ── Similar Places Studio ── */}
+            <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-sky-50/70 via-white to-amber-50/50 p-5 sm:p-6 shadow-sm">
+              <div className="absolute -top-14 -right-14 h-44 w-44 rounded-full bg-sky-200/30 blur-3xl" />
+              <div className="absolute -bottom-20 -left-12 h-48 w-48 rounded-full bg-secondary/20 blur-3xl" />
+
+              <div className="relative z-10 space-y-5">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-black tracking-tight text-foreground flex items-center gap-2">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                        <WandSparkles className="h-4 w-4" />
+                      </span>
+                      Because You Like This Place
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Pick one venue and we will get similar recommendations
+                      instantly for you.
+                    </p>
+                  </div>
+                  {selectedSimilarSeedPlace && (
+                    <span className="rounded-full border border-sky-200 bg-white/90 px-3 py-1 text-xs font-semibold text-sky-700">
+                      Selected: {selectedSimilarSeedPlace.name}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Input
+                      value={similarSearchInput}
+                      onChange={(e) => setSimilarSearchInput(e.target.value)}
+                      onFocus={() => setIsSimilarInputFocused(true)}
+                      onBlur={() => {
+                        setTimeout(() => setIsSimilarInputFocused(false), 120);
+                      }}
+                      placeholder="Type a place you like (name, area, or tag)..."
+                      className="h-12 rounded-2xl border-sky-200 bg-white/90 focus-visible:ring-sky-300"
+                    />
+
+                    {showSimilarSuggestions && (
+                      <div className="absolute z-20 mt-2 w-full rounded-2xl border border-border/70 bg-white shadow-xl p-2 max-h-72 overflow-y-auto">
+                        {similarSearchResults.length > 0 ? (
+                          similarSearchResults.map((place) => {
+                            const isActive = selectedSimilarSeedId === place.id;
+                            return (
+                              <button
+                                key={`suggestion-${place.id}`}
+                                onMouseDown={() => {
+                                  setSimilarSearchInput(place.name);
+                                  selectPlaceForSimilar(place.id);
+                                }}
+                                className={`w-full text-left rounded-xl px-3 py-2.5 transition-colors ${
+                                  isActive
+                                    ? "bg-sky-100 text-sky-800"
+                                    : "hover:bg-muted"
+                                }`}
+                              >
+                                <p className="text-sm font-semibold text-foreground">
+                                  {place.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {place.address}
+                                </p>
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <p className="px-3 py-2 text-xs text-muted-foreground">
+                            No matches found. Try another keyword.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {similarSeedOptions.slice(0, 6).map((place) => {
+                      const isActive = selectedSimilarSeedId === place.id;
+                      return (
+                        <button
+                          key={`quick-seed-${place.id}`}
+                          onClick={() => {
+                            setSimilarSearchInput(place.name);
+                            selectPlaceForSimilar(place.id);
+                          }}
+                          className={`rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                            isActive
+                              ? "bg-sky-600 text-white shadow-md"
+                              : "bg-white border border-border/70 text-foreground hover:border-sky-300 hover:bg-sky-50"
+                          }`}
+                        >
+                          {place.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {isSimilarLoading ? (
+                  <div className="flex gap-4 overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div
+                        key={`similar-skeleton-${i}`}
+                        className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
+                      />
+                    ))}
+                  </div>
+                ) : similarError ? (
+                  <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
+                    <p className="text-sm font-semibold text-destructive">
+                      Could not load similar places
+                    </p>
+                    <p className="text-xs text-destructive/80 mt-1">
+                      {similarError}
+                    </p>
+                  </div>
+                ) : similarPlaces.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-border/70 bg-white/70 px-4 py-8 text-center">
+                    <p className="font-semibold text-foreground">
+                      Choose a place to get similar recommendations
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      We will recommend venues with a matching vibe and style.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex gap-4 overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
+                    {similarPlaces.map((place, i) => (
+                      <div
+                        key={`similar-${place.id}`}
+                        className="animate-slide-in-right"
+                        style={{ animationDelay: `${i * 40}ms` }}
+                      >
+                        <PlaceCard
+                          place={place}
+                          variant="horizontal"
+                          onToggleSave={toggleSave}
+                          onClick={(id) => navigate(`/venue/${id}`)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
 
           {/* ── RIGHT SIDEBAR ── */}

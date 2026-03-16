@@ -20,6 +20,7 @@ import ForgotPasswordPage from "@/features/auth/pages/ForgotPasswordPage";
 import ResetPasswordPage from "@/features/auth/pages/ResetPasswordPage";
 import OnboardingPage from "@/features/onboarding/pages/OnboardingPage";
 import HomePage from "@/features/home/pages/HomePage";
+import HomeSeeAllPage from "@/features/home/pages/HomeSeeAllPage";
 import FavoritesPage from "@/features/favorites/pages/FavoritesPage";
 import PlaceDetailPage from "@/features/place-detail/pages/PlaceDetailPage";
 import ProfilePage from "@/features/profile/pages/ProfilePage";
@@ -139,6 +140,7 @@ function App() {
           }
         >
           <Route path="/" element={<HomePage />} />
+          <Route path="/home/see-all/:collection" element={<HomeSeeAllPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<EditProfilePage />} />
           <Route

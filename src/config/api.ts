@@ -47,12 +47,11 @@ export const API_ENDPOINTS = {
     // NOTE: curatedPlaces are personalized recommendations — userId is REQUIRED.
     // There is no generic /venues/curated endpoint; the backend computes
     // a ranked list from the user's preference vector.
-    curated: (userId: string) => `/recommendations/${userId}`,
-    trending: "/venues/trending",
-    toggleSave: (placeId: string) => `/venues/${placeId}/save`,
+
+    toggleSave: (placeId: string) => `/api/v1/Venue/${placeId}/save`,
     // Returns places filtered by mood (e.g., "chill", "romantic").
     // The backend applies its own mood-to-attribute mapping.
-    moodPlaces: (moodId: string) => `/venues/mood/${moodId}`,
+    moodPlaces: (moodId: string) => `/api/v1/Venue/mood/${moodId}`,
 
     // Venue discovery endpoints (standard envelope: ApiResponse<HomePlace[]>)
     venuesByDistrict: (district: string) =>
@@ -65,6 +64,12 @@ export const API_ENDPOINTS = {
     venueTopRatedInArea: "/api/v1/Venue/top-rated-in-area",
   },
 
+  // ── Recommendations ────────────────────────────────────────────────
+  recommendations: {
+    curated: "/api/v1/Recommendation/personalized",
+    similar: (venueId: string) => `/api/v1/Recommendation/similar/${venueId}`,
+    trending: "/api/v1/Recommendation/trending",
+  },
   // ── Favorites ────────────────────────────────────────────────
   favorites: {
     getAll: (userId: string) => `/users/${userId}/favorites`,

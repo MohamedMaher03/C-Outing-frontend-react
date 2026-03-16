@@ -15,11 +15,12 @@
  *   import { homeMock as homeApi } from "../mocks/homeMock";
  */
 
-// import { homeApi } from "../api/homeApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
 import { homeMock as homeApi } from "../mocks/homeMock";
 import type {
   HomePageData,
   HomePlace,
+  HomeRecommendationsQuery,
+  SimilarRecommendationsParams,
   VenueByDistrictParams,
   VenueByPriceRangeParams,
   VenueByTypeParams,
@@ -37,12 +38,47 @@ export const homeService = {
    *                 trending is global, and the call is batched
    *                 together for a single loading state.
    */
-  async fetchHomePageData(userId: string): Promise<HomePageData> {
+  async fetchHomePageData(
+    params?: HomeRecommendationsQuery,
+  ): Promise<HomePageData> {
     try {
-      return await homeApi.fetchHomePageData(userId);
+      return await homeApi.fetchHomePageData(params);
     } catch (error) {
       console.error("Error fetching home page data:", error);
       throw new Error("Failed to fetch home page data");
+    }
+  },
+
+  async fetchPersonalizedRecommendations(
+    params?: HomeRecommendationsQuery,
+  ): Promise<HomePlace[]> {
+    try {
+      return await homeApi.fetchPersonalizedRecommendations(params);
+    } catch (error) {
+      console.error("Error fetching personalized recommendations:", error);
+      throw new Error("Failed to fetch personalized recommendations");
+    }
+  },
+
+  async fetchTrendingRecommendations(
+    params?: HomeRecommendationsQuery,
+  ): Promise<HomePlace[]> {
+    try {
+      return await homeApi.fetchTrendingRecommendations(params);
+    } catch (error) {
+      console.error("Error fetching trending recommendations:", error);
+      throw new Error("Failed to fetch trending recommendations");
+    }
+  },
+
+  async fetchSimilarRecommendations(
+    params: SimilarRecommendationsParams,
+  ): Promise<HomePlace[]> {
+    try {
+      return await homeApi.fetchSimilarRecommendations(params);
+    } catch (error) {
+      console.error("Error fetching similar recommendations:", error);
+      throw new Error("Failed to fetch similar recommendations");
     }
   },
 

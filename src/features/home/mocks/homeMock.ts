@@ -15,6 +15,8 @@ import { PLACES } from "@/mocks/mockData";
 import type {
   HomePageData,
   HomePlace,
+  HomeRecommendationsQuery,
+  SimilarRecommendationsParams,
   VenueByDistrictParams,
   VenueByPriceRangeParams,
   VenueByTypeParams,
@@ -46,6 +48,15 @@ const sortByTopRated = (list: HomePlace[]) =>
   [...list].sort(
     (a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount,
   );
+
+const sortByPersonalized = (list: HomePlace[]) =>
+  [...list].sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
+
+const withCount = (
+  list: HomePlace[],
+  count: number | undefined,
+  fallback: number,
+) => list.slice(0, count ?? fallback);
 
 /**
  * Maps each mood ID to a predicate that decides whether a Place fits.
@@ -97,23 +108,82 @@ export const homeMock = {
    * In production the backend sorts by the user's preference vector;
    * here we approximate with matchScore as a stand-in.
    */
-  async fetchHomePageData(userId: string): Promise<HomePageData> {
+  async fetchHomePageData(params?: HomeRecommendationsQuery): Promise<HomePageData> {
     await delay(800);
-    console.log(`[Mock] Fetching home page data for user ${userId}`);
+    console.log(`[Mock] Fetching home page data`);
 
     const all: HomePlace[] = normalizedPlaces();
 
     // Curated = personalized — sorted by matchScore (proxy for recommendation rank)
-    const curatedPlaces = [...all]
-      .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0))
-      .slice(0, 5);
+    const curatedPlaces = withCount(sortByPersonalized(all), params?.count, 10);
 
     // Trending = global — same for every user
-    const trendingPlaces = [...all]
-      .sort((a, b) => b.reviewCount - a.reviewCount)
-      .slice(0, 6);
+    const trendingPlaces = withCount(
+      [...all].sort((a, b) => b.reviewCount - a.reviewCount),
+      params?.count,
+      10,
+    );
 
     return { curatedPlaces, trendingPlaces };
+  },
+
+  async fetchPersonalizedRecommendations(
+    params?: HomeRecommendationsQuery,
+  ): Promise<HomePlace[]> {
+    await delay(450);
+    console.log(
+      `[Mock] Fetching personalized recommendations (count: ${params?.count ?? 10})`,
+    );
+    return withCount(sortByPersonalized(normalizedPlaces()), params?.count, 10);
+  },
+
+  async fetchTrendingRecommendations(
+    params?: HomeRecommendationsQuery,
+  ): Promise<HomePlace[]> {
+    await delay(450);
+    console.log(
+      `[Mock] Fetching trending recommendations (count: ${params?.count ?? 10})`,
+    );
+    return withCount(
+      [...normalizedPlaces()].sort((a, b) => b.reviewCount - a.reviewCount),
+      params?.count,
+      10,
+    );
+  },
+
+  async fetchSimilarRecommendations(
+    params: SimilarRecommendationsParams,
+  ): Promise<HomePlace[]> {
+    await delay(550);
+    console.log(
+      `[Mock] Fetching similar recommendations for venue: ${params.venueId} (count: ${params.count ?? 5})`,
+    );
+
+    const all = normalizedPlaces();
+    const seed = all.find((place) => place.id === params.venueId);
+    if (!seed) return [];
+
+    const scored = all
+      .filter((place) => place.id !== seed.id)
+      .map((place) => {
+        const sharedTags = (place.atmosphereTags ?? []).filter((tag) =>
+          (seed.atmosphereTags ?? []).includes(tag),
+        ).length;
+
+        const categoryScore = place.category === seed.category ? 30 : 0;
+        const priceScore = place.priceLevel === seed.priceLevel ? 20 : 0;
+        const tagScore = sharedTags * 10;
+        const qualityScore = place.rating * 5;
+
+        return {
+          place,
+          score: categoryScore + priceScore + tagScore + qualityScore,
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .map((item) => item.place);
+
+    return withCount(scored, params.count, 5);
   },
 
   /**

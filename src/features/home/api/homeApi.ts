@@ -17,6 +17,8 @@ import { API_ENDPOINTS } from "@/config/api";
 import type {
   HomePageData,
   HomePlace,
+  HomeRecommendationsQuery,
+  SimilarRecommendationsParams,
   VenueByDistrictParams,
   VenueByPriceRangeParams,
   VenueByTypeParams,
@@ -26,20 +28,65 @@ import type {
 export const homeApi = {
   /**
    * GET /recommendations/:userId  (curated — personalized)
-   * GET /venues/trending           (same for all users)
+   * GET /recommendations/trending           (same for all users)
    *
    * curatedPlaces MUST carry a userId because the backend ranks them using
    * the user's preference vector.
    */
-  async fetchHomePageData(userId: string): Promise<HomePageData> {
+  async fetchHomePageData(params?: HomeRecommendationsQuery): Promise<HomePageData> {
+    const count = params?.count;
     const [curated, trending] = await Promise.all([
-      axiosInstance.get<HomePlace[]>(API_ENDPOINTS.home.curated(userId)),
-      axiosInstance.get<HomePlace[]>(API_ENDPOINTS.home.trending),
+      axiosInstance.get<HomePlace[]>(API_ENDPOINTS.recommendations.curated, {
+        params: { count },
+      }),
+      axiosInstance.get<HomePlace[]>(API_ENDPOINTS.recommendations.trending, {
+        params: { count },
+      }),
     ]);
+
     return {
       curatedPlaces: curated.data,
       trendingPlaces: trending.data,
     };
+  },
+
+  /** GET /api/v1/Recommendation/personalized?count={count} */
+  async fetchPersonalizedRecommendations(
+    params?: HomeRecommendationsQuery,
+  ): Promise<HomePlace[]> {
+    const { data } = await axiosInstance.get<HomePlace[]>(
+      API_ENDPOINTS.recommendations.curated,
+      {
+        params: { count: params?.count },
+      },
+    );
+    return data;
+  },
+
+  /** GET /api/v1/Recommendation/trending?count={count} */
+  async fetchTrendingRecommendations(
+    params?: HomeRecommendationsQuery,
+  ): Promise<HomePlace[]> {
+    const { data } = await axiosInstance.get<HomePlace[]>(
+      API_ENDPOINTS.recommendations.trending,
+      {
+        params: { count: params?.count },
+      },
+    );
+    return data;
+  },
+
+  /** GET /api/v1/Recommendation/similar/{venueId}?count={count} */
+  async fetchSimilarRecommendations(
+    params: SimilarRecommendationsParams,
+  ): Promise<HomePlace[]> {
+    const { data } = await axiosInstance.get<HomePlace[]>(
+      API_ENDPOINTS.recommendations.similar(params.venueId),
+      {
+        params: { count: params.count },
+      },
+    );
+    return data;
   },
 
   /**

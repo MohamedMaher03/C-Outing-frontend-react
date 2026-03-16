@@ -27,6 +27,11 @@ interface UseHomeReturn {
   selectedMood: string | null;
   isLoading: boolean;
   error: string | null;
+  selectedSimilarSeedId: string | null;
+  similarSeedPlaces: HomePlace[];
+  similarPlaces: HomePlace[];
+  isSimilarLoading: boolean;
+  similarError: string | null;
 
   // Endpoint-driven discovery state
   selectedDistrict: string | null;
@@ -64,6 +69,7 @@ interface UseHomeReturn {
   setSelectedPriceRange: (priceRange: VenuePriceRange | null) => void;
   setSelectedArea: (area: string) => void;
   setActiveDiscoverySource: (source: DiscoverySource) => void;
+  selectPlaceForSimilar: (placeId: string | null) => void;
   toggleSave: (id: string) => void;
   reloadPlaces: () => Promise<void>;
 }
@@ -77,6 +83,13 @@ export const useHome = (): UseHomeReturn => {
   const [error, setError] = useState<string | null>(null);
   const [moodPlaces, setMoodPlaces] = useState<HomePlace[]>([]);
   const [isMoodLoading, setIsMoodLoading] = useState(false);
+  const [selectedSimilarSeedId, setSelectedSimilarSeedId] = useState<
+    string | null
+  >(null);
+  const [similarSeedPlaces, setSimilarSeedPlaces] = useState<HomePlace[]>([]);
+  const [similarPlaces, setSimilarPlaces] = useState<HomePlace[]>([]);
+  const [isSimilarLoading, setIsSimilarLoading] = useState(false);
+  const [similarError, setSimilarError] = useState<string | null>(null);
 
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const [selectedVenueType, setSelectedVenueType] = useState<string | null>(
@@ -107,11 +120,75 @@ export const useHome = (): UseHomeReturn => {
   const [rawCurated, setRawCurated] = useState<HomePlace[]>([]);
   const [rawTrending, setRawTrending] = useState<HomePlace[]>([]);
 
-  useEffect(() => {
-    if (user) {
-      loadPlaces();
+  const loadPlaces = useCallback(async () => {
+    if (!user) return;
+    try {
+      setIsLoading(true);
+      setError(null);
+      const [homeData, personalizedSeedPool, trendingSeedPool] =
+        await Promise.all([
+          homeService.fetchHomePageData({ count: 10 }),
+          homeService.fetchPersonalizedRecommendations({ count: 50 }),
+          homeService.fetchTrendingRecommendations({ count: 50 }),
+        ]);
+      const { curatedPlaces, trendingPlaces } = homeData;
+      setRawCurated(curatedPlaces);
+      setRawTrending(trendingPlaces);
+      const combinedSeedPool = [...personalizedSeedPool, ...trendingSeedPool]
+        .filter(
+          (place, index, arr) =>
+            arr.findIndex((candidate) => candidate.id === place.id) === index,
+        )
+        .slice(0, 60);
+      setSimilarSeedPlaces(combinedSeedPool);
+
+      if (combinedSeedPool.length > 0) {
+        setSelectedSimilarSeedId((prev) => prev ?? combinedSeedPool[0].id);
+      }
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to load places"));
+    } finally {
+      setIsLoading(false);
     }
-  }, [user?.userId]);
+  }, [user]);
+
+  useEffect(() => {
+    loadPlaces();
+  }, [loadPlaces]);
+
+  useEffect(() => {
+    if (!selectedSimilarSeedId) {
+      setSimilarPlaces([]);
+      setSimilarError(null);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchSimilarPlaces = async () => {
+      setIsSimilarLoading(true);
+      setSimilarError(null);
+      try {
+        const places = await homeService.fetchSimilarRecommendations({
+          venueId: selectedSimilarSeedId,
+          count: 8,
+        });
+        if (!cancelled) setSimilarPlaces(places);
+      } catch (err) {
+        if (!cancelled) {
+          setSimilarError(
+            getErrorMessage(err, "Failed to load similar recommendations"),
+          );
+        }
+      } finally {
+        if (!cancelled) setIsSimilarLoading(false);
+      }
+    };
+
+    fetchSimilarPlaces();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSimilarSeedId]);
 
   useEffect(() => {
     if (!selectedMood) {
@@ -317,22 +394,6 @@ export const useHome = (): UseHomeReturn => {
     topRatedInAreaError,
   ]);
 
-  const loadPlaces = async () => {
-    if (!user) return;
-    try {
-      setIsLoading(true);
-      setError(null);
-      const { curatedPlaces, trendingPlaces } =
-        await homeService.fetchHomePageData(user.userId);
-      setRawCurated(curatedPlaces);
-      setRawTrending(trendingPlaces);
-    } catch (err) {
-      setError(getErrorMessage(err, "Failed to load places"));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const toggleFilter = useCallback((filter: FilterType) => {
     if (filter === "all") {
       setSelectedFilters([]);
@@ -366,6 +427,8 @@ export const useHome = (): UseHomeReturn => {
         setGlobalTopRatedVenues((prev) => toggle(prev));
         setTopRatedInAreaVenues((prev) => toggle(prev));
         setMoodPlaces((prev) => toggle(prev));
+        setSimilarSeedPlaces((prev) => toggle(prev));
+        setSimilarPlaces((prev) => toggle(prev));
       } catch (toggleError) {
         console.error("Failed to toggle save", toggleError);
       }
@@ -434,6 +497,11 @@ export const useHome = (): UseHomeReturn => {
     selectedMood,
     isLoading,
     error,
+    selectedSimilarSeedId,
+    similarSeedPlaces,
+    similarPlaces,
+    isSimilarLoading,
+    similarError,
 
     selectedDistrict,
     selectedVenueType,
@@ -467,6 +535,7 @@ export const useHome = (): UseHomeReturn => {
     setSelectedPriceRange,
     setSelectedArea,
     setActiveDiscoverySource,
+    selectPlaceForSimilar: setSelectedSimilarSeedId,
     toggleSave,
     reloadPlaces: loadPlaces,
   };

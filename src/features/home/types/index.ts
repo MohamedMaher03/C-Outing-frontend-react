@@ -56,6 +56,16 @@ export interface HomePageData {
   trendingPlaces: HomePlace[];
 }
 
+export interface HomeRecommendationsQuery {
+  count?: number;
+}
+
+export interface SimilarRecommendationsParams extends HomeRecommendationsQuery {
+  venueId: string;
+}
+
+export type HomeRecommendationCollection = "curated" | "trending";
+
 export interface VenueByDistrictParams {
   district: string;
 }
