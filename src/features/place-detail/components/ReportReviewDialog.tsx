@@ -20,24 +20,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-
-export const REPORT_REASONS = [
-  "Spam",
-  "Harassment",
-  "Inaccurate Information",
-  "Inappropriate Content",
-  "Hate Speech",
-  "Copyright Violation",
-  "Other",
-] as const;
-
-export type ReportReason = (typeof REPORT_REASONS)[number];
-
-export interface ReportPayload {
-  reviewId: string;
-  reason: ReportReason;
-  description: string;
-}
+import {
+  REPORT_REASONS,
+  type ReportPayload,
+  type ReportReason,
+} from "../types";
 
 interface ReportReviewDialogProps {
   reviewId: string;

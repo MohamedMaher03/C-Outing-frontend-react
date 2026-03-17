@@ -2,14 +2,80 @@
  * Place Detail Feature — Type Definitions
  */
 
-import type { Place } from "@/mocks/mockData";
 import type { PaginatedResponse } from "@/types";
+
+export type PriceLevel =
+  | "price_cheapest"
+  | "cheap"
+  | "mid_range"
+  | "expensive"
+  | "luxury";
+
+export type InteractionActionType =
+  | "Click"
+  | "ViewDetails"
+  | "Rate"
+  | "Favorite"
+  | "Share";
+
+export const REPORT_REASONS = [
+  "Spam",
+  "Harassment",
+  "Inaccurate Information",
+  "Inappropriate Content",
+  "Hate Speech",
+  "Copyright Violation",
+  "Other",
+] as const;
+
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+export interface ReportPayload {
+  reviewId: string;
+  reason: ReportReason;
+  description: string;
+}
+
+export interface PlaceBase {
+  id: string;
+  name: string;
+  category: string;
+  latitude: number;
+  longitude: number;
+  address: string;
+  rating: number;
+  reviewCount: number;
+  totalReviews?: number;
+  description: string;
+  image: string;
+  phone?: string;
+  website?: string;
+  menuUrl?: string;
+  bookingUrl?: string;
+  priceRange?: string;
+  priceLevel?: PriceLevel;
+  hours?: string;
+  isOpen?: boolean;
+  atmosphereTags?: string[];
+  socialBadges?: Array<
+    "Good for Solo" | "Good for Couples" | "Good for Groups"
+  >;
+  hasWifi?: boolean;
+  hasToilet?: boolean;
+  seatingType?: Array<"indoor" | "outdoor">;
+  parkingAvailable?: boolean;
+  accessibilityScore?: number;
+  menuImagesCount?: number;
+  menuImagesUrls?: string[];
+  isSaved?: boolean;
+  matchScore?: number;
+}
 
 /**
  * Extended place with detail-page-only fields.
  * All venue metadata (phone, website, hours, etc.) lives on the base Place type.
  */
-export interface PlaceDetail extends Place {
+export interface PlaceDetail extends PlaceBase {
   reviews?: Review[];
 }
 
@@ -85,7 +151,7 @@ export interface ReviewSummary {
 /** Payload for recording a user interaction event */
 export interface RecordInteractionRequest {
   placeId: string;
-  actionType: "Click" | "ViewDetails" | "Rate" | "Favorite" | "Share";
+  actionType: InteractionActionType;
   ratingValue?: number;
   comment?: string;
   sessionId: string;

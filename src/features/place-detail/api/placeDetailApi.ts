@@ -27,6 +27,7 @@ import type {
   ReviewSummary,
   RecordInteractionRequest,
 } from "../types";
+import { getReviewIdentity } from "../utils/reviewIdentity";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -191,69 +192,6 @@ const normalizeReview = (raw: unknown): Review => {
     createdAt: createdAt.toISOString(),
     updatedAt: updatedAt.toISOString(),
   };
-};
-
-const getCurrentAuthUser = (): {
-  userId?: string;
-  userName?: string;
-  userAvatar?: string;
-} => {
-  try {
-    const rawUser = localStorage.getItem("authUser");
-    if (!rawUser) return {};
-
-    const parsed = JSON.parse(rawUser) as Record<string, unknown>;
-    return {
-      userId: asString(parsed.userId),
-      userName: asString(parsed.name),
-      userAvatar: asString(parsed.avatar, parsed.avatarUrl, parsed.imageUrl),
-    };
-  } catch {
-    return {};
-  }
-};
-
-const enrichReviewForImmediateUi = (
-  review: Review,
-  fallback: {
-    venueId?: string;
-    venueName?: string;
-    rating?: number;
-    comment?: string;
-  },
-): Review => {
-  const authUser = getCurrentAuthUser();
-
-  return {
-    ...review,
-    venueId: review.venueId || fallback.venueId || "",
-    venueName: review.venueName || fallback.venueName || "",
-    userId:
-      review.userId === "unknown-user"
-        ? (authUser.userId ?? review.userId)
-        : review.userId,
-    userName:
-      review.userName === "Anonymous"
-        ? (authUser.userName ?? review.userName)
-        : review.userName,
-    userAvatar: review.userAvatar ?? authUser.userAvatar,
-    rating:
-      review.rating === 0
-        ? Math.max(1, Math.min(5, Math.round(fallback.rating ?? 0)))
-        : review.rating,
-    comment:
-      review.comment.trim().length === 0
-        ? (fallback.comment?.trim() ?? review.comment)
-        : review.comment,
-  };
-};
-
-const getReviewIdentity = (review: Review): string => {
-  if (review.reviewId && review.reviewId.trim().length > 0) {
-    return `id:${review.reviewId}`;
-  }
-
-  return `k:${review.venueId}:${review.userId}:${review.createdAt}`;
 };
 
 const normalizeSocialReview = (raw: unknown): SocialMediaReview => {
@@ -495,12 +433,7 @@ export const placeDetailApi = {
         comment,
       },
     );
-    return enrichReviewForImmediateUi(normalizeReview(data), {
-      venueId,
-      venueName: "",
-      rating,
-      comment,
-    });
+    return normalizeReview(data);
   },
 
   async updateReview(
@@ -511,11 +444,7 @@ export const placeDetailApi = {
       API_ENDPOINTS.places.editReview(reviewId),
       payload,
     );
-
-    return enrichReviewForImmediateUi(normalizeReview(data), {
-      rating: payload.rating ?? undefined,
-      comment: payload.comment ?? undefined,
-    });
+    return normalizeReview(data);
   },
 
   async deleteReview(reviewId: string): Promise<void> {

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -21,52 +20,23 @@ import {
   Accessibility,
   Images,
 } from "lucide-react";
-import type { ReportPayload } from "@/features/place-detail/components/ReportReviewDialog";
 import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePlaceDetail } from "@/features/place-detail/hooks/usePlaceDetail";
+import { getReviewIdentity } from "@/features/place-detail/utils/reviewIdentity";
+import { PRICE_SYMBOL } from "@/features/place-detail/utils/priceLevel";
 import { ReviewCard } from "@/features/place-detail/components/ReviewCard";
 import { SocialReviewCard } from "@/features/place-detail/components/SocialReviewCard";
 import { ReviewSummarySection } from "@/features/place-detail/components/ReviewSummarySection";
 import { AddReviewForm } from "@/features/place-detail/components/AddReviewForm";
 import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleton";
 
-/** Maps price level string to dollar-sign display */
-const PRICE_SYMBOL: Record<string, string> = {
-  price_cheapest: "$",
-  cheap: "$$",
-  mid_range: "$$$",
-  expensive: "$$$$",
-  luxury: "$$$$$",
-};
-
-const getReviewIdentity = (review: {
-  reviewId?: string;
-  venueId: string;
-  userId: string;
-  createdAt: string;
-}): string =>
-  review.reviewId?.trim()
-    ? `id:${review.reviewId}`
-    : `k:${review.venueId}:${review.userId}:${review.createdAt}`;
-
 // ============ Main Page ============
 
 const PlaceDetailPage = () => {
   const { id } = useParams();
-  const [isLiked, setIsLiked] = useState(false);
-  const [savingLike, setSavingLike] = useState(false);
-  const [notification, setNotification] = useState<{
-    show: boolean;
-    type: "like" | "favorite" | "report" | null;
-    action: "added" | "removed" | "submitted";
-  }>({ show: false, type: null, action: "added" });
-  // Track which review IDs the current user has already reported (session-based)
-  const [reportedReviews, setReportedReviews] = useState<Set<string>>(
-    new Set(),
-  );
 
   const {
     place,
@@ -74,6 +44,9 @@ const PlaceDetailPage = () => {
     error,
     isFavorite,
     savingFavorite,
+    isLiked,
+    savingLike,
+    notification,
     reviews,
     reviewsPagination,
     loadingMoreReviews,
@@ -90,11 +63,13 @@ const PlaceDetailPage = () => {
     reviewSubmitted,
     reviewActionError,
     toggleFavorite,
+    toggleLike,
+    isReviewReported,
     openInMaps,
     goBack,
     handleSubmitReview,
     handleDeleteMyReview,
-    handleReportReview: reportReview,
+    handleReportReview,
     loadMoreReviews,
   } = usePlaceDetail(id);
 
@@ -102,51 +77,8 @@ const PlaceDetailPage = () => {
     await handleDeleteMyReview();
   };
 
-  const handleReportReview = async (payload: ReportPayload) => {
-    // Prevent duplicate reports in this session
-    if (reportedReviews.has(payload.reviewId)) return;
-    await reportReview(payload.reviewId, payload.reason, payload.description);
-    setReportedReviews((prev) => new Set([...prev, payload.reviewId]));
-    setNotification({ show: true, type: "report", action: "submitted" });
-    setTimeout(() => {
-      setNotification({ show: false, type: null, action: "added" });
-    }, 2500);
-  };
-
-  const showNotification = (
-    type: "like" | "favorite",
-    action: "added" | "removed",
-  ) => {
-    setNotification({ show: true, type, action });
-    setTimeout(() => {
-      setNotification({ show: false, type: null, action: "added" });
-    }, 2500);
-  };
-
-  const handleLikeClick = async () => {
-    try {
-      setSavingLike(true);
-      const newLikedState = !isLiked;
-      setIsLiked(newLikedState);
-      showNotification("like", newLikedState ? "added" : "removed");
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    } catch (err) {
-      console.error("Error toggling like:", err);
-      setIsLiked(!isLiked);
-    } finally {
-      setSavingLike(false);
-    }
-  };
-
-  const handleFavoriteClick = async () => {
-    try {
-      await toggleFavorite();
-      showNotification("favorite", !isFavorite ? "added" : "removed");
-    } catch (err) {
-      console.error("Error toggling favorite:", err);
-    }
-  };
+  const onLikeClick = async () => toggleLike();
+  const onFavoriteClick = async () => toggleFavorite();
 
   if (loading) {
     return (
@@ -187,7 +119,7 @@ const PlaceDetailPage = () => {
         <div className="absolute top-4 right-4 flex items-center gap-2">
           {/* Like Button */}
           <button
-            onClick={handleLikeClick}
+            onClick={onLikeClick}
             disabled={savingLike}
             className="p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all hover:scale-110 disabled:opacity-50"
             title="Like this place"
@@ -200,7 +132,7 @@ const PlaceDetailPage = () => {
           </button>
           {/* Favorite Button */}
           <button
-            onClick={handleFavoriteClick}
+            onClick={onFavoriteClick}
             disabled={savingFavorite}
             className="p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all hover:scale-110 disabled:opacity-50"
             title="Add to favorites"
@@ -539,7 +471,7 @@ const PlaceDetailPage = () => {
                     <ReviewCard
                       key={getReviewIdentity(review)}
                       review={review}
-                      alreadyReported={reportedReviews.has(
+                      alreadyReported={isReviewReported(
                         review.reviewId ?? getReviewIdentity(review),
                       )}
                       onReport={handleReportReview}

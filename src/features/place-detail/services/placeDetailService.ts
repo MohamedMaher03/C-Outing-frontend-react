@@ -45,6 +45,71 @@ export type {
   RecordInteractionRequest,
 } from "@/features/place-detail/types";
 
+const asString = (...values: unknown[]): string | undefined => {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
+const getCurrentAuthUser = (): {
+  userId?: string;
+  userName?: string;
+  userAvatar?: string;
+} => {
+  try {
+    const rawUser = localStorage.getItem("authUser");
+    if (!rawUser) return {};
+
+    const parsed = JSON.parse(rawUser) as Record<string, unknown>;
+    return {
+      userId: asString(parsed.userId),
+      userName: asString(parsed.name),
+      userAvatar: asString(parsed.avatar, parsed.avatarUrl, parsed.imageUrl),
+    };
+  } catch {
+    return {};
+  }
+};
+
+const enrichReviewForImmediateUi = (
+  review: Review,
+  fallback: {
+    venueId?: string;
+    venueName?: string;
+    rating?: number;
+    comment?: string;
+  },
+): Review => {
+  const authUser = getCurrentAuthUser();
+
+  return {
+    ...review,
+    venueId: review.venueId || fallback.venueId || "",
+    venueName: review.venueName || fallback.venueName || "",
+    userId:
+      review.userId === "unknown-user"
+        ? (authUser.userId ?? review.userId)
+        : review.userId,
+    userName:
+      review.userName === "Anonymous"
+        ? (authUser.userName ?? review.userName)
+        : review.userName,
+    userAvatar: review.userAvatar ?? authUser.userAvatar,
+    rating:
+      review.rating === 0
+        ? Math.max(1, Math.min(5, Math.round(fallback.rating ?? 0)))
+        : review.rating,
+    comment:
+      review.comment.trim().length === 0
+        ? (fallback.comment?.trim() ?? review.comment)
+        : review.comment,
+  };
+};
+
 // ── Place Detail Service ─────────────────────────────────────
 
 export const placeDetailService = {
@@ -108,7 +173,17 @@ export const placeDetailService = {
     comment: string,
   ): Promise<Review> {
     try {
-      return await placeDetailApi.submitReview(placeId, rating, comment);
+      const review = await placeDetailApi.submitReview(
+        placeId,
+        rating,
+        comment,
+      );
+      return enrichReviewForImmediateUi(review, {
+        venueId: placeId,
+        venueName: "",
+        rating,
+        comment,
+      });
     } catch (error) {
       console.error("Error submitting review:", error);
       throw new Error("Failed to submit review");
@@ -120,7 +195,11 @@ export const placeDetailService = {
     payload: UpdateReviewPayload,
   ): Promise<Review> {
     try {
-      return await placeDetailApi.updateReview(reviewId, payload);
+      const review = await placeDetailApi.updateReview(reviewId, payload);
+      return enrichReviewForImmediateUi(review, {
+        rating: payload.rating ?? undefined,
+        comment: payload.comment ?? undefined,
+      });
     } catch (error) {
       console.error("Error updating review:", error);
       throw new Error("Failed to update review");

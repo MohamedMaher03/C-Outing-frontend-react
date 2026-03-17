@@ -1,7 +1,7 @@
 import { Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import type { Review } from "../types";
-import { ReportReviewDialog, type ReportPayload } from "./ReportReviewDialog";
+import type { ReportPayload, Review } from "../types";
+import { ReportReviewDialog } from "./ReportReviewDialog";
 
 interface ReviewCardProps {
   review: Review;

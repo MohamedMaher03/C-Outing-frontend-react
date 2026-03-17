@@ -18,17 +18,18 @@ import {
   getAverageRating,
   recordInteraction,
 } from "@/features/place-detail/services/placeDetailService";
+import { favoriteAdapter } from "@/features/place-detail/services/favoriteAdapter";
 import type {
+  InteractionActionType,
   PlaceDetail,
+  ReportPayload,
   Review,
   ReviewListResponse,
   SocialMediaReview,
   ReviewSummary,
 } from "@/features/place-detail/types";
-import {
-  toggleFavorite,
-  checkIsFavorite,
-} from "@/features/favorites/services/favoritesService";
+import { getReviewIdentity } from "@/features/place-detail/utils/reviewIdentity";
+import { getOrCreateSessionId } from "@/features/place-detail/utils/sessionManager";
 import { getErrorMessage, isApiError } from "@/utils/apiError";
 
 interface ReviewsPaginationState {
@@ -48,14 +49,6 @@ const DEFAULT_PAGINATION: ReviewsPaginationState = {
 };
 
 const mergeUniqueById = (current: Review[], incoming: Review[]): Review[] => {
-  const getReviewIdentity = (review: Review): string => {
-    if (review.reviewId && review.reviewId.trim().length > 0) {
-      return `id:${review.reviewId}`;
-    }
-
-    return `k:${review.venueId}:${review.userId}:${review.createdAt}`;
-  };
-
   const map = new Map<string, Review>();
   current.forEach((review) => map.set(getReviewIdentity(review), review));
   incoming.forEach((review) => map.set(getReviewIdentity(review), review));
@@ -67,13 +60,20 @@ const mergeUniqueById = (current: Review[], incoming: Review[]): Review[] => {
 const isNotFoundApiError = (error: unknown): boolean =>
   isApiError(error) && error.statusCode === 404;
 
-interface UsePlaceDetailReturn {
+export interface UsePlaceDetailReturn {
   // State
   place: PlaceDetail | null;
   loading: boolean;
   error: string | null;
   isFavorite: boolean;
   savingFavorite: boolean;
+  isLiked: boolean;
+  savingLike: boolean;
+  notification: {
+    show: boolean;
+    type: "like" | "favorite" | "report" | null;
+    action: "added" | "removed" | "submitted";
+  };
 
   // Reviews
   reviews: Review[];
@@ -96,19 +96,15 @@ interface UsePlaceDetailReturn {
 
   // Actions
   toggleFavorite: () => Promise<void>;
+  toggleLike: () => Promise<void>;
+  isReviewReported: (reviewId: string) => boolean;
   openInMaps: () => void;
   goBack: () => void;
   handleSubmitReview: (rating: number, comment: string) => Promise<void>;
   handleDeleteMyReview: () => Promise<void>;
-  handleReportReview: (
-    reviewId: string,
-    reason: string,
-    description?: string,
-  ) => Promise<void>;
+  handleReportReview: (payload: ReportPayload) => Promise<void>;
   loadMoreReviews: () => Promise<void>;
-  trackInteraction: (
-    actionType: "Click" | "ViewDetails" | "Rate" | "Favorite" | "Share",
-  ) => Promise<void>;
+  trackInteraction: (actionType: InteractionActionType) => Promise<void>;
 }
 
 export const usePlaceDetail = (
@@ -120,6 +116,17 @@ export const usePlaceDetail = (
   const [error, setError] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [savingFavorite, setSavingFavorite] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [savingLike, setSavingLike] = useState(false);
+  const [notification, setNotification] = useState<{
+    show: boolean;
+    type: "like" | "favorite" | "report" | null;
+    action: "added" | "removed" | "submitted";
+  }>({ show: false, type: null, action: "added" });
+  const notificationTimeoutRef = useRef<number | null>(null);
+  const [reportedReviewIds, setReportedReviewIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -143,6 +150,31 @@ export const usePlaceDetail = (
     null,
   );
   const isSubmittingReviewRef = useRef(false);
+
+  const showNotification = useCallback(
+    (
+      type: "like" | "favorite" | "report",
+      action: "added" | "removed" | "submitted",
+    ) => {
+      if (notificationTimeoutRef.current) {
+        window.clearTimeout(notificationTimeoutRef.current);
+      }
+
+      setNotification({ show: true, type, action });
+      notificationTimeoutRef.current = window.setTimeout(() => {
+        setNotification({ show: false, type: null, action: "added" });
+      }, 2500);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (notificationTimeoutRef.current) {
+        window.clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Fetch place details on mount or when placeId changes
   useEffect(() => {
@@ -179,7 +211,7 @@ export const usePlaceDetail = (
 
       const [data, favoriteStatus] = await Promise.all([
         getPlaceById(id),
-        checkIsFavorite(id),
+        favoriteAdapter.isFavorite(id),
       ]);
 
       setPlace(data);
@@ -294,8 +326,7 @@ export const usePlaceDetail = (
 
   const trackViewInteraction = async (id: string) => {
     try {
-      const sessionId =
-        sessionStorage.getItem("sessionId") || generateSessionId();
+      const sessionId = getOrCreateSessionId();
       await recordInteraction({
         placeId: id,
         actionType: "ViewDetails",
@@ -317,7 +348,8 @@ export const usePlaceDetail = (
       setIsFavorite(newFavoriteState);
 
       // Call API
-      await toggleFavorite(place.id, isFavorite);
+      await favoriteAdapter.toggle(place.id, isFavorite);
+      showNotification("favorite", newFavoriteState ? "added" : "removed");
 
       // Track interaction
       await trackInteraction("Favorite");
@@ -329,6 +361,21 @@ export const usePlaceDetail = (
       setSavingFavorite(false);
     }
   };
+
+  const handleToggleLike = useCallback(async () => {
+    try {
+      setSavingLike(true);
+      const next = !isLiked;
+      setIsLiked(next);
+      showNotification("like", next ? "added" : "removed");
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    } catch (err) {
+      console.error("Error toggling like:", err);
+      setIsLiked((prev) => !prev);
+    } finally {
+      setSavingLike(false);
+    }
+  }, [isLiked, showNotification]);
 
   const handleSubmitReview = useCallback(
     async (rating: number, comment: string) => {
@@ -363,15 +410,9 @@ export const usePlaceDetail = (
 
         setMyReview(newReview);
         setReviews((prev) => {
-          const newIdentity =
-            newReview.reviewId && newReview.reviewId.trim().length > 0
-              ? `id:${newReview.reviewId}`
-              : `k:${newReview.venueId}:${newReview.userId}:${newReview.createdAt}`;
+          const newIdentity = getReviewIdentity(newReview);
           const existingIndex = prev.findIndex((r) => {
-            const identity =
-              r.reviewId && r.reviewId.trim().length > 0
-                ? `id:${r.reviewId}`
-                : `k:${r.venueId}:${r.userId}:${r.createdAt}`;
+            const identity = getReviewIdentity(r);
             return identity === newIdentity;
           });
           if (existingIndex >= 0) {
@@ -446,17 +487,23 @@ export const usePlaceDetail = (
   }, [myReview, placeId, syncReviewsAfterMutation]);
 
   const handleReportReview = useCallback(
-    async (reviewId: string, reason: string, description?: string) => {
-      if (!reviewId) {
+    async (payload: ReportPayload) => {
+      if (!payload.reviewId) {
         throw new Error("Cannot report review because reviewId is missing");
+      }
+
+      if (reportedReviewIds.has(payload.reviewId)) {
+        return;
       }
 
       try {
         setReportingReview(true);
-        await reportReview(reviewId, {
-          reason,
-          description,
+        await reportReview(payload.reviewId, {
+          reason: payload.reason,
+          description: payload.description,
         });
+        setReportedReviewIds((prev) => new Set([...prev, payload.reviewId]));
+        showNotification("report", "submitted");
       } catch (err) {
         console.error("Error reporting review:", err);
         throw err;
@@ -464,7 +511,7 @@ export const usePlaceDetail = (
         setReportingReview(false);
       }
     },
-    [],
+    [reportedReviewIds, showNotification],
   );
 
   const openInMaps = () => {
@@ -483,14 +530,11 @@ export const usePlaceDetail = (
     navigate(-1);
   };
 
-  const trackInteraction = async (
-    actionType: "Click" | "ViewDetails" | "Rate" | "Favorite" | "Share",
-  ) => {
+  const trackInteraction = async (actionType: InteractionActionType) => {
     if (!place) return;
 
     try {
-      const sessionId =
-        sessionStorage.getItem("sessionId") || generateSessionId();
+      const sessionId = getOrCreateSessionId();
       await recordInteraction({
         placeId: place.id,
         actionType,
@@ -507,6 +551,9 @@ export const usePlaceDetail = (
     error,
     isFavorite,
     savingFavorite,
+    isLiked,
+    savingLike,
+    notification,
     reviews,
     reviewsPagination,
     loadingMoreReviews,
@@ -523,6 +570,8 @@ export const usePlaceDetail = (
     reviewSubmitted,
     reviewActionError,
     toggleFavorite: handleToggleFavorite,
+    toggleLike: handleToggleLike,
+    isReviewReported: (reviewId: string) => reportedReviewIds.has(reviewId),
     openInMaps,
     goBack,
     handleSubmitReview,
@@ -531,11 +580,4 @@ export const usePlaceDetail = (
     loadMoreReviews,
     trackInteraction,
   };
-};
-
-// Helper function to generate session ID
-const generateSessionId = (): string => {
-  const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  sessionStorage.setItem("sessionId", sessionId);
-  return sessionId;
 };
