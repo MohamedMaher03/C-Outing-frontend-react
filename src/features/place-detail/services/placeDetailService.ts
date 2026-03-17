@@ -15,12 +15,17 @@
  *   import { placeDetailMock as placeDetailApi } from "../mocks/placeDetailMock";
  */
 
-// import { placeDetailApi } from "../api/placeDetailApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
-import { placeDetailMock as placeDetailApi } from "../mocks/placeDetailMock";
-import type { Place } from "@/mocks/mockData";
+import { placeDetailApi } from "../api/placeDetailApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
+//import { placeDetailMock as placeDetailApi } from "../mocks/placeDetailMock";
+import { isApiError } from "@/utils/apiError";
 import type {
   PlaceDetail,
   Review,
+  ReviewListParams,
+  ReviewListResponse,
+  ReportReviewRequest,
+  UpdateReviewPayload,
+  VenueAverageRating,
   SocialMediaReview,
   ReviewSummary,
   RecordInteractionRequest,
@@ -30,6 +35,11 @@ import type {
 export type {
   PlaceDetail,
   Review,
+  ReviewListParams,
+  ReviewListResponse,
+  ReportReviewRequest,
+  UpdateReviewPayload,
+  VenueAverageRating,
   SocialMediaReview,
   ReviewSummary,
   RecordInteractionRequest,
@@ -53,9 +63,12 @@ export const placeDetailService = {
   /**
    * Fetch user reviews for a place (from the website).
    */
-  async getPlaceReviews(placeId: string): Promise<Review[]> {
+  async getPlaceReviews(
+    placeId: string,
+    params?: ReviewListParams,
+  ): Promise<ReviewListResponse> {
     try {
-      return await placeDetailApi.getPlaceReviews(placeId);
+      return await placeDetailApi.getPlaceReviews(placeId, params);
     } catch (error) {
       console.error("Error fetching reviews:", error);
       throw new Error("Failed to load reviews");
@@ -102,15 +115,78 @@ export const placeDetailService = {
     }
   },
 
-  /**
-   * Get similar places based on the current place.
-   */
-  async getSimilarPlaces(placeId: string): Promise<Place[]> {
+  async updateReview(
+    reviewId: string,
+    payload: UpdateReviewPayload,
+  ): Promise<Review> {
     try {
-      return await placeDetailApi.getSimilarPlaces(placeId);
+      return await placeDetailApi.updateReview(reviewId, payload);
     } catch (error) {
-      console.error("Error fetching similar places:", error);
-      throw new Error("Failed to load similar places");
+      console.error("Error updating review:", error);
+      throw new Error("Failed to update review");
+    }
+  },
+
+  async deleteReview(reviewId: string): Promise<void> {
+    try {
+      await placeDetailApi.deleteReview(reviewId);
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      throw new Error("Failed to delete review");
+    }
+  },
+
+  async getReviewById(reviewId: string): Promise<Review> {
+    try {
+      return await placeDetailApi.getReviewById(reviewId);
+    } catch (error) {
+      console.error("Error fetching review:", error);
+      throw new Error("Failed to load review");
+    }
+  },
+
+  async getUserReviews(
+    userId: string,
+    params?: ReviewListParams,
+  ): Promise<ReviewListResponse> {
+    try {
+      return await placeDetailApi.getUserReviews(userId, params);
+    } catch (error) {
+      console.error("Error fetching user reviews:", error);
+      throw new Error("Failed to load user reviews");
+    }
+  },
+
+  async getMyReview(venueId: string): Promise<Review | null> {
+    try {
+      return await placeDetailApi.getMyReview(venueId);
+    } catch (error) {
+      if (isApiError(error) && error.statusCode === 404) {
+        return null;
+      }
+      console.error("Error fetching my review:", error);
+      throw new Error("Failed to load your review");
+    }
+  },
+
+  async getAverageRating(venueId: string): Promise<VenueAverageRating> {
+    try {
+      return await placeDetailApi.getAverageRating(venueId);
+    } catch (error) {
+      console.error("Error fetching average rating:", error);
+      throw new Error("Failed to load average rating");
+    }
+  },
+
+  async reportReview(
+    reviewId: string,
+    payload: ReportReviewRequest,
+  ): Promise<void> {
+    try {
+      await placeDetailApi.reportReview(reviewId, payload);
+    } catch (error) {
+      console.error("Error reporting review:", error);
+      throw new Error("Failed to submit report");
     }
   },
 
@@ -134,5 +210,11 @@ export const getPlaceReviews = placeDetailService.getPlaceReviews;
 export const getSocialMediaReviews = placeDetailService.getSocialMediaReviews;
 export const getReviewSummary = placeDetailService.getReviewSummary;
 export const submitReview = placeDetailService.submitReview;
-export const getSimilarPlaces = placeDetailService.getSimilarPlaces;
+export const updateReview = placeDetailService.updateReview;
+export const deleteReview = placeDetailService.deleteReview;
+export const getReviewById = placeDetailService.getReviewById;
+export const getUserReviews = placeDetailService.getUserReviews;
+export const getMyReview = placeDetailService.getMyReview;
+export const getAverageRating = placeDetailService.getAverageRating;
+export const reportReview = placeDetailService.reportReview;
 export const recordInteraction = placeDetailService.recordInteraction;

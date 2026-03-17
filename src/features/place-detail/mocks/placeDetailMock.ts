@@ -11,7 +11,6 @@
  */
 
 import { PLACES } from "@/mocks/mockData";
-import type { Place } from "@/mocks/mockData";
 import type {
   PlaceDetail,
   Review,
@@ -84,12 +83,15 @@ export const placeDetailMock = {
     await delay(500);
 
     const mockReview: Review = {
-      id: `review_${Date.now()}`,
+      reviewId: `review_${Date.now()}`,
+      venueId: placeId,
+      venueName: "Mock Venue",
       userId: "user_1",
       userName: "Current User",
       rating,
       comment,
-      date: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     if (!MOCK_REVIEWS[placeId]) {
@@ -99,14 +101,6 @@ export const placeDetailMock = {
 
     console.log("[Mock] Review submitted for place:", placeId, mockReview);
     return mockReview;
-  },
-
-  /**
-   * Mock GET /places/:placeId/similar
-   */
-  async getSimilarPlaces(placeId: string): Promise<Place[]> {
-    await delay(500);
-    return PLACES.filter((p) => p.id !== placeId).slice(0, 3);
   },
 
   /**

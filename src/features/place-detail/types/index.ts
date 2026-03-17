@@ -3,6 +3,7 @@
  */
 
 import type { Place } from "@/mocks/mockData";
+import type { PaginatedResponse } from "@/types";
 
 /**
  * Extended place with detail-page-only fields.
@@ -10,18 +11,48 @@ import type { Place } from "@/mocks/mockData";
  */
 export interface PlaceDetail extends Place {
   reviews?: Review[];
-  similarPlaces?: Place[];
 }
 
 /** A user-submitted review on the website */
 export interface Review {
-  id: string;
+  reviewId?: string;
+  venueId: string;
+  venueName: string;
   userId: string;
   userName: string;
   userAvatar?: string;
   rating: number;
   comment: string;
-  date: Date;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewListParams {
+  page?: number;
+  pageSize?: number;
+}
+
+export type ReviewListResponse = PaginatedResponse<Review>;
+
+export interface CreateReviewPayload {
+  venueId: string;
+  comment: string;
+  rating: number;
+}
+
+export interface UpdateReviewPayload {
+  comment?: string | null;
+  rating?: number | null;
+}
+
+export interface ReportReviewRequest {
+  reason: string;
+  description?: string;
+}
+
+export interface VenueAverageRating {
+  venueId: string;
+  averageRating: number;
 }
 
 /** A review scraped from a social media platform */

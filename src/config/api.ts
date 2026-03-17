@@ -86,14 +86,25 @@ export const API_ENDPOINTS = {
     updatePreferences: (userId: string) => `/users/${userId}/preferences`,
   },
 
+  //Now i am working here on place detail api endpoints
   // ── Places / Detail ──────────────────────────────────────────
   places: {
-    getById: (placeId: string) => `/places/${placeId}`,
-    getReviews: (placeId: string) => `/places/${placeId}/reviews`,
-    submitReview: (placeId: string) => `/places/${placeId}/reviews`,
-    getSocialReviews: (placeId: string) => `/places/${placeId}/social-reviews`,
-    getReviewSummary: (placeId: string) => `/places/${placeId}/review-summary`,
-    getSimilar: (placeId: string) => `/places/${placeId}/similar`,
+    getById: (id: string) => `/api/v1/Venue/${id}`,
+    getReviews: (venueId: string) => `/api/v1/Review/venue/${venueId}`,
+    submitReview: "/api/v1/Review",
+    getSocialReviews: (venueId: string) =>
+      `/api/v1/Review/social/venue/${venueId}`,
+    getReviewSummary: (venueId: string) =>
+      `/api/v1/review-summary/venue/${venueId}`,
+    getReviewById: (reviewId: string) => `/api/v1/Review/${reviewId}`,
+    editReview: (reviewId: string) => `/api/v1/Review/${reviewId}`,
+    deleteReview: (reviewId: string) => `/api/v1/Review/${reviewId}`,
+    reportReview: (reviewId: string) => `/api/v1/Review/${reviewId}/report`,
+    getUserReviews: (userId: string) => `/api/v1/Review/user/${userId}`,
+    getMyReview: (venueId: string) =>
+      `/api/v1/Review/venue/${venueId}/my-review`,
+    getAverageRating: (venueId: string) =>
+      `/api/v1/Review/venue/${venueId}/average-rating`,
   },
 
   // ── Notifications (in-app feed) ────────────────────────────

@@ -42,6 +42,16 @@ const PRICE_SYMBOL: Record<string, string> = {
   luxury: "$$$$$",
 };
 
+const getReviewIdentity = (review: {
+  reviewId?: string;
+  venueId: string;
+  userId: string;
+  createdAt: string;
+}): string =>
+  review.reviewId?.trim()
+    ? `id:${review.reviewId}`
+    : `k:${review.venueId}:${review.userId}:${review.createdAt}`;
+
 // ============ Main Page ============
 
 const PlaceDetailPage = () => {
@@ -65,24 +75,37 @@ const PlaceDetailPage = () => {
     isFavorite,
     savingFavorite,
     reviews,
+    reviewsPagination,
+    loadingMoreReviews,
     socialReviews,
     reviewSummary,
+    myReview,
+    myReviewLoading,
     reviewsLoading,
     socialReviewsLoading,
     summaryLoading,
     submittingReview,
+    deletingReview,
+    reportingReview,
     reviewSubmitted,
+    reviewActionError,
     toggleFavorite,
     openInMaps,
     goBack,
     handleSubmitReview,
+    handleDeleteMyReview,
+    handleReportReview: reportReview,
+    loadMoreReviews,
   } = usePlaceDetail(id);
+
+  const onDeleteMyReview = async () => {
+    await handleDeleteMyReview();
+  };
 
   const handleReportReview = async (payload: ReportPayload) => {
     // Prevent duplicate reports in this session
     if (reportedReviews.has(payload.reviewId)) return;
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await reportReview(payload.reviewId, payload.reason, payload.description);
     setReportedReviews((prev) => new Set([...prev, payload.reviewId]));
     setNotification({ show: true, type: "report", action: "submitted" });
     setTimeout(() => {
@@ -476,10 +499,28 @@ const PlaceDetailPage = () => {
             {/* Website User Reviews */}
             <TabsContent value="website" className="space-y-4 mt-4">
               {/* Add Review Form */}
+              {myReviewLoading ? (
+                <div className="text-xs text-muted-foreground">
+                  Loading your review...
+                </div>
+              ) : myReview ? (
+                <div className="text-xs rounded-lg border border-secondary/30 bg-secondary/10 text-secondary px-3 py-2">
+                  You already reviewed this place. Updating the form will edit
+                  your existing review.
+                </div>
+              ) : null}
+
               <AddReviewForm
+                key={`${myReview?.reviewId ?? "create"}-${myReview?.createdAt ?? "none"}-${myReview ? "edit" : "create"}`}
                 onSubmit={handleSubmitReview}
                 submitting={submittingReview}
                 submitted={reviewSubmitted}
+                mode={myReview ? "edit" : "create"}
+                initialRating={myReview?.rating ?? 0}
+                initialComment={myReview?.comment ?? ""}
+                onDelete={myReview ? onDeleteMyReview : undefined}
+                deleting={deletingReview || reportingReview}
+                errorMessage={reviewActionError}
               />
 
               {/* Reviews list */}
@@ -496,12 +537,27 @@ const PlaceDetailPage = () => {
                 <div className="space-y-3">
                   {reviews.map((review) => (
                     <ReviewCard
-                      key={review.id}
+                      key={getReviewIdentity(review)}
                       review={review}
-                      alreadyReported={reportedReviews.has(review.id)}
+                      alreadyReported={reportedReviews.has(
+                        review.reviewId ?? getReviewIdentity(review),
+                      )}
                       onReport={handleReportReview}
                     />
                   ))}
+
+                  {reviewsPagination.hasNextPage && (
+                    <Button
+                      variant="outline"
+                      onClick={loadMoreReviews}
+                      disabled={loadingMoreReviews}
+                      className="w-full"
+                    >
+                      {loadingMoreReviews
+                        ? "Loading more..."
+                        : `Load More Reviews (${reviews.length}/${reviewsPagination.totalCount})`}
+                    </Button>
+                  )}
                 </div>
               )}
             </TabsContent>

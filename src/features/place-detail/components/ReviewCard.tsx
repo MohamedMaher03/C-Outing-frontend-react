@@ -20,10 +20,18 @@ export const ReviewCard = ({
       <div className="flex items-center gap-3">
         <Link
           to={`/users/${review.userId}`}
-          className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary hover:bg-primary/20 transition-colors flex-shrink-0"
+          className="h-9 w-9 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary hover:bg-primary/20 transition-colors flex-shrink-0"
           onClick={(e) => e.stopPropagation()}
         >
-          {review.userName.charAt(0)}
+          {review.userAvatar ? (
+            <img
+              src={review.userAvatar}
+              alt={review.userName}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            review.userName.charAt(0)
+          )}
         </Link>
         <div>
           <Link
@@ -34,7 +42,7 @@ export const ReviewCard = ({
             {review.userName}
           </Link>
           <p className="text-xs text-muted-foreground">
-            {new Date(review.date).toLocaleDateString("en-US", {
+            {new Date(review.createdAt).toLocaleDateString("en-US", {
               year: "numeric",
               month: "short",
               day: "numeric",
@@ -59,9 +67,9 @@ export const ReviewCard = ({
         </div>
 
         {/* Report button — only rendered when handler is provided */}
-        {onReport && (
+        {onReport && review.reviewId && (
           <ReportReviewDialog
-            reviewId={review.id}
+            reviewId={review.reviewId}
             reviewAuthor={review.userName}
             alreadyReported={alreadyReported}
             onReport={onReport}

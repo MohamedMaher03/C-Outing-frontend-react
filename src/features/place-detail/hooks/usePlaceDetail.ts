@@ -11,11 +11,17 @@ import {
   getSocialMediaReviews,
   getReviewSummary,
   submitReview,
+  updateReview,
+  deleteReview,
+  reportReview,
+  getMyReview,
+  getAverageRating,
   recordInteraction,
 } from "@/features/place-detail/services/placeDetailService";
 import type {
   PlaceDetail,
   Review,
+  ReviewListResponse,
   SocialMediaReview,
   ReviewSummary,
 } from "@/features/place-detail/types";
@@ -23,7 +29,43 @@ import {
   toggleFavorite,
   checkIsFavorite,
 } from "@/features/favorites/services/favoritesService";
-import { getErrorMessage } from "@/utils/apiError";
+import { getErrorMessage, isApiError } from "@/utils/apiError";
+
+interface ReviewsPaginationState {
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage: boolean;
+}
+
+const DEFAULT_PAGINATION: ReviewsPaginationState = {
+  pageIndex: 1,
+  pageSize: 10,
+  totalCount: 0,
+  totalPages: 0,
+  hasNextPage: false,
+};
+
+const mergeUniqueById = (current: Review[], incoming: Review[]): Review[] => {
+  const getReviewIdentity = (review: Review): string => {
+    if (review.reviewId && review.reviewId.trim().length > 0) {
+      return `id:${review.reviewId}`;
+    }
+
+    return `k:${review.venueId}:${review.userId}:${review.createdAt}`;
+  };
+
+  const map = new Map<string, Review>();
+  current.forEach((review) => map.set(getReviewIdentity(review), review));
+  incoming.forEach((review) => map.set(getReviewIdentity(review), review));
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+};
+
+const isNotFoundApiError = (error: unknown): boolean =>
+  isApiError(error) && error.statusCode === 404;
 
 interface UsePlaceDetailReturn {
   // State
@@ -35,21 +77,35 @@ interface UsePlaceDetailReturn {
 
   // Reviews
   reviews: Review[];
+  reviewsPagination: ReviewsPaginationState;
+  loadingMoreReviews: boolean;
   socialReviews: SocialMediaReview[];
   reviewSummary: ReviewSummary | null;
+  myReview: Review | null;
+  myReviewLoading: boolean;
   reviewsLoading: boolean;
   socialReviewsLoading: boolean;
   summaryLoading: boolean;
 
   // Review form
   submittingReview: boolean;
+  deletingReview: boolean;
+  reportingReview: boolean;
   reviewSubmitted: boolean;
+  reviewActionError: string | null;
 
   // Actions
   toggleFavorite: () => Promise<void>;
   openInMaps: () => void;
   goBack: () => void;
   handleSubmitReview: (rating: number, comment: string) => Promise<void>;
+  handleDeleteMyReview: () => Promise<void>;
+  handleReportReview: (
+    reviewId: string,
+    reason: string,
+    description?: string,
+  ) => Promise<void>;
+  loadMoreReviews: () => Promise<void>;
   trackInteraction: (
     actionType: "Click" | "ViewDetails" | "Rate" | "Favorite" | "Share",
   ) => Promise<void>;
@@ -67,27 +123,54 @@ export const usePlaceDetail = (
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsPagination, setReviewsPagination] =
+    useState<ReviewsPaginationState>(DEFAULT_PAGINATION);
+  const [loadingMoreReviews, setLoadingMoreReviews] = useState(false);
   const [socialReviews, setSocialReviews] = useState<SocialMediaReview[]>([]);
   const [reviewSummary, setReviewSummary] = useState<ReviewSummary | null>(
     null,
   );
+  const [myReview, setMyReview] = useState<Review | null>(null);
+  const [myReviewLoading, setMyReviewLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [socialReviewsLoading, setSocialReviewsLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [deletingReview, setDeletingReview] = useState(false);
+  const [reportingReview, setReportingReview] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewActionError, setReviewActionError] = useState<string | null>(
+    null,
+  );
   const isSubmittingReviewRef = useRef(false);
 
   // Fetch place details on mount or when placeId changes
   useEffect(() => {
     if (placeId) {
       fetchPlaceDetails(placeId);
-      fetchReviews(placeId);
+      fetchReviews(placeId, 1);
       fetchSocialReviews(placeId);
       fetchReviewSummary(placeId);
+      fetchMyReview(placeId);
       trackViewInteraction(placeId);
     }
   }, [placeId]);
+
+  const refreshAverageRating = async (id: string) => {
+    try {
+      const avg = await getAverageRating(id);
+      setPlace((prev) =>
+        prev
+          ? {
+              ...prev,
+              rating: avg.averageRating,
+            }
+          : prev,
+      );
+    } catch (err) {
+      console.error("Error refreshing average rating:", err);
+    }
+  };
 
   const fetchPlaceDetails = async (id: string) => {
     try {
@@ -109,17 +192,48 @@ export const usePlaceDetail = (
     }
   };
 
-  const fetchReviews = async (id: string) => {
+  const applyReviewPagination = (data: ReviewListResponse) => {
+    setReviewsPagination({
+      pageIndex: data.pageIndex,
+      pageSize: data.pageSize,
+      totalCount: data.totalCount,
+      totalPages: data.totalPages,
+      hasNextPage: data.hasNextPage,
+    });
+  };
+
+  const fetchReviews = async (id: string, page = 1, append = false) => {
     try {
-      setReviewsLoading(true);
-      const data = await getPlaceReviews(id);
-      setReviews(data);
+      if (append) {
+        setLoadingMoreReviews(true);
+      } else {
+        setReviewsLoading(true);
+      }
+
+      const data = await getPlaceReviews(id, { page, pageSize: 10 });
+      if (append) {
+        setReviews((prev) => mergeUniqueById(prev, data.items));
+      } else {
+        setReviews(data.items);
+      }
+      applyReviewPagination(data);
     } catch (err) {
       console.error("Error fetching reviews:", err);
     } finally {
-      setReviewsLoading(false);
+      if (append) {
+        setLoadingMoreReviews(false);
+      } else {
+        setReviewsLoading(false);
+      }
     }
   };
+
+  const loadMoreReviews = useCallback(async () => {
+    if (!placeId || !reviewsPagination.hasNextPage || loadingMoreReviews)
+      return;
+
+    await fetchReviews(placeId, reviewsPagination.pageIndex + 1, true);
+  }, [placeId, reviewsPagination, loadingMoreReviews]);
 
   const fetchSocialReviews = async (id: string) => {
     try {
@@ -144,6 +258,39 @@ export const usePlaceDetail = (
       setSummaryLoading(false);
     }
   };
+
+  const fetchMyReview = async (id: string) => {
+    try {
+      setMyReviewLoading(true);
+      const review = await getMyReview(id);
+      setMyReview(review);
+    } catch (err) {
+      if (isNotFoundApiError(err)) {
+        setMyReview(null);
+        return;
+      }
+      console.error("Error fetching current user review:", err);
+    } finally {
+      setMyReviewLoading(false);
+    }
+  };
+
+  const syncReviewsAfterMutation = useCallback(async (id: string) => {
+    const [myReviewResult, reviewsPageResult] = await Promise.all([
+      getMyReview(id).catch((error) => {
+        if (isNotFoundApiError(error)) return null;
+        throw error;
+      }),
+      getPlaceReviews(id, { page: 1, pageSize: 10 }).catch(() => null),
+    ]);
+
+    setMyReview(myReviewResult);
+
+    if (reviewsPageResult) {
+      setReviews(reviewsPageResult.items);
+      applyReviewPagination(reviewsPageResult);
+    }
+  }, []);
 
   const trackViewInteraction = async (id: string) => {
     try {
@@ -193,20 +340,62 @@ export const usePlaceDetail = (
 
       try {
         setSubmittingReview(true);
-        const newReview = await submitReview(placeId, rating, comment);
+        setReviewActionError(null);
+
+        const canonicalMyReview = myReview
+          ? await getMyReview(placeId).catch((error) => {
+              if (isNotFoundApiError(error)) return myReview;
+              throw error;
+            })
+          : null;
+
+        if (canonicalMyReview && !canonicalMyReview.reviewId) {
+          throw new Error("Cannot edit review because reviewId is missing");
+        }
+
+        const editableReviewId = canonicalMyReview?.reviewId;
+        const newReview = canonicalMyReview
+          ? await updateReview(editableReviewId as string, {
+              rating,
+              comment,
+            })
+          : await submitReview(placeId, rating, comment);
+
+        setMyReview(newReview);
         setReviews((prev) => {
-          // Extra safety: avoid duplicate if the same review id is already present
-          if (prev.some((r) => r.id === newReview.id)) return prev;
+          const newIdentity =
+            newReview.reviewId && newReview.reviewId.trim().length > 0
+              ? `id:${newReview.reviewId}`
+              : `k:${newReview.venueId}:${newReview.userId}:${newReview.createdAt}`;
+          const existingIndex = prev.findIndex((r) => {
+            const identity =
+              r.reviewId && r.reviewId.trim().length > 0
+                ? `id:${r.reviewId}`
+                : `k:${r.venueId}:${r.userId}:${r.createdAt}`;
+            return identity === newIdentity;
+          });
+          if (existingIndex >= 0) {
+            const next = [...prev];
+            next[existingIndex] = newReview;
+            return next;
+          }
+
           return [newReview, ...prev];
         });
         setReviewSubmitted(true);
 
         // Track interaction
         await trackInteraction("Rate");
+        await Promise.all([
+          fetchReviewSummary(placeId),
+          refreshAverageRating(placeId),
+          syncReviewsAfterMutation(placeId),
+        ]);
 
         // Reset submitted flag after a delay
         setTimeout(() => setReviewSubmitted(false), 3000);
       } catch (err) {
+        setReviewActionError(getErrorMessage(err, "Failed to submit review"));
         console.error("Error submitting review:", err);
         throw err;
       } finally {
@@ -214,7 +403,68 @@ export const usePlaceDetail = (
         isSubmittingReviewRef.current = false;
       }
     },
-    [place, placeId],
+    [myReview, place, placeId, syncReviewsAfterMutation],
+  );
+
+  const handleDeleteMyReview = useCallback(async () => {
+    if (!myReview || !placeId) return;
+
+    try {
+      setDeletingReview(true);
+      setReviewActionError(null);
+      if (!myReview.reviewId) {
+        throw new Error("Cannot delete review because reviewId is missing");
+      }
+      await deleteReview(myReview.reviewId);
+
+      setReviews((prev) =>
+        prev.filter((review) => {
+          if (myReview.reviewId && review.reviewId) {
+            return review.reviewId !== myReview.reviewId;
+          }
+
+          return !(
+            review.venueId === myReview.venueId &&
+            review.userId === myReview.userId &&
+            review.createdAt === myReview.createdAt
+          );
+        }),
+      );
+      setMyReview(null);
+      await Promise.all([
+        fetchReviewSummary(placeId),
+        refreshAverageRating(placeId),
+        syncReviewsAfterMutation(placeId),
+      ]);
+    } catch (err) {
+      setReviewActionError(getErrorMessage(err, "Failed to delete review"));
+      console.error("Error deleting review:", err);
+      throw err;
+    } finally {
+      setDeletingReview(false);
+    }
+  }, [myReview, placeId, syncReviewsAfterMutation]);
+
+  const handleReportReview = useCallback(
+    async (reviewId: string, reason: string, description?: string) => {
+      if (!reviewId) {
+        throw new Error("Cannot report review because reviewId is missing");
+      }
+
+      try {
+        setReportingReview(true);
+        await reportReview(reviewId, {
+          reason,
+          description,
+        });
+      } catch (err) {
+        console.error("Error reporting review:", err);
+        throw err;
+      } finally {
+        setReportingReview(false);
+      }
+    },
+    [],
   );
 
   const openInMaps = () => {
@@ -258,17 +508,27 @@ export const usePlaceDetail = (
     isFavorite,
     savingFavorite,
     reviews,
+    reviewsPagination,
+    loadingMoreReviews,
     socialReviews,
     reviewSummary,
+    myReview,
+    myReviewLoading,
     reviewsLoading,
     socialReviewsLoading,
     summaryLoading,
     submittingReview,
+    deletingReview,
+    reportingReview,
     reviewSubmitted,
+    reviewActionError,
     toggleFavorite: handleToggleFavorite,
     openInMaps,
     goBack,
     handleSubmitReview,
+    handleDeleteMyReview,
+    handleReportReview,
+    loadMoreReviews,
     trackInteraction,
   };
 };

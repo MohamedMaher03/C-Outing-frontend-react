@@ -16,14 +16,25 @@ export {
   getSocialMediaReviews,
   getReviewSummary,
   recordInteraction,
-  getSimilarPlaces,
   submitReview,
+  updateReview,
+  deleteReview,
+  getReviewById,
+  getUserReviews,
+  getMyReview,
+  getAverageRating,
+  reportReview,
 } from "./services/placeDetailService";
 
 // Types
 export type {
   PlaceDetail,
   Review,
+  ReviewListParams,
+  ReviewListResponse,
+  ReportReviewRequest,
+  UpdateReviewPayload,
+  VenueAverageRating,
   SocialMediaReview,
   ReviewSummary,
   RecordInteractionRequest,
