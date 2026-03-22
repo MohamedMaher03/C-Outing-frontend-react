@@ -27,6 +27,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePlaceDetail } from "@/features/place-detail/hooks/usePlaceDetail";
 import { getReviewIdentity } from "@/features/place-detail/utils/reviewIdentity";
 import { PRICE_SYMBOL } from "@/features/place-detail/utils/priceLevel";
+import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defaultImages";
 import { ReviewCard } from "@/features/place-detail/components/ReviewCard";
 import { SocialReviewCard } from "@/features/place-detail/components/SocialReviewCard";
 import { ReviewSummarySection } from "@/features/place-detail/components/ReviewSummarySection";
@@ -80,6 +81,23 @@ const PlaceDetailPage = () => {
   const onLikeClick = async () => toggleLike();
   const onFavoriteClick = async () => toggleFavorite();
 
+  const currentUserId = (() => {
+    try {
+      const raw = localStorage.getItem("authUser");
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const candidate =
+        (typeof parsed.userId === "string" && parsed.userId.trim()) ||
+        (typeof parsed.id === "string" && parsed.id.trim()) ||
+        null;
+
+      return candidate && candidate.length > 0 ? candidate : null;
+    } catch {
+      return null;
+    }
+  })();
+
   if (loading) {
     return (
       <LoadingSpinner
@@ -108,6 +126,9 @@ const PlaceDetailPage = () => {
           src={place.image}
           alt={place.name}
           className="w-full h-full object-cover"
+          onError={(event) => {
+            event.currentTarget.src = getDefaultVenueImageDataUrl(place.name);
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
         <button
@@ -204,6 +225,22 @@ const PlaceDetailPage = () => {
             <MapPin className="h-4 w-4 flex-shrink-0" />
             <span>{place.address}</span>
           </div>
+
+          {(place.district || place.type || place.category) && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+              {place.category && (
+                <span className="px-2 py-0.5 rounded-full bg-muted font-medium">
+                  {place.category}
+                </span>
+              )}
+              {place.type && (
+                <span className="px-2 py-0.5 rounded-full bg-muted font-medium">
+                  {place.type}
+                </span>
+              )}
+              {place.district && <span>{place.district}</span>}
+            </div>
+          )}
 
           {/* Price + hours */}
           <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground">
@@ -474,7 +511,11 @@ const PlaceDetailPage = () => {
                       alreadyReported={isReviewReported(
                         review.reviewId ?? getReviewIdentity(review),
                       )}
-                      onReport={handleReportReview}
+                      onReport={
+                        currentUserId && review.userId === currentUserId
+                          ? undefined
+                          : handleReportReview
+                      }
                     />
                   ))}
 

@@ -13,6 +13,7 @@ export { placeDetailApi } from "./api/placeDetailApi";
 export {
   placeDetailService,
   getPlaceById,
+  toggleLike,
   getPlaceReviews,
   getSocialMediaReviews,
   getReviewSummary,

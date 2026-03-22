@@ -27,6 +27,10 @@ import type {
   ReviewSummary,
   RecordInteractionRequest,
 } from "../types";
+import {
+  getDefaultAvatarDataUrl,
+  getDefaultVenueImageDataUrl,
+} from "../utils/defaultImages";
 import { getReviewIdentity } from "../utils/reviewIdentity";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -86,34 +90,96 @@ const clampRating = (...values: unknown[]): number => {
   return Math.max(1, Math.min(5, Math.round(rating)));
 };
 
+const toPriceLevel = (raw: unknown): PlaceDetail["priceLevel"] => {
+  if (typeof raw === "string") {
+    const normalized = raw.trim().toLowerCase();
+    if (
+      normalized === "price_cheapest" ||
+      normalized === "cheap" ||
+      normalized === "mid_range" ||
+      normalized === "expensive" ||
+      normalized === "luxury"
+    ) {
+      return normalized;
+    }
+  }
+
+  const numeric = asNumber(raw);
+  if (numeric === undefined) return undefined;
+
+  if (numeric <= 1) return "price_cheapest";
+  if (numeric <= 2) return "cheap";
+  if (numeric <= 3) return "mid_range";
+  if (numeric <= 4) return "expensive";
+  return "luxury";
+};
+
+const normalizeSocialBadges = (
+  raw: unknown,
+): Array<"Good for Solo" | "Good for Couples" | "Good for Groups"> => {
+  const allowed = new Set([
+    "good for solo",
+    "good for couples",
+    "good for groups",
+  ]);
+
+  return Array.from(
+    new Set(
+      asStringArray(raw)
+        .map((badge) => badge.toLowerCase())
+        .filter((badge) => allowed.has(badge))
+        .map((badge) => {
+          if (badge === "good for solo") return "Good for Solo";
+          if (badge === "good for couples") return "Good for Couples";
+          return "Good for Groups";
+        }),
+    ),
+  );
+};
+
+const normalizeSeatingType = (raw: unknown): Array<"indoor" | "outdoor"> =>
+  Array.from(
+    new Set(
+      asStringArray(raw)
+        .map((seat) => seat.toLowerCase())
+        .filter((seat) => seat === "indoor" || seat === "outdoor")
+        .map((seat) => (seat === "outdoor" ? "outdoor" : "indoor")),
+    ),
+  );
+
 const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
   const data = isRecord(raw) ? raw : {};
   const location = isRecord(data.location) ? data.location : undefined;
 
-  const socialBadgesRaw = Array.isArray(data.socialBadges)
-    ? data.socialBadges
-    : [];
+  const venueName = asString(data.name, data.title) ?? "Unknown Place";
 
-  const socialBadges = socialBadgesRaw.filter(
-    (
-      badge,
-    ): badge is "Good for Solo" | "Good for Couples" | "Good for Groups" =>
-      badge === "Good for Solo" ||
-      badge === "Good for Couples" ||
-      badge === "Good for Groups",
-  );
+  const imageUrls = asStringArray(data.imageUrls);
+  const displayImageUrl = asString(data.displayImageUrl);
+  const selectedImage =
+    asString(
+      displayImageUrl,
+      imageUrls[0],
+      data.image,
+      data.imageUrl,
+      data.thumbnailUrl,
+      data.coverImage,
+    ) ?? getDefaultVenueImageDataUrl(venueName);
 
-  const seatingTypeRaw = Array.isArray(data.seatingType)
-    ? data.seatingType
+  const resolvedAddress =
+    asString(data.location, data.address, location?.address) ?? "";
+
+  const numericPriceRange = asNumber(data.priceRange);
+  const normalizedPriceRange =
+    asString(data.priceRange_Display, data.priceRange) ??
+    (numericPriceRange !== undefined ? String(numericPriceRange) : undefined);
+
+  const normalizedReviews = Array.isArray(data.reviews)
+    ? data.reviews.map(normalizeReview)
     : [];
-  const seatingType = seatingTypeRaw.filter(
-    (seat): seat is "indoor" | "outdoor" =>
-      seat === "indoor" || seat === "outdoor",
-  );
 
   return {
     id: asString(data.id, data.venueId) ?? "",
-    name: asString(data.name, data.title) ?? "Unknown Place",
+    name: venueName,
     category: asString(data.category, data.type) ?? "Uncategorized",
     latitude:
       asNumber(data.latitude, data.lat, location?.latitude, location?.lat) ?? 0,
@@ -125,8 +191,12 @@ const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
         location?.longitude,
         location?.lng,
       ) ?? 0,
-    address: asString(data.address, location?.address) ?? "",
+    location: resolvedAddress,
+    address: resolvedAddress,
+    district: asString(data.district),
+    type: asString(data.type),
     rating: asNumber(data.rating, data.averageRating) ?? 0,
+    averageRating: asNumber(data.averageRating, data.rating) ?? 0,
     reviewCount: Math.max(
       0,
       Math.round(
@@ -139,36 +209,35 @@ const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
         asNumber(data.totalReviews, data.reviewCount, data.ratingCount) ?? 0,
       ),
     ),
+    likeCount: Math.max(0, Math.round(asNumber(data.likeCount) ?? 0)),
     description: asString(data.description, data.about) ?? "",
-    image:
-      asString(data.image, data.imageUrl, data.thumbnailUrl, data.coverImage) ??
-      "",
+    image: selectedImage,
+    displayImageUrl: displayImageUrl ?? selectedImage,
+    imageUrls,
+    createdAt: asString(data.createdAt),
     phone: asString(data.phone, data.phoneNumber),
     website: asString(data.website, data.websiteUrl),
     menuUrl: asString(data.menuUrl, data.menuLink),
     bookingUrl: asString(data.bookingUrl, data.bookingLink),
-    priceRange: asString(data.priceRange),
-    priceLevel:
-      (asString(data.priceLevel) as
-        | "price_cheapest"
-        | "cheap"
-        | "mid_range"
-        | "expensive"
-        | "luxury"
-        | undefined) ?? undefined,
+    priceRange: normalizedPriceRange,
+    priceRangeDisplay: asString(data.priceRange_Display),
+    priceLevel: toPriceLevel(data.priceRange ?? data.priceLevel),
     hours: asString(data.hours, data.openingHours),
     isOpen: asBoolean(data.isOpen),
     atmosphereTags: asStringArray(data.atmosphereTags),
-    socialBadges,
+    socialBadges: normalizeSocialBadges(data.socialBadges),
     hasWifi: asBoolean(data.hasWifi),
     hasToilet: asBoolean(data.hasToilet),
-    seatingType,
+    seatingType: normalizeSeatingType(data.seatingType),
     parkingAvailable: asBoolean(data.parkingAvailable),
     accessibilityScore: asNumber(data.accessibilityScore),
     menuImagesCount: asNumber(data.menuImagesCount),
     menuImagesUrls: asStringArray(data.menuImagesUrls),
-    isSaved: asBoolean(data.isSaved),
+    isSaved: asBoolean(data.isSaved, data.isFavorited),
+    isFavorited: asBoolean(data.isFavorited, data.isSaved),
+    isLiked: asBoolean(data.isLiked),
     matchScore: asNumber(data.matchScore),
+    reviews: normalizedReviews,
   };
 };
 
@@ -178,6 +247,7 @@ const normalizeReview = (raw: unknown): Review => {
   const updatedAt = toDate(data.updatedAt ?? data.createdAt ?? data.date);
 
   return {
+    id: asString(data.id, data.reviewId),
     reviewId: asString(data.reviewId, data.id),
     venueId: asString(data.venueId) ?? "",
     venueName: asString(data.venueName, data.placeName, data.venueTitle) ?? "",
@@ -186,7 +256,12 @@ const normalizeReview = (raw: unknown): Review => {
     userName:
       asString(data.userName, data.authorName, data.reviewerName) ??
       "Anonymous",
-    userAvatar: asString(data.userAvatar, data.avatarUrl, data.authorAvatar),
+    userAvatar:
+      asString(data.userAvatar, data.avatarUrl, data.authorAvatar) ??
+      getDefaultAvatarDataUrl(
+        asString(data.userName, data.authorName, data.reviewerName) ??
+          "Anonymous",
+      ),
     rating: clampRating(data.rating, data.stars),
     comment: asString(data.comment, data.content, data.reviewText) ?? "",
     createdAt: createdAt.toISOString(),
@@ -362,6 +437,14 @@ const normalizeAverageRating = (
   };
 };
 
+const normalizeLikeState = (raw: unknown): boolean | null => {
+  if (typeof raw === "boolean") return raw;
+  if (!isRecord(raw)) return null;
+
+  const state = asBoolean(raw.isLiked, raw.liked, raw.value, raw.result);
+  return state ?? null;
+};
+
 export const placeDetailApi = {
   /**
    * GET /places/:placeId
@@ -372,6 +455,14 @@ export const placeDetailApi = {
       API_ENDPOINTS.places.getById(placeId),
     );
     return normalizePlaceDetail(data);
+  },
+
+  async toggleLike(venueId: string): Promise<boolean | null> {
+    const { data } = await axiosInstance.post<unknown>(
+      API_ENDPOINTS.places.toggleLike(venueId),
+    );
+
+    return normalizeLikeState(data);
   },
 
   /**
@@ -495,9 +586,19 @@ export const placeDetailApi = {
     reviewId: string,
     payload: ReportReviewRequest,
   ): Promise<void> {
+    const reason = payload.reason.trim();
+    if (reason.length < 5 || reason.length > 100) {
+      throw new Error("Report reason must be between 5 and 100 characters");
+    }
+
+    const description = payload.description?.trim() ?? "";
+    if (description.length > 500) {
+      throw new Error("Report description must be 500 characters or less");
+    }
+
     await axiosInstance.post(API_ENDPOINTS.places.reportReview(reviewId), {
-      reason: payload.reason,
-      description: payload.description?.trim() || undefined,
+      reason,
+      description: description.length > 0 ? description : null,
     });
   },
 

@@ -19,7 +19,7 @@ export type InteractionActionType =
   | "Share";
 
 export const REPORT_REASONS = [
-  "Spam",
+  "Spam Content",
   "Harassment",
   "Inaccurate Information",
   "Inappropriate Content",
@@ -33,7 +33,7 @@ export type ReportReason = (typeof REPORT_REASONS)[number];
 export interface ReportPayload {
   reviewId: string;
   reason: ReportReason;
-  description: string;
+  description?: string;
 }
 
 export interface PlaceBase {
@@ -42,17 +42,26 @@ export interface PlaceBase {
   category: string;
   latitude: number;
   longitude: number;
+  location?: string;
   address: string;
+  district?: string;
+  type?: string;
   rating: number;
+  averageRating?: number;
   reviewCount: number;
+  likeCount?: number;
   totalReviews?: number;
   description: string;
   image: string;
+  displayImageUrl?: string;
+  imageUrls?: string[];
+  createdAt?: string;
   phone?: string;
   website?: string;
   menuUrl?: string;
   bookingUrl?: string;
   priceRange?: string;
+  priceRangeDisplay?: string;
   priceLevel?: PriceLevel;
   hours?: string;
   isOpen?: boolean;
@@ -68,6 +77,8 @@ export interface PlaceBase {
   menuImagesCount?: number;
   menuImagesUrls?: string[];
   isSaved?: boolean;
+  isFavorited?: boolean;
+  isLiked?: boolean;
   matchScore?: number;
 }
 
@@ -81,6 +92,7 @@ export interface PlaceDetail extends PlaceBase {
 
 /** A user-submitted review on the website */
 export interface Review {
+  id?: string;
   reviewId?: string;
   venueId: string;
   venueName: string;
@@ -113,7 +125,7 @@ export interface UpdateReviewPayload {
 
 export interface ReportReviewRequest {
   reason: string;
-  description?: string;
+  description?: string | null;
 }
 
 export interface VenueAverageRating {

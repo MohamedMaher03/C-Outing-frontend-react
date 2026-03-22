@@ -90,6 +90,7 @@ export const API_ENDPOINTS = {
   // ── Places / Detail ──────────────────────────────────────────
   places: {
     getById: (id: string) => `/api/v1/Venue/${id}`,
+    toggleLike: (id: string) => `/api/v1/Venue/${id}/like`,
     getReviews: (venueId: string) => `/api/v1/Review/venue/${venueId}`,
     submitReview: "/api/v1/Review",
     getSocialReviews: (venueId: string) =>

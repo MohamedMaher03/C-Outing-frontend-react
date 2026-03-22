@@ -125,6 +125,15 @@ export const placeDetailService = {
     }
   },
 
+  async toggleLike(venueId: string): Promise<boolean | null> {
+    try {
+      return await placeDetailApi.toggleLike(venueId);
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      throw new Error("Failed to toggle like");
+    }
+  },
+
   /**
    * Fetch user reviews for a place (from the website).
    */
@@ -285,6 +294,7 @@ export const placeDetailService = {
 // ── Legacy named exports (keep backward compatibility with hooks) ──
 
 export const getPlaceById = placeDetailService.getPlaceById;
+export const toggleLike = placeDetailService.toggleLike;
 export const getPlaceReviews = placeDetailService.getPlaceReviews;
 export const getSocialMediaReviews = placeDetailService.getSocialMediaReviews;
 export const getReviewSummary = placeDetailService.getReviewSummary;

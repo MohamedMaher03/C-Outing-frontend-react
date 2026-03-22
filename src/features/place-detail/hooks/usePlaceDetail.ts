@@ -16,6 +16,7 @@ import {
   reportReview,
   getMyReview,
   getAverageRating,
+  toggleLike as toggleVenueLike,
   recordInteraction,
 } from "@/features/place-detail/services/placeDetailService";
 import { favoriteAdapter } from "@/features/place-detail/services/favoriteAdapter";
@@ -57,8 +58,40 @@ const mergeUniqueById = (current: Review[], incoming: Review[]): Review[] => {
   );
 };
 
+const sortReviewsByNewest = (items: Review[]): Review[] =>
+  [...items].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+
+const paginationFromInlineReviews = (
+  items: Review[],
+): ReviewsPaginationState => ({
+  pageIndex: 1,
+  pageSize: Math.max(items.length, 1),
+  totalCount: items.length,
+  totalPages: items.length > 0 ? 1 : 0,
+  hasNextPage: false,
+});
+
 const isNotFoundApiError = (error: unknown): boolean =>
   isApiError(error) && error.statusCode === 404;
+
+const getCurrentAuthUserId = (): string | null => {
+  try {
+    const raw = localStorage.getItem("authUser");
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const candidate =
+      (typeof parsed.userId === "string" && parsed.userId.trim()) ||
+      (typeof parsed.id === "string" && parsed.id.trim()) ||
+      null;
+
+    return candidate && candidate.length > 0 ? candidate : null;
+  } catch {
+    return null;
+  }
+};
 
 export interface UsePlaceDetailReturn {
   // State
@@ -180,7 +213,6 @@ export const usePlaceDetail = (
   useEffect(() => {
     if (placeId) {
       fetchPlaceDetails(placeId);
-      fetchReviews(placeId, 1);
       fetchSocialReviews(placeId);
       fetchReviewSummary(placeId);
       fetchMyReview(placeId);
@@ -209,13 +241,25 @@ export const usePlaceDetail = (
       setLoading(true);
       setError(null);
 
-      const [data, favoriteStatus] = await Promise.all([
-        getPlaceById(id),
-        favoriteAdapter.isFavorite(id),
-      ]);
+      const data = await getPlaceById(id);
 
       setPlace(data);
-      setIsFavorite(favoriteStatus);
+      const fallbackFavoriteStatus =
+        data.isFavorited ??
+        data.isSaved ??
+        (await favoriteAdapter.isFavorite(id).catch(() => false));
+      setIsFavorite(fallbackFavoriteStatus);
+      setIsLiked(data.isLiked ?? false);
+
+      const inlineReviews = Array.isArray(data.reviews) ? data.reviews : [];
+      if (inlineReviews.length > 0) {
+        const sortedInlineReviews = sortReviewsByNewest(inlineReviews);
+        setReviews(sortedInlineReviews);
+        setReviewsPagination(paginationFromInlineReviews(sortedInlineReviews));
+        setReviewsLoading(false);
+      } else {
+        await fetchReviews(id, 1);
+      }
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load place details"));
       console.error("Error fetching place details:", err);
@@ -243,6 +287,13 @@ export const usePlaceDetail = (
       }
 
       const data = await getPlaceReviews(id, { page, pageSize: 10 });
+      if (!append && data.items.length === 0 && place?.reviews?.length) {
+        const fallbackReviews = sortReviewsByNewest(place.reviews);
+        setReviews(fallbackReviews);
+        setReviewsPagination(paginationFromInlineReviews(fallbackReviews));
+        return;
+      }
+
       if (append) {
         setReviews((prev) => mergeUniqueById(prev, data.items));
       } else {
@@ -363,19 +414,55 @@ export const usePlaceDetail = (
   };
 
   const handleToggleLike = useCallback(async () => {
+    if (!place) return;
+
+    const previousState = isLiked;
+    const optimisticState = !previousState;
+
     try {
       setSavingLike(true);
-      const next = !isLiked;
-      setIsLiked(next);
-      showNotification("like", next ? "added" : "removed");
-      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // Optimistic UI update while waiting for backend toggle response.
+      setIsLiked(optimisticState);
+      setPlace((prev) =>
+        prev
+          ? {
+              ...prev,
+              isLiked: optimisticState,
+            }
+          : prev,
+      );
+
+      const serverState = await toggleVenueLike(place.id);
+      const resolvedLikeState = serverState ?? optimisticState;
+
+      setIsLiked(resolvedLikeState);
+      setPlace((prev) =>
+        prev
+          ? {
+              ...prev,
+              isLiked: resolvedLikeState,
+            }
+          : prev,
+      );
+      showNotification("like", resolvedLikeState ? "added" : "removed");
     } catch (err) {
       console.error("Error toggling like:", err);
-      setIsLiked((prev) => !prev);
+
+      // Revert optimistic update if request fails.
+      setIsLiked(previousState);
+      setPlace((prev) =>
+        prev
+          ? {
+              ...prev,
+              isLiked: previousState,
+            }
+          : prev,
+      );
     } finally {
       setSavingLike(false);
     }
-  }, [isLiked, showNotification]);
+  }, [isLiked, place, showNotification]);
 
   const handleSubmitReview = useCallback(
     async (rating: number, comment: string) => {
@@ -492,6 +579,23 @@ export const usePlaceDetail = (
         throw new Error("Cannot report review because reviewId is missing");
       }
 
+      const currentUserId = getCurrentAuthUserId();
+      const targetReview =
+        reviews.find(
+          (review) =>
+            review.reviewId === payload.reviewId ||
+            review.id === payload.reviewId,
+        ) ??
+        (myReview &&
+        (myReview.reviewId === payload.reviewId ||
+          myReview.id === payload.reviewId)
+          ? myReview
+          : null);
+
+      if (currentUserId && targetReview?.userId === currentUserId) {
+        throw new Error("You cannot report your own review");
+      }
+
       if (reportedReviewIds.has(payload.reviewId)) {
         return;
       }
@@ -511,7 +615,7 @@ export const usePlaceDetail = (
         setReportingReview(false);
       }
     },
-    [reportedReviewIds, showNotification],
+    [myReview, reportedReviewIds, reviews, showNotification],
   );
 
   const openInMaps = () => {
