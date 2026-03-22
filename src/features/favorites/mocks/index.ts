@@ -4,13 +4,16 @@
  */
 
 import { PLACES } from "@/mocks/mockData";
-import type { FavoritePlace } from "../types";
+import type { FavoriteItem } from "../types";
 
 /** Create the initial set of mock favorites */
-export const createInitialFavorites = (): FavoritePlace[] =>
+export const createInitialFavorites = (): FavoriteItem[] =>
   PLACES.slice(0, 3).map((place) => ({
-    ...place,
-    isSaved: true,
+    venue: {
+      ...place,
+      isSaved: true,
+    },
+    createdAt: new Date().toISOString().slice(0, 10),
   }));
 
 // Re-export mock API for convenient access

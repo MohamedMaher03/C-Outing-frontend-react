@@ -15,7 +15,7 @@
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type { PaginatedResponse } from "@/types";
-import type { FavoriteListParams, FavoritePlace } from "../types";
+import type { FavoriteItem, FavoriteListParams } from "../types";
 
 export const favoritesApi = {
   /**
@@ -24,12 +24,17 @@ export const favoritesApi = {
    */
   async getFavorites(
     params?: FavoriteListParams,
-  ): Promise<PaginatedResponse<FavoritePlace>> {
-    const { data } = await axiosInstance.get<PaginatedResponse<FavoritePlace>>(
+  ): Promise<PaginatedResponse<FavoriteItem>> {
+    const page =
+      params?.page ??
+      (typeof params?.pageIndex === "number"
+        ? params.pageIndex + 1
+        : undefined);
+    const { data } = await axiosInstance.get<PaginatedResponse<FavoriteItem>>(
       API_ENDPOINTS.favorites.getAll,
       {
         params: {
-          page: params?.page ?? 1,
+          ...(page !== undefined ? { page } : {}),
           pageSize: params?.pageSize ?? 10,
         },
       },

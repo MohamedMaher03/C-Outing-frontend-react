@@ -12,12 +12,12 @@
 
 import { PLACES } from "@/mocks/mockData";
 import type { PaginatedResponse } from "@/types";
-import type { FavoriteListParams, FavoritePlace } from "../types";
+import type { FavoriteItem, FavoriteListParams } from "../types";
 import { createInitialFavorites } from "./index";
 
 // ── In-memory mock store ─────────────────────────────────────
 
-let mockFavorites: FavoritePlace[] = createInitialFavorites();
+let mockFavorites: FavoriteItem[] = createInitialFavorites();
 
 // ── Helper ───────────────────────────────────────────────────
 
@@ -33,24 +33,28 @@ export const favoritesMock = {
    */
   async getFavorites(
     params?: FavoriteListParams,
-  ): Promise<PaginatedResponse<FavoritePlace>> {
+  ): Promise<PaginatedResponse<FavoriteItem>> {
     await delay(5000);
 
-    const page = Math.max(1, params?.page ?? 1);
+    const pageIndex = Math.max(
+      0,
+      params?.pageIndex ??
+        (typeof params?.page === "number" ? params.page - 1 : 0),
+    );
     const pageSize = Math.max(1, params?.pageSize ?? 10);
     const totalCount = mockFavorites.length;
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-    const start = (page - 1) * pageSize;
+    const start = pageIndex * pageSize;
     const items = mockFavorites.slice(start, start + pageSize);
 
     return {
       items,
-      pageIndex: page,
+      pageIndex,
       pageSize,
       totalCount,
       totalPages,
-      hasPreviousPage: page > 1,
-      hasNextPage: page < totalPages,
+      hasPreviousPage: pageIndex > 0,
+      hasNextPage: pageIndex + 1 < totalPages,
     };
   },
 
@@ -61,8 +65,11 @@ export const favoritesMock = {
     await delay(900);
 
     const place = PLACES.find((p) => p.id === placeId);
-    if (place && !mockFavorites.find((f) => f.id === placeId)) {
-      mockFavorites.push({ ...place, isSaved: true });
+    if (place && !mockFavorites.find((f) => f.venue.id === placeId)) {
+      mockFavorites.push({
+        venue: { ...place, isSaved: true },
+        createdAt: new Date().toISOString().slice(0, 10),
+      });
     }
   },
 
@@ -71,7 +78,7 @@ export const favoritesMock = {
    */
   async removeFromFavorites(placeId: string): Promise<void> {
     await delay(300);
-    mockFavorites = mockFavorites.filter((f) => f.id !== placeId);
+    mockFavorites = mockFavorites.filter((f) => f.venue.id !== placeId);
   },
 
   /**
@@ -79,6 +86,6 @@ export const favoritesMock = {
    */
   async checkIsFavorite(placeId: string): Promise<boolean> {
     await delay(200);
-    return !!mockFavorites.find((f) => f.id === placeId);
+    return !!mockFavorites.find((f) => f.venue.id === placeId);
   },
 };

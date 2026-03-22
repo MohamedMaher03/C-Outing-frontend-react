@@ -64,10 +64,10 @@ const FavoritesPage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {favorites.map((place) => (
+          {favorites.map((favorite) => (
             <PlaceCard
-              key={place.id}
-              place={{ ...place, isSaved: true }}
+              key={favorite.venue.id}
+              place={{ ...favorite.venue, isSaved: true }}
               userLocation={userLocation}
               onToggleSave={handleToggleSave}
               onClick={(id) => navigate(`/venue/${id}`)}

@@ -19,7 +19,7 @@ export {
 } from "./services/favoritesService";
 
 // Types
-export type { FavoriteListParams, FavoritePlace } from "./types";
+export type { FavoriteItem, FavoriteListParams, FavoritePlace } from "./types";
 
 // Mocks (development use)
 export { favoritesMock } from "./mocks/favoritesMock";

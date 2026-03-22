@@ -18,8 +18,8 @@
 import type { PaginatedResponse } from "@/types";
 import { favoritesApi } from "../api/favoritesApi";
 import type {
+  FavoriteItem,
   FavoriteListParams,
-  FavoritePlace,
 } from "@/features/favorites/types";
 
 // ── Favorites Service ────────────────────────────────────────
@@ -30,12 +30,12 @@ export const favoritesService = {
    */
   async getFavorites(
     params?: FavoriteListParams,
-  ): Promise<PaginatedResponse<FavoritePlace>> {
+  ): Promise<PaginatedResponse<FavoriteItem>> {
     try {
       return await favoritesApi.getFavorites(params);
     } catch (error) {
       console.error("Error fetching favorites:", error);
-      throw new Error("Failed to load favorites");
+      throw error;
     }
   },
 
@@ -47,7 +47,7 @@ export const favoritesService = {
       await favoritesApi.addToFavorites(placeId);
     } catch (error) {
       console.error("Error adding to favorites:", error);
-      throw new Error("Failed to add to favorites");
+      throw error;
     }
   },
 
@@ -59,7 +59,7 @@ export const favoritesService = {
       await favoritesApi.removeFromFavorites(placeId);
     } catch (error) {
       console.error("Error removing from favorites:", error);
-      throw new Error("Failed to remove from favorites");
+      throw error;
     }
   },
 
@@ -82,7 +82,7 @@ export const favoritesService = {
       return await favoritesApi.checkIsFavorite(placeId);
     } catch (error) {
       console.error("Error checking favorite status:", error);
-      throw new Error("Failed to check favorite status");
+      throw error;
     }
   },
 };

@@ -8,12 +8,12 @@ import {
   getFavorites,
   toggleFavorite as toggleFavoriteService,
 } from "@/features/favorites/services/favoritesService";
-import type { FavoritePlace } from "@/features/favorites/types";
+import type { FavoriteItem } from "@/features/favorites/types";
 import { getErrorMessage } from "@/utils/apiError";
 
 interface UseFavoritesReturn {
   // State
-  favorites: FavoritePlace[];
+  favorites: FavoriteItem[];
   loading: boolean;
   error: string | null;
   pageIndex: number;
@@ -29,10 +29,10 @@ interface UseFavoritesReturn {
 }
 
 export const useFavorites = (): UseFavoritesReturn => {
-  const [favorites, setFavorites] = useState<FavoritePlace[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pageIndex, setPageIndex] = useState(1);
+  const [pageIndex, setPageIndex] = useState(0);
   const [pageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -49,7 +49,7 @@ export const useFavorites = (): UseFavoritesReturn => {
       setLoading(true);
       setError(null);
 
-      const data = await getFavorites({ page: 1, pageSize });
+      const data = await getFavorites({ pageIndex: 0, pageSize });
       setFavorites(data.items);
       setPageIndex(data.pageIndex);
       setTotalCount(data.totalCount);
@@ -60,7 +60,7 @@ export const useFavorites = (): UseFavoritesReturn => {
       setError(getErrorMessage(err, "Failed to load favorites"));
       console.error("Error fetching favorites:", err);
       setFavorites([]);
-      setPageIndex(1);
+      setPageIndex(0);
       setTotalCount(0);
       setTotalPages(0);
       setHasPreviousPage(false);
@@ -72,12 +72,14 @@ export const useFavorites = (): UseFavoritesReturn => {
 
   const toggleSave = async (placeId: string) => {
     try {
-      const currentPlace = favorites.find((p) => p.id === placeId);
+      const currentPlace = favorites.find((item) => item.venue.id === placeId);
       const isFavorite = !!currentPlace;
 
       // Optimistic update
       if (isFavorite) {
-        setFavorites((prev) => prev.filter((p) => p.id !== placeId));
+        setFavorites((prev) =>
+          prev.filter((item) => item.venue.id !== placeId),
+        );
       }
 
       // Call API
