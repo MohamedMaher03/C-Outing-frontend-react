@@ -6,16 +6,22 @@ export const signUpSchema = z
       .string()
       .trim()
       .min(2, "Full name must be at least 2 characters")
-      .max(50, "Full name must be less than 50 characters"),
+      .max(100, "Full name must be less than 100 characters"),
 
-    email: z.string().trim().email("Please enter a valid email address"),
+    email: z
+      .string()
+      .trim()
+      .max(100, "Email must be less than 100 characters")
+      .email("Please enter a valid email address"),
 
     phone: z
       .string()
       .trim()
+      .min(10, "Phone number must be at least 10 characters")
+      .max(20, "Phone number must be less than 20 characters")
       .regex(
-        /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/,
-        "Please enter a valid phone number",
+        /^\+[0-9]{1,3}[0-9\s\-()]{8,}$/,
+        "Phone number must include country code (e.g. +201234567890)",
       ),
 
     dateOfBirth: z
@@ -38,10 +44,27 @@ export const signUpSchema = z
 
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters")
+      .min(6, "Password must be at least 6 characters")
+      .max(100, "Password must be less than 100 characters")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
         "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+      ),
+
+    avatar: z
+      .preprocess(
+        (value) => {
+          if (value instanceof FileList) {
+            return value.length > 0 ? value[0] : undefined;
+          }
+          if (value instanceof File) return value;
+          return undefined;
+        },
+        z.union([z.instanceof(File), z.undefined()]),
+      )
+      .refine(
+        (file) => !file || file.type.startsWith("image/"),
+        "Avatar must be an image",
       ),
 
     confirmPassword: z.string().min(1, "Please confirm your password"),
@@ -55,4 +78,5 @@ export const signUpSchema = z
     path: ["confirmPassword"],
   });
 
+export type SignUpFormInput = z.input<typeof signUpSchema>;
 export type SignUpFormData = z.infer<typeof signUpSchema>;

@@ -22,7 +22,10 @@ export interface RegisterRequest {
   email: string;
   password: string;
   phoneNumber: string;
+  /** RFC3339 date-time string sent as DateOfBirth query parameter. */
   dateOfBirth: string;
+  /** Optional user-selected avatar image; fallback is generated if missing. */
+  avatar?: File;
 }
 
 /** Backend returns `data: "…"` string on successful registration */
@@ -98,7 +101,7 @@ export interface LoginField {
 export interface SignUpFieldConfig {
   id: keyof Omit<
     SignUpFormData,
-    "password" | "confirmPassword" | "acceptTerms"
+    "password" | "confirmPassword" | "acceptTerms" | "avatar"
   >;
   label: string;
   placeholder: string;

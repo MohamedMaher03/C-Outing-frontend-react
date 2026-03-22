@@ -32,6 +32,7 @@ import type {
   ResetPasswordRequest,
 } from "../types";
 import { normalizeAuthError } from "../errors";
+import { buildRegisterPayload } from "../utils/registerPayload";
 
 export const authApi = {
   /**
@@ -61,9 +62,16 @@ export const authApi = {
    */
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
     try {
+      const registerPayload = buildRegisterPayload(payload);
       const { data } = await axiosInstance.post<RegisterResponse>(
         API_ENDPOINTS.auth.register,
-        payload,
+        registerPayload.formData,
+        {
+          params: registerPayload.params,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
       );
       return data;
     } catch (error) {

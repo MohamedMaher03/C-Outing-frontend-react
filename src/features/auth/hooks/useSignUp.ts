@@ -39,6 +39,7 @@ export const useSignUp = (): UseSignUpReturn => {
         password: data.password,
         phoneNumber: data.phone,
         dateOfBirth: data.dateOfBirth,
+        avatar: data.avatar,
       });
       return true;
     } catch (err) {

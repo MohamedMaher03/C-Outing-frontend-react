@@ -2,12 +2,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema } from "@/features/auth/validation/signUp.schema";
 import type { SignUpFormData } from "@/features/auth/validation/signUp.schema";
+import type { SignUpFormInput } from "@/features/auth/validation/signUp.schema";
 import { Controller } from "react-hook-form";
 import { PasswordInput } from "./form/PasswordInput";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InlineLoading } from "@/components/ui/LoadingSpinner";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormError } from "@/components/ui/form-error";
 import { FormField } from "./form/FormField";
@@ -27,7 +29,7 @@ const SignUpForm = () => {
     handleSubmit,
     formState: { errors },
     control,
-  } = useForm<SignUpFormData>({
+  } = useForm<SignUpFormInput, unknown, SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
       acceptTerms: false,
@@ -197,6 +199,27 @@ const SignUpForm = () => {
               />
 
               <FormError message={errors.confirmPassword?.message} />
+            </div>
+
+            {/* Avatar (Optional) */}
+            <div className="space-y-2">
+              <Label htmlFor="avatar">Avatar (Optional)</Label>
+              <Input
+                id="avatar"
+                type="file"
+                accept="image/*"
+                {...register("avatar")}
+                className={
+                  errors.avatar
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : ""
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                If you skip this, we will upload a default avatar for your
+                account.
+              </p>
+              <FormError message={errors.avatar?.message} />
             </div>
 
             {/* Terms and Conditions */}
