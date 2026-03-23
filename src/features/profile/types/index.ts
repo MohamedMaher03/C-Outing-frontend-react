@@ -55,12 +55,10 @@ export interface NotificationSettings {
     recommendations: boolean;
     favorites: boolean;
     reviews: boolean;
-    messages: boolean;
     updates: boolean;
   };
   email: {
-    weekly: boolean;
-    monthly: boolean;
+    monthlyDigest: boolean;
     promotions: boolean;
     tips: boolean;
   };
@@ -68,8 +66,6 @@ export interface NotificationSettings {
 
 /** Privacy & data-collection toggles */
 export interface PrivacySettings {
-  profileVisible: boolean;
-  showLocation: boolean;
   showFavorites: boolean;
   showActivity: boolean;
   dataCollection: boolean;

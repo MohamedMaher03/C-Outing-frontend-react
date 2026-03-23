@@ -3,13 +3,9 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   HelpCircle,
-  MessageCircle,
   Mail,
-  Phone,
-  Book,
   ChevronRight,
   Search,
-  ExternalLink,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -21,90 +17,49 @@ const HelpSupportPage = () => {
 
   const contactOptions = [
     {
-      icon: MessageCircle,
-      label: "Live Chat",
-      description: "Chat with our support team",
-      action: () => console.log("Open live chat"),
-      available: true,
-    },
-    {
       icon: Mail,
       label: "Email Support",
-      description: "support@couting.app",
-      action: () => (window.location.href = "mailto:support@couting.app"),
+      description: "farouqdiaaeldin@gmail.com",
+      action: () => (window.location.href = "mailto:farouqdiaaeldin@gmail.com"),
       available: true,
-    },
-    {
-      icon: Phone,
-      label: "Phone Support",
-      description: "+20 123 456 7890",
-      action: () => (window.location.href = "tel:+201234567890"),
-      available: false,
     },
   ];
 
   const faqs = [
     {
-      question: "How do I save my favorite places?",
+      question: "How do personalized recommendations work?",
       answer:
-        "Tap the heart icon on any place card or detail page to add it to your favorites. You can view all your saved places in the Favorites tab.",
+        "Recommendations are generated from your onboarding preferences, selected vibe, districts, and your activity such as saved places and reviews.",
     },
     {
-      question: "How are recommendations generated?",
+      question: "How can I change my interests, vibe, budget, or districts?",
       answer:
-        "We use your interests, location preferences, vibe settings, and past activity to suggest places you'll love. Update your preferences in the Profile section for better recommendations.",
+        "Open Profile and go to Preferences, then update your interests, vibe slider, budget level, and preferred districts. Your future recommendations update based on these changes.",
     },
     {
-      question: "Can I use the app offline?",
+      question: "How do I save and manage favorite places?",
       answer:
-        "You can view previously loaded content offline, but searching and getting new recommendations requires an internet connection.",
+        "Tap the save or heart action on a place to add it to Favorites. You can remove it any time from the Favorites screen or directly from the place card.",
     },
     {
-      question: "How do I change my location preferences?",
+      question: "How do I write or edit my review for a place?",
       answer:
-        "Go to Profile > Preferences > Areas, then select or deselect the districts you're interested in exploring.",
+        "Open the place details page and submit a review with your rating and comment. If you already reviewed that place, use the edit option on your review.",
     },
     {
-      question: "Is my data secure?",
+      question: "How can I control my notifications?",
       answer:
-        "Yes! We use industry-standard encryption and never share your personal information with third parties without your consent. Visit Privacy & Data settings for more details.",
+        "Go to Profile > Notifications to enable or disable push and email updates such as recommendation alerts, favorite updates, review responses, and monthly digest emails.",
     },
     {
-      question: "How do I report an issue with a venue?",
+      question: "What privacy settings can I change?",
       answer:
-        "On the venue detail page, tap the three dots menu and select 'Report Issue'. You can flag incorrect information, closed venues, or other problems.",
+        "In Profile > Privacy & Data, you can choose whether your favorites and activity are visible, and whether data collection and personalization are enabled.",
     },
     {
-      question: "Can I delete my account?",
+      question: "How do I delete my account?",
       answer:
-        "Yes, you can permanently delete your account from Profile > Account > Privacy > Delete Account. This action cannot be undone.",
-    },
-  ];
-
-  const resources = [
-    {
-      label: "User Guide",
-      description: "Complete guide to using the app",
-      icon: Book,
-      link: "#",
-    },
-    {
-      label: "Terms of Service",
-      description: "Our terms and conditions",
-      icon: ExternalLink,
-      link: "#",
-    },
-    {
-      label: "Privacy Policy",
-      description: "How we protect your data",
-      icon: ExternalLink,
-      link: "#",
-    },
-    {
-      label: "Community Guidelines",
-      description: "Be a good community member",
-      icon: ExternalLink,
-      link: "#",
+        "Go to Profile > Privacy & Data and choose Delete Account. This action is permanent and removes your profile data, favorites, and preferences.",
     },
   ];
 
@@ -242,33 +197,6 @@ const HelpSupportPage = () => {
                 </p>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Resources */}
-        <div className="space-y-4">
-          <h2 className="text-base font-semibold text-foreground">Resources</h2>
-          <div className="space-y-2">
-            {resources.map((resource) => (
-              <a
-                key={resource.label}
-                href={resource.link}
-                className="flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <resource.icon className="h-5 w-5 text-muted-foreground" />
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-foreground">
-                      {resource.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {resource.description}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </a>
-            ))}
           </div>
         </div>
 

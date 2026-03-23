@@ -1,12 +1,4 @@
-import {
-  ArrowLeft,
-  Shield,
-  Eye,
-  Lock,
-  Database,
-  Download,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeft, Shield, Eye, Database, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -29,12 +21,10 @@ const PrivacyPage = () => {
     privacySettings,
     loading,
     saving,
-    downloading,
     deleting,
     error,
     toggleSetting,
     handleSave,
-    handleDownloadData,
     handleDeleteAccount,
   } = usePrivacy();
 
@@ -51,16 +41,6 @@ const PrivacyPage = () => {
       title: "Profile Visibility",
       icon: Eye,
       items: [
-        {
-          key: "profileVisible" as const,
-          label: "Public Profile",
-          description: "Allow others to see your profile information",
-        },
-        {
-          key: "showLocation" as const,
-          label: "Show Location",
-          description: "Display your approximate location to others",
-        },
         {
           key: "showFavorites" as const,
           label: "Show Favorites",
@@ -161,34 +141,14 @@ const PrivacyPage = () => {
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
-              <Lock className="h-5 w-5 text-secondary" />
+              <Shield className="h-5 w-5 text-secondary" />
             </div>
             <h2 className="text-base font-semibold text-foreground">
-              Data Management
+              Account Management
             </h2>
           </div>
 
           <div className="space-y-3">
-            <button
-              onClick={handleDownloadData}
-              disabled={downloading}
-              className="w-full flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:bg-muted/50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <div className="flex items-center gap-3">
-                <Download className="h-5 w-5 text-foreground" />
-                <div className="text-left">
-                  <p className="text-sm font-medium text-foreground">
-                    {downloading
-                      ? "Preparing download..."
-                      : "Download Your Data"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Get a copy of your information
-                  </p>
-                </div>
-              </div>
-            </button>
-
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <button className="w-full flex items-center justify-between p-4 rounded-xl bg-card border border-destructive/50 hover:bg-destructive/10 transition-colors">

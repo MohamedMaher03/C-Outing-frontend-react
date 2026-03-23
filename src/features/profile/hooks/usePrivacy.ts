@@ -11,7 +11,6 @@ import { useNavigate } from "react-router-dom";
 import {
   getPrivacySettings,
   updatePrivacySettings,
-  requestDataDownload,
   deleteUserAccount,
 } from "@/features/profile/services/profileService";
 import type { PrivacySettings } from "@/features/profile/types";
@@ -24,8 +23,6 @@ interface UsePrivacyReturn {
   loading: boolean;
   /** True while a save request is in-flight */
   saving: boolean;
-  /** True while a download request is in-flight */
-  downloading: boolean;
   /** True while an account deletion request is in-flight */
   deleting: boolean;
   /** Error message, if any */
@@ -34,8 +31,6 @@ interface UsePrivacyReturn {
   toggleSetting: (key: keyof PrivacySettings) => void;
   /** Persist current settings and navigate back */
   handleSave: () => Promise<void>;
-  /** Trigger a data-export download */
-  handleDownloadData: () => Promise<void>;
   /** Permanently delete the account */
   handleDeleteAccount: () => Promise<void>;
 }
@@ -44,8 +39,6 @@ export const usePrivacy = (): UsePrivacyReturn => {
   const navigate = useNavigate();
 
   const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
-    profileVisible: true,
-    showLocation: true,
     showFavorites: false,
     showActivity: true,
     dataCollection: true,
@@ -53,7 +46,6 @@ export const usePrivacy = (): UsePrivacyReturn => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,18 +83,6 @@ export const usePrivacy = (): UsePrivacyReturn => {
     }
   };
 
-  const handleDownloadData = async () => {
-    try {
-      setDownloading(true);
-      setError(null);
-      await requestDataDownload();
-    } catch (err) {
-      setError(getErrorMessage(err, "Failed to download data"));
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   const handleDeleteAccount = async () => {
     try {
       setDeleting(true);
@@ -123,12 +103,10 @@ export const usePrivacy = (): UsePrivacyReturn => {
     privacySettings,
     loading,
     saving,
-    downloading,
     deleting,
     error,
     toggleSetting,
     handleSave,
-    handleDownloadData,
     handleDeleteAccount,
   };
 };

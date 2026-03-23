@@ -1,11 +1,4 @@
-import {
-  ArrowLeft,
-  Bell,
-  Mail,
-  MessageSquare,
-  Heart,
-  Star,
-} from "lucide-react";
+import { ArrowLeft, Bell, Mail, Heart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -54,14 +47,8 @@ const NotificationsPage = () => {
         {
           key: "reviews" as const,
           label: "Review Responses",
-          description: "When someone responds to your reviews",
-          icon: MessageSquare,
-        },
-        {
-          key: "messages" as const,
-          label: "Messages",
-          description: "Direct messages from other users",
-          icon: MessageSquare,
+          description: "When someone adds a review on a place you reviewed",
+          icon: Star,
         },
         {
           key: "updates" as const,
@@ -78,14 +65,9 @@ const NotificationsPage = () => {
       icon: Mail,
       items: [
         {
-          key: "weekly" as const,
-          label: "Weekly Digest",
-          description: "Summary of top places and updates",
-        },
-        {
-          key: "monthly" as const,
-          label: "Monthly Newsletter",
-          description: "Curated content and city guides",
+          key: "monthlyDigest" as const,
+          label: "Monthly Digest",
+          description: "Monthly summary of top places and updates",
         },
         {
           key: "promotions" as const,

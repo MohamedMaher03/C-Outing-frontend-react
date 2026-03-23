@@ -63,20 +63,16 @@ export const MOCK_NOTIFICATION_SETTINGS: NotificationSettings = {
     recommendations: true,
     favorites: true,
     reviews: false,
-    messages: true,
     updates: true,
   },
   email: {
-    weekly: true,
-    monthly: false,
+    monthlyDigest: true,
     promotions: true,
     tips: true,
   },
 };
 
 export const MOCK_PRIVACY_SETTINGS: PrivacySettings = {
-  profileVisible: true,
-  showLocation: true,
   showFavorites: false,
   showActivity: true,
   dataCollection: true,

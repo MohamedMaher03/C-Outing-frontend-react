@@ -43,15 +43,13 @@ export const useNotifications = (): UseNotificationsReturn => {
     recommendations: true,
     favorites: true,
     reviews: false,
-    messages: true,
     updates: true,
   });
 
   const [emailNotifications, setEmailNotifications] = useState<
     NotificationSettings["email"]
   >({
-    weekly: true,
-    monthly: false,
+    monthlyDigest: true,
     promotions: true,
     tips: true,
   });
