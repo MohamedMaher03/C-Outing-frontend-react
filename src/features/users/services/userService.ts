@@ -25,7 +25,9 @@ const mapProfileDtoToPublicProfile = (
   isEmailVerified: dto.isEmailVerified,
 });
 
-const mapReviewDtoToActivity = (dto: BackendUserReviewDto): UserReviewActivity => ({
+const mapReviewDtoToActivity = (
+  dto: BackendUserReviewDto,
+): UserReviewActivity => ({
   reviewId: dto.id,
   placeId: dto.venueId,
   placeName: dto.venueName,
@@ -60,7 +62,10 @@ export const getPublicProfileBundle = async (
     if (currentUserId && currentUserId === userId) {
       const ownProfile = await userApi.getCurrentProfile();
       return {
-        profile: mapProfileDtoToPublicProfile(ownProfile, reviewsResult.totalCount),
+        profile: mapProfileDtoToPublicProfile(
+          ownProfile,
+          reviewsResult.totalCount,
+        ),
         reviews,
       };
     }

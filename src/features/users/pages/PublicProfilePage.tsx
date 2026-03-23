@@ -74,14 +74,8 @@ const PublicProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const {
-    profile,
-    reviews,
-    loading,
-    error,
-    isOwnProfile,
-    reload,
-  } = usePublicProfile(id ?? "");
+  const { profile, reviews, loading, error, isOwnProfile, reload } =
+    usePublicProfile(id ?? "");
 
   // ── Loading ──────────────────────────────
 
@@ -208,7 +202,10 @@ const PublicProfilePage = () => {
           <div className="h-8 w-px bg-white/20" />
           <StatPill value={reviews.length} label="Recent" />
           <div className="h-8 w-px bg-white/20" />
-          <StatPill value={profile.totalInteractions ?? "—"} label="Interactions" />
+          <StatPill
+            value={profile.totalInteractions ?? "—"}
+            label="Interactions"
+          />
         </div>
       </div>
 
@@ -231,12 +228,19 @@ const PublicProfilePage = () => {
         <div className="px-4 mt-4">
           <div className="rounded-xl border border-border bg-card p-4 flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-foreground">Community activity snapshot</p>
+              <p className="text-sm font-semibold text-foreground">
+                Community activity snapshot
+              </p>
               <p className="text-xs text-muted-foreground">
                 This page is powered by profile + review history from backend.
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => void reload()} className="gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void reload()}
+              className="gap-1.5"
+            >
               <Activity className="h-3.5 w-3.5" />
               Refresh
             </Button>

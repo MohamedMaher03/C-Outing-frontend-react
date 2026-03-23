@@ -76,12 +76,11 @@ export const userApi = {
     pageIndex = 1,
     pageSize = 10,
   ): Promise<PaginatedResponse<BackendUserReviewDto>> {
-    const { data } = await axiosInstance.get<PaginatedResponse<BackendUserReviewDto>>(
-      API_ENDPOINTS.users.getReviews(userId),
-      {
-        params: { pageIndex, pageSize },
-      },
-    );
+    const { data } = await axiosInstance.get<
+      PaginatedResponse<BackendUserReviewDto>
+    >(API_ENDPOINTS.users.getReviews(userId), {
+      params: { pageIndex, pageSize },
+    });
     return data;
   },
 };
