@@ -1,21 +1,16 @@
 /**
  * Profile Service
  *
- * Business logic layer — composes API calls and applies domain rules.
- * Currently backed by mock data so the UI works without a live backend.
- *
- * ⚠️  HOW TO SWITCH TO THE REAL API:
- *   1. Uncomment the `profileApi` import below.
- *   2. In each exported function, comment out the mock block and
- *      uncomment the `profileApi.*` call directly below it.
- *   Every function is already wired with the correct endpoint via
- *   src/features/profile/api/profileApi.ts.
+ * Business logic layer — composes API calls and applies feature-level mapping.
+ * Profile read/update is wired to backend API.
+ * Preferences/notifications/privacy remain mock-backed until their API contracts are finalized.
  */
 
-// import { profileApi } from "../api/profileApi"; // TODO: Uncomment when backend is ready
+import { profileApi } from "../api/profileApi";
 
 import type {
   UserProfile,
+  UpdateUserProfileRequest,
   UserPreferences,
   UpdatePreferencesRequest,
   EditProfileData,
@@ -23,9 +18,7 @@ import type {
   PrivacySettings,
 } from "@/features/profile/types";
 import {
-  MOCK_PROFILE,
   MOCK_PREFERENCES as INITIAL_PREFERENCES,
-  MOCK_EDIT_PROFILE,
   MOCK_NOTIFICATION_SETTINGS,
   MOCK_PRIVACY_SETTINGS,
 } from "@/features/profile/mocks";
@@ -33,6 +26,7 @@ import {
 // Re-export types for consumers that import from the service directly
 export type {
   UserProfile,
+  UpdateUserProfileRequest,
   UserPreferences,
   UpdatePreferencesRequest,
   EditProfileData,
@@ -42,90 +36,172 @@ export type {
 
 // ── Mutable mock stores (simulate server state during development) ──────────
 let MOCK_PREFERENCES: UserPreferences = { ...INITIAL_PREFERENCES };
-let MOCK_EDIT_PROFILE_DATA: EditProfileData = { ...MOCK_EDIT_PROFILE };
 let MOCK_NOTIFICATIONS: NotificationSettings = {
   push: { ...MOCK_NOTIFICATION_SETTINGS.push },
   email: { ...MOCK_NOTIFICATION_SETTINGS.email },
 };
 let MOCK_PRIVACY: PrivacySettings = { ...MOCK_PRIVACY_SETTINGS };
 
-// Placeholder: replace with real user id from auth context when backend is live
-const CURRENT_USER_ID = 1;
+const CURRENT_USER_ID = "1";
+
+const getTodayDateString = (): string => new Date().toISOString().slice(0, 10);
+
+const normalizeBirthDateForInput = (birthDate?: string): string => {
+  if (!birthDate) return getTodayDateString();
+
+  const datePart = birthDate.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return getTodayDateString();
+
+  const [year] = datePart.split("-");
+  if (!year || Number(year) <= 1) return getTodayDateString();
+
+  return datePart;
+};
+
+const buildFallbackProfile = (): UserProfile => ({
+  id: "",
+  name: getFallbackName(),
+  email: "",
+  phoneNumber: "",
+  birthDate: getTodayDateString(),
+  age: 0,
+  role: 0,
+  totalInteractions: 0,
+  isBanned: false,
+  isEmailVerified: false,
+  avatarUrl: undefined,
+  createdAt: "",
+  updatedAt: "",
+});
+
+const normalizeProfile = (
+  profile: Partial<UserProfile> | null | undefined,
+  fallback?: UserProfile,
+): UserProfile => {
+  const base = fallback ?? buildFallbackProfile();
+
+  const normalizedName =
+    typeof profile?.name === "string" && profile.name.trim().length > 0
+      ? profile.name.trim()
+      : base.name;
+
+  return {
+    ...base,
+    ...profile,
+    name: normalizedName,
+    email: profile?.email ?? base.email,
+    phoneNumber: profile?.phoneNumber ?? base.phoneNumber,
+    birthDate: profile?.birthDate ?? base.birthDate,
+    age: profile?.age ?? base.age,
+    role: profile?.role ?? base.role,
+    totalInteractions: profile?.totalInteractions ?? base.totalInteractions,
+    isBanned: profile?.isBanned ?? base.isBanned,
+    isEmailVerified: profile?.isEmailVerified ?? base.isEmailVerified,
+    avatarUrl: profile?.avatarUrl ?? base.avatarUrl,
+    createdAt: profile?.createdAt ?? base.createdAt,
+    updatedAt: profile?.updatedAt ?? base.updatedAt,
+  };
+};
+
+const getFallbackName = (): string => {
+  try {
+    const raw = localStorage.getItem("authUser");
+    if (!raw) return "Guest User";
+
+    const parsed = JSON.parse(raw) as { name?: string };
+    const name = parsed?.name?.trim();
+    return name && name.length >= 2 ? name : "Guest User";
+  } catch {
+    return "Guest User";
+  }
+};
 
 // ── Profile ─────────────────────────────────────────────────────────────────
 
-/**
- * Fetch user profile.
- * TODO: Uncomment when backend is ready:
- *   return profileApi.getProfile(CURRENT_USER_ID);
- */
 export const getUserProfile = async (): Promise<UserProfile> => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return { ...MOCK_PROFILE };
+  const profile = (await profileApi.getProfile()) as UserProfile | null;
 
-  // return profileApi.getProfile(CURRENT_USER_ID);
+  return normalizeProfile(profile);
 };
 
 /**
- * Update user profile (used by the main profile preferences page).
- * TODO: Uncomment when backend is ready:
- *   return profileApi.updateProfile(CURRENT_USER_ID, data);
+ * Update user profile via authenticated /api/v1/User/profile endpoint.
  */
 export const updateUserProfile = async (
-  data: Partial<UserProfile>,
+  data: UpdateUserProfileRequest,
+  avatarFile?: File,
 ): Promise<UserProfile> => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return { ...MOCK_PROFILE, ...data };
+  const current = await getUserProfile();
 
-  // return profileApi.updateProfile(CURRENT_USER_ID, data);
+  const resolvedName =
+    data.name?.trim() || current.name?.trim() || "Guest User";
+  const resolvedPhoneNumber =
+    data.phoneNumber?.trim() || current.phoneNumber || "";
+  const resolvedBirthDate =
+    data.birthDate || normalizeBirthDateForInput(current.birthDate);
+
+  const updated = (await profileApi.updateProfile(
+    {
+      name: resolvedName,
+      phoneNumber: resolvedPhoneNumber,
+      birthDate: resolvedBirthDate,
+    },
+    avatarFile,
+  )) as UserProfile | null;
+
+  return normalizeProfile(updated, {
+    ...current,
+    name: resolvedName,
+    phoneNumber: resolvedPhoneNumber,
+    birthDate: resolvedBirthDate,
+  });
 };
 
-// ── Edit Profile (extended fields) ──────────────────────────────────────────
-
-/** * Upload a new avatar image.
- * Returns the URL for the uploaded avatar.
- *
- * Mock: Creates a local blob URL to simulate the upload.
- * TODO: Uncomment when backend is ready:
- *   return profileApi.uploadAvatar(CURRENT_USER_ID, file);
+/**
+ * Backward-compatible avatar upload helper.
+ * Kept to avoid stale HMR imports while profile update is now unified.
  */
 export const uploadAvatar = async (
   file: File,
 ): Promise<{ avatarUrl: string }> => {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-
-  // Mock: create a local object URL to simulate a server-returned URL
-  const avatarUrl = URL.createObjectURL(file);
-  MOCK_EDIT_PROFILE_DATA = { ...MOCK_EDIT_PROFILE_DATA, avatar: avatarUrl };
-  return { avatarUrl };
-
-  // return profileApi.uploadAvatar(CURRENT_USER_ID, file);
+  const updated = await updateUserProfile({}, file);
+  return { avatarUrl: updated.avatarUrl ?? "" };
 };
 
-/** * Fetch extended profile data (name, email, phone, location, bio).
- * TODO: Uncomment when backend is ready:
- *   return profileApi.getProfile(CURRENT_USER_ID) as unknown as EditProfileData;
- */
+// ── Edit Profile (extended fields) ──────────────────────────────────────────
+
+/** Fetch edit profile form model mapped from backend profile payload. */
 export const getEditProfile = async (): Promise<EditProfileData> => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return { ...MOCK_EDIT_PROFILE_DATA };
-
-  // return profileApi.getProfile(CURRENT_USER_ID) as unknown as EditProfileData;
+  const profile = await getUserProfile();
+  return {
+    name: profile.name,
+    email: profile.email,
+    phoneNumber: profile.phoneNumber ?? "",
+    birthDate: normalizeBirthDateForInput(profile.birthDate),
+    avatarUrl: profile.avatarUrl,
+  };
 };
 
-/**
- * Save extended profile edits.
- * TODO: Uncomment when backend is ready:
- *   return profileApi.updateProfile(CURRENT_USER_ID, data) as unknown as EditProfileData;
- */
+/** Save edit profile form model to backend profile endpoint. */
 export const updateEditProfile = async (
   data: Partial<EditProfileData>,
+  avatarFile?: File,
 ): Promise<EditProfileData> => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  MOCK_EDIT_PROFILE_DATA = { ...MOCK_EDIT_PROFILE_DATA, ...data };
-  return { ...MOCK_EDIT_PROFILE_DATA };
+  const payload: UpdateUserProfileRequest = {
+    name: data.name?.trim(),
+    phoneNumber: data.phoneNumber?.trim(),
+    birthDate: data.birthDate,
+  };
 
-  // return profileApi.updateProfile(CURRENT_USER_ID, data) as unknown as EditProfileData;
+  const updated = await updateUserProfile(payload, avatarFile);
+
+  return {
+    name: updated.name,
+    email: updated.email,
+    phoneNumber: updated.phoneNumber ?? "",
+    birthDate: normalizeBirthDateForInput(updated.birthDate),
+    avatarUrl: updated.avatarUrl,
+  };
 };
 
 // ── Preferences ──────────────────────────────────────────────────────────────

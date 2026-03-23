@@ -16,12 +16,26 @@ import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type {
   UserProfile,
+  UpdateUserProfileRequest,
   UserPreferences,
   UpdatePreferencesRequest,
-  EditProfileData,
   NotificationSettings,
   PrivacySettings,
 } from "../types";
+
+const toDateOnly = (value: string): string => {
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+
+  return trimmed;
+};
 // NOTE: All axiosInstance calls below use `T` as the generic (not `ApiResponse<T>`).
 // The axiosInstance response interceptor automatically unwraps the
 // { success, data: T, message } envelope, so response.data IS T directly.
@@ -29,36 +43,57 @@ import type {
 export const profileApi = {
   // ── Profile ────────────────────────────────────────────────
 
-  async getProfile(userId: string): Promise<UserProfile> {
+  async getProfile(): Promise<UserProfile> {
     const { data } = await axiosInstance.get<UserProfile>(
-      API_ENDPOINTS.users.getProfile(userId),
+      API_ENDPOINTS.profile.getCurrentProfile,
     );
     return data;
   },
 
   async updateProfile(
-    userId: string,
-    payload: Partial<EditProfileData>,
+    payload: UpdateUserProfileRequest,
+    avatarFile?: File,
   ): Promise<UserProfile> {
+    if (avatarFile) {
+      const formData = new FormData();
+
+      if (payload.name !== undefined) {
+        formData.append("Name", payload.name);
+      }
+      if (payload.birthDate !== undefined) {
+        formData.append("BirthDate", toDateOnly(payload.birthDate));
+      }
+      if (payload.phoneNumber !== undefined) {
+        formData.append("PhoneNumber", payload.phoneNumber);
+      }
+      formData.append("Avatar", avatarFile);
+
+      const { data } = await axiosInstance.put<UserProfile>(
+        API_ENDPOINTS.profile.updateCurrentProfile,
+        formData,
+      );
+      return data;
+    }
+
+    const formBody = new URLSearchParams();
+    if (payload.name !== undefined) {
+      formBody.append("Name", payload.name);
+    }
+    if (payload.birthDate !== undefined) {
+      formBody.append("BirthDate", toDateOnly(payload.birthDate));
+    }
+    if (payload.phoneNumber !== undefined) {
+      formBody.append("PhoneNumber", payload.phoneNumber);
+    }
+
     const { data } = await axiosInstance.put<UserProfile>(
-      API_ENDPOINTS.users.updateProfile(userId),
-      payload,
-    );
-    return data;
-  },
-
-  // ── Avatar ─────────────────────────────────────────────────
-
-  async uploadAvatar(
-    userId: string,
-    file: File,
-  ): Promise<{ avatarUrl: string }> {
-    const formData = new FormData();
-    formData.append("avatar", file);
-    const { data } = await axiosInstance.post<{ avatarUrl: string }>(
-      API_ENDPOINTS.profile.uploadAvatar(userId),
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } },
+      API_ENDPOINTS.profile.updateCurrentProfile,
+      formBody,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
     );
     return data;
   },

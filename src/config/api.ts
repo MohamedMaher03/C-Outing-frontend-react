@@ -33,6 +33,8 @@ export const API_ENDPOINTS = {
   },
 
   profile: {
+    getCurrentProfile: "/api/v1/User/profile",
+    updateCurrentProfile: "/api/v1/User/profile",
     uploadAvatar: (userId: string) => `/users/${userId}/avatar`,
     getNotifications: (userId: string) => `/users/${userId}/notifications`,
     updateNotifications: (userId: string) => `/users/${userId}/notifications`,

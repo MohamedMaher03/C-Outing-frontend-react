@@ -11,7 +11,6 @@ import { useNavigate } from "react-router-dom";
 import {
   getEditProfile,
   updateEditProfile,
-  uploadAvatar,
 } from "@/features/profile/services/profileService";
 import type { EditProfileData } from "@/features/profile/types";
 import { getErrorMessage } from "@/utils/apiError";
@@ -19,6 +18,7 @@ import { getErrorMessage } from "@/utils/apiError";
 /** Max file size: 5 MB */
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const PHONE_REGEX = /^\+[0-9]{1,3}[0-9\s\-()]{8,}$/;
 
 interface UseEditProfileReturn {
   /** Current form values */
@@ -29,8 +29,6 @@ interface UseEditProfileReturn {
   loading: boolean;
   /** True while a save request is in-flight */
   saving: boolean;
-  /** True while avatar is being uploaded */
-  uploadingAvatar: boolean;
   /** Error message, if any */
   error: string | null;
   /** Ref for the hidden file input */
@@ -53,15 +51,13 @@ export const useEditProfile = (): UseEditProfileReturn => {
   const [formData, setFormData] = useState<EditProfileData>({
     name: "",
     email: "",
-    phone: "",
-    location: "",
-    bio: "",
-    avatar: undefined,
+    phoneNumber: "",
+    birthDate: "",
+    avatarUrl: undefined,
   });
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -75,8 +71,8 @@ export const useEditProfile = (): UseEditProfileReturn => {
         setError(null);
         const data = await getEditProfile();
         setFormData(data);
-        if (data.avatar) {
-          setAvatarPreview(data.avatar);
+        if (data.avatarUrl) {
+          setAvatarPreview(data.avatarUrl);
         }
       } catch (err) {
         setError(getErrorMessage(err, "Failed to load profile"));
@@ -141,21 +137,37 @@ export const useEditProfile = (): UseEditProfileReturn => {
       setSaving(true);
       setError(null);
 
-      let updatedAvatar = formData.avatar;
+      const trimmedName = formData.name.trim();
+      const trimmedPhone = formData.phoneNumber.trim();
 
-      // Upload avatar first if a new file was selected
-      if (pendingAvatarFile.current) {
-        setUploadingAvatar(true);
-        const { avatarUrl } = await uploadAvatar(pendingAvatarFile.current);
-        updatedAvatar = avatarUrl;
-        pendingAvatarFile.current = null;
-        setUploadingAvatar(false);
+      if (trimmedName.length < 2 || trimmedName.length > 100) {
+        setError("Name must be between 2 and 100 characters.");
+        return;
       }
 
-      await updateEditProfile({ ...formData, avatar: updatedAvatar });
+      if (!PHONE_REGEX.test(trimmedPhone)) {
+        setError(
+          "Phone number must include country code (e.g. +20 123 456 7890).",
+        );
+        return;
+      }
+
+      if (!formData.birthDate) {
+        setError("Birth date is required.");
+        return;
+      }
+
+      await updateEditProfile(
+        {
+          ...formData,
+          name: trimmedName,
+          phoneNumber: trimmedPhone,
+        },
+        pendingAvatarFile.current ?? undefined,
+      );
+      pendingAvatarFile.current = null;
       navigate("/profile");
     } catch (err) {
-      setUploadingAvatar(false);
       setError(getErrorMessage(err, "Failed to save profile"));
     } finally {
       setSaving(false);
@@ -167,7 +179,6 @@ export const useEditProfile = (): UseEditProfileReturn => {
     avatarPreview,
     loading,
     saving,
-    uploadingAvatar,
     error,
     fileInputRef,
     triggerFilePicker,

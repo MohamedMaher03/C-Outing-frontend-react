@@ -15,9 +15,9 @@ export { profileApi } from "./api/profileApi";
 export {
   getUserProfile,
   updateUserProfile,
+  uploadAvatar,
   getEditProfile,
   updateEditProfile,
-  uploadAvatar,
   getUserPreferences,
   updateUserPreferences,
   getNotificationSettings,

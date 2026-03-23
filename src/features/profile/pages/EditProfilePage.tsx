@@ -4,15 +4,15 @@ import {
   User,
   Mail,
   Phone,
-  MapPin,
   Loader2,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { cn } from "@/lib/utils";
 import { useEditProfile } from "@/features/profile/hooks/useEditProfile";
+import { buildDefaultAvatarDataUrl } from "@/features/profile/utils/defaultAvatar";
 
 const EditProfilePage = () => {
   const {
@@ -20,7 +20,6 @@ const EditProfilePage = () => {
     avatarPreview,
     loading,
     saving,
-    uploadingAvatar,
     error,
     fileInputRef,
     triggerFilePicker,
@@ -62,15 +61,14 @@ const EditProfilePage = () => {
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <div className="h-24 w-24 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
-                {avatarPreview ? (
-                  <img
-                    src={avatarPreview}
-                    alt="Profile avatar"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <User className="h-12 w-12 text-secondary" />
-                )}
+                <img
+                  src={
+                    avatarPreview ||
+                    buildDefaultAvatarDataUrl(formData.name || "User")
+                  }
+                  alt="Profile avatar"
+                  className="h-full w-full object-cover"
+                />
               </div>
               {/* Hidden file input */}
               <input
@@ -83,10 +81,10 @@ const EditProfilePage = () => {
               <button
                 type="button"
                 onClick={triggerFilePicker}
-                disabled={uploadingAvatar}
+                disabled={saving}
                 className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-secondary text-white flex items-center justify-center hover:bg-secondary/90 transition-colors disabled:opacity-50"
               >
-                {uploadingAvatar ? (
+                {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Camera className="h-4 w-4" />
@@ -136,16 +134,19 @@ const EditProfilePage = () => {
                   name="email"
                   type="email"
                   value={formData.email}
-                  onChange={handleChange}
+                  readOnly
                   className="pl-10"
-                  placeholder="Enter your email"
+                  placeholder="Email"
                 />
               </div>
+              <p className="text-xs text-muted-foreground">
+                Email is managed by your account settings.
+              </p>
             </div>
 
             <div className="space-y-2">
               <Label
-                htmlFor="phone"
+                htmlFor="phoneNumber"
                 className="text-sm font-medium text-foreground"
               >
                 Phone Number
@@ -153,58 +154,39 @@ const EditProfilePage = () => {
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="phone"
-                  name="phone"
+                  id="phoneNumber"
+                  name="phoneNumber"
                   type="tel"
-                  value={formData.phone}
+                  value={formData.phoneNumber}
                   onChange={handleChange}
                   className="pl-10"
-                  placeholder="Enter your phone"
+                  placeholder="e.g. +20 123 456 7890"
                 />
               </div>
+              <p className="text-xs text-muted-foreground">
+                Use international format with country code.
+              </p>
             </div>
 
             <div className="space-y-2">
               <Label
-                htmlFor="location"
+                htmlFor="birthDate"
                 className="text-sm font-medium text-foreground"
               >
-                Location
+                Birth Date
               </Label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="location"
-                  name="location"
-                  value={formData.location}
+                  id="birthDate"
+                  name="birthDate"
+                  type="date"
+                  value={formData.birthDate}
                   onChange={handleChange}
                   className="pl-10"
-                  placeholder="Enter your location"
+                  placeholder="Select your birth date"
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="bio"
-                className="text-sm font-medium text-foreground"
-              >
-                Bio
-              </Label>
-              <textarea
-                id="bio"
-                name="bio"
-                value={formData.bio}
-                onChange={handleChange}
-                rows={4}
-                className={cn(
-                  "flex w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none",
-                )}
-                placeholder="Tell us about yourself..."
-              />
-              <p className="text-xs text-muted-foreground">
-                {formData.bio.length}/200 characters
-              </p>
             </div>
           </div>
 
@@ -220,14 +202,10 @@ const EditProfilePage = () => {
             </Button>
             <Button
               type="submit"
-              disabled={saving || uploadingAvatar}
+              disabled={saving}
               className="flex-1 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
             >
-              {uploadingAvatar
-                ? "Uploading photo..."
-                : saving
-                  ? "Saving..."
-                  : "Save Changes"}
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </form>

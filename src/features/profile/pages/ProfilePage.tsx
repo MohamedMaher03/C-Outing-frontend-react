@@ -1,4 +1,13 @@
-import { User, Settings, LogOut, ChevronRight, Palette } from "lucide-react";
+import {
+  Settings,
+  LogOut,
+  ChevronRight,
+  Palette,
+  Phone,
+  Cake,
+  Activity,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +18,7 @@ import { useProfile } from "@/features/profile/hooks/useProfile";
 import { INTEREST_ICON_MAP } from "@/features/profile/mocks";
 import type { PriceLevel } from "@/features/admin/types";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { buildDefaultAvatarDataUrl } from "@/features/profile/utils/defaultAvatar";
 
 const BUDGET_OPTIONS: Array<{ value: PriceLevel; label: string }> = [
   { value: "price_cheapest", label: "Cheapest ($)" },
@@ -18,8 +28,15 @@ const BUDGET_OPTIONS: Array<{ value: PriceLevel; label: string }> = [
   { value: "luxury", label: "Luxury ($$$$$)" },
 ];
 
+const roleLabel = (role: number | undefined): string => {
+  if (role === 2) return "Admin";
+  if (role === 1) return "Moderator";
+  return "User";
+};
+
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("preferences");
   const {
     profile,
     loading,
@@ -36,6 +53,12 @@ const ProfilePage = () => {
     savePreferences,
     handleSignOut,
   } = useProfile();
+
+  const avatarSrc = useMemo(
+    () =>
+      profile?.avatarUrl || buildDefaultAvatarDataUrl(profile?.name || "User"),
+    [profile?.avatarUrl, profile?.name],
+  );
 
   const handleSave = async () => {
     try {
@@ -79,15 +102,11 @@ const ProfilePage = () => {
       {/* Profile Header */}
       <div className="flex items-center gap-4">
         <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
-          {profile?.avatar ? (
-            <img
-              src={profile.avatar}
-              alt="Profile avatar"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <User className="h-8 w-8 text-secondary" />
-          )}
+          <img
+            src={avatarSrc}
+            alt="Profile avatar"
+            className="h-full w-full object-cover"
+          />
         </div>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-foreground">
@@ -96,16 +115,58 @@ const ProfilePage = () => {
           <p className="text-sm text-muted-foreground">
             {profile?.email || "user@couting.app"}
           </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {profile?.bio || ""}
-          </p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+              {roleLabel(profile?.role)}
+            </span>
+            {profile?.isBanned ? (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
+                Banned
+              </span>
+            ) : null}
+          </div>
         </div>
-        <Button variant="ghost" size="icon">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setActiveTab("account")}
+          aria-label="Go to account settings"
+        >
           <Settings className="h-5 w-5" />
         </Button>
       </div>
 
-      <Tabs defaultValue="preferences" className="w-full">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/30 p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Phone className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-wide">Phone</p>
+          </div>
+          <p className="text-sm font-semibold text-foreground mt-2 break-words">
+            {profile?.phoneNumber || "Not set"}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/30 p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Cake className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-wide">Age</p>
+          </div>
+          <p className="text-2xl font-bold text-foreground mt-2 leading-none">
+            {profile?.age ?? "-"}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/30 p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Activity className="h-4 w-4" />
+            <p className="text-xs uppercase tracking-wide">Interactions</p>
+          </div>
+          <p className="text-2xl font-bold text-foreground mt-2 leading-none">
+            {profile?.totalInteractions ?? 0}
+          </p>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full">
           <TabsTrigger value="preferences" className="flex-1">
             Preferences

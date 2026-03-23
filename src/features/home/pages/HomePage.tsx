@@ -139,7 +139,6 @@ const HomePage = () => {
         subText="Finding the best places for you..."
       />
     );
-    // i want log venues ids
   }
 
   if (error) {

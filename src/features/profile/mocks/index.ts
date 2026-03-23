@@ -28,11 +28,19 @@ import type {
 // ============ Mock API Data ============
 
 export const MOCK_PROFILE: UserProfile = {
-  userId: 1,
+  id: "123e4567-e89b-12d3-a456-426614174000",
   name: "Ahmed Khalil",
   email: "ahmed@couting.app",
-  bio: "Food lover | Explorer | Coffee enthusiast",
-  avatar: "https://i.pravatar.cc/150?img=3",
+  phoneNumber: "+20 123 456 7890",
+  birthDate: "1998-07-12T00:00:00.000Z",
+  age: 27,
+  role: 0,
+  totalInteractions: 42,
+  isBanned: false,
+  isEmailVerified: true,
+  avatarUrl: "https://i.pravatar.cc/150?img=3",
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-03-20T10:00:00.000Z",
 };
 
 export const MOCK_PREFERENCES: UserPreferences = {
@@ -45,10 +53,9 @@ export const MOCK_PREFERENCES: UserPreferences = {
 export const MOCK_EDIT_PROFILE: EditProfileData = {
   name: "Ahmed Khalil",
   email: "ahmed@couting.app",
-  phone: "+20 123 456 7890",
-  location: "Cairo, Egypt",
-  bio: "Food lover | Explorer | Coffee enthusiast",
-  avatar: undefined,
+  phoneNumber: "+20 123 456 7890",
+  birthDate: "1998-07-12",
+  avatarUrl: undefined,
 };
 
 export const MOCK_NOTIFICATION_SETTINGS: NotificationSettings = {

@@ -5,11 +5,25 @@
 import type { PriceLevel } from "@/features/admin/types";
 
 export interface UserProfile {
-  userId: number;
+  id: string;
   name: string;
   email: string;
-  avatar?: string;
-  bio?: string;
+  phoneNumber: string;
+  birthDate: string;
+  age: number;
+  role: number;
+  totalInteractions: number;
+  isBanned: boolean;
+  isEmailVerified: boolean;
+  avatarUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateUserProfileRequest {
+  name?: string;
+  phoneNumber?: string;
+  birthDate?: string;
 }
 
 export interface UserPreferences {
@@ -30,10 +44,9 @@ export interface UpdatePreferencesRequest {
 export interface EditProfileData {
   name: string;
   email: string;
-  phone: string;
-  location: string;
-  bio: string;
-  avatar?: string;
+  phoneNumber: string;
+  birthDate: string;
+  avatarUrl?: string;
 }
 
 /** Push + email notification toggles */

@@ -57,6 +57,17 @@ const AUTH_FLOW_PATHS = new Set([
 
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Let the browser set multipart boundaries for FormData payloads.
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+      if (config.headers && typeof config.headers.set === "function") {
+        config.headers.set("Content-Type", undefined);
+      } else if (config.headers) {
+        const headers = config.headers as Record<string, unknown>;
+        delete headers["Content-Type"];
+        delete headers["content-type"];
+      }
+    }
+
     const token = localStorage.getItem("authToken");
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
