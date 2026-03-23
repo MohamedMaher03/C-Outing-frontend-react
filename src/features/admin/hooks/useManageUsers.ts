@@ -8,7 +8,6 @@ import { adminService } from "@/features/admin/services/adminService";
 import type {
   AdminUser,
   AdminUserId,
-  AdminUserRole,
   AdminUserStatus,
 } from "@/features/admin/types";
 import { filterUsers } from "@/features/admin/utils/adminFilters";
@@ -30,10 +29,9 @@ interface UseManageUsersReturn {
   setActionMenu: (userId: AdminUserId | null) => void;
 
   // Actions
-  handleRoleChange: (userId: AdminUserId, role: AdminUserRole) => Promise<void>;
   handleStatusChange: (
     userId: AdminUserId,
-    status: AdminUserStatus,
+    status: Extract<AdminUserStatus, "active" | "banned">,
   ) => Promise<void>;
 }
 
@@ -59,17 +57,9 @@ export const useManageUsers = (): UseManageUsersReturn => {
     loadUsers();
   }, []);
 
-  const handleRoleChange = async (userId: AdminUserId, role: AdminUserRole) => {
-    await adminService.updateUserRole(userId, role);
-    setUsers((prev) =>
-      prev.map((u) => (u.userId === userId ? { ...u, role } : u)),
-    );
-    setActionMenu(null);
-  };
-
   const handleStatusChange = async (
     userId: AdminUserId,
-    status: AdminUserStatus,
+    status: Extract<AdminUserStatus, "active" | "banned">,
   ) => {
     await adminService.updateUserStatus(userId, status);
     setUsers((prev) =>
@@ -91,7 +81,6 @@ export const useManageUsers = (): UseManageUsersReturn => {
     setSearch,
     setRoleFilter,
     setActionMenu,
-    handleRoleChange,
     handleStatusChange,
   };
 };

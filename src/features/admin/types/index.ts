@@ -11,6 +11,9 @@ export interface AdminStats {
   newUsersThisWeek: number;
   pendingReviews: number;
   resolvedReportsThisWeek: number;
+  topCategories?: string[];
+  systemStatus?: string;
+  healthTimestamp?: string;
 }
 
 export type PriceLevel =

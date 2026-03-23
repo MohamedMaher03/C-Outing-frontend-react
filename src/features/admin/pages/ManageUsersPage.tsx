@@ -7,12 +7,10 @@
 
 import {
   Search,
-  Shield,
   ShieldCheck,
   User,
   Ban,
   CheckCircle,
-  AlertTriangle,
   ChevronDown,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -37,7 +35,6 @@ const ManageUsersPage = () => {
     setSearch,
     setRoleFilter,
     setActionMenu,
-    handleRoleChange,
     handleStatusChange,
   } = useManageUsers();
 
@@ -174,31 +171,6 @@ const ManageUsersPage = () => {
                   {actionMenu === user.userId && (
                     <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border rounded-xl shadow-lg z-20 py-2">
                       <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        Change Role
-                      </p>
-                      {(["user", "moderator", "admin"] as const).map((r) => (
-                        <button
-                          key={r}
-                          onClick={() => handleRoleChange(user.userId, r)}
-                          disabled={user.role === r}
-                          className={cn(
-                            "w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors flex items-center gap-2",
-                            user.role === r && "opacity-50 cursor-not-allowed",
-                          )}
-                        >
-                          {r === "admin" ? (
-                            <Shield className="h-3.5 w-3.5 text-red-500" />
-                          ) : r === "moderator" ? (
-                            <ShieldCheck className="h-3.5 w-3.5 text-blue-500" />
-                          ) : (
-                            <User className="h-3.5 w-3.5 text-gray-500" />
-                          )}
-                          {r.charAt(0).toUpperCase() + r.slice(1)}
-                        </button>
-                      ))}
-
-                      <div className="border-t border-border my-1" />
-                      <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                         Status
                       </p>
                       {user.status !== "active" && (
@@ -219,16 +191,6 @@ const ManageUsersPage = () => {
                           className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-red-600"
                         >
                           <Ban className="h-3.5 w-3.5" /> Ban User
-                        </button>
-                      )}
-                      {user.status !== "suspended" && (
-                        <button
-                          onClick={() =>
-                            handleStatusChange(user.userId, "suspended")
-                          }
-                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-amber-600"
-                        >
-                          <AlertTriangle className="h-3.5 w-3.5" /> Suspend
                         </button>
                       )}
                     </div>

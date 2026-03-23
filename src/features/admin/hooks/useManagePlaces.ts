@@ -109,11 +109,18 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     placeId: string,
     status: AdminPlace["status"],
   ) => {
-    await adminService.updatePlaceStatus(placeId, status);
-    setPlaces((prev) =>
-      prev.map((p) => (p.id === placeId ? { ...p, status } : p)),
-    );
-    showToast(`Place status updated to ${status}.`);
+    try {
+      await adminService.updatePlaceStatus(placeId, status);
+      setPlaces((prev) =>
+        prev.map((p) => (p.id === placeId ? { ...p, status } : p)),
+      );
+      showToast(`Place status updated to ${status}.`);
+    } catch {
+      showToast(
+        "Place status change is not available from backend yet.",
+        "info",
+      );
+    }
   };
 
   const handleDelete = async (placeId: string, placeName: string) => {

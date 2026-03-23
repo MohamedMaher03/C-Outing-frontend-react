@@ -26,6 +26,9 @@ const AdminDashboardPage = () => {
     return <LoadingSpinner size="md" text="Loading dashboard..." fullScreen />;
   }
 
+  const isHealthy =
+    (stats.systemStatus ?? "Healthy").toLowerCase() === "healthy";
+
   const statCards = [
     {
       label: "Total Users",
@@ -176,9 +179,21 @@ const AdminDashboardPage = () => {
               <span className="text-sm text-muted-foreground">
                 Server Status
               </span>
-              <span className="text-sm font-medium text-emerald-600 flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Operational
+              <span
+                className={
+                  isHealthy
+                    ? "text-sm font-medium text-emerald-600 flex items-center gap-1"
+                    : "text-sm font-medium text-amber-600 flex items-center gap-1"
+                }
+              >
+                <span
+                  className={
+                    isHealthy
+                      ? "h-2 w-2 rounded-full bg-emerald-500 animate-pulse"
+                      : "h-2 w-2 rounded-full bg-amber-500 animate-pulse"
+                  }
+                />
+                {stats.systemStatus ?? "Unknown"}
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -189,7 +204,9 @@ const AdminDashboardPage = () => {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Uptime</span>
-              <span className="text-sm font-medium text-foreground">99.9%</span>
+              <span className="text-sm font-medium text-foreground">
+                Snapshot: {stats.healthTimestamp ?? "N/A"}
+              </span>
             </div>
           </div>
         </div>

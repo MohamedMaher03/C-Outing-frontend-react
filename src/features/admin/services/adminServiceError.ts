@@ -6,6 +6,11 @@ export const withAdminServiceError = async <T>(
     return await operation();
   } catch (error) {
     console.error(fallbackMessage, error);
-    throw new Error(fallbackMessage);
+    const details = error instanceof Error ? error.message : "";
+    if (!details || details === fallbackMessage) {
+      throw new Error(fallbackMessage);
+    }
+
+    throw new Error(`${fallbackMessage}. ${details}`);
   }
 };

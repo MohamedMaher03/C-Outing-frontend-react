@@ -129,23 +129,17 @@ export const API_ENDPOINTS = {
 
   // ── Admin ─────────────────────────────────────────────────────
   admin: {
-    getStats: "/admin/stats",
-    getRecentActivity: "/admin/activity",
-    getUsers: "/admin/users",
-    updateUserRole: (userId: string) => `/admin/users/${userId}/role`,
-    updateUserStatus: (userId: string) => `/admin/users/${userId}/status`,
-    getPlaces: "/admin/places",
-    addPlace: "/admin/places",
-    updatePlaceStatus: (placeId: string) => `/admin/places/${placeId}/status`,
-    deletePlace: (placeId: string) => `/admin/places/${placeId}`,
-    getReviews: "/admin/reviews",
-    updateReviewStatus: (reviewId: string) =>
-      `/admin/reviews/${reviewId}/status`,
-    deleteReview: (reviewId: string) => `/admin/reviews/${reviewId}`,
-    getCategories: "/admin/categories",
-    updateCategory: (categoryId: string) => `/admin/categories/${categoryId}`,
-    getSettings: "/admin/settings",
-    updateSettings: "/admin/settings",
+    getStats: "/api/v1/Admin/stats",
+    getUsers: "/api/v1/Admin/users",
+    getUserById: (userId: string) => `/api/v1/Admin/users/${userId}`,
+    deleteUser: (userId: string) => `/api/v1/Admin/users/${userId}`,
+    banUser: (userId: string) => `/api/v1/Admin/users/${userId}/ban`,
+    unbanUser: (userId: string) => `/api/v1/Admin/users/${userId}/unban`,
+    getVenues: "/api/v1/Admin/venues",
+    deleteVenue: (venueId: string) => `/api/v1/Admin/venues/${venueId}`,
+    getReportedVenues: "/api/v1/Admin/venues/reported",
+    deleteReview: (reviewId: string) => `/api/v1/Admin/reviews/${reviewId}`,
+    getSystemHealth: "/api/v1/Admin/system/health",
   },
 
   // ── Moderator ────────────────────────────────────────────────

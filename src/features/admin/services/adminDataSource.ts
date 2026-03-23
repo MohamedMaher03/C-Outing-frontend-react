@@ -4,7 +4,6 @@ import type {
   AdminStats,
   AdminUser,
   AdminUserId,
-  AdminUserRole,
   AdminUserStatus,
   AdminPlace,
   AdminReview,
@@ -18,7 +17,6 @@ export interface AdminDataSource {
   getStats: () => Promise<AdminStats>;
   getRecentActivity: () => Promise<RecentActivity[]>;
   getUsers: () => Promise<AdminUser[]>;
-  updateUserRole: (userId: AdminUserId, role: AdminUserRole) => Promise<void>;
   updateUserStatus: (
     userId: AdminUserId,
     status: AdminUserStatus,
@@ -47,7 +45,7 @@ export interface AdminDataSource {
 
 const shouldUseMocks =
   import.meta.env.VITE_ADMIN_USE_MOCKS === undefined
-    ? true
+    ? false
     : import.meta.env.VITE_ADMIN_USE_MOCKS === "true";
 
 export const adminDataSource: AdminDataSource = shouldUseMocks
