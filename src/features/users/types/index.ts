@@ -9,12 +9,16 @@
 export interface PublicUserProfile {
   userId: string;
   name: string;
+  email?: string;
   avatar?: string;
   bio?: string;
   reviewCount: number;
-  joinedDate?: Date;
-  /** Whether the current user is already following this user */
-  isFollowing?: boolean;
+  joinedDate?: string | Date;
+  age?: number;
+  role?: number;
+  totalInteractions?: number;
+  isBanned?: boolean;
+  isEmailVerified?: boolean;
 }
 
 /** A review activity item shown on the public profile page */
@@ -26,7 +30,9 @@ export interface UserReviewActivity {
   placeCategory?: string;
   rating: number;
   comment: string;
-  date: Date;
+  date: string | Date;
+  sentimentScore?: number;
+  userAvatar?: string;
 }
 
 /** Aggregated public stats for the hero section */

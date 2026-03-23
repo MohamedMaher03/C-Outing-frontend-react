@@ -1,57 +1,96 @@
 import type { PublicUserProfile, UserReviewActivity } from "../types";
-//import { userApi } from "../api/userApi";  (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
-import { usersMock as userApi } from "../mocks/usersMock";
+import {
+  userApi,
+  type BackendUserProfileDto,
+  type BackendUserReviewDto,
+} from "../api/userApi";
 
 // ── Public Profile ───────────────────────────────────────────────────────────
 
+const mapProfileDtoToPublicProfile = (
+  dto: BackendUserProfileDto,
+  reviewCount?: number,
+): PublicUserProfile => ({
+  userId: dto.id,
+  name: dto.name,
+  email: dto.email,
+  avatar: dto.avatarUrl,
+  bio: dto.bio,
+  reviewCount: reviewCount ?? 0,
+  joinedDate: dto.createdAt,
+  age: dto.age,
+  role: dto.role,
+  totalInteractions: dto.totalInteractions,
+  isBanned: dto.isBanned,
+  isEmailVerified: dto.isEmailVerified,
+});
+
+const mapReviewDtoToActivity = (dto: BackendUserReviewDto): UserReviewActivity => ({
+  reviewId: dto.id,
+  placeId: dto.venueId,
+  placeName: dto.venueName,
+  rating: dto.rating,
+  comment: dto.comment,
+  date: dto.createdAt,
+  sentimentScore: dto.sentimentScore,
+  userAvatar: dto.userAvatar,
+});
+
+interface PublicProfileBundle {
+  profile: PublicUserProfile;
+  reviews: UserReviewActivity[];
+}
+
 /**
- * Fetch a public profile by userId.
- * The `currentUserId` is passed so the service can flag own-profile views.
+ * Fetches public profile data + recent reviews with backend-aware fallbacks.
+ *
+ * For own profile, uses /api/v1/User/profile.
+ * For any user, uses /api/v1/Review/user/{userId} for review activity.
+ * If dedicated public-profile-by-id is not available yet, review payload is
+ * used as a graceful profile fallback for public pages.
  */
-export const getPublicProfile = async (
+export const getPublicProfileBundle = async (
   userId: string,
   currentUserId?: string,
-): Promise<PublicUserProfile> => {
+): Promise<PublicProfileBundle> => {
   try {
-    const profile = await userApi.getPublicProfile(userId, currentUserId);
-    return profile;
+    const reviewsResult = await userApi.getUserReviews(userId, 1, 10);
+    const reviews = reviewsResult.items.map(mapReviewDtoToActivity);
+
+    if (currentUserId && currentUserId === userId) {
+      const ownProfile = await userApi.getCurrentProfile();
+      return {
+        profile: mapProfileDtoToPublicProfile(ownProfile, reviewsResult.totalCount),
+        reviews,
+      };
+    }
+
+    try {
+      const publicProfile = await userApi.getPublicProfile(userId);
+      return {
+        profile: mapProfileDtoToPublicProfile(
+          publicProfile,
+          reviewsResult.totalCount,
+        ),
+        reviews,
+      };
+    } catch {
+      const fallbackName = reviewsResult.items[0]?.userName ?? "Outing User";
+      const fallbackAvatar = reviewsResult.items[0]?.userAvatar;
+
+      return {
+        profile: {
+          userId,
+          name: fallbackName,
+          avatar: fallbackAvatar,
+          reviewCount: reviewsResult.totalCount,
+          joinedDate: undefined,
+        },
+        reviews,
+      };
+    }
   } catch (error) {
-    console.error("Error fetching public profile:", error);
+    console.error("Error fetching public profile bundle:", error);
     throw new Error("Failed to load public profile");
-  }
-};
-
-// ── User Reviews ─────────────────────────────────────────────────────────────
-
-/** Fetch the recent review activity for a given user */
-export const getUserReviews = async (
-  userId: string,
-): Promise<UserReviewActivity[]> => {
-  try {
-    const reviews = await userApi.getUserReviews(userId);
-    return reviews;
-  } catch (error) {
-    console.error("Error fetching user reviews:", error);
-    throw new Error("Failed to load user reviews");
-  }
-};
-
-// ── Follow / Unfollow ────────────────────────────────────────────────────────
-
-/**
- * Toggle follow status.
- * The mock simply flips isFollowing in memory; the real backend
- * manages the social graph.
- */
-export const toggleFollow = async (
-  userId: string,
-  currentlyFollowing: boolean,
-): Promise<{ isFollowing: boolean }> => {
-  try {
-    const response = await userApi.follow(userId, currentlyFollowing);
-    return response;
-  } catch (error) {
-    console.error("Error toggling follow status:", error);
-    throw new Error("Failed to update follow status");
   }
 };

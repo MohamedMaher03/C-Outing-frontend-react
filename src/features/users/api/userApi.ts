@@ -1,61 +1,86 @@
 /**
  * Users API Layer
  *
- * Pure HTTP functions for the public users endpoints.
+ * Pure HTTP functions for the users/public profile endpoints.
  * Uses the shared axiosInstance so the auth token is injected automatically.
- *
- * ⚠️  CURRENTLY UNUSED — userService.ts uses mock data.
- *     Uncomment these calls in the service when the backend is ready.
  */
 
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
-import type { PublicUserProfile, UserReviewActivity } from "../types";
+import type { PaginatedResponse } from "@/types";
+
+export interface BackendUserProfileDto {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  birthDate: string;
+  age: number;
+  role: number;
+  totalInteractions: number;
+  isBanned: boolean;
+  isEmailVerified: boolean;
+  avatarUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+  bio?: string;
+}
+
+export interface BackendUserReviewDto {
+  id: string;
+  venueId: string;
+  venueName: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  comment: string;
+  rating: number;
+  sentimentScore: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // NOTE: All axiosInstance calls below use `T` as the generic (not `ApiResponse<T>`).
 // The axiosInstance response interceptor automatically unwraps the
 // { success, data: T, message } envelope, so response.data IS T directly.
 
 export const userApi = {
   /**
-   * GET /users/me
-   * Returns the authenticated user's own public-facing profile snapshot.
+   * GET /api/v1/User/profile
+   * Returns the authenticated current user's profile payload.
    */
-  async getMe(): Promise<PublicUserProfile> {
-    const { data } = await axiosInstance.get<PublicUserProfile>(
-      API_ENDPOINTS.users.getMe,
+  async getCurrentProfile(): Promise<BackendUserProfileDto> {
+    const { data } = await axiosInstance.get<BackendUserProfileDto>(
+      API_ENDPOINTS.profile.getCurrentProfile,
     );
     return data;
   },
 
   /**
-   * GET /users/:id
-   * Returns the public profile for any user by ID.
+   * GET /api/v1/User/{userId}/profile
+   * Public profile endpoint for another user (pending backend confirmation).
    */
-  async getPublicProfile(userId: string): Promise<PublicUserProfile> {
-    const { data } = await axiosInstance.get<PublicUserProfile>(
+  async getPublicProfile(userId: string): Promise<BackendUserProfileDto> {
+    const { data } = await axiosInstance.get<BackendUserProfileDto>(
       API_ENDPOINTS.users.getPublicProfile(userId),
     );
     return data;
   },
 
   /**
-   * GET /users/:id/reviews
+   * GET /api/v1/Review/user/{userId}
    * Returns the recent review activity for the given user.
    */
-  async getUserReviews(userId: string): Promise<UserReviewActivity[]> {
-    const { data } = await axiosInstance.get<UserReviewActivity[]>(
+  async getUserReviews(
+    userId: string,
+    pageIndex = 1,
+    pageSize = 10,
+  ): Promise<PaginatedResponse<BackendUserReviewDto>> {
+    const { data } = await axiosInstance.get<PaginatedResponse<BackendUserReviewDto>>(
       API_ENDPOINTS.users.getReviews(userId),
-    );
-    return data;
-  },
-
-  /**
-   * POST /users/:id/follow
-   * Toggle follow status for another user.
-   */
-  async follow(userId: string): Promise<{ isFollowing: boolean }> {
-    const { data } = await axiosInstance.post<{ isFollowing: boolean }>(
-      API_ENDPOINTS.users.follow(userId),
+      {
+        params: { pageIndex, pageSize },
+      },
     );
     return data;
   },

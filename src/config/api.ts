@@ -27,9 +27,9 @@ export const API_ENDPOINTS = {
     getPreferences: (userId: string) => `/users/${userId}/preferences`,
     updatePreferences: (userId: string) => `/users/${userId}/preferences`,
     // Public-user endpoints (used by features/users)
-    getPublicProfile: (userId: string) => `/users/${userId}`,
-    getReviews: (userId: string) => `/users/${userId}/reviews`,
-    follow: (userId: string) => `/users/${userId}/follow`,
+    // NOTE: public profile by userId is currently pending backend confirmation.
+    getPublicProfile: (userId: string) => `/api/v1/User/${userId}/profile`,
+    getReviews: (userId: string) => `/api/v1/Review/user/${userId}`,
   },
 
   profile: {

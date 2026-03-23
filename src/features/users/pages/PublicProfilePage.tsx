@@ -17,8 +17,11 @@ import {
   Star,
   MapPin,
   CalendarDays,
-  UserCheck,
-  UserPlus,
+  Mail,
+  BadgeCheck,
+  ShieldAlert,
+  Activity,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -52,6 +55,19 @@ function StatPill({ value, label }: { value: string | number; label: string }) {
   );
 }
 
+function roleLabel(role?: number): string {
+  switch (role) {
+    case 1:
+      return "User";
+    case 2:
+      return "Moderator";
+    case 3:
+      return "Admin";
+    default:
+      return "Member";
+  }
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 const PublicProfilePage = () => {
@@ -62,10 +78,9 @@ const PublicProfilePage = () => {
     profile,
     reviews,
     loading,
-    followLoading,
     error,
     isOwnProfile,
-    follow,
+    reload,
   } = usePublicProfile(id ?? "");
 
   // ── Loading ──────────────────────────────
@@ -97,6 +112,10 @@ const PublicProfilePage = () => {
     ? new Date(profile.joinedDate).getFullYear()
     : null;
 
+  const safeAge = typeof profile.age === "number" ? profile.age : null;
+  const hasVerifiedEmail = !!profile.isEmailVerified;
+  const isBanned = !!profile.isBanned;
+
   return (
     <div className="max-w-2xl mx-auto pb-10">
       {/* ── Back nav ─────────────────────────────────────────── */}
@@ -111,10 +130,14 @@ const PublicProfilePage = () => {
       </div>
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <div className="relative mt-4 mx-4 rounded-2xl overflow-hidden bg-gradient-to-br from-primary to-[hsl(var(--navy-light))] p-6 text-primary-foreground">
+      <div className="relative mt-4 mx-4 rounded-2xl overflow-hidden bg-gradient-to-br from-primary via-[hsl(var(--navy-light))] to-primary p-6 text-primary-foreground shadow-xl">
         {/* subtle decorative circles */}
         <div className="absolute -top-8 -right-8 h-40 w-40 rounded-full bg-white/5" />
         <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-white/5" />
+        <div className="absolute top-6 right-6 hidden sm:flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-wide uppercase">
+          <Sparkles className="h-3.5 w-3.5" />
+          Public Profile
+        </div>
 
         <div className="relative flex items-start gap-4">
           {/* Avatar */}
@@ -137,10 +160,38 @@ const PublicProfilePage = () => {
             <h1 className="text-xl font-bold leading-tight truncate">
               {profile.name}
             </h1>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-1 font-medium">
+                {roleLabel(profile.role)}
+              </span>
+              {safeAge !== null && (
+                <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-1 font-medium">
+                  Age {safeAge}
+                </span>
+              )}
+              {hasVerifiedEmail && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-300/20 px-2.5 py-1 font-medium">
+                  <BadgeCheck className="h-3 w-3" />
+                  Verified
+                </span>
+              )}
+              {isBanned && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-red-300/20 px-2.5 py-1 font-medium">
+                  <ShieldAlert className="h-3 w-3" />
+                  Restricted
+                </span>
+              )}
+            </div>
             {joinedYear && (
               <div className="flex items-center gap-1 mt-0.5 text-primary-foreground/70 text-xs">
                 <CalendarDays className="h-3 w-3" />
                 <span>Member since {joinedYear}</span>
+              </div>
+            )}
+            {profile.email && (
+              <div className="mt-1 flex items-center gap-1 text-primary-foreground/75 text-xs truncate">
+                <Mail className="h-3 w-3" />
+                <span className="truncate">{profile.email}</span>
               </div>
             )}
             {profile.bio && (
@@ -157,42 +208,9 @@ const PublicProfilePage = () => {
           <div className="h-8 w-px bg-white/20" />
           <StatPill value={reviews.length} label="Recent" />
           <div className="h-8 w-px bg-white/20" />
-          <StatPill
-            value={
-              isOwnProfile ? "You" : profile.isFollowing ? "Following" : "—"
-            }
-            label="Status"
-          />
+          <StatPill value={profile.totalInteractions ?? "—"} label="Interactions" />
         </div>
       </div>
-
-      {/* ── Follow button (not shown on own profile) ──────────── */}
-      {!isOwnProfile && (
-        <div className="px-4 mt-4">
-          <Button
-            onClick={follow}
-            disabled={followLoading}
-            variant={profile.isFollowing ? "outline" : "default"}
-            className={`w-full font-semibold gap-2 transition-all ${
-              profile.isFollowing
-                ? "border-secondary text-secondary hover:bg-secondary/10"
-                : "bg-primary text-primary-foreground hover:bg-[hsl(var(--navy-light))]"
-            }`}
-          >
-            {profile.isFollowing ? (
-              <>
-                <UserCheck className="h-4 w-4" />
-                {followLoading ? "Updating…" : "Following"}
-              </>
-            ) : (
-              <>
-                <UserPlus className="h-4 w-4" />
-                {followLoading ? "Updating…" : "Follow"}
-              </>
-            )}
-          </Button>
-        </div>
-      )}
 
       {/* ── Own profile CTA ─────────────────────────────────── */}
       {isOwnProfile && (
@@ -206,6 +224,23 @@ const PublicProfilePage = () => {
               View your full profile
             </Button>
           </Link>
+        </div>
+      )}
+
+      {!isOwnProfile && (
+        <div className="px-4 mt-4">
+          <div className="rounded-xl border border-border bg-card p-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Community activity snapshot</p>
+              <p className="text-xs text-muted-foreground">
+                This page is powered by profile + review history from backend.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => void reload()} className="gap-1.5">
+              <Activity className="h-3.5 w-3.5" />
+              Refresh
+            </Button>
+          </div>
         </div>
       )}
 
@@ -234,11 +269,6 @@ const PublicProfilePage = () => {
                   <span className="text-sm font-semibold text-foreground truncate">
                     {r.placeName}
                   </span>
-                  {r.placeCategory && (
-                    <span className="hidden sm:inline-flex text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary font-medium flex-shrink-0">
-                      {r.placeCategory}
-                    </span>
-                  )}
                 </div>
                 <StarRow rating={r.rating} />
               </div>
@@ -247,6 +277,12 @@ const PublicProfilePage = () => {
               <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
                 {r.comment}
               </p>
+
+              {typeof r.sentimentScore === "number" && (
+                <div className="inline-flex rounded-full bg-secondary/10 px-2.5 py-1 text-[11px] font-semibold text-secondary">
+                  Sentiment score: {r.sentimentScore.toFixed(1)}
+                </div>
+              )}
 
               {/* Date */}
               <p className="text-xs text-muted-foreground/60">

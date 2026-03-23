@@ -18,18 +18,14 @@ const delay = (ms: number): Promise<void> =>
 export const usersMock = {
   async getPublicProfile(
     userId: string,
-    currentUserId?: string,
+    _currentUserId?: string,
   ): Promise<PublicUserProfile> {
     await delay(500);
     const profile = MOCK_PUBLIC_PROFILES[userId];
     if (!profile) {
       throw new Error("Profile not found");
     }
-    return {
-      ...profile,
-      // Own profile never shows a "Follow" button — isFollowing stays undefined
-      ...(userId === currentUserId ? { isFollowing: undefined } : {}),
-    };
+    return profile;
   },
 
   /**
@@ -38,20 +34,5 @@ export const usersMock = {
   async getUserReviews(userId: string): Promise<UserReviewActivity[]> {
     await delay(300);
     return MOCK_USER_REVIEWS[userId] ?? [];
-  },
-
-  async follow(
-    userId: string,
-    currentlyFollowing: boolean,
-  ): Promise<{ isFollowing: boolean }> {
-    await delay(300);
-
-    // Mutate mock store so the UI stays consistent across re-renders
-    const profile = MOCK_PUBLIC_PROFILES[userId];
-    if (profile) {
-      profile.isFollowing = !currentlyFollowing;
-    }
-
-    return { isFollowing: !currentlyFollowing };
   },
 };

@@ -13,7 +13,6 @@ export const MOCK_PUBLIC_PROFILES: Record<string, PublicUserProfile> = {
     bio: "Cairo explorer | Coffee addict | Always looking for the next hidden gem.",
     reviewCount: 12,
     joinedDate: new Date("2024-03-10"),
-    isFollowing: false,
   },
   u2: {
     userId: "u2",
@@ -21,7 +20,6 @@ export const MOCK_PUBLIC_PROFILES: Record<string, PublicUserProfile> = {
     bio: "Food blogger & weekend adventurer. Sharing the best spots in Egypt.",
     reviewCount: 8,
     joinedDate: new Date("2024-06-01"),
-    isFollowing: true,
   },
   u3: {
     userId: "u3",
@@ -29,7 +27,6 @@ export const MOCK_PUBLIC_PROFILES: Record<string, PublicUserProfile> = {
     bio: "Photography enthusiast. I visit places to capture golden-hour moments.",
     reviewCount: 21,
     joinedDate: new Date("2023-11-20"),
-    isFollowing: false,
   },
   u4: {
     userId: "u4",
@@ -37,7 +34,6 @@ export const MOCK_PUBLIC_PROFILES: Record<string, PublicUserProfile> = {
     bio: "Discovering Cairo one neighbourhood at a time.",
     reviewCount: 5,
     joinedDate: new Date("2025-01-05"),
-    isFollowing: false,
   },
 };
 
