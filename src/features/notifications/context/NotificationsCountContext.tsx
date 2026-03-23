@@ -15,22 +15,10 @@
  * └────────────────────────────────────────────────────────────┘
  */
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import { getNotifications } from "@/features/notifications/services/notificationsService";
-
-// ── Context type ─────────────────────────────────────────────
-
-interface NotificationsCountContextType {
-  unreadCount: number;
-  setUnreadCount: (count: number) => void;
-}
-
-// ── Context ──────────────────────────────────────────────────
-
-const NotificationsCountContext = createContext<
-  NotificationsCountContextType | undefined
->(undefined);
+import { notificationsService } from "@/features/notifications/services/notificationsService";
+import { NotificationsCountContext } from "./notificationsCount.context";
 
 // ── Provider ─────────────────────────────────────────────────
 
@@ -44,8 +32,9 @@ export function NotificationsCountProvider({
   // Fetch the initial unread count on mount so the bell badge is correct
   // on every page, not just after visiting NotificationsPage.
   useEffect(() => {
-    getNotifications()
-      .then((data) => setUnreadCount(data.unreadCount))
+    notificationsService
+      .getUnreadCount()
+      .then((count) => setUnreadCount(count))
       .catch(() => {
         // Silently ignore — the badge will just stay at 0
       });
@@ -56,20 +45,4 @@ export function NotificationsCountProvider({
       {children}
     </NotificationsCountContext.Provider>
   );
-}
-
-// ── Hook ─────────────────────────────────────────────────────
-
-/**
- * useNotificationsCount — read or update the global unread badge count.
- * Must be used inside NotificationsCountProvider.
- */
-export function useNotificationsCount(): NotificationsCountContextType {
-  const ctx = useContext(NotificationsCountContext);
-  if (ctx === undefined) {
-    throw new Error(
-      "useNotificationsCount must be used within NotificationsCountProvider",
-    );
-  }
-  return ctx;
 }

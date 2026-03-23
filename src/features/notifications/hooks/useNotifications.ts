@@ -6,13 +6,8 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  getNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-  deleteNotification,
-} from "@/features/notifications/services/notificationsService";
-import { useNotificationsCount } from "@/features/notifications/context/NotificationsCountContext";
+import { notificationsService } from "@/features/notifications/services/notificationsService";
+import { useNotificationsCount } from "@/features/notifications/hooks/useNotificationsCount";
 import type { Notification } from "@/features/notifications/types";
 import { getErrorMessage } from "@/utils/apiError";
 
@@ -62,37 +57,50 @@ export const useNotifications = (): UseNotificationsReturn => {
     [setGlobalUnreadCount],
   );
 
+  const getUnreadCountFromList = useCallback(
+    (list: Notification[]) =>
+      list.filter((notification) => !notification.isRead).length,
+    [],
+  );
+
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getNotifications();
-      setNotifications(data.notifications);
-      syncCount(data.unreadCount);
+      const [data, unread] = await Promise.all([
+        notificationsService.getNotifications(),
+        notificationsService.getUnreadCount(),
+      ]);
+      setNotifications(data.items ?? []);
+      syncCount(unread ?? 0);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load notifications"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [syncCount]);
 
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
 
   const markAsRead = async (id: string) => {
-    const target = notifications.find((n) => n.id === id);
+    const target = notifications.find((notification) => notification.id === id);
     if (!target || target.isRead) return;
 
     // Optimistic update
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-    );
-    const newCount = Math.max(0, unreadCount - 1);
-    syncCount(newCount);
+    setNotifications((prev) => {
+      const next = prev.map((notification) =>
+        notification.id === id
+          ? { ...notification, isRead: true }
+          : notification,
+      );
+      syncCount(getUnreadCountFromList(next));
+      return next;
+    });
 
     try {
-      await markNotificationAsRead(id);
+      await notificationsService.markAsRead(id);
     } catch {
       // Revert on failure
       await fetchNotifications();
@@ -101,27 +109,32 @@ export const useNotifications = (): UseNotificationsReturn => {
 
   const markAllRead = async () => {
     // Optimistic update
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    syncCount(0);
+    setNotifications((prev) => {
+      const next = prev.map((notification) => ({
+        ...notification,
+        isRead: true,
+      }));
+      syncCount(getUnreadCountFromList(next));
+      return next;
+    });
 
     try {
-      await markAllNotificationsAsRead();
+      await notificationsService.markAllAsRead();
     } catch {
       await fetchNotifications();
     }
   };
 
   const removeNotification = async (id: string) => {
-    const removed = notifications.find((n) => n.id === id);
-
     // Optimistic update
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    if (removed && !removed.isRead) {
-      syncCount(Math.max(0, unreadCount - 1));
-    }
+    setNotifications((prev) => {
+      const next = prev.filter((notification) => notification.id !== id);
+      syncCount(getUnreadCountFromList(next));
+      return next;
+    });
 
     try {
-      await deleteNotification(id);
+      await notificationsService.deleteNotification(id);
     } catch {
       await fetchNotifications();
     }

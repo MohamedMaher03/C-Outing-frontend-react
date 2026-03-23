@@ -2,89 +2,70 @@
  * Notifications Service — Business Logic Layer
  *
  * Sits between hooks/components and the HTTP layer (notificationsApi).
- * Responsibilities:
- *   • Call notificationsApi functions
- *   • Transform DTOs to UI models if needed
- *   • Centralise error handling
- *
- * ┌──────────────────────────────────────────────────────────────────────┐
- * │  useNotifications  →  notificationsService  →  notificationsApi     │
- * └──────────────────────────────────────────────────────────────────────┘
- *
- * 🔧 To use the real API, swap the import:
- *   import { notificationsApi } from "../api/notificationsApi";
+ * This layer is intentionally framework-agnostic (no React imports).
  */
 
-// import { notificationsApi } from "../api/notificationsApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS)
-import { notificationsMock as notificationsApi } from "../mocks/notificationsMock";
+import { notificationsApi } from "../api/notificationsApi";
 import type {
+  Notification,
+  NotificationsQueryParams,
   NotificationsResponse,
   NotificationActionResponse,
 } from "../types";
 
-// ── Notifications Service ────────────────────────────────────
+const DEFAULT_FEED_PARAMS: Required<NotificationsQueryParams> = {
+  pageIndex: 1,
+  pageSize: 50,
+};
+
+function normalizeNotifications(items: Notification[]): Notification[] {
+  // Keep a stable newest-first ordering for all consumers.
+  return [...items].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+}
 
 export const notificationsService = {
-  /**
-   * Fetch the notification feed for the current user.
-   */
-  async getNotifications(): Promise<NotificationsResponse> {
-    try {
-      return await notificationsApi.getNotifications();
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-      throw new Error("Failed to load notifications");
-    }
+  defaultFeedParams: DEFAULT_FEED_PARAMS,
+
+  async getNotifications(
+    params?: NotificationsQueryParams,
+  ): Promise<NotificationsResponse> {
+    const response = await notificationsApi.getNotifications({
+      ...DEFAULT_FEED_PARAMS,
+      ...params,
+    });
+
+    return {
+      ...response,
+      items: normalizeNotifications(response.items ?? []),
+    };
   },
 
-  /**
-   * Mark a single notification as read.
-   */
+  async getUnreadCount(): Promise<number> {
+    return notificationsApi.getUnreadCount();
+  },
+
   async markAsRead(
     notificationId: string,
   ): Promise<NotificationActionResponse> {
-    try {
-      return await notificationsApi.markAsRead(notificationId);
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-      throw new Error("Failed to mark notification as read");
-    }
+    return notificationsApi.markAsRead(notificationId);
   },
 
-  /**
-   * Mark all notifications as read.
-   */
   async markAllAsRead(): Promise<NotificationActionResponse> {
-    try {
-      return await notificationsApi.markAllAsRead();
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-      throw new Error("Failed to mark all notifications as read");
-    }
+    return notificationsApi.markAllAsRead();
   },
 
-  /**
-   * Delete a single notification.
-   */
   async deleteNotification(
     notificationId: string,
   ): Promise<NotificationActionResponse> {
-    try {
-      return await notificationsApi.deleteNotification(notificationId);
-    } catch (error) {
-      console.error("Error deleting notification:", error);
-      throw new Error("Failed to delete notification");
-    }
+    return notificationsApi.deleteNotification(notificationId);
   },
 };
 
-// ── Named exports for direct hook consumption ────────────────
-
-export const getNotifications =
-  notificationsService.getNotifications.bind(notificationsService);
-export const markNotificationAsRead =
-  notificationsService.markAsRead.bind(notificationsService);
-export const markAllNotificationsAsRead =
-  notificationsService.markAllAsRead.bind(notificationsService);
-export const deleteNotification =
-  notificationsService.deleteNotification.bind(notificationsService);
+// Named exports kept for backward compatibility.
+export const getNotifications = notificationsService.getNotifications;
+export const getUnreadNotificationsCount = notificationsService.getUnreadCount;
+export const markNotificationAsRead = notificationsService.markAsRead;
+export const markAllNotificationsAsRead = notificationsService.markAllAsRead;
+export const deleteNotification = notificationsService.deleteNotification;

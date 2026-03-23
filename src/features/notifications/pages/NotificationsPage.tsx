@@ -3,49 +3,7 @@ import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import NotificationItem from "../components/NotificationItem";
 import { useNotifications } from "../hooks/useNotifications";
-import type { Notification } from "../types";
-
-// ── Date grouping logic ──────────────────────────────────────
-
-type DateGroup = "Today" | "Yesterday" | "Earlier";
-
-function getDateGroup(date: Date): DateGroup {
-  const now = new Date();
-  const itemDate = new Date(date);
-
-  const isToday =
-    itemDate.getDate() === now.getDate() &&
-    itemDate.getMonth() === now.getMonth() &&
-    itemDate.getFullYear() === now.getFullYear();
-
-  if (isToday) return "Today";
-
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  const isYesterday =
-    itemDate.getDate() === yesterday.getDate() &&
-    itemDate.getMonth() === yesterday.getMonth() &&
-    itemDate.getFullYear() === yesterday.getFullYear();
-
-  if (isYesterday) return "Yesterday";
-
-  return "Earlier";
-}
-
-function groupNotificationsByDate(
-  notifications: Notification[],
-): [DateGroup, Notification[]][] {
-  const groups: Partial<Record<DateGroup, Notification[]>> = {};
-
-  for (const n of notifications) {
-    const key = getDateGroup(new Date(n.createdAt));
-    if (!groups[key]) groups[key] = [];
-    groups[key]!.push(n);
-  }
-
-  const ORDER: DateGroup[] = ["Today", "Yesterday", "Earlier"];
-  return ORDER.filter((k) => groups[k]).map((k) => [k, groups[k]!]);
-}
+import { groupNotificationsByDate } from "../utils/notificationPresentation";
 
 // ── Page ─────────────────────────────────────────────────────
 

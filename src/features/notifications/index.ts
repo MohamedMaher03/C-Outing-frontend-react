@@ -5,12 +5,10 @@
 // Hooks
 export { useNotifications } from "./hooks/useNotifications";
 export type { NotificationFilterTab } from "./hooks/useNotifications";
+export { useNotificationsCount } from "./hooks/useNotificationsCount";
 
 // Context
-export {
-  NotificationsCountProvider,
-  useNotificationsCount,
-} from "./context/NotificationsCountContext";
+export { NotificationsCountProvider } from "./context/NotificationsCountContext";
 
 // API layer (exposed for advanced usage / testing)
 export { notificationsApi } from "./api/notificationsApi";
@@ -19,10 +17,17 @@ export { notificationsApi } from "./api/notificationsApi";
 export {
   notificationsService,
   getNotifications,
+  getUnreadNotificationsCount,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
 } from "./services/notificationsService";
+
+// Shared presentation helpers
+export {
+  groupNotificationsByDate,
+  formatRelativeNotificationTime,
+} from "./utils/notificationPresentation";
 
 // Components
 export { default as NotificationBell } from "./components/NotificationBell";
@@ -32,6 +37,7 @@ export { default as NotificationItem } from "./components/NotificationItem";
 export type {
   Notification,
   NotificationType,
+  NotificationsQueryParams,
   NotificationsResponse,
   NotificationActionResponse,
 } from "./types";

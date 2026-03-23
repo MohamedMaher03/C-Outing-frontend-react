@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatRelativeNotificationTime } from "../utils/notificationPresentation";
 import type { Notification, NotificationType } from "../types";
 
 // ── Type → visual config ─────────────────────────────────────
@@ -57,27 +58,16 @@ const TYPE_CONFIG: Record<
   },
 };
 
-// ── Relative time helper ─────────────────────────────────────
-
-function formatRelativeTime(date: Date): string {
-  const diffMs = Date.now() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
-  const diffD = Math.floor(diffH / 24);
-  if (diffD === 1) return "Yesterday";
-  if (diffD < 7) return `${diffD}d ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function getTypeConfig(type: string) {
+  return TYPE_CONFIG[type as NotificationType] ?? TYPE_CONFIG.system;
 }
 
 // ── Component ────────────────────────────────────────────────
 
 interface NotificationItemProps {
   notification: Notification;
-  onMarkRead: (id: string) => void;
-  onDelete: (id: string) => void;
+  onMarkRead: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
 const NotificationItem = ({
@@ -86,11 +76,11 @@ const NotificationItem = ({
   onDelete,
 }: NotificationItemProps) => {
   const navigate = useNavigate();
-  const { icon: Icon, iconClass, bgClass } = TYPE_CONFIG[notification.type];
+  const { icon: Icon, iconClass, bgClass } = getTypeConfig(notification.type);
 
   const handleClick = () => {
     if (!notification.isRead) {
-      onMarkRead(notification.id);
+      void onMarkRead(notification.id);
     }
     if (notification.actionUrl) {
       navigate(notification.actionUrl);
@@ -99,7 +89,7 @@ const NotificationItem = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onDelete(notification.id);
+    void onDelete(notification.id);
   };
 
   return (
@@ -143,10 +133,10 @@ const NotificationItem = ({
           {notification.title}
         </p>
         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-          {notification.body}
+          {notification.message}
         </p>
         <p className="text-[11px] text-muted-foreground/70 pt-1">
-          {formatRelativeTime(new Date(notification.createdAt))}
+          {formatRelativeNotificationTime(new Date(notification.createdAt))}
         </p>
       </div>
 

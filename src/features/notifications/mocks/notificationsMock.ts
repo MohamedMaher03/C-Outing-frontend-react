@@ -21,18 +21,18 @@ import type {
 const now = new Date();
 
 const todayMinus = (minutes: number) =>
-  new Date(now.getTime() - 1000 * 60 * minutes);
+  new Date(now.getTime() - 1000 * 60 * minutes).toISOString();
 
 const yesterdayMinus = (hours: number) => {
   const d = new Date(now);
   d.setDate(now.getDate() - 1);
-  return new Date(d.getTime() - 1000 * 60 * 60 * hours);
+  return new Date(d.getTime() - 1000 * 60 * 60 * hours).toISOString();
 };
 
 const earlierMinus = (days: number) => {
   const d = new Date(now);
   d.setDate(now.getDate() - days);
-  return d;
+  return d.toISOString();
 };
 
 export const MOCK_NOTIFICATIONS: Notification[] = [
@@ -41,7 +41,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "n1",
     type: "recommendation",
     title: "New place just for you 🌟",
-    body: "Based on your vibe settings, you might love Ovio Rooftop in Zamalek. Check it out before it gets crowded!",
+    message:
+      "Based on your vibe settings, you might love Ovio Rooftop in Zamalek. Check it out before it gets crowded!",
     isRead: false,
     createdAt: todayMinus(25),
     actionUrl: "/venue/ovio-rooftop",
@@ -50,7 +51,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "n2",
     type: "like",
     title: "Ahmed liked your review",
-    body: "Your review on Sequoia Restaurant was liked by Ahmed Hassan.",
+    message: "Your review on Sequoia Restaurant was liked by Ahmed Hassan.",
     isRead: false,
     createdAt: todayMinus(90),
     actionUrl: "/venue/sequoia",
@@ -59,7 +60,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "n3",
     type: "review_response",
     title: "New reply on your review",
-    body: 'The owner of Cairo Jazz Club replied: "Thank you for your kind words! We look forward to seeing you again."',
+    message:
+      'The owner of Cairo Jazz Club replied: "Thank you for your kind words! We look forward to seeing you again."',
     isRead: false,
     createdAt: todayMinus(180),
     actionUrl: "/venue/cairo-jazz-club",
@@ -69,7 +71,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "n4",
     type: "favorite_update",
     title: "Sequoia updated its hours",
-    body: "A place you saved has changed its opening hours. Now open until 2:00 AM on weekends.",
+    message:
+      "A place you saved has changed its opening hours. Now open until 2:00 AM on weekends.",
     isRead: true,
     createdAt: yesterdayMinus(2),
     actionUrl: "/venue/sequoia",
@@ -78,7 +81,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "n5",
     type: "new_place",
     title: "New spot in Zamalek! 🗺️",
-    body: "BABEL Rooftop & Lounge just opened nearby and matches your weekend vibe perfectly.",
+    message:
+      "BABEL Rooftop & Lounge just opened nearby and matches your weekend vibe perfectly.",
     isRead: false,
     createdAt: yesterdayMinus(5),
     actionUrl: "/venue/babel-rooftop",
@@ -87,7 +91,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "n6",
     type: "like",
     title: "3 people liked your review",
-    body: "Your review on Kazoku Sushi received 3 new likes in the last 24 hours.",
+    message:
+      "Your review on Kazoku Sushi received 3 new likes in the last 24 hours.",
     isRead: true,
     createdAt: yesterdayMinus(9),
     actionUrl: "/venue/kazoku-sushi",
@@ -97,7 +102,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "n7",
     type: "system",
     title: "Welcome to C-Outing 2.0! 🎉",
-    body: "We've launched AI-powered recommendations, a refreshed design, and smarter search. Explore what's new!",
+    message:
+      "We've launched AI-powered recommendations, a refreshed design, and smarter search. Explore what's new!",
     isRead: true,
     createdAt: earlierMinus(4),
     actionUrl: undefined,
@@ -106,7 +112,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "n8",
     type: "recommendation",
     title: "5 weekend places picked for you",
-    body: "Friday evening hotspots are trending in Maadi. Tap to see your curated weekend list.",
+    message:
+      "Friday evening hotspots are trending in Maadi. Tap to see your curated weekend list.",
     isRead: true,
     createdAt: earlierMinus(5),
     actionUrl: "/",
@@ -115,7 +122,8 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     id: "n9",
     type: "favorite_update",
     title: "Kazoku Sushi is now fully booked",
-    body: "A saved place of yours has no available slots this weekend. Consider exploring similar spots.",
+    message:
+      "A saved place of yours has no available slots this weekend. Consider exploring similar spots.",
     isRead: true,
     createdAt: earlierMinus(6),
     actionUrl: "/venue/kazoku-sushi",
@@ -140,11 +148,31 @@ export const notificationsMock = {
    */
   async getNotifications(): Promise<NotificationsResponse> {
     await delay(600);
-    const unreadCount = mockNotifications.filter((n) => !n.isRead).length;
     return {
-      notifications: [...mockNotifications],
-      unreadCount,
+      items: [...mockNotifications],
+      pageIndex: 1,
+      pageSize: mockNotifications.length,
+      totalCount: mockNotifications.length,
+      totalPages: 1,
+      hasPreviousPage: false,
+      hasNextPage: false,
     };
+  },
+
+  /**
+   * Mock GET /api/v1/Notification/unread
+   */
+  async getUnreadNotifications(): Promise<Notification[]> {
+    await delay(250);
+    return mockNotifications.filter((n) => !n.isRead);
+  },
+
+  /**
+   * Mock GET /api/v1/Notification/unread-count
+   */
+  async getUnreadCount(): Promise<number> {
+    await delay(150);
+    return mockNotifications.filter((n) => !n.isRead).length;
   },
 
   /**
@@ -157,7 +185,7 @@ export const notificationsMock = {
     mockNotifications = mockNotifications.map((n) =>
       n.id === notificationId ? { ...n, isRead: true } : n,
     );
-    return { success: true };
+    return "Notification marked as read";
   },
 
   /**
@@ -166,7 +194,7 @@ export const notificationsMock = {
   async markAllAsRead(): Promise<NotificationActionResponse> {
     await delay(300);
     mockNotifications = mockNotifications.map((n) => ({ ...n, isRead: true }));
-    return { success: true };
+    return "All notifications marked as read";
   },
 
   /**
@@ -179,6 +207,6 @@ export const notificationsMock = {
     mockNotifications = mockNotifications.filter(
       (n) => n.id !== notificationId,
     );
-    return { success: true };
+    return "Notification deleted";
   },
 };
