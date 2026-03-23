@@ -5,7 +5,13 @@
 
 import { useState, useEffect } from "react";
 import { adminService } from "@/features/admin/services/adminService";
-import type { AdminUser } from "@/features/admin/types";
+import type {
+  AdminUser,
+  AdminUserId,
+  AdminUserRole,
+  AdminUserStatus,
+} from "@/features/admin/types";
+import { filterUsers } from "@/features/admin/utils/adminFilters";
 import { getErrorMessage } from "@/utils/apiError";
 
 interface UseManageUsersReturn {
@@ -15,22 +21,19 @@ interface UseManageUsersReturn {
   error: string | null;
   search: string;
   roleFilter: string;
-  actionMenu: number | null;
+  actionMenu: AdminUserId | null;
   filteredUsers: AdminUser[];
 
   // Setters
   setSearch: (value: string) => void;
   setRoleFilter: (value: string) => void;
-  setActionMenu: (userId: number | null) => void;
+  setActionMenu: (userId: AdminUserId | null) => void;
 
   // Actions
-  handleRoleChange: (
-    userId: number,
-    role: "user" | "moderator" | "admin",
-  ) => Promise<void>;
+  handleRoleChange: (userId: AdminUserId, role: AdminUserRole) => Promise<void>;
   handleStatusChange: (
-    userId: number,
-    status: "active" | "banned" | "suspended",
+    userId: AdminUserId,
+    status: AdminUserStatus,
   ) => Promise<void>;
 }
 
@@ -40,7 +43,7 @@ export const useManageUsers = (): UseManageUsersReturn => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [actionMenu, setActionMenu] = useState<number | null>(null);
+  const [actionMenu, setActionMenu] = useState<AdminUserId | null>(null);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -56,10 +59,7 @@ export const useManageUsers = (): UseManageUsersReturn => {
     loadUsers();
   }, []);
 
-  const handleRoleChange = async (
-    userId: number,
-    role: "user" | "moderator" | "admin",
-  ) => {
+  const handleRoleChange = async (userId: AdminUserId, role: AdminUserRole) => {
     await adminService.updateUserRole(userId, role);
     setUsers((prev) =>
       prev.map((u) => (u.userId === userId ? { ...u, role } : u)),
@@ -68,8 +68,8 @@ export const useManageUsers = (): UseManageUsersReturn => {
   };
 
   const handleStatusChange = async (
-    userId: number,
-    status: "active" | "banned" | "suspended",
+    userId: AdminUserId,
+    status: AdminUserStatus,
   ) => {
     await adminService.updateUserStatus(userId, status);
     setUsers((prev) =>
@@ -78,13 +78,7 @@ export const useManageUsers = (): UseManageUsersReturn => {
     setActionMenu(null);
   };
 
-  const filteredUsers = users.filter((u) => {
-    const matchesSearch =
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
-    const matchesRole = roleFilter === "all" || u.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
+  const filteredUsers = filterUsers(users, search, roleFilter);
 
   return {
     users,

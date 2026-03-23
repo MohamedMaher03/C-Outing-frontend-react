@@ -20,12 +20,16 @@ export type PriceLevel =
   | "expensive"
   | "luxury";
 
+export type AdminUserId = string;
+export type AdminUserRole = "user" | "moderator" | "admin";
+export type AdminUserStatus = "active" | "banned" | "suspended";
+
 export interface AdminUser {
-  userId: number;
+  userId: AdminUserId;
   name: string;
   email: string;
-  role: "user" | "moderator" | "admin";
-  status: "active" | "banned" | "suspended";
+  role: AdminUserRole;
+  status: AdminUserStatus;
   joinedDate: Date;
   lastActive: Date;
   reviewCount: number;
@@ -53,7 +57,7 @@ export interface AdminPlace {
 
 export interface AdminReview {
   id: string;
-  userId: number;
+  userId: AdminUserId;
   userName: string;
   userAvatar?: string;
   placeId: string;
@@ -90,9 +94,14 @@ export interface RecentActivity {
   type: "user_joined" | "review_posted" | "place_added" | "report_filed";
   description: string;
   timestamp: Date;
-  userId?: number;
+  userId?: AdminUserId;
   userName?: string;
 }
+
+export type CreateAdminPlaceInput = Omit<
+  AdminPlace,
+  "id" | "rating" | "reviewCount" | "createdAt" | "status"
+>;
 
 // ── Shared UI Types ───────────────────────────────────────────
 

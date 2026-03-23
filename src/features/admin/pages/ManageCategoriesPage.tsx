@@ -13,25 +13,6 @@ import {
   Save,
   X,
   MapPin,
-  Coffee,
-  UtensilsCrossed,
-  Moon,
-  Palette,
-  Trees,
-  ShoppingBag,
-  Heart,
-  Compass,
-  Laptop,
-  Camera,
-  Music,
-  Dumbbell,
-  BookOpen,
-  Mountain,
-  Beer,
-  Star,
-  Building,
-  Bike,
-  Globe,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,36 +21,16 @@ import { Label } from "@/components/ui/label";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import { useManageCategories } from "@/features/admin/hooks/useManageCategories";
+import { CURATED_CATEGORY_ICONS } from "@/features/admin/constants/categoryIcons";
 
 // ── Icon Picker Data ───────────────────────────────────────────
-
-const CURATED_ICONS = [
-  { name: "MapPin", icon: MapPin },
-  { name: "Coffee", icon: Coffee },
-  { name: "UtensilsCrossed", icon: UtensilsCrossed },
-  { name: "Moon", icon: Moon },
-  { name: "Palette", icon: Palette },
-  { name: "Trees", icon: Trees },
-  { name: "ShoppingBag", icon: ShoppingBag },
-  { name: "Heart", icon: Heart },
-  { name: "Compass", icon: Compass },
-  { name: "Laptop", icon: Laptop },
-  { name: "Camera", icon: Camera },
-  { name: "Music", icon: Music },
-  { name: "Dumbbell", icon: Dumbbell },
-  { name: "BookOpen", icon: BookOpen },
-  { name: "Mountain", icon: Mountain },
-  { name: "Beer", icon: Beer },
-  { name: "Star", icon: Star },
-  { name: "Building", icon: Building },
-  { name: "Bike", icon: Bike },
-  { name: "Globe", icon: Globe },
-] as const;
 
 const ICON_MAP: Record<
   string,
   React.ComponentType<{ className?: string }>
-> = Object.fromEntries(CURATED_ICONS.map(({ name, icon }) => [name, icon]));
+> = Object.fromEntries(
+  CURATED_CATEGORY_ICONS.map(({ name, icon }) => [name, icon]),
+);
 
 const CategoryIcon = ({
   name,
@@ -164,7 +125,7 @@ const ManageCategoriesPage = () => {
           <div className="space-y-1.5">
             <Label className="text-sm font-medium">Icon</Label>
             <div className="grid grid-cols-10 gap-1.5">
-              {CURATED_ICONS.map(({ name, icon: IconComp }) => (
+              {CURATED_CATEGORY_ICONS.map(({ name, icon: IconComp }) => (
                 <button
                   key={name}
                   type="button"
@@ -237,7 +198,7 @@ const ManageCategoriesPage = () => {
                     </Button>
                   </div>
                   <div className="grid grid-cols-10 gap-1">
-                    {CURATED_ICONS.map(({ name, icon: IconComp }) => (
+                    {CURATED_CATEGORY_ICONS.map(({ name, icon: IconComp }) => (
                       <button
                         key={name}
                         type="button"

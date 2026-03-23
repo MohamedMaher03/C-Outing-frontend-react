@@ -15,182 +15,149 @@
  *   import { adminMock as adminApi } from "../mocks/adminMock";
  */
 
-// import { adminApi } from "../api/adminApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
-import { adminMock as adminApi } from "../mocks/adminMock";
 import type {
   AdminStats,
   AdminUser,
+  AdminUserId,
+  AdminUserRole,
+  AdminUserStatus,
   AdminPlace,
   AdminReview,
   AdminCategory,
   SystemSettings,
   RecentActivity,
+  CreateAdminPlaceInput,
 } from "../types";
+import { adminDataSource } from "./adminDataSource";
+import { withAdminServiceError } from "./adminServiceError";
 
 // ── Admin Service ─────────────────────────────────────────────
 
 export const adminService = {
   async getStats(): Promise<AdminStats> {
-    try {
-      return await adminApi.getStats();
-    } catch (error) {
-      console.error("Error fetching admin stats:", error);
-      throw new Error("Failed to load admin stats");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.getStats(),
+      "Failed to load admin stats",
+    );
   },
 
   async getRecentActivity(): Promise<RecentActivity[]> {
-    try {
-      return await adminApi.getRecentActivity();
-    } catch (error) {
-      console.error("Error fetching recent activity:", error);
-      throw new Error("Failed to load recent activity");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.getRecentActivity(),
+      "Failed to load recent activity",
+    );
   },
 
   async getUsers(): Promise<AdminUser[]> {
-    try {
-      return await adminApi.getUsers();
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      throw new Error("Failed to load users");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.getUsers(),
+      "Failed to load users",
+    );
   },
 
   async updateUserRole(
-    userId: number,
-    role: "user" | "moderator" | "admin",
+    userId: AdminUserId,
+    role: AdminUserRole,
   ): Promise<void> {
-    try {
-      await adminApi.updateUserRole(userId, role);
-    } catch (error) {
-      console.error("Error updating user role:", error);
-      throw new Error("Failed to update user role");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.updateUserRole(userId, role),
+      "Failed to update user role",
+    );
   },
 
   async updateUserStatus(
-    userId: number,
-    status: "active" | "banned" | "suspended",
+    userId: AdminUserId,
+    status: AdminUserStatus,
   ): Promise<void> {
-    try {
-      await adminApi.updateUserStatus(userId, status);
-    } catch (error) {
-      console.error("Error updating user status:", error);
-      throw new Error("Failed to update user status");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.updateUserStatus(userId, status),
+      "Failed to update user status",
+    );
   },
 
   async getPlaces(): Promise<AdminPlace[]> {
-    try {
-      return await adminApi.getPlaces();
-    } catch (error) {
-      console.error("Error fetching places:", error);
-      throw new Error("Failed to load places");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.getPlaces(),
+      "Failed to load places",
+    );
   },
 
-  async addPlace(
-    placeData: Omit<
-      AdminPlace,
-      "id" | "rating" | "reviewCount" | "createdAt" | "status"
-    >,
-  ): Promise<AdminPlace> {
-    try {
-      return await adminApi.addPlace(placeData);
-    } catch (error) {
-      console.error("Error adding place:", error);
-      throw new Error("Failed to add place");
-    }
+  async addPlace(placeData: CreateAdminPlaceInput): Promise<AdminPlace> {
+    return withAdminServiceError(
+      () => adminDataSource.addPlace(placeData),
+      "Failed to add place",
+    );
   },
 
   async updatePlaceStatus(
     placeId: string,
     status: AdminPlace["status"],
   ): Promise<void> {
-    try {
-      await adminApi.updatePlaceStatus(placeId, status);
-    } catch (error) {
-      console.error("Error updating place status:", error);
-      throw new Error("Failed to update place status");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.updatePlaceStatus(placeId, status),
+      "Failed to update place status",
+    );
   },
 
   async deletePlace(placeId: string): Promise<void> {
-    try {
-      await adminApi.deletePlace(placeId);
-    } catch (error) {
-      console.error("Error deleting place:", error);
-      throw new Error("Failed to delete place");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.deletePlace(placeId),
+      "Failed to delete place",
+    );
   },
 
   async getReviews(): Promise<AdminReview[]> {
-    try {
-      return await adminApi.getReviews();
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-      throw new Error("Failed to load reviews");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.getReviews(),
+      "Failed to load reviews",
+    );
   },
 
   async updateReviewStatus(
     reviewId: string,
     status: AdminReview["status"],
   ): Promise<void> {
-    try {
-      await adminApi.updateReviewStatus(reviewId, status);
-    } catch (error) {
-      console.error("Error updating review status:", error);
-      throw new Error("Failed to update review status");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.updateReviewStatus(reviewId, status),
+      "Failed to update review status",
+    );
   },
 
   async deleteReview(reviewId: string): Promise<void> {
-    try {
-      await adminApi.deleteReview(reviewId);
-    } catch (error) {
-      console.error("Error deleting review:", error);
-      throw new Error("Failed to delete review");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.deleteReview(reviewId),
+      "Failed to delete review",
+    );
   },
 
   async getCategories(): Promise<AdminCategory[]> {
-    try {
-      return await adminApi.getCategories();
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      throw new Error("Failed to load categories");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.getCategories(),
+      "Failed to load categories",
+    );
   },
 
   async updateCategory(
     categoryId: string,
     data: Partial<AdminCategory>,
   ): Promise<void> {
-    try {
-      await adminApi.updateCategory(categoryId, data);
-    } catch (error) {
-      console.error("Error updating category:", error);
-      throw new Error("Failed to update category");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.updateCategory(categoryId, data),
+      "Failed to update category",
+    );
   },
 
   async getSettings(): Promise<SystemSettings> {
-    try {
-      return await adminApi.getSettings();
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-      throw new Error("Failed to load settings");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.getSettings(),
+      "Failed to load settings",
+    );
   },
 
   async updateSettings(settings: Partial<SystemSettings>): Promise<void> {
-    try {
-      await adminApi.updateSettings(settings);
-    } catch (error) {
-      console.error("Error updating settings:", error);
-      throw new Error("Failed to update settings");
-    }
+    return withAdminServiceError(
+      () => adminDataSource.updateSettings(settings),
+      "Failed to update settings",
+    );
   },
 };

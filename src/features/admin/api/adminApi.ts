@@ -17,11 +17,15 @@ import { API_ENDPOINTS } from "@/config/api";
 import type {
   AdminStats,
   AdminUser,
+  AdminUserId,
+  AdminUserRole,
+  AdminUserStatus,
   AdminPlace,
   AdminReview,
   AdminCategory,
   SystemSettings,
   RecentActivity,
+  CreateAdminPlaceInput,
 } from "../types";
 
 export const adminApi = {
@@ -63,12 +67,15 @@ export const adminApi = {
    * Updates a user's role.
    */
   async updateUserRole(
-    userId: string,
-    role: "user" | "moderator" | "admin",
+    userId: AdminUserId,
+    role: AdminUserRole,
   ): Promise<void> {
-    await axiosInstance.patch(API_ENDPOINTS.admin.updateUserRole(userId), {
-      role,
-    });
+    await axiosInstance.patch(
+      API_ENDPOINTS.admin.updateUserRole(String(userId)),
+      {
+        role,
+      },
+    );
   },
 
   /**
@@ -76,12 +83,15 @@ export const adminApi = {
    * Updates a user's account status.
    */
   async updateUserStatus(
-    userId: string,
-    status: "active" | "banned" | "suspended",
+    userId: AdminUserId,
+    status: AdminUserStatus,
   ): Promise<void> {
-    await axiosInstance.patch(API_ENDPOINTS.admin.updateUserStatus(userId), {
-      status,
-    });
+    await axiosInstance.patch(
+      API_ENDPOINTS.admin.updateUserStatus(String(userId)),
+      {
+        status,
+      },
+    );
   },
 
   /**
@@ -99,12 +109,7 @@ export const adminApi = {
    * POST /admin/places
    * Creates a new place.
    */
-  async addPlace(
-    placeData: Omit<
-      AdminPlace,
-      "id" | "rating" | "reviewCount" | "createdAt" | "status"
-    >,
-  ): Promise<AdminPlace> {
+  async addPlace(placeData: CreateAdminPlaceInput): Promise<AdminPlace> {
     const { data } = await axiosInstance.post<AdminPlace>(
       API_ENDPOINTS.admin.addPlace,
       placeData,

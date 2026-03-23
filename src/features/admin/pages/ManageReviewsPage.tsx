@@ -9,7 +9,6 @@ import {
   MessageSquare,
   Star,
   CheckCircle,
-  Clock,
   AlertTriangle,
   Trash2,
   XCircle,
@@ -32,32 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useManageReviews } from "@/features/admin/hooks/useManageReviews";
-
-const statusConfig: Record<
-  string,
-  { label: string; class: string; icon: typeof CheckCircle }
-> = {
-  published: {
-    label: "Published",
-    class: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    icon: CheckCircle,
-  },
-  pending: {
-    label: "Pending",
-    class: "bg-amber-100 text-amber-700 border-amber-200",
-    icon: Clock,
-  },
-  flagged: {
-    label: "Flagged",
-    class: "bg-red-100 text-red-700 border-red-200",
-    icon: AlertTriangle,
-  },
-  removed: {
-    label: "Removed",
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    icon: XCircle,
-  },
-};
+import { reviewStatusConfig } from "@/features/admin/constants/statusConfigs";
 
 const ManageReviewsPage = () => {
   const {
@@ -133,7 +107,7 @@ const ManageReviewsPage = () => {
           </div>
         ) : (
           filtered.map((review) => {
-            const config = statusConfig[review.status];
+            const config = reviewStatusConfig[review.status];
             const StatusIcon = config.icon;
 
             return (

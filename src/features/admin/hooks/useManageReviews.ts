@@ -6,6 +6,7 @@
 import { useState, useEffect } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { AdminReview } from "@/features/admin/types";
+import { filterReviews } from "@/features/admin/utils/adminFilters";
 import { getErrorMessage } from "@/utils/apiError";
 
 interface UseManageReviewsReturn {
@@ -65,14 +66,7 @@ export const useManageReviews = (): UseManageReviewsReturn => {
     setReviews((prev) => prev.filter((r) => r.id !== reviewId));
   };
 
-  const filteredReviews = reviews.filter((r) => {
-    const matchesSearch =
-      r.userName.toLowerCase().includes(search.toLowerCase()) ||
-      r.placeName.toLowerCase().includes(search.toLowerCase()) ||
-      r.comment.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredReviews = filterReviews(reviews, search, statusFilter);
 
   return {
     reviews,

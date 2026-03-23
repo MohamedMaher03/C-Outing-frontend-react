@@ -11,8 +11,6 @@ import {
   MapPin,
   Star,
   CheckCircle,
-  Clock,
-  AlertTriangle,
   Trash2,
   Eye,
   XCircle,
@@ -42,90 +40,17 @@ import {
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useManagePlaces } from "@/features/admin/hooks/useManagePlaces";
-import type { PriceLevel } from "@/features/admin/types";
 import { DISTRICTS } from "@/mocks/mockData";
+import {
+  COMMON_PLACE_TAGS,
+  PRICE_LEVEL_OPTIONS,
+} from "@/features/admin/constants/placeManagement";
+import { placeStatusConfig } from "@/features/admin/constants/statusConfigs";
+import { EMPTY_PLACE_FORM } from "@/features/admin/utils/placeForm";
 
 // ── Constants ─────────────────────────────────────────────────
 
-const COMMON_TAGS = [
-  "Outdoor",
-  "Romantic",
-  "Scenic",
-  "Street Food",
-  "Casual",
-  "Local",
-  "Art",
-  "Culture",
-  "Free Entry",
-  "Co-working",
-  "Tech",
-  "Historical",
-  "Shopping",
-  "Iconic",
-  "Nightlife",
-  "Live Music",
-  "Parks",
-  "Family-friendly",
-  "Rooftop",
-  "Fine Dining",
-  "Nile View",
-  "Late Night",
-  "Hidden Gem",
-  "Budget Friendly",
-  "Pet Friendly",
-  "Instagrammable",
-];
-
-const PRICE_LEVEL_OPTIONS: Array<{ value: PriceLevel; signs: number }> = [
-  { value: "price_cheapest", signs: 1 },
-  { value: "cheap", signs: 2 },
-  { value: "mid_range", signs: 3 },
-  { value: "expensive", signs: 4 },
-  { value: "luxury", signs: 5 },
-];
-
-// ── Config ────────────────────────────────────────────────────
-
-const statusConfig: Record<
-  string,
-  { label: string; class: string; icon: typeof CheckCircle }
-> = {
-  active: {
-    label: "Active",
-    class: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    icon: CheckCircle,
-  },
-  pending: {
-    label: "Pending",
-    class: "bg-amber-100 text-amber-700 border-amber-200",
-    icon: Clock,
-  },
-  flagged: {
-    label: "Flagged",
-    class: "bg-red-100 text-red-700 border-red-200",
-    icon: AlertTriangle,
-  },
-  removed: {
-    label: "Removed",
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    icon: XCircle,
-  },
-};
-
 // ── Component ─────────────────────────────────────────────────
-
-const EMPTY_FORM = {
-  name: "",
-  category: "",
-  district: "",
-  description: "",
-  whyRecommend: "",
-  priceLevel: "mid_range" as PriceLevel,
-  tags: [] as string[],
-  image: "",
-  phone: "",
-  website: "",
-};
 
 const ManagePlacesPage = () => {
   const navigate = useNavigate();
@@ -417,7 +342,7 @@ const ManagePlacesPage = () => {
               </button>
               {showTagPicker && (
                 <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-card border border-border rounded-xl p-3 shadow-lg flex flex-wrap gap-2">
-                  {COMMON_TAGS.map((tag) => (
+                  {COMMON_PLACE_TAGS.map((tag) => (
                     <button
                       key={tag}
                       type="button"
@@ -498,7 +423,7 @@ const ManagePlacesPage = () => {
               variant="outline"
               onClick={() => {
                 setShowAddForm(false);
-                setForm(EMPTY_FORM);
+                setForm(EMPTY_PLACE_FORM);
               }}
             >
               Cancel
@@ -563,7 +488,7 @@ const ManagePlacesPage = () => {
           </div>
         ) : (
           filtered.map((place) => {
-            const config = statusConfig[place.status];
+            const config = placeStatusConfig[place.status];
             const StatusIcon = config.icon;
 
             return (

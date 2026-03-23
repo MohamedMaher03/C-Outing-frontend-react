@@ -12,20 +12,13 @@ import type {
   PlaceFormData,
   PlaceFormErrors,
 } from "@/features/admin/types";
+import { filterPlaces } from "@/features/admin/utils/adminFilters";
+import {
+  EMPTY_PLACE_FORM,
+  toCreatePlaceInput,
+  validatePlaceForm,
+} from "@/features/admin/utils/placeForm";
 import { getErrorMessage } from "@/utils/apiError";
-
-const EMPTY_FORM: PlaceFormData = {
-  name: "",
-  category: "",
-  district: "",
-  description: "",
-  whyRecommend: "",
-  priceLevel: "mid_range",
-  tags: [],
-  image: "",
-  phone: "",
-  website: "",
-};
 
 interface UseManagePlacesReturn {
   // Data state
@@ -76,7 +69,7 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showAddForm, setShowAddForm] = useState(false);
-  const [form, setForm] = useState<PlaceFormData>(EMPTY_FORM);
+  const [form, setForm] = useState<PlaceFormData>(EMPTY_PLACE_FORM);
   const [formErrors, setFormErrors] = useState<PlaceFormErrors>({});
   const [submittingForm, setSubmittingForm] = useState(false);
   const [showTagPicker, setShowTagPicker] = useState(false);
@@ -129,39 +122,16 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     showToast(`"${placeName}" has been permanently deleted.`, "error");
   };
 
-  const validateForm = (): boolean => {
-    const errors: PlaceFormErrors = {};
-    if (!form.name.trim()) errors.name = "Place name is required.";
-    if (!form.category) errors.category = "Please select a category.";
-    if (!form.district) errors.district = "Please select a district.";
-    if (!form.description.trim()) {
-      errors.description = "Description is required.";
-    } else if (form.description.trim().length < 20) {
-      errors.description = "Description must be at least 20 characters.";
-    }
-    if (!form.image.trim()) errors.image = "Image URL is required.";
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
   const handleAddPlace = async () => {
-    if (!validateForm()) return;
+    const errors = validatePlaceForm(form);
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     setSubmittingForm(true);
     try {
-      const newPlace = await adminService.addPlace({
-        name: form.name.trim(),
-        category: form.category,
-        district: form.district,
-        image: form.image.trim(),
-        tags: form.tags,
-        description: form.description.trim(),
-        whyRecommend: form.whyRecommend.trim(),
-        priceLevel: form.priceLevel,
-        phone: form.phone.trim(),
-        website: form.website.trim(),
-      });
+      const newPlace = await adminService.addPlace(toCreatePlaceInput(form));
       setPlaces((prev) => [newPlace, ...prev]);
-      setForm(EMPTY_FORM);
+      setForm(EMPTY_PLACE_FORM);
       setFormErrors({});
       setShowAddForm(false);
       showToast(
@@ -183,13 +153,7 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     }));
   };
 
-  const filteredPlaces = places.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.district.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredPlaces = filterPlaces(places, search, statusFilter);
 
   return {
     places,

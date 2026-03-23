@@ -21,28 +21,10 @@ import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import { useManageUsers } from "@/features/admin/hooks/useManageUsers";
-
-const roleBadge: Record<string, { label: string; class: string }> = {
-  admin: { label: "Admin", class: "bg-red-100 text-red-700 border-red-200" },
-  moderator: {
-    label: "Moderator",
-    class: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  user: { label: "User", class: "bg-gray-100 text-gray-700 border-gray-200" },
-};
-
-const statusBadge: Record<
-  string,
-  { label: string; class: string; icon: typeof CheckCircle }
-> = {
-  active: { label: "Active", class: "text-emerald-600", icon: CheckCircle },
-  banned: { label: "Banned", class: "text-red-600", icon: Ban },
-  suspended: {
-    label: "Suspended",
-    class: "text-amber-600",
-    icon: AlertTriangle,
-  },
-};
+import {
+  userRoleBadge,
+  userStatusBadge,
+} from "@/features/admin/constants/statusConfigs";
 
 const ManageUsersPage = () => {
   const {
@@ -117,8 +99,8 @@ const ManageUsersPage = () => {
           </div>
         ) : (
           filteredUsers.map((user) => {
-            const role = roleBadge[user.role];
-            const status = statusBadge[user.status];
+            const role = userRoleBadge[user.role];
+            const status = userStatusBadge[user.status];
             const StatusIcon = status.icon;
 
             return (

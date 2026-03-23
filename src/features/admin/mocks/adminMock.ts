@@ -8,11 +8,15 @@
 import type {
   AdminStats,
   AdminUser,
+  AdminUserId,
+  AdminUserRole,
+  AdminUserStatus,
   AdminPlace,
   AdminReview,
   AdminCategory,
   SystemSettings,
   RecentActivity,
+  CreateAdminPlaceInput,
 } from "../types";
 
 // ── Helper ───────────────────────────────────────────────────
@@ -35,7 +39,7 @@ export const MOCK_ADMIN_STATS: AdminStats = {
 
 export const MOCK_ADMIN_USERS: AdminUser[] = [
   {
-    userId: 1,
+    userId: "1",
     name: "Ahmed Khalil",
     email: "ahmed@couting.app",
     role: "user",
@@ -46,7 +50,7 @@ export const MOCK_ADMIN_USERS: AdminUser[] = [
     avatar: "https://i.pravatar.cc/150?img=3",
   },
   {
-    userId: 2,
+    userId: "2",
     name: "Sara Mohamed",
     email: "sara@couting.app",
     role: "moderator",
@@ -57,7 +61,7 @@ export const MOCK_ADMIN_USERS: AdminUser[] = [
     avatar: "https://i.pravatar.cc/150?img=5",
   },
   {
-    userId: 3,
+    userId: "3",
     name: "Omar Hassan",
     email: "omar@couting.app",
     role: "admin",
@@ -68,7 +72,7 @@ export const MOCK_ADMIN_USERS: AdminUser[] = [
     avatar: "https://i.pravatar.cc/150?img=8",
   },
   {
-    userId: 4,
+    userId: "4",
     name: "Fatima Ali",
     email: "fatima@example.com",
     role: "user",
@@ -79,7 +83,7 @@ export const MOCK_ADMIN_USERS: AdminUser[] = [
     avatar: "https://i.pravatar.cc/150?img=9",
   },
   {
-    userId: 5,
+    userId: "5",
     name: "Mohamed Nasser",
     email: "m.nasser@example.com",
     role: "user",
@@ -90,7 +94,7 @@ export const MOCK_ADMIN_USERS: AdminUser[] = [
     avatar: "https://i.pravatar.cc/150?img=12",
   },
   {
-    userId: 6,
+    userId: "6",
     name: "Layla Ibrahim",
     email: "layla@example.com",
     role: "user",
@@ -101,7 +105,7 @@ export const MOCK_ADMIN_USERS: AdminUser[] = [
     avatar: "https://i.pravatar.cc/150?img=16",
   },
   {
-    userId: 7,
+    userId: "7",
     name: "Youssef Adel",
     email: "youssef@example.com",
     role: "moderator",
@@ -112,7 +116,7 @@ export const MOCK_ADMIN_USERS: AdminUser[] = [
     avatar: "https://i.pravatar.cc/150?img=11",
   },
   {
-    userId: 8,
+    userId: "8",
     name: "Nour Samir",
     email: "nour@example.com",
     role: "user",
@@ -202,7 +206,7 @@ export const MOCK_ADMIN_PLACES: AdminPlace[] = [
 export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
   {
     id: "r1",
-    userId: 1,
+    userId: "1",
     userName: "Ahmed Khalil",
     userAvatar: "https://i.pravatar.cc/150?img=3",
     placeId: "1",
@@ -216,7 +220,7 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
   },
   {
     id: "r2",
-    userId: 4,
+    userId: "4",
     userName: "Fatima Ali",
     userAvatar: "https://i.pravatar.cc/150?img=9",
     placeId: "2",
@@ -230,7 +234,7 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
   },
   {
     id: "r3",
-    userId: 5,
+    userId: "5",
     userName: "Mohamed Nasser",
     placeId: "6",
     placeName: "Cairo Jazz Club",
@@ -243,7 +247,7 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
   },
   {
     id: "r4",
-    userId: 6,
+    userId: "6",
     userName: "Layla Ibrahim",
     userAvatar: "https://i.pravatar.cc/150?img=16",
     placeId: "3",
@@ -257,7 +261,7 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
   },
   {
     id: "r5",
-    userId: 8,
+    userId: "8",
     userName: "Nour Samir",
     userAvatar: "https://i.pravatar.cc/150?img=20",
     placeId: "1",
@@ -270,7 +274,7 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
   },
   {
     id: "r6",
-    userId: 7,
+    userId: "7",
     userName: "Youssef Adel",
     userAvatar: "https://i.pravatar.cc/150?img=11",
     placeId: "7",
@@ -368,7 +372,7 @@ export const MOCK_RECENT_ACTIVITY: RecentActivity[] = [
     type: "user_joined",
     description: "Nour Samir joined C-Outing",
     timestamp: new Date("2026-03-03T10:30:00"),
-    userId: 8,
+    userId: "8",
     userName: "Nour Samir",
   },
   {
@@ -376,7 +380,7 @@ export const MOCK_RECENT_ACTIVITY: RecentActivity[] = [
     type: "review_posted",
     description: "Layla Ibrahim reviewed The Townhouse Gallery",
     timestamp: new Date("2026-03-02T18:45:00"),
-    userId: 6,
+    userId: "6",
     userName: "Layla Ibrahim",
   },
   {
@@ -384,7 +388,7 @@ export const MOCK_RECENT_ACTIVITY: RecentActivity[] = [
     type: "report_filed",
     description: "Report filed on review by Mohamed Nasser",
     timestamp: new Date("2026-03-02T14:20:00"),
-    userId: 5,
+    userId: "5",
     userName: "Mohamed Nasser",
   },
   {
@@ -415,8 +419,8 @@ export const adminMock = {
   },
 
   async updateUserRole(
-    userId: number,
-    role: "user" | "moderator" | "admin",
+    userId: AdminUserId,
+    role: AdminUserRole,
   ): Promise<void> {
     await delay(400);
     const user = MOCK_ADMIN_USERS.find((u) => u.userId === userId);
@@ -424,8 +428,8 @@ export const adminMock = {
   },
 
   async updateUserStatus(
-    userId: number,
-    status: "active" | "banned" | "suspended",
+    userId: AdminUserId,
+    status: AdminUserStatus,
   ): Promise<void> {
     await delay(400);
     const user = MOCK_ADMIN_USERS.find((u) => u.userId === userId);
@@ -453,12 +457,7 @@ export const adminMock = {
     console.log(`[Mock] Deleted place ${placeId}`);
   },
 
-  async addPlace(
-    data: Omit<
-      AdminPlace,
-      "id" | "rating" | "reviewCount" | "createdAt" | "status"
-    >,
-  ): Promise<AdminPlace> {
+  async addPlace(data: CreateAdminPlaceInput): Promise<AdminPlace> {
     await delay(600);
     const newPlace: AdminPlace = {
       ...data,
