@@ -1,8 +1,8 @@
 /**
  * Moderate Places Page (Moderator)
  *
- * Verify/edit place information. Moderators can approve/flag/add places.
- * Delete is via escalation to admin (with confirmation dialog + toast).
+ * Verify/edit place information. Moderators can approve, flag, add,
+ * and delete places directly.
  */
 
 import { useEffect, useRef } from "react";
@@ -151,7 +151,7 @@ const ModeratePlacesPage = () => {
     setShowTagPicker,
     handleApprove,
     handleFlag,
-    handleEscalateDelete,
+    handleDeletePlace,
     handleAddPlace,
     toggleTag,
   } = useModeratePlaces();
@@ -649,32 +649,28 @@ const ModeratePlacesPage = () => {
                         variant="ghost"
                         size="sm"
                         className="text-xs gap-1 h-8 text-destructive hover:text-destructive"
-                        title="Escalate for deletion"
+                        title="Delete place"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Escalate for Deletion
-                        </AlertDialogTitle>
+                        <AlertDialogTitle>Delete Place</AlertDialogTitle>
                         <AlertDialogDescription>
-                          You don't have permission to permanently delete
-                          places. This will escalate "{place.name}" to admin for
-                          final deletion. The place will be removed from your
-                          queue.
+                          This will permanently delete "{place.name}". This
+                          action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() =>
-                            handleEscalateDelete(place.id, place.name)
+                            handleDeletePlace(place.id, place.name)
                           }
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                          Escalate to Admin
+                          Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -690,8 +686,8 @@ const ModeratePlacesPage = () => {
       <div className="p-4 rounded-xl bg-secondary/5 border border-secondary/20">
         <p className="text-sm text-foreground">
           <span className="font-medium">ℹ️ Note:</span> As a moderator, you can
-          approve, flag, or submit new places. Deletions are escalated to an
-          admin for final review.
+          approve, flag, delete, or submit new places. Flagged places are sent
+          to admin for follow-up.
         </p>
       </div>
     </div>

@@ -2,8 +2,8 @@
  * useModeratePlaces Hook
  * Manages state and actions for the Moderate Places moderator page.
  *
- * Note: Places are an admin-managed resource, so this hook delegates
- * data fetching and mutations to adminService.
+ * Note: Until moderator backend endpoints are available, this hook
+ * delegates data fetching and mutations to adminService.
  */
 
 import { useState, useEffect } from "react";
@@ -64,7 +64,7 @@ interface UseModeratePlacesReturn {
   // Actions
   handleApprove: (placeId: string) => Promise<void>;
   handleFlag: (placeId: string) => Promise<void>;
-  handleEscalateDelete: (placeId: string, placeName: string) => Promise<void>;
+  handleDeletePlace: (placeId: string, placeName: string) => Promise<void>;
   handleAddPlace: () => Promise<void>;
   toggleTag: (tag: string) => void;
 }
@@ -130,16 +130,13 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
         p.id === placeId ? { ...p, status: "flagged" as const } : p,
       ),
     );
-    showToast("Place flagged for review.", "warning");
+    showToast("Place flagged and sent to admin review queue.", "warning");
   };
 
-  const handleEscalateDelete = async (placeId: string, placeName: string) => {
+  const handleDeletePlace = async (placeId: string, placeName: string) => {
     await adminService.deletePlace(placeId);
     setPlaces((prev) => prev.filter((p) => p.id !== placeId));
-    showToast(
-      `"${placeName}" escalated for deletion — pending admin review.`,
-      "warning",
-    );
+    showToast(`"${placeName}" deleted successfully.`);
   };
 
   const validateForm = (): boolean => {
@@ -222,7 +219,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     setShowTagPicker,
     handleApprove,
     handleFlag,
-    handleEscalateDelete,
+    handleDeletePlace,
     handleAddPlace,
     toggleTag,
   };

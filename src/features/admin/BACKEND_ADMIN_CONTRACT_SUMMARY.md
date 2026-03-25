@@ -1,212 +1,116 @@
 # Admin Backend Contract Summary
 
-## Integrated Endpoints (now used by frontend)
+## Current Admin Dashboard Data Source (in frontend now)
+
+The dashboard currently calls:
 
 1. `GET /api/v1/Admin/stats`
-
-- Used for admin dashboard totals.
-- Frontend mapping:
-  - `totalUsers` -> `totalUsers`
-  - `totalVenues` -> `totalPlaces`
-  - `activeInteractions` -> `activeUsersToday`
-  - `topCategories` -> dashboard activity summary
-
 2. `GET /api/v1/Admin/system/health`
-
-- Used for system status and review totals.
-- Frontend mapping:
-  - `TotalReviews` -> `totalReviews`
-  - `Status` -> `systemStatus`
-  - `Timestamp` -> `healthTimestamp`
-
-3. `GET /api/v1/Admin/users`
-
-- Used for users management list.
-- Frontend supports query params:
-  - `SearchTerm`, `Role`, `IsBanned`, `page`, `count`
-- Current frontend call uses `page=1`, `count=100`.
-
-4. `PATCH /api/v1/Admin/users/{userId}/ban`
-
-- Used to ban user in admin users page.
-
-5. `PATCH /api/v1/Admin/users/{userId}/unban`
-
-- Used to restore user (active status).
-
-6. `GET /api/v1/Admin/venues`
-
-- Used for places management list.
-- Frontend currently calls with `page=1`, `count=100`.
-
-7. `GET /api/v1/Admin/venues/reported`
-
-- Used to flag reported venues in places list and to compute open reports count.
-
-8. `DELETE /api/v1/Admin/venues/{venueId}`
-
-- Used for deleting venue from places page.
-
-9. `DELETE /api/v1/Admin/reviews/{reviewId}`
-
-- Endpoint kept in API layer, but currently not fully actionable in UI because backend does not provide admin review listing endpoint.
-
-## Changes Needed in Existing Endpoints
-
-1. `GET /api/v1/Admin/users`
-
-- Clarify role integer enum in API docs and contract.
-- Frontend assumption today:
-  - `0 -> user`
-  - `2 -> moderator`
-  - `3 -> admin`
-- If backend uses another mapping, frontend role badges will be wrong.
-
-2. `GET /api/v1/Admin/system/health`
-
-- Current payload uses PascalCase keys while other endpoints use camelCase.
-- Recommended to align with camelCase for consistency:
-  - `totalUsers`, `totalVenues`, `totalReviews`, `recentInteractions`, `status`, `timestamp`
-
 3. `GET /api/v1/Admin/venues/reported`
 
-- Should ideally return paginated envelope like `venues` endpoint for scalability.
-- Current array response is fine for now but may become heavy with large data.
+And it calls some of them twice because dashboard has two service methods:
 
-## New Endpoints Needed (to complete admin feature)
+1. `getStats()` calls stats + system-health + reported-venues.
+2. `getRecentActivity()` calls stats + system-health again.
 
-1. Review moderation list
+So one dashboard load currently makes 5 HTTP requests total.
 
-- `GET /api/v1/Admin/reviews`
-- Query params: `searchTerm?`, `status?`, `page=1`, `count=10`
-- Response:
+## Recommended Improvement (better backend design)
+
+Yes, it is better to add one dedicated dashboard endpoint that returns all dashboard data in one response.
+
+### New Endpoint (recommended)
+
+`GET /api/v1/Admin/dashboard`
+
+### Expected Response
 
 ```json
 {
   "success": true,
   "statusCode": 200,
-  "message": "Reviews fetched successfully",
+  "message": "Admin dashboard fetched successfully",
   "data": {
-    "items": [
+    "stats": {
+      "totalUsers": 1200,
+      "totalVenues": 250,
+      "totalReviews": 3200,
+      "openReports": 14,
+      "activeInteractions": 56,
+      "newUsersThisWeek": 32,
+      "pendingReviews": 9,
+      "resolvedReportsThisWeek": 11
+    },
+    "systemHealth": {
+      "status": "Healthy",
+      "timestamp": "2026-03-23T18:35:20.003Z"
+    },
+    "recentActivity": [
       {
-        "id": "uuid",
-        "userId": "uuid",
-        "userName": "string",
-        "userAvatarUrl": "string | null",
-        "venueId": "uuid",
-        "venueName": "string",
-        "rating": 4,
-        "comment": "string",
-        "status": "published",
-        "reportCount": 2,
-        "createdAt": "2026-03-23T18:35:20.003Z"
+        "id": "string",
+        "type": "user_joined",
+        "description": "New user joined",
+        "timestamp": "2026-03-23T18:35:20.003Z",
+        "userId": "string",
+        "userName": "string"
       }
-    ],
-    "pageIndex": 1,
-    "pageSize": 10,
-    "totalCount": 1,
-    "totalPages": 1,
-    "hasPreviousPage": false,
-    "hasNextPage": false
+    ]
   }
 }
 ```
 
-2. Review moderation status update
+## Endpoints You Can Remove for Dashboard Usage
 
-- `PATCH /api/v1/Admin/reviews/{reviewId}/status`
-- Request:
+If `GET /api/v1/Admin/dashboard` is added, the dashboard page no longer needs to call these separately:
 
-```json
-{
-  "status": "published"
-}
-```
+1. `GET /api/v1/Admin/stats` (for dashboard only)
+2. `GET /api/v1/Admin/system/health` (for dashboard only)
+3. `GET /api/v1/Admin/venues/reported` (for dashboard report count only)
 
-- Allowed statuses: `published`, `pending`, `flagged`, `removed`.
+Note: You can keep them for other consumers, but dashboard should use only `/dashboard`.
 
-3. Venue create (admin add place)
+## Keep These Existing Integrated Endpoints (non-dashboard pages)
 
-- `POST /api/v1/Admin/venues`
-- Request:
+1. `GET /api/v1/Admin/users`
+2. `PATCH /api/v1/Admin/users/{userId}/ban`
+3. `PATCH /api/v1/Admin/users/{userId}/unban`
+4. `GET /api/v1/Admin/venues`
+5. `DELETE /api/v1/Admin/venues/{venueId}`
+6. `DELETE /api/v1/Admin/reviews/{reviewId}`
 
-```json
-{
-  "name": "string",
-  "category": "string",
-  "district": "string",
-  "description": "string",
-  "whyRecommend": "string",
-  "priceRange": 3,
-  "atmosphereTags": ["family", "cozy"],
-  "imageUrl": "string",
-  "phone": "string",
-  "website": "string"
-}
-```
+## Existing Endpoint Adjustments Still Needed
 
-- Response: created venue in standard envelope.
+1. `GET /api/v1/Admin/users`
 
-4. Venue moderation status update
+- Clarify role integer enum in API contract.
+- Frontend currently assumes:
+  - `0 -> user`
+  - `2 -> moderator`
+  - `3 -> admin`
 
-- `PATCH /api/v1/Admin/venues/{venueId}/status`
-- Request:
+2. `GET /api/v1/Admin/system/health`
 
-```json
-{
-  "status": "active"
-}
-```
+- Prefer camelCase keys for consistency across API:
+  - `totalUsers`, `totalVenues`, `totalReviews`, `recentInteractions`, `status`, `timestamp`
 
-- Allowed statuses: `active`, `pending`, `flagged`, `removed`.
+3. `GET /api/v1/Admin/venues/reported`
 
-5. Categories management
+- Prefer paginated response for scalability when list grows.
 
-- `GET /api/v1/Admin/categories`
-- `PATCH /api/v1/Admin/categories/{categoryId}`
-- Optional: `POST /api/v1/Admin/categories`
+## Remaining Endpoints Needed to Complete Admin Feature
 
-Suggested category DTO:
+1. `GET /api/v1/Admin/reviews` (review moderation list)
+2. `PATCH /api/v1/Admin/reviews/{reviewId}/status`
+3. `POST /api/v1/Admin/venues` (add place)
+4. `PATCH /api/v1/Admin/venues/{venueId}/status`
+5. `GET /api/v1/Admin/categories`
+6. `PATCH /api/v1/Admin/categories/{categoryId}`
+7. `GET /api/v1/Admin/settings`
+8. `PATCH /api/v1/Admin/settings`
 
-```json
-{
-  "id": "string",
-  "label": "string",
-  "icon": "string",
-  "count": 0,
-  "status": "active"
-}
-```
+## Frontend Behavior Right Now
 
-6. System settings management
-
-- `GET /api/v1/Admin/settings`
-- `PATCH /api/v1/Admin/settings`
-
-Suggested settings DTO:
-
-```json
-{
-  "siteName": "C-Outing",
-  "maintenanceMode": false,
-  "maxUploadSize": 5,
-  "defaultLanguage": "en",
-  "enableNotifications": true,
-  "enableReviews": true,
-  "moderationRequired": true,
-  "autoFlagThreshold": 3
-}
-```
-
-7. Optional but useful: dashboard activity feed
-
-- `GET /api/v1/Admin/activity`
-- If provided, frontend can replace synthesized activity entries with real audit trail.
-
-## Frontend Behavior Notes After Integration
-
-1. Admin feature now defaults to real backend (`VITE_ADMIN_USE_MOCKS` defaults to false when not provided).
-2. Users page role editing and suspend action are removed from backend calls (only ban/unban are real).
-3. Places delete is fully real.
-4. Places status update and add-place operations now show clear unsupported messages until backend endpoints are added.
-5. Dashboard activity is currently synthesized from stats + health since no activity endpoint exists.
+1. Admin uses real backend by default.
+2. Dashboard data is synthesized from multiple endpoints as described above.
+3. Users ban/unban and venue delete are fully real.
+4. Add-place, place-status moderation, review moderation list/status, categories write, and settings write still wait for backend endpoints.
