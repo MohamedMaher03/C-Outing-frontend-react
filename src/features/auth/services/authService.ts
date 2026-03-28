@@ -33,14 +33,76 @@ import { buildUserFromAuthToken } from "./jwtClaims";
 
 // ── Session helpers (private) ────────────────────────────────
 
+const canUseStorage = (): boolean =>
+  typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+
+const getStorageItem = (key: string): string | null => {
+  if (!canUseStorage()) return null;
+
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setStorageItem = (key: string, value: string): boolean => {
+  if (!canUseStorage()) return false;
+
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const removeStorageItem = (key: string): void => {
+  if (!canUseStorage()) return;
+
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // no-op: storage can be disabled in strict browser modes
+  }
+};
+
+const isUserRole = (value: unknown): value is User["role"] =>
+  value === "user" || value === "moderator" || value === "admin";
+
+const isStoredUser = (value: unknown): value is User => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const candidate = value as Partial<User>;
+
+  return (
+    typeof candidate.userId === "string" &&
+    typeof candidate.name === "string" &&
+    typeof candidate.email === "string" &&
+    typeof candidate.hasCompletedOnboarding === "boolean" &&
+    isUserRole(candidate.role)
+  );
+};
+
 const persistSession = (token: string, user: User): void => {
-  localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, token);
-  localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+  const tokenStored = setStorageItem(AUTH_STORAGE_KEYS.TOKEN, token);
+  const userStored = setStorageItem(
+    AUTH_STORAGE_KEYS.USER,
+    JSON.stringify(user),
+  );
+
+  // Keep storage consistent if one write fails.
+  if (!tokenStored || !userStored) {
+    removeStorageItem(AUTH_STORAGE_KEYS.TOKEN);
+    removeStorageItem(AUTH_STORAGE_KEYS.USER);
+  }
 };
 
 const clearSession = (): void => {
-  localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
-  localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
+  removeStorageItem(AUTH_STORAGE_KEYS.TOKEN);
+  removeStorageItem(AUTH_STORAGE_KEYS.USER);
 };
 
 // ── Auth Service ─────────────────────────────────────────────
@@ -103,14 +165,19 @@ export const authService = {
    * Returns null if no valid session is stored.
    */
   restoreSession(): { token: string; user: User } | null {
-    const token = localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN);
-    const raw = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+    const token = getStorageItem(AUTH_STORAGE_KEYS.TOKEN);
+    const raw = getStorageItem(AUTH_STORAGE_KEYS.USER);
 
     if (!token || !raw) return null;
 
     try {
-      const user = JSON.parse(raw) as User;
-      return { token, user };
+      const parsed = JSON.parse(raw) as unknown;
+      if (!isStoredUser(parsed)) {
+        clearSession();
+        return null;
+      }
+
+      return { token, user: parsed };
     } catch {
       // Corrupted storage — clear it
       clearSession();
@@ -123,7 +190,7 @@ export const authService = {
    *                       user stays in sync with the latest data.
    */
   updateStoredUser(user: User): void {
-    localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+    setStorageItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
   },
 
   /**

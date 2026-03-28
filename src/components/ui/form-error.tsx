@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 interface FormErrorProps {
   message?: string;
   className?: string;
@@ -6,5 +8,14 @@ interface FormErrorProps {
 export const FormError = ({ message, className }: FormErrorProps) => {
   if (!message) return null;
 
-  return <p className={className || "text-xs text-destructive"}>{message}</p>;
+  return (
+    <p
+      role="alert"
+      aria-live="polite"
+      className={cn("text-xs text-destructive break-words", className)}
+      dir="auto"
+    >
+      {message}
+    </p>
+  );
 };

@@ -9,7 +9,7 @@
  * Flow: LoginForm → useLogin → AuthContext.login → authService → authApi → axios
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getAuthErrorMessage } from "../errors";
 import type { LoginFormData } from "../validation/login.schema";
@@ -25,10 +25,14 @@ export const useLogin = (): UseLoginReturn => {
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
 
   const clearError = () => setError(null);
 
   const loginUser = async (data: LoginFormData): Promise<boolean> => {
+    if (inFlightRef.current) return false;
+
+    inFlightRef.current = true;
     setIsLoading(true);
     setError(null);
 
@@ -39,6 +43,7 @@ export const useLogin = (): UseLoginReturn => {
       setError(getAuthErrorMessage(err));
       return false;
     } finally {
+      inFlightRef.current = false;
       setIsLoading(false);
     }
   };

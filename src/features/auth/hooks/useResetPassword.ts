@@ -9,7 +9,7 @@
  * Flow: ResetPasswordPage → useResetPassword → authService → authApi → axios
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { authService } from "../services/authService";
 import { getAuthErrorMessage } from "../errors";
 import type { ResetPasswordFormData } from "../validation/resetPassword.schema";
@@ -25,12 +25,16 @@ interface UseResetPasswordReturn {
 export const useResetPassword = (): UseResetPasswordReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
 
   const clearError = () => setError(null);
 
   const resetPassword = async (
     data: ResetPasswordFormData,
   ): Promise<boolean> => {
+    if (inFlightRef.current) return false;
+
+    inFlightRef.current = true;
     setIsLoading(true);
     setError(null);
 
@@ -45,11 +49,15 @@ export const useResetPassword = (): UseResetPasswordReturn => {
       setError(getAuthErrorMessage(err));
       return false;
     } finally {
+      inFlightRef.current = false;
       setIsLoading(false);
     }
   };
 
   const resendResetOtp = async (email: string): Promise<boolean> => {
+    if (inFlightRef.current) return false;
+
+    inFlightRef.current = true;
     setIsLoading(true);
     setError(null);
 
@@ -60,6 +68,7 @@ export const useResetPassword = (): UseResetPasswordReturn => {
       setError(getAuthErrorMessage(err));
       return false;
     } finally {
+      inFlightRef.current = false;
       setIsLoading(false);
     }
   };

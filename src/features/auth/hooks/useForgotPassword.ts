@@ -9,7 +9,7 @@
  * Flow: ForgotPasswordPage → useForgotPassword → authService → authApi → axios
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { authService } from "../services/authService";
 import { getAuthErrorMessage } from "../errors";
 import type { ForgotPasswordFormData } from "../validation/forgotPassword.schema";
@@ -24,12 +24,16 @@ interface UseForgotPasswordReturn {
 export const useForgotPassword = (): UseForgotPasswordReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
 
   const clearError = () => setError(null);
 
   const sendResetOtp = async (
     data: ForgotPasswordFormData,
   ): Promise<boolean> => {
+    if (inFlightRef.current) return false;
+
+    inFlightRef.current = true;
     setIsLoading(true);
     setError(null);
 
@@ -40,6 +44,7 @@ export const useForgotPassword = (): UseForgotPasswordReturn => {
       setError(getAuthErrorMessage(err));
       return false;
     } finally {
+      inFlightRef.current = false;
       setIsLoading(false);
     }
   };

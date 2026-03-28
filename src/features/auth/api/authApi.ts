@@ -50,7 +50,6 @@ export const authApi = {
       );
       return data;
     } catch (error) {
-      console.error("Login API error:", error);
       throw normalizeAuthError(error);
     }
   },

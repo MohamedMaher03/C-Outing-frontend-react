@@ -9,11 +9,15 @@ import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { ArrowLeft, Mail, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InlineLoading } from "@/components/ui/LoadingSpinner";
-import logo from "@/assets/images/logo2.png";
-import cairoBg from "@/assets/images/cairo-bg.jpg";
 import { useVerifyEmail } from "@/features/auth/hooks/useVerifyEmail";
+import { AUTH_OTP_LENGTH } from "@/features/auth/constants";
+import {
+  AuthShell,
+  AuthSurface,
+} from "@/features/auth/components/layout/AuthShell";
+import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
 
-const OTP_LENGTH = 6;
+const OTP_LENGTH = AUTH_OTP_LENGTH;
 const RESEND_COOLDOWN_SECONDS = 60;
 
 /** Masks an email address: john.doe@example.com → j*****e@example.com */
@@ -37,6 +41,7 @@ export default function VerifyEmailPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const successTimeoutRef = useRef<number | null>(null);
 
   // Redirect to register if there's no email in route state
   if (!email) return <Navigate to="/register" replace />;
@@ -51,6 +56,17 @@ export default function VerifyEmailPage() {
     const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(id);
   }, [countdown]);
+
+  // Cleanup pending success banner timeout on unmount.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(
+    () => () => {
+      if (successTimeoutRef.current !== null) {
+        window.clearTimeout(successTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const handleDigitChange = (index: number, raw: string) => {
     // Handle paste of full OTP into any box
@@ -118,200 +134,146 @@ export default function VerifyEmailPage() {
       setDigits(Array(OTP_LENGTH).fill(""));
       setSuccessMessage("A new code has been sent to your email.");
       inputRefs.current[0]?.focus();
-      setTimeout(() => setSuccessMessage(null), 4000);
+      if (successTimeoutRef.current !== null) {
+        window.clearTimeout(successTimeoutRef.current);
+      }
+      successTimeoutRef.current = window.setTimeout(
+        () => setSuccessMessage(null),
+        4000,
+      );
     }
   };
 
   return (
-    <div className="relative w-full min-h-screen flex items-center justify-center overflow-hidden py-8">
-      {/* Background Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${cairoBg})` }}
-      />
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-primary/70" />
+    <AuthShell>
+      <AuthSurface>
+        {/* Back to Register */}
+        <button
+          type="button"
+          onClick={() => navigate("/register")}
+          className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 text-sm text-muted-foreground transition-colors hover:text-foreground/90"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Register
+        </button>
 
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-md mx-4">
-        {/* Logo Header */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <img
-            src={logo}
-            alt="C-Outing Logo"
-            className="h-12 w-auto rounded-lg"
-          />
-          <h1 className="text-3xl font-bold tracking-tight text-cream">
-            C-OUTING
-          </h1>
+        {/* Header */}
+        <div className="text-center space-y-3">
+          <div className="flex justify-center">
+            <div className="rounded-full bg-accent/15 p-3.5">
+              <Mail className="h-7 w-7 text-accent/85" />
+            </div>
+          </div>
+          <h2 className="text-2xl font-semibold text-foreground">
+            Verify Your Email
+          </h2>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            We sent a 6-digit verification code to{" "}
+            <span className="font-medium text-foreground break-all" dir="auto">
+              {maskEmail(email)}
+            </span>
+            . Enter it below to confirm your account.
+          </p>
         </div>
 
-        {/* Glass Card */}
-        <div className="glass rounded-2xl p-8 space-y-6">
-          {/* Back to Register */}
-          <button
-            type="button"
-            onClick={() => navigate("/register")}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+        {/* Error Banner */}
+        {error && <AuthStatusBanner message={error} onDismiss={clearError} />}
+
+        {/* Success Banner */}
+        {successMessage && (
+          <AuthStatusBanner message={successMessage} variant="success" />
+        )}
+
+        {/* OTP Form */}
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6"
+          noValidate
+          aria-busy={isLoading}
+        >
+          {/* OTP Input Boxes */}
+          <div className="flex justify-center gap-2 sm:gap-3" dir="ltr">
+            {digits.map((digit, index) => (
+              <input
+                key={index}
+                ref={(el) => {
+                  inputRefs.current[index] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                autoFocus={index === 0}
+                aria-label={`Digit ${index + 1} of ${OTP_LENGTH}`}
+                onChange={(e) => handleDigitChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
+                onPaste={handlePaste}
+                className={[
+                  "h-12 w-10 rounded-lg border text-center text-lg font-semibold sm:w-11",
+                  "bg-background/70 text-foreground",
+                  "transition-colors duration-200 ease-out",
+                  "focus:outline-none focus:ring-2 focus:ring-primary/35 focus:border-primary/40",
+                  digit
+                    ? "border-primary/45 bg-primary/10"
+                    : "border-border/70",
+                  isLoading ? "opacity-50 cursor-not-allowed" : "",
+                ].join(" ")}
+                disabled={isLoading}
+              />
+            ))}
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            className="w-full font-medium shadow-sm hover:bg-primary/95"
+            disabled={!isComplete || isLoading}
           >
-            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Register
-          </button>
-
-          {/* Header */}
-          <div className="text-center space-y-3">
-            <div className="flex justify-center">
-              <div className="rounded-full bg-accent/20 p-4">
-                <Mail className="h-8 w-8 text-accent" />
-              </div>
-            </div>
-            <h2 className="text-2xl font-bold text-foreground">
-              Verify Your Email
-            </h2>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              We sent a 6-digit verification code to{" "}
-              <span className="font-medium text-foreground">
-                {maskEmail(email)}
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <InlineLoading />
+                Verifying…
               </span>
-              . Enter it below to confirm your account.
-            </p>
-          </div>
-
-          {/* Error Banner */}
-          {error && (
-            <div className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              <svg
-                className="mt-0.5 h-4 w-4 shrink-0"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="flex-1">{error}</span>
-              <button
-                type="button"
-                onClick={clearError}
-                className="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
-              >
-                <svg
-                  className="h-4 w-4"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                </svg>
-              </button>
-            </div>
-          )}
-
-          {/* Success Banner */}
-          {successMessage && (
-            <div className="flex items-center gap-3 rounded-lg border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-              <svg
-                className="h-4 w-4 shrink-0"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              {successMessage}
-            </div>
-          )}
-
-          {/* OTP Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* OTP Input Boxes */}
-            <div className="flex justify-center gap-3">
-              {digits.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => {
-                    inputRefs.current[index] = el;
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  autoFocus={index === 0}
-                  aria-label={`Digit ${index + 1} of ${OTP_LENGTH}`}
-                  onChange={(e) => handleDigitChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  onPaste={handlePaste}
-                  className={[
-                    "h-14 w-12 rounded-xl border text-center text-xl font-bold",
-                    "bg-background/50 text-foreground",
-                    "transition-all duration-150",
-                    "focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent",
-                    digit
-                      ? "border-accent/60 bg-accent/10"
-                      : "border-border/60",
-                    isLoading ? "opacity-50 cursor-not-allowed" : "",
-                  ].join(" ")}
-                  disabled={isLoading}
-                />
-              ))}
-            </div>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full font-semibold"
-              disabled={!isComplete || isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <InlineLoading />
-                  Verifying…
-                </span>
-              ) : (
-                "Verify Email"
-              )}
-            </Button>
-          </form>
-
-          {/* Resend Section */}
-          <div className="text-center space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Didn't receive the code?
-            </p>
-            {canResend ? (
-              <button
-                type="button"
-                onClick={handleResend}
-                disabled={isResending}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isResending ? (
-                  <>
-                    <InlineLoading />
-                    Sending…
-                  </>
-                ) : (
-                  <>
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    Resend Code
-                  </>
-                )}
-              </button>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Resend in{" "}
-                <span className="font-semibold tabular-nums text-foreground">
-                  {countdown}s
-                </span>
-              </p>
+              "Verify Email"
             )}
-          </div>
+          </Button>
+        </form>
+
+        {/* Resend Section */}
+        <div className="text-center space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Didn't receive the code?
+          </p>
+          {canResend ? (
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={isResending}
+              className="inline-flex min-h-11 items-center gap-1.5 px-2 text-sm font-medium text-foreground/80 transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isResending ? (
+                <>
+                  <InlineLoading />
+                  Sending…
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Resend Code
+                </>
+              )}
+            </button>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Resend in{" "}
+              <span className="font-semibold tabular-nums text-foreground">
+                {countdown}s
+              </span>
+            </p>
+          )}
         </div>
-      </div>
-    </div>
+      </AuthSurface>
+    </AuthShell>
   );
 }

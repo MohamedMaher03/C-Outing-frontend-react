@@ -117,6 +117,7 @@ export interface FormFieldProps {
   type?: string;
   icon?: React.ReactNode;
   error?: string;
+  disabled?: boolean;
   register: UseFormRegisterReturn;
 }
 
@@ -125,5 +126,6 @@ export interface PasswordInputProps {
   id: string;
   placeholder?: string;
   error?: boolean;
+  disabled?: boolean;
   register: UseFormRegisterReturn;
 }

@@ -11,6 +11,7 @@ type Props = {
   type?: string;
   icon?: ReactNode;
   error?: string;
+  disabled?: boolean;
   register: UseFormRegisterReturn;
 };
 
@@ -21,6 +22,7 @@ export const FormField = ({
   type = "text",
   icon,
   error,
+  disabled,
   register,
 }: Props) => {
   return (
@@ -39,7 +41,9 @@ export const FormField = ({
           type={type}
           placeholder={placeholder}
           {...register}
-          className={`${icon ? "pl-10" : ""} ${
+          disabled={disabled}
+          aria-invalid={!!error}
+          className={`h-11 text-base sm:text-sm ${icon ? "pl-10" : ""} ${
             error ? "border-destructive focus-visible:ring-destructive" : ""
           }`}
         />

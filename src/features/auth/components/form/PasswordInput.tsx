@@ -7,10 +7,17 @@ type Props = {
   id: string;
   placeholder?: string;
   error?: boolean;
+  disabled?: boolean;
   register: UseFormRegisterReturn;
 };
 
-export const PasswordInput = ({ id, placeholder, error, register }: Props) => {
+export const PasswordInput = ({
+  id,
+  placeholder,
+  error,
+  disabled,
+  register,
+}: Props) => {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -20,7 +27,9 @@ export const PasswordInput = ({ id, placeholder, error, register }: Props) => {
         type={visible ? "text" : "password"}
         placeholder={placeholder}
         {...register}
-        className={`pr-10 ${
+        disabled={disabled}
+        aria-invalid={error}
+        className={`h-11 pr-10 text-base sm:text-sm ${
           error ? "border-destructive focus-visible:ring-destructive" : ""
         }`}
       />
@@ -28,7 +37,10 @@ export const PasswordInput = ({ id, placeholder, error, register }: Props) => {
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+        disabled={disabled}
+        aria-label={visible ? "Hide password" : "Show password"}
+        aria-pressed={visible}
+        className="absolute right-1 top-1/2 -translate-y-1/2 flex min-h-11 min-w-11 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
       >
         {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
       </button>

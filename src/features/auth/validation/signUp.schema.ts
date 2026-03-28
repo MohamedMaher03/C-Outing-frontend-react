@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AUTH_AVATAR_RULES, AUTH_PASSWORD_RULES } from "../constants";
 
 export const signUpSchema = z
   .object({
@@ -44,11 +45,17 @@ export const signUpSchema = z
 
     password: z
       .string()
-      .min(6, "Password must be at least 6 characters")
-      .max(100, "Password must be less than 100 characters")
+      .min(
+        AUTH_PASSWORD_RULES.MIN_LENGTH,
+        `Password must be at least ${AUTH_PASSWORD_RULES.MIN_LENGTH} characters`,
+      )
+      .max(
+        AUTH_PASSWORD_RULES.MAX_LENGTH,
+        `Password must be less than ${AUTH_PASSWORD_RULES.MAX_LENGTH} characters`,
+      )
       .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+        AUTH_PASSWORD_RULES.COMPLEXITY_REGEX,
+        AUTH_PASSWORD_RULES.COMPLEXITY_MESSAGE,
       ),
 
     avatar: z
@@ -63,8 +70,12 @@ export const signUpSchema = z
         z.union([z.instanceof(File), z.undefined()]),
       )
       .refine(
-        (file) => !file || file.type.startsWith("image/"),
+        (file) => !file || file.type.startsWith(AUTH_AVATAR_RULES.MIME_PREFIX),
         "Avatar must be an image",
+      )
+      .refine(
+        (file) => !file || file.size <= AUTH_AVATAR_RULES.MAX_SIZE_BYTES,
+        `Avatar must be smaller than ${AUTH_AVATAR_RULES.MAX_SIZE_MB}MB`,
       ),
 
     confirmPassword: z.string().min(1, "Please confirm your password"),

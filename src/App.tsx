@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -5,6 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import "./App.css";
+import { PageLoading } from "@/components/ui/LoadingSpinner";
 import {
   ProtectedRoute,
   PublicRoute,
@@ -13,39 +15,10 @@ import {
 } from "@/routes";
 import AppLayout from "@/components/layout/AppLayout";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import LoginForm from "@/features/auth/components/LoginForm";
-import SignUpPage from "@/features/auth/pages/SignUpPage";
-import VerifyEmailPage from "@/features/auth/pages/VerifyEmailPage";
-import ForgotPasswordPage from "@/features/auth/pages/ForgotPasswordPage";
-import ResetPasswordPage from "@/features/auth/pages/ResetPasswordPage";
-import OnboardingPage from "@/features/onboarding/pages/OnboardingPage";
-import HomePage from "@/features/home/pages/HomePage";
-import HomeSeeAllPage from "@/features/home/pages/HomeSeeAllPage";
-import FavoritesPage from "@/features/favorites/pages/FavoritesPage";
-import PlaceDetailPage from "@/features/place-detail/pages/PlaceDetailPage";
-import ProfilePage from "@/features/profile/pages/ProfilePage";
-import EditProfilePage from "@/features/profile/pages/EditProfilePage";
-import NotificationsPage from "@/features/profile/pages/NotificationsPage";
-import PrivacyPage from "@/features/profile/pages/PrivacyPage";
-import HelpSupportPage from "@/features/profile/pages/HelpSupportPage";
-import PublicProfilePage from "@/features/users/pages/PublicProfilePage";
-import NotFound from "@/pages/NotFound";
+import type { DashboardNavItem } from "@/components/layout/DashboardLayout";
+import RoleBasedLayout from "./components/layout/RoleBasedLayout";
 
 // Admin pages
-import AdminDashboardPage from "@/features/admin/pages/AdminDashboardPage";
-import ManageUsersPage from "@/features/admin/pages/ManageUsersPage";
-import ManagePlacesPage from "@/features/admin/pages/ManagePlacesPage";
-import ManageReviewsPage from "@/features/admin/pages/ManageReviewsPage";
-import ManageCategoriesPage from "@/features/admin/pages/ManageCategoriesPage";
-import SystemSettingsPage from "@/features/admin/pages/SystemSettingsPage";
-
-// Moderator pages
-import ModeratorDashboardPage from "@/features/moderator/pages/ModeratorDashboardPage";
-import ModerateReviewsPage from "@/features/moderator/pages/ModerateReviewsPage";
-import ModeratePlacesPage from "@/features/moderator/pages/ModeratePlacesPage";
-import ReportedContentPage from "@/features/moderator/pages/ReportedContentPage";
-
-// Icons for dashboard nav
 import {
   LayoutDashboard,
   Users,
@@ -56,8 +29,77 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
-import type { DashboardNavItem } from "@/components/layout/DashboardLayout";
-import RoleBasedLayout from "./components/layout/RoleBasedLayout";
+const LoginPage = lazy(() => import("@/features/auth/pages/LoginPage"));
+const SignUpPage = lazy(() => import("@/features/auth/pages/SignUpPage"));
+const VerifyEmailPage = lazy(
+  () => import("@/features/auth/pages/VerifyEmailPage"),
+);
+const ForgotPasswordPage = lazy(
+  () => import("@/features/auth/pages/ForgotPasswordPage"),
+);
+const ResetPasswordPage = lazy(
+  () => import("@/features/auth/pages/ResetPasswordPage"),
+);
+const OnboardingPage = lazy(
+  () => import("@/features/onboarding/pages/OnboardingPage"),
+);
+const HomePage = lazy(() => import("@/features/home/pages/HomePage"));
+const HomeSeeAllPage = lazy(
+  () => import("@/features/home/pages/HomeSeeAllPage"),
+);
+const FavoritesPage = lazy(
+  () => import("@/features/favorites/pages/FavoritesPage"),
+);
+const PlaceDetailPage = lazy(
+  () => import("@/features/place-detail/pages/PlaceDetailPage"),
+);
+const ProfilePage = lazy(() => import("@/features/profile/pages/ProfilePage"));
+const EditProfilePage = lazy(
+  () => import("@/features/profile/pages/EditProfilePage"),
+);
+const NotificationsPage = lazy(
+  () => import("@/features/profile/pages/NotificationsPage"),
+);
+const PrivacyPage = lazy(() => import("@/features/profile/pages/PrivacyPage"));
+const HelpSupportPage = lazy(
+  () => import("@/features/profile/pages/HelpSupportPage"),
+);
+const PublicProfilePage = lazy(
+  () => import("@/features/users/pages/PublicProfilePage"),
+);
+const NotFound = lazy(() => import("@/pages/NotFound"));
+
+const AdminDashboardPage = lazy(
+  () => import("@/features/admin/pages/AdminDashboardPage"),
+);
+const ManageUsersPage = lazy(
+  () => import("@/features/admin/pages/ManageUsersPage"),
+);
+const ManagePlacesPage = lazy(
+  () => import("@/features/admin/pages/ManagePlacesPage"),
+);
+const ManageReviewsPage = lazy(
+  () => import("@/features/admin/pages/ManageReviewsPage"),
+);
+const ManageCategoriesPage = lazy(
+  () => import("@/features/admin/pages/ManageCategoriesPage"),
+);
+const SystemSettingsPage = lazy(
+  () => import("@/features/admin/pages/SystemSettingsPage"),
+);
+
+const ModeratorDashboardPage = lazy(
+  () => import("@/features/moderator/pages/ModeratorDashboardPage"),
+);
+const ModerateReviewsPage = lazy(
+  () => import("@/features/moderator/pages/ModerateReviewsPage"),
+);
+const ModeratePlacesPage = lazy(
+  () => import("@/features/moderator/pages/ModeratePlacesPage"),
+);
+const ReportedContentPage = lazy(
+  () => import("@/features/moderator/pages/ReportedContentPage"),
+);
 
 // ── Nav Configs ──────────────────────────────────────────────
 
@@ -90,124 +132,141 @@ const moderatorNavItems: DashboardNavItem[] = [
 function App() {
   return (
     <Router>
-      <Routes>
-        {/* Public Routes - No Layout */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <LoginForm />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicRoute>
-              <SignUpPage />
-            </PublicRoute>
-          }
-        />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route
-          path="/forgot-password"
-          element={
-            <PublicRoute>
-              <ForgotPasswordPage />
-            </PublicRoute>
-          }
-        />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-        {/* Onboarding — only for users who haven't completed it yet */}
-        <Route
-          path="/onboarding"
-          element={
-            <OnboardingRoute>
-              <OnboardingPage />
-            </OnboardingRoute>
-          }
-        />
-
-        {/* App Routes with AppLayout - all require authentication */}
-        {/* ── User Routes (ONLY user role) ───────────────────────── */}
-
-        <Route
-          element={
-            <RoleBasedRoute allowedRoles={["user"]} redirectTo="/not-found">
-              <AppLayout />
-            </RoleBasedRoute>
-          }
-        >
-          <Route path="/" element={<HomePage />} />
+      <Suspense fallback={<PageLoading />}>
+        <Routes>
+          {/* Public Routes - No Layout */}
           <Route
-            path="/home/see-all/:collection"
-            element={<HomeSeeAllPage />}
+            path="/login"
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            }
           />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/edit" element={<EditProfilePage />} />
           <Route
-            path="/profile/notifications"
-            element={<NotificationsPage />}
+            path="/register"
+            element={
+              <PublicRoute>
+                <SignUpPage />
+              </PublicRoute>
+            }
           />
-          <Route path="/profile/privacy" element={<PrivacyPage />} />
-          <Route path="/profile/help" element={<HelpSupportPage />} />
-          <Route path="/favorites" element={<FavoritesPage />} />
-          <Route path="/notifications" element={<Navigate to="/" replace />} />
-        </Route>
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route
+            path="/forgot-password"
+            element={
+              <PublicRoute>
+                <ForgotPasswordPage />
+              </PublicRoute>
+            }
+          />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        {/* ── Protected Routes (ANY authenticated user) ──────────────────────────── */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <RoleBasedLayout
-                adminNavItems={adminNavItems}
-                moderatorNavItems={moderatorNavItems}
-              />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/venue/:id" element={<PlaceDetailPage />} />
-          <Route path="/users/:id" element={<PublicProfilePage />} />
-          <Route path="/not-found" element={<NotFound />} />
-        </Route>
+          {/* Onboarding — only for users who haven't completed it yet */}
+          <Route
+            path="/onboarding"
+            element={
+              <OnboardingRoute>
+                <OnboardingPage />
+              </OnboardingRoute>
+            }
+          />
 
-        {/* ── Admin Routes ──────────────────────────────── */}
-        <Route
-          element={
-            <RoleBasedRoute allowedRoles={["admin"]} redirectTo="/not-found">
-              <DashboardLayout navItems={adminNavItems} title="Admin Panel" />
-            </RoleBasedRoute>
-          }
-        >
-          <Route path="/admin" element={<AdminDashboardPage />} />
-          <Route path="/admin/users" element={<ManageUsersPage />} />
-          <Route path="/admin/places" element={<ManagePlacesPage />} />
-          <Route path="/admin/reviews" element={<ManageReviewsPage />} />
-          <Route path="/admin/categories" element={<ManageCategoriesPage />} />
-          <Route path="/admin/settings" element={<SystemSettingsPage />} />
-        </Route>
+          {/* App Routes with AppLayout - all require authentication */}
+          {/* ── User Routes (ONLY user role) ───────────────────────── */}
 
-        {/* ── Moderator Routes ──────────────────────────── */}
-        <Route
-          element={
-            <RoleBasedRoute
-              allowedRoles={["moderator"]}
-              redirectTo="/not-found"
-            >
-              <DashboardLayout navItems={moderatorNavItems} title="Moderator" />
-            </RoleBasedRoute>
-          }
-        >
-          <Route path="/moderator" element={<ModeratorDashboardPage />} />
-          <Route path="/moderator/reviews" element={<ModerateReviewsPage />} />
-          <Route path="/moderator/places" element={<ModeratePlacesPage />} />
-          <Route path="/moderator/reports" element={<ReportedContentPage />} />
-        </Route>
+          <Route
+            element={
+              <RoleBasedRoute allowedRoles={["user"]} redirectTo="/not-found">
+                <AppLayout />
+              </RoleBasedRoute>
+            }
+          >
+            <Route path="/" element={<HomePage />} />
+            <Route
+              path="/home/see-all/:collection"
+              element={<HomeSeeAllPage />}
+            />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/edit" element={<EditProfilePage />} />
+            <Route
+              path="/profile/notifications"
+              element={<NotificationsPage />}
+            />
+            <Route path="/profile/privacy" element={<PrivacyPage />} />
+            <Route path="/profile/help" element={<HelpSupportPage />} />
+            <Route path="/favorites" element={<FavoritesPage />} />
+            <Route
+              path="/notifications"
+              element={<Navigate to="/" replace />}
+            />
+          </Route>
 
-        {/* 404 Not Found Route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* ── Protected Routes (ANY authenticated user) ──────────────────────────── */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <RoleBasedLayout
+                  adminNavItems={adminNavItems}
+                  moderatorNavItems={moderatorNavItems}
+                />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/venue/:id" element={<PlaceDetailPage />} />
+            <Route path="/users/:id" element={<PublicProfilePage />} />
+            <Route path="/not-found" element={<NotFound />} />
+          </Route>
+
+          {/* ── Admin Routes ──────────────────────────────── */}
+          <Route
+            element={
+              <RoleBasedRoute allowedRoles={["admin"]} redirectTo="/not-found">
+                <DashboardLayout navItems={adminNavItems} title="Admin Panel" />
+              </RoleBasedRoute>
+            }
+          >
+            <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route path="/admin/users" element={<ManageUsersPage />} />
+            <Route path="/admin/places" element={<ManagePlacesPage />} />
+            <Route path="/admin/reviews" element={<ManageReviewsPage />} />
+            <Route
+              path="/admin/categories"
+              element={<ManageCategoriesPage />}
+            />
+            <Route path="/admin/settings" element={<SystemSettingsPage />} />
+          </Route>
+
+          {/* ── Moderator Routes ──────────────────────────── */}
+          <Route
+            element={
+              <RoleBasedRoute
+                allowedRoles={["moderator"]}
+                redirectTo="/not-found"
+              >
+                <DashboardLayout
+                  navItems={moderatorNavItems}
+                  title="Moderator"
+                />
+              </RoleBasedRoute>
+            }
+          >
+            <Route path="/moderator" element={<ModeratorDashboardPage />} />
+            <Route
+              path="/moderator/reviews"
+              element={<ModerateReviewsPage />}
+            />
+            <Route path="/moderator/places" element={<ModeratePlacesPage />} />
+            <Route
+              path="/moderator/reports"
+              element={<ReportedContentPage />}
+            />
+          </Route>
+
+          {/* 404 Not Found Route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }

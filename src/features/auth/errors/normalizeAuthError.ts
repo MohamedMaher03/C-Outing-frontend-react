@@ -11,8 +11,10 @@
  * Status-code mapping:
  *   400 / 422 → INVALID_CREDENTIALS  (bad request / validation)
  *   401       → INVALID_CREDENTIALS  (wrong password / unauthenticated)
+ *   403       → ACCESS_DENIED
  *   404       → EMAIL_NOT_FOUND
  *   409       → EMAIL_ALREADY_EXISTS (register conflict)
+ *   429       → RATE_LIMITED
  *   undefined → NETWORK_ERROR        (no response received)
  *   5xx / *   → UNKNOWN_ERROR
  */
@@ -24,14 +26,22 @@ import type { AuthErrorCode } from "../constants";
 const HTTP_STATUS_TO_AUTH_CODE: Partial<Record<number, AuthErrorCode>> = {
   400: "INVALID_CREDENTIALS",
   401: "INVALID_CREDENTIALS",
+  403: "ACCESS_DENIED",
   404: "EMAIL_NOT_FOUND",
   409: "EMAIL_ALREADY_EXISTS",
+  429: "RATE_LIMITED",
   422: "INVALID_CREDENTIALS",
 };
 
 const isTransportStatusMessage = (message?: string): boolean =>
   typeof message === "string" &&
   /^Request failed with status code \d+$/i.test(message);
+
+const isLikelyNetworkFailure = (message?: string): boolean =>
+  typeof message === "string" &&
+  /(network|timeout|timed out|failed to fetch|load failed|abort)/i.test(
+    message,
+  );
 
 export function normalizeAuthError(error: unknown): AuthError {
   // 1. Already an AuthError — pass through.
@@ -66,8 +76,11 @@ export function normalizeAuthError(error: unknown): AuthError {
   }
 
   // 3. Network failure or unexpected non-ApiError.
-  return new AuthError(
-    "UNKNOWN_ERROR",
-    error instanceof Error ? error.message : String(error),
-  );
+  const fallbackMessage =
+    error instanceof Error ? error.message : String(error);
+  const code: AuthErrorCode = isLikelyNetworkFailure(fallbackMessage)
+    ? "NETWORK_ERROR"
+    : "UNKNOWN_ERROR";
+
+  return new AuthError(code, fallbackMessage);
 }
