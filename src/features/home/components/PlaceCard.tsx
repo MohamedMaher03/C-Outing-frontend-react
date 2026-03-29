@@ -1,5 +1,5 @@
 import { Heart, MapPin, Star, Clock, Wifi, Navigation } from "lucide-react";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
@@ -293,4 +293,8 @@ const PlaceCard = ({
   );
 };
 
-export default PlaceCard;
+const MemoizedPlaceCard = memo(PlaceCard);
+
+MemoizedPlaceCard.displayName = "PlaceCard";
+
+export default MemoizedPlaceCard;

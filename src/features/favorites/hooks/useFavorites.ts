@@ -3,13 +3,14 @@
  * Manages favorites page state and actions
  */
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getFavorites,
   toggleFavorite as toggleFavoriteService,
 } from "@/features/favorites/services/favoritesService";
 import type { FavoriteItem } from "@/features/favorites/types";
-import { getErrorMessage } from "@/utils/apiError";
+import { normalizePageSize } from "@/features/favorites/utils/favoritesParams";
+import { getErrorMessage, isApiError } from "@/utils/apiError";
 
 interface UseFavoritesReturn {
   // State
@@ -22,81 +23,221 @@ interface UseFavoritesReturn {
   totalPages: number;
   hasPreviousPage: boolean;
   hasNextPage: boolean;
+  savePendingMap: Record<string, boolean>;
+  actionError: string | null;
 
   // Actions
   toggleSave: (placeId: string) => Promise<void>;
-  refreshFavorites: () => Promise<void>;
+  refreshFavorites: (options?: {
+    showLoader?: boolean;
+    showPageError?: boolean;
+  }) => Promise<void>;
+  clearActionError: () => void;
 }
+
+const DEFAULT_PAGE_SIZE = 10;
+
+const toFriendlyErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return "You are offline. Reconnect and try again.";
+  }
+
+  if (isApiError(error)) {
+    if (error.statusCode === 401) {
+      return "Your session expired. Sign in again to view saved places.";
+    }
+    if (error.statusCode === 403) {
+      return "This account cannot access saved places.";
+    }
+    if (error.statusCode === 404) {
+      return "Saved places are unavailable right now. Please try again soon.";
+    }
+    if (error.statusCode === 429) {
+      return "Too many requests. Please wait a few seconds and retry.";
+    }
+    if (typeof error.statusCode === "number" && error.statusCode >= 500) {
+      return "We are having trouble loading saved places. Please try again shortly.";
+    }
+  }
+
+  return getErrorMessage(error, fallback);
+};
 
 export const useFavorites = (): UseFavoritesReturn => {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize] = useState(10);
+  const pageSize = DEFAULT_PAGE_SIZE;
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
+  const [savePendingMap, setSavePendingMap] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [actionError, setActionError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+  const fetchRequestIdRef = useRef(0);
+  const saveInFlightIds = useRef(new Set<string>());
 
-  // Fetch favorites on mount
-  useEffect(() => {
-    fetchFavorites();
-  }, []);
+  const fetchFavorites = useCallback(
+    async ({
+      showLoader = true,
+      showPageError = true,
+    }: {
+      showLoader?: boolean;
+      showPageError?: boolean;
+    } = {}): Promise<void> => {
+      const requestId = ++fetchRequestIdRef.current;
 
-  const fetchFavorites = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+      try {
+        if (showLoader) {
+          setLoading(true);
+        }
 
-      const data = await getFavorites({ pageIndex: 0, pageSize });
-      setFavorites(data.items);
-      setPageIndex(data.pageIndex);
-      setTotalCount(data.totalCount);
-      setTotalPages(data.totalPages);
-      setHasPreviousPage(data.hasPreviousPage);
-      setHasNextPage(data.hasNextPage);
-    } catch (err) {
-      setError(getErrorMessage(err, "Failed to load favorites"));
-      console.error("Error fetching favorites:", err);
-      setFavorites([]);
-      setPageIndex(0);
-      setTotalCount(0);
-      setTotalPages(0);
-      setHasPreviousPage(false);
-      setHasNextPage(false);
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (showPageError) {
+          setError(null);
+        }
 
-  const toggleSave = async (placeId: string) => {
-    try {
-      const currentPlace = favorites.find((item) => item.venue.id === placeId);
-      const isFavorite = !!currentPlace;
+        const data = await getFavorites({
+          pageIndex: 0,
+          pageSize: normalizePageSize(pageSize),
+        });
 
-      // Optimistic update
-      if (isFavorite) {
-        setFavorites((prev) =>
-          prev.filter((item) => item.venue.id !== placeId),
+        if (!mountedRef.current || requestId !== fetchRequestIdRef.current) {
+          return;
+        }
+
+        setFavorites(data.items);
+        setPageIndex(data.pageIndex);
+        setTotalCount(data.totalCount);
+        setTotalPages(data.totalPages);
+        setHasPreviousPage(Boolean(data.hasPreviousPage));
+        setHasNextPage(
+          Boolean(data.hasNextPage) &&
+            data.totalPages > 0 &&
+            data.pageIndex + 1 < data.totalPages,
         );
+      } catch (err) {
+        if (!mountedRef.current || requestId !== fetchRequestIdRef.current) {
+          return;
+        }
+
+        if (showPageError) {
+          setError(
+            toFriendlyErrorMessage(err, "We could not load your saved places."),
+          );
+          setFavorites([]);
+          setPageIndex(0);
+          setTotalCount(0);
+          setTotalPages(0);
+          setHasPreviousPage(false);
+          setHasNextPage(false);
+        }
+      } finally {
+        if (
+          mountedRef.current &&
+          requestId === fetchRequestIdRef.current &&
+          showLoader
+        ) {
+          setLoading(false);
+        }
+      }
+    },
+    [pageSize],
+  );
+
+  useEffect(() => {
+    mountedRef.current = true;
+    void fetchFavorites();
+
+    return () => {
+      mountedRef.current = false;
+      fetchRequestIdRef.current += 1;
+    };
+  }, [fetchFavorites]);
+
+  const toggleSave = useCallback(
+    async (rawPlaceId: string) => {
+      const placeId = rawPlaceId.trim();
+
+      if (!placeId) {
+        const message =
+          "We could not update this save because the place could not be identified.";
+        setActionError(message);
+        throw new Error(message);
       }
 
-      // Call API
-      await toggleFavoriteService(placeId, isFavorite);
+      if (saveInFlightIds.current.has(placeId)) {
+        return;
+      }
 
-      // If API fails, the error will be caught and state will be reverted
-    } catch (err) {
-      console.error("Error toggling favorite:", err);
-      // Revert optimistic update on error
-      await fetchFavorites();
-      throw err;
-    }
-  };
+      try {
+        setActionError(null);
+        setError(null);
+        saveInFlightIds.current.add(placeId);
+        setSavePendingMap((prev) => ({ ...prev, [placeId]: true }));
 
-  const refreshFavorites = async () => {
-    await fetchFavorites();
-  };
+        const currentPlace = favorites.find(
+          (item) => item.venue.id === placeId,
+        );
+        const isFavorite = !!currentPlace;
+
+        // Optimistic update
+        if (isFavorite) {
+          setFavorites((prev) =>
+            prev.filter((item) => item.venue.id !== placeId),
+          );
+          setTotalCount((prev) => Math.max(0, prev - 1));
+        }
+
+        // Call API
+        await toggleFavoriteService(placeId, isFavorite);
+
+        // Keep remove-from-favorites snappy without a follow-up refetch.
+        // Adding back (rare on this page) still reloads to hydrate full venue data.
+        if (!isFavorite) {
+          await fetchFavorites({ showLoader: false, showPageError: false });
+        }
+
+        // If API fails, the error will be caught and state will be reverted
+      } catch (err) {
+        setActionError(
+          toFriendlyErrorMessage(err, "We could not update your saved places."),
+        );
+        // Revert optimistic update on error
+        await fetchFavorites({ showLoader: false, showPageError: false });
+        throw err;
+      } finally {
+        saveInFlightIds.current.delete(placeId);
+        if (mountedRef.current) {
+          setSavePendingMap((prev) => {
+            const next = { ...prev };
+            delete next[placeId];
+            return next;
+          });
+        }
+      }
+    },
+    [favorites, fetchFavorites],
+  );
+
+  const refreshFavorites = useCallback(
+    async (
+      options: {
+        showLoader?: boolean;
+        showPageError?: boolean;
+      } = {},
+    ) => {
+      await fetchFavorites(options);
+    },
+    [fetchFavorites],
+  );
+
+  const clearActionError = useCallback(() => {
+    setActionError(null);
+  }, []);
 
   return {
     favorites,
@@ -108,7 +249,10 @@ export const useFavorites = (): UseFavoritesReturn => {
     totalPages,
     hasPreviousPage,
     hasNextPage,
+    savePendingMap,
+    actionError,
     toggleSave,
     refreshFavorites,
+    clearActionError,
   };
 };

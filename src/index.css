@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -41,6 +41,25 @@
     --navy-light: 216 40% 30%;
     --cream: 40 30% 95%;
 
+    --font-family-body: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+    --font-family-display: "Fraunces", "Iowan Old Style", "Times New Roman",
+      serif;
+    --text-caption: 0.75rem;
+    --text-secondary: 0.875rem;
+    --text-body: 1rem;
+    --text-subheading: 1.25rem;
+    --text-heading: 1.953rem;
+    --leading-caption: 1.4;
+    --leading-secondary: 1.5;
+    --leading-body: 1.6;
+    --leading-subheading: 1.35;
+    --leading-heading: 1.15;
+    --weight-body: 400;
+    --weight-label: 600;
+    --weight-heading: 700;
+    --tracking-caps: 0.05em;
+    --tracking-heading: -0.012em;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -79,6 +98,14 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --leading-body: 1.65;
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      --text-subheading: 1.333rem;
+      --text-heading: 2.111rem;
+    }
   }
 }
 
@@ -89,11 +116,57 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: "Plus Jakarta Sans", sans-serif;
+    font-family: var(--font-family-body);
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+    font-kerning: normal;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   }
 }
 
 @layer utilities {
+  .text-role-heading {
+    font-family: var(--font-family-display);
+    font-size: var(--text-heading);
+    line-height: var(--leading-heading);
+    font-weight: var(--weight-heading);
+    letter-spacing: var(--tracking-heading);
+  }
+
+  .text-role-subheading {
+    font-size: var(--text-subheading);
+    line-height: var(--leading-subheading);
+    font-weight: var(--weight-label);
+  }
+
+  .text-role-body {
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+    font-weight: var(--weight-body);
+  }
+
+  .text-role-secondary {
+    font-size: var(--text-secondary);
+    line-height: var(--leading-secondary);
+    font-weight: 500;
+  }
+
+  .text-role-caption {
+    font-size: var(--text-caption);
+    line-height: var(--leading-caption);
+    font-weight: var(--weight-label);
+    letter-spacing: var(--tracking-caps);
+  }
+
+  .text-measure-comfortable {
+    max-width: 65ch;
+  }
+
+  .text-numeric-tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
   .glass {
     @apply bg-white/80 backdrop-blur-xl border border-white/30 shadow-2xl;
   }
