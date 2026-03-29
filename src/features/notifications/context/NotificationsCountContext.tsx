@@ -32,12 +32,21 @@ export function NotificationsCountProvider({
   // Fetch the initial unread count on mount so the bell badge is correct
   // on every page, not just after visiting NotificationsPage.
   useEffect(() => {
+    let active = true;
+
     notificationsService
       .getUnreadCount()
-      .then((count) => setUnreadCount(count))
+      .then((count) => {
+        if (!active) return;
+        setUnreadCount(Math.max(0, count));
+      })
       .catch(() => {
         // Silently ignore — the badge will just stay at 0
       });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (

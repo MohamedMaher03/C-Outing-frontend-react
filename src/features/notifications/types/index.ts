@@ -41,3 +41,5 @@ export type NotificationsResponse = PaginatedResponse<Notification>;
 
 /** Generic success/fail response from mutating notification endpoints */
 export type NotificationActionResponse = string | null;
+
+export type { NotificationsDataSource } from "./dataSource";

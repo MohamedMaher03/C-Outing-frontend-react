@@ -8,8 +8,9 @@
  *   • Attaching the Authorization header on every request
  *   • Handling 401 responses globally
  *
- * To switch to mocks during development, swap the import in notificationsService.ts:
- *   import { notificationsMock as notificationsApi } from "../mocks/notificationsMock";
+ * To switch to mocks during development, set:
+ *   VITE_NOTIFICATIONS_USE_MOCKS=true
+ * in your environment so notificationsDataSource uses notificationsMock.
  */
 
 import axiosInstance from "@/config/axios.config";

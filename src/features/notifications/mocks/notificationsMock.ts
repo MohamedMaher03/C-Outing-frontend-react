@@ -1,17 +1,15 @@
 /**
  * Notifications Mock Implementation
  *
- * Drop-in replacement for notificationsApi — mirrors the same interface so it
- * can be swapped in notificationsService.ts without changing any other code:
- *
- *   // notificationsService.ts — swap this one line:
- *   import { notificationsMock as notificationsApi } from "../mocks/notificationsMock";
+ * Drop-in replacement for notificationsApi through notificationsDataSource.
+ * Enable with VITE_NOTIFICATIONS_USE_MOCKS=true.
  *
  * Simulates realistic network latency and in-memory notifications storage.
  */
 
 import type {
   Notification,
+  NotificationsQueryParams,
   NotificationsResponse,
   NotificationActionResponse,
 } from "../types";
@@ -139,6 +137,14 @@ let mockNotifications: Notification[] = [...MOCK_NOTIFICATIONS];
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+const clampInt = (value: unknown, min: number, max: number): number => {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return min;
+  }
+
+  return Math.min(max, Math.max(min, Math.floor(value)));
+};
+
 // ── Mock Notifications API ───────────────────────────────────
 // Interface intentionally mirrors notificationsApi so they are interchangeable.
 
@@ -146,16 +152,28 @@ export const notificationsMock = {
   /**
    * Mock GET /users/:userId/notifications
    */
-  async getNotifications(): Promise<NotificationsResponse> {
+  async getNotifications(
+    params?: NotificationsQueryParams,
+  ): Promise<NotificationsResponse> {
     await delay(600);
+
+    const pageIndex = clampInt(params?.pageIndex, 1, Number.MAX_SAFE_INTEGER);
+    const pageSize = clampInt(params?.pageSize, 1, 100);
+    const totalCount = mockNotifications.length;
+    const totalPages = totalCount === 0 ? 0 : Math.ceil(totalCount / pageSize);
+    const safePageIndex =
+      totalPages === 0 ? 0 : Math.min(pageIndex, totalPages);
+    const start = safePageIndex <= 0 ? 0 : (safePageIndex - 1) * pageSize;
+    const end = start + pageSize;
+
     return {
-      items: [...mockNotifications],
-      pageIndex: 1,
-      pageSize: mockNotifications.length,
-      totalCount: mockNotifications.length,
-      totalPages: 1,
-      hasPreviousPage: false,
-      hasNextPage: false,
+      items: mockNotifications.slice(start, end),
+      pageIndex: safePageIndex,
+      pageSize,
+      totalCount,
+      totalPages,
+      hasPreviousPage: safePageIndex > 1,
+      hasNextPage: safePageIndex > 0 && safePageIndex < totalPages,
     };
   },
 

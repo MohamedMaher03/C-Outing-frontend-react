@@ -4,7 +4,7 @@
  * Drop-in replacement for favoritesApi. It mirrors the same datasource
  * interface and is selected through favoritesDataSource.
  *
- * Set VITE_FAVORITES_USE_MOCKS=true to activate this datasource.
+ * Set VITE_USE_MOCKS=true to activate this datasource.
  *
  * Simulates realistic network latency and in-memory favorites storage.
  */
