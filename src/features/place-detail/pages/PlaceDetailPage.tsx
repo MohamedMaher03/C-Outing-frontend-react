@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePlaceDetail } from "@/features/place-detail/hooks/usePlaceDetail";
 import { getReviewIdentity } from "@/features/place-detail/utils/reviewIdentity";
-import { PRICE_SYMBOL } from "@/features/place-detail/utils/priceLevel";
+import { PRICE_LEVEL_META } from "@/features/place-detail/utils/priceLevel";
 import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defaultImages";
 import { ReviewCard } from "@/features/place-detail/components/ReviewCard";
 import { SocialReviewCard } from "@/features/place-detail/components/SocialReviewCard";
@@ -245,8 +245,11 @@ const PlaceDetailPage = () => {
           {/* Price + hours */}
           <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground">
             {place.priceLevel && (
-              <span className="font-semibold text-secondary">
-                {PRICE_SYMBOL[place.priceLevel]}
+              <span className="inline-flex items-center gap-1 font-semibold text-secondary">
+                <span>{PRICE_LEVEL_META[place.priceLevel].label}</span>
+                <span className="text-xs font-medium text-secondary/85">
+                  {PRICE_LEVEL_META[place.priceLevel].symbol}
+                </span>
                 {place.priceRange && (
                   <span className="text-muted-foreground font-normal ml-1">
                     · {place.priceRange}

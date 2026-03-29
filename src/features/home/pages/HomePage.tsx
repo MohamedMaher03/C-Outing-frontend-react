@@ -1,19 +1,32 @@
-import { useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
+  ChevronLeft,
   ChevronRight,
   Flame,
   Compass,
   Sparkles,
   WandSparkles,
+  RotateCcw,
+  ShieldAlert,
+  Wifi,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Input } from "@/components/ui/input";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useHome } from "@/features/home/hooks/useHomeHook";
+import { cn } from "@/lib/utils";
 import {
   FILTER_OPTIONS,
   DISCOVERY_SOURCE_OPTIONS,
@@ -21,7 +34,108 @@ import {
   VENUE_PRICE_RANGE_OPTIONS,
 } from "@/features/home/mocks";
 import type { VenuePriceRange } from "@/features/home/types";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
+
+const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const;
+const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
+
+interface HorizontalScrollerProps {
+  children: ReactNode;
+  ariaLabel: string;
+  className?: string;
+}
+
+const HorizontalScroller = ({
+  children,
+  ariaLabel,
+  className,
+}: HorizontalScrollerProps) => {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const shouldReduceMotion = useReducedMotion();
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollButtons = useCallback(() => {
+    const element = scrollRef.current;
+    if (!element) {
+      return;
+    }
+
+    const maxScrollLeft = element.scrollWidth - element.clientWidth;
+    setCanScrollLeft(element.scrollLeft > 8);
+    setCanScrollRight(element.scrollLeft < maxScrollLeft - 8);
+  }, []);
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) {
+      return;
+    }
+
+    element.addEventListener("scroll", updateScrollButtons, { passive: true });
+
+    const resizeObserver = new ResizeObserver(updateScrollButtons);
+    resizeObserver.observe(element);
+
+    return () => {
+      element.removeEventListener("scroll", updateScrollButtons);
+      resizeObserver.disconnect();
+    };
+  }, [updateScrollButtons]);
+
+  useEffect(() => {
+    updateScrollButtons();
+  }, [children, updateScrollButtons]);
+
+  const scrollByDirection = (direction: "left" | "right") => {
+    const element = scrollRef.current;
+    if (!element) {
+      return;
+    }
+
+    const amount = Math.max(Math.round(element.clientWidth * 0.8), 280);
+    element.scrollBy({
+      left: direction === "left" ? -amount : amount,
+      behavior: shouldReduceMotion ? "auto" : "smooth",
+    });
+  };
+
+  return (
+    <div className="group relative">
+      <button
+        type="button"
+        onClick={() => scrollByDirection("left")}
+        aria-label={`Scroll ${ariaLabel} left`}
+        disabled={!canScrollLeft}
+        className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-card/95 text-foreground shadow-sm transition-opacity hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+
+      <div
+        ref={scrollRef}
+        className={cn(
+          "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 scrollbar-hide",
+          className,
+        )}
+        aria-label={ariaLabel}
+      >
+        {children}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => scrollByDirection("right")}
+        aria-label={`Scroll ${ariaLabel} right`}
+        disabled={!canScrollRight}
+        className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-card/95 text-foreground shadow-sm transition-opacity hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
+  );
+};
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -55,22 +169,35 @@ const HomePage = () => {
     trendingPlaces,
     moodPlaces,
     isMoodLoading,
+    moodError,
     userLocation,
     selectedSimilarSeedId,
     similarSeedPlaces,
     similarPlaces,
     isSimilarLoading,
     similarError,
+    saveError,
     selectPlaceForSimilar,
     requestUserLocation,
     toggleSave,
+    clearSaveError,
+    isPlaceSavePending,
+    retryDiscovery,
+    retrySimilar,
+    retryMood,
     isLoading,
     error,
+    reloadPlaces,
     categories,
     moodOptions,
     trendingTags,
     popularDistricts,
   } = useHome();
+
+  const compactNumberFormatter = useMemo(
+    () => new Intl.NumberFormat(undefined, { notation: "compact" }),
+    [],
+  );
 
   const typeDiscoveryOptions = categories.map((category) => ({
     id: category.id,
@@ -85,6 +212,7 @@ const HomePage = () => {
   const discoveryResultCount = discoveryPlaces.length;
   const [similarSearchInput, setSimilarSearchInput] = useState("");
   const [isSimilarInputFocused, setIsSimilarInputFocused] = useState(false);
+  const moodSectionRef = useRef<HTMLElement | null>(null);
 
   const similarSeedOptions = similarSeedPlaces;
 
@@ -115,6 +243,53 @@ const HomePage = () => {
     isSimilarInputFocused ||
     (similarSearchInput.trim().length > 0 &&
       similarSearchInput !== selectedSimilarSeedPlace?.name);
+  const shouldReduceMotion = useReducedMotion();
+
+  const stateTransition = useMemo(
+    () => ({
+      duration: shouldReduceMotion ? 0.01 : 0.24,
+      ease: EASE_OUT_QUART,
+    }),
+    [shouldReduceMotion],
+  );
+
+  const heroContainerVariants = useMemo(
+    () => ({
+      hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 16 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+          duration: shouldReduceMotion ? 0.01 : 0.62,
+          ease: EASE_OUT_EXPO,
+          staggerChildren: shouldReduceMotion ? 0 : 0.12,
+          delayChildren: shouldReduceMotion ? 0 : 0.08,
+        },
+      },
+    }),
+    [shouldReduceMotion],
+  );
+
+  const heroItemVariants = useMemo(
+    () => ({
+      hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 14 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+          duration: shouldReduceMotion ? 0.01 : 0.48,
+          ease: EASE_OUT_QUART,
+        },
+      },
+    }),
+    [shouldReduceMotion],
+  );
+
+  const cardDelay = useCallback(
+    (index: number, base = 0) =>
+      shouldReduceMotion ? 0 : base + Math.min(index * 0.06, 0.28),
+    [shouldReduceMotion],
+  );
 
   const handlePriceRangeSelect = (priceRange: VenuePriceRange) => {
     setSelectedPriceRange(
@@ -122,6 +297,49 @@ const HomePage = () => {
     );
     setActiveDiscoverySource("price-range");
   };
+
+  const scrollMoodSectionIntoView = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const maxAttempts = 8;
+    let attempts = 0;
+
+    const tryScroll = () => {
+      const moodSection = moodSectionRef.current;
+      if (moodSection) {
+        moodSection.scrollIntoView({
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+          block: "start",
+        });
+        return;
+      }
+
+      attempts += 1;
+      if (attempts < maxAttempts) {
+        window.requestAnimationFrame(tryScroll);
+      }
+    };
+
+    window.requestAnimationFrame(tryScroll);
+  }, []);
+
+  const handleMoodOptionSelect = useCallback(
+    (moodId: string, isActive: boolean) => {
+      if (isActive) {
+        setSelectedMood(null);
+        return;
+      }
+
+      setSelectedMood(moodId);
+      scrollMoodSectionIntoView();
+    },
+    [scrollMoodSectionIntoView, setSelectedMood],
+  );
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -143,113 +361,317 @@ const HomePage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center max-w-sm px-6">
-          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">😔</span>
-          </div>
-          <p className="text-destructive font-semibold mb-2">
-            Failed to load places
-          </p>
-          <p className="text-sm text-muted-foreground">{error}</p>
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-primary via-primary/92 to-primary/80">
+        <div className="absolute -top-20 -left-10 h-72 w-72 rounded-full bg-secondary/10 blur-2xl" />
+        <div className="absolute right-0 top-12 h-64 w-64 rounded-full bg-secondary/10 blur-2xl" />
+
+        <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center px-4 py-10 sm:px-6 lg:px-8">
+          <section
+            className="w-full overflow-hidden rounded-3xl border border-white/15 bg-white/10 shadow-xl backdrop-blur-lg"
+            role="alert"
+            aria-live="assertive"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_0.75fr]">
+              <div className="space-y-6 p-6 sm:p-8 lg:p-10">
+                <div className="inline-flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-secondary">
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                  Something went wrong
+                </div>
+
+                <div className="space-y-2">
+                  <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                    We could not load your home feed right now
+                  </h1>
+                  <p className="max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
+                    No worries, your account and preferences are safe. Please
+                    try again in a moment.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    type="button"
+                    onClick={() => void reloadPlaces()}
+                    variant="secondary"
+                    className="h-10 rounded-full px-5 text-sm font-semibold text-primary shadow-sm"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Try again
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    variant="outline"
+                    className="h-10 rounded-full border-white/25 bg-white/10 px-5 text-sm font-semibold text-white hover:bg-white/15 hover:text-white"
+                  >
+                    Refresh page
+                  </Button>
+                </div>
+              </div>
+
+              <aside className="border-t border-white/10 bg-black/15 p-6 sm:p-8 lg:border-l lg:border-t-0">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-white/70">
+                  Quick check
+                </h2>
+
+                <ul className="mt-4 space-y-3">
+                  <li className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/85">
+                    <span className="flex items-center gap-2 font-semibold text-white">
+                      <Wifi className="h-4 w-4 text-secondary" />
+                      Network connection
+                    </span>
+                    <p className="mt-1 text-xs leading-relaxed text-white/70">
+                      Confirm your internet is active, then retry.
+                    </p>
+                  </li>
+                </ul>
+              </aside>
+            </div>
+          </section>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <motion.div
+      className="min-h-screen bg-background"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{
+        duration: shouldReduceMotion ? 0.01 : 0.32,
+        ease: EASE_OUT_QUART,
+      }}
+    >
       {/* ====== HERO SECTION ====== */}
-      <div className="relative overflow-hidden h-[380px] sm:h-[400px]">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 transition-transform duration-20s hover:scale-110"
+      <div className="relative h-[340px] overflow-hidden sm:h-[390px] lg:h-[420px]">
+        <motion.div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${cairoBg})` }}
+          initial={{ scale: shouldReduceMotion ? 1 : 1.06 }}
+          animate={{ scale: 1 }}
+          transition={{
+            duration: shouldReduceMotion ? 0.01 : 0.85,
+            ease: EASE_OUT_EXPO,
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-transparent to-secondary/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/62 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/32 via-transparent to-secondary/6" />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 pt-10 pb-6 h-full flex flex-col justify-end">
-          <div className="space-y-2 mb-7 animate-fade-in-up">
+        <motion.div
+          className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-5 pt-8 sm:pb-6 sm:pt-10"
+          variants={heroContainerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div className="mb-6 space-y-2" variants={heroItemVariants}>
             <p className="text-white/80 text-sm font-medium tracking-wide uppercase">
               {getGreeting()}, {userName} ✦
             </p>
-            <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight">
-              <span className="text-gradient-gold">Discover Cairo</span>
+            <h1 className="text-3xl font-semibold leading-tight sm:text-5xl lg:text-[3.4rem]">
+              <span className="text-cream">Discover Cairo</span>
             </h1>
-            <p className="text-white/90 text-base max-w-md">
+            <p className="max-w-md text-sm text-white/85 sm:text-base">
               AI-powered spots curated for your vibe. Where are we heading
               today?
             </p>
-          </div>
+          </motion.div>
 
           {/* Search Bar */}
-          <div className="relative animate-fade-in-up animate-delay-100 max-w-2xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary" />
+          <motion.div
+            className="relative w-full max-w-2xl"
+            variants={heroItemVariants}
+          >
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/85" />
             <Input
               placeholder="Search places, districts, or tags..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search Cairo venues"
-              className="pl-12 pr-14 h-14 rounded-2xl border border-white/20 bg-white/15 backdrop-blur-xl text-white placeholder:text-white/50 focus:border-secondary focus:ring-secondary/30 focus:bg-white/20 transition-all text-base shadow-xl"
+              className="h-12 rounded-2xl border border-white/15 bg-white/10 pl-12 pr-14 text-base text-white shadow-lg transition-colors placeholder:text-white/55 focus:border-secondary/70 focus:bg-white/15 focus:ring-secondary/20 backdrop-blur-md sm:h-14"
             />
-          </div>
+          </motion.div>
 
           {/* Filter Pills */}
-          <div
-            className="flex gap-2 overflow-x-auto pb-2 mt-4 scrollbar-hide -mx-4 px-4 animate-fade-in-up animate-delay-200"
-            role="tablist"
+          <motion.div
+            className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide"
             aria-label="Filter venues"
+            variants={heroItemVariants}
           >
-            {FILTER_OPTIONS.map((filter) => {
+            {FILTER_OPTIONS.map((filter, index) => {
               const Icon = filter.icon;
               const isActive =
                 filter.id === "all"
                   ? selectedFilters.length === 0
                   : selectedFilters.includes(filter.id);
               return (
-                <button
+                <motion.button
+                  type="button"
                   key={filter.id}
-                  role="tab"
-                  aria-selected={isActive}
+                  aria-pressed={isActive}
                   onClick={() => toggleFilter(filter.id)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
+                  whileHover={
+                    shouldReduceMotion
+                      ? undefined
+                      : { y: -2, transition: { duration: 0.16 } }
+                  }
+                  whileTap={
+                    shouldReduceMotion
+                      ? undefined
+                      : { scale: 0.97, transition: { duration: 0.1 } }
+                  }
+                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: shouldReduceMotion ? 0.01 : 0.26,
+                    ease: EASE_OUT_QUART,
+                    delay: cardDelay(index, 0.18),
+                  }}
+                  className={`inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 sm:px-5 ${
                     isActive
-                      ? "bg-secondary text-primary shadow-lg shadow-secondary/40 scale-105 glow-gold"
-                      : "bg-white/10 text-white/90 hover:bg-white/20 border border-white/10 backdrop-blur-xl hover:border-secondary/30"
+                      ? "border-secondary/35 bg-secondary/85 text-primary shadow-sm"
+                      : "border-white/15 bg-white/10 text-white/85 backdrop-blur-md hover:border-secondary/25 hover:bg-white/15"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
                   {filter.label}
-                </button>
+                </motion.button>
               );
             })}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 pt-4">
+      <motion.div
+        className="max-w-7xl mx-auto px-4 pt-4"
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: shouldReduceMotion ? 0.01 : 0.36,
+          ease: EASE_OUT_QUART,
+          delay: shouldReduceMotion ? 0 : 0.1,
+        }}
+      >
         <LocationPermissionBanner
           userLocation={userLocation}
           onEnableLocation={requestUserLocation}
-          className="animate-fade-in-up"
         />
-      </div>
+      </motion.div>
+
+      <AnimatePresence initial={false}>
+        {saveError && (
+          <motion.div
+            key="save-error"
+            className="mx-auto mt-4 max-w-7xl px-4"
+            initial={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+            transition={stateTransition}
+          >
+            <div
+              className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-medium text-destructive">
+                  {saveError}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={clearSaveError}
+                  className="h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ====== MAIN CONTENT: TWO-COLUMN LAYOUT ====== */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex gap-8 items-start">
+      <div className="mx-auto max-w-7xl px-4 py-6 md:py-8">
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           {/* ── LEFT: Main Feed ── */}
           <div className="flex-1 min-w-0 space-y-12">
-            {/* ── Venue Discovery Studio (New Endpoints) ── */}
-            <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/30 p-5 sm:p-6 shadow-sm">
-              <div className="absolute -top-20 -right-16 h-52 w-52 rounded-full bg-secondary/15 blur-3xl" />
-              <div className="absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-orange-200/20 blur-3xl" />
+            {/* ── QUICK CONTROLS (MOBILE/TABLET) ── */}
+            <section className="space-y-4 lg:hidden">
+              <div className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-base font-semibold text-foreground">
+                    Mood selector
+                  </h2>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Tap to personalize suggestions
+                  </span>
+                </div>
 
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {moodOptions.map((mood) => {
+                    const isActive = selectedMood === mood.id;
+                    const MoodIcon = MOOD_ICON_MAP[mood.icon] ?? Sparkles;
+                    return (
+                      <button
+                        type="button"
+                        key={`mobile-mood-${mood.id}`}
+                        onClick={() =>
+                          handleMoodOptionSelect(mood.id, isActive)
+                        }
+                        className={`flex min-h-11 items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                          isActive
+                            ? "border-secondary/35 bg-secondary/10"
+                            : "border-border/60 bg-background hover:border-secondary/40"
+                        }`}
+                      >
+                        <MoodIcon className="h-4 w-4 shrink-0 text-secondary/90" />
+                        <span className="min-w-0 truncate text-xs font-medium text-foreground">
+                          {mood.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
+                <h2 className="text-base font-semibold text-foreground">
+                  Trending tags
+                </h2>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {trendingTags.map((tag) => (
+                    <button
+                      type="button"
+                      key={`mobile-tag-${tag.id}`}
+                      onClick={() => setSearch(tag.label)}
+                      className="inline-flex min-h-11 items-center gap-1 rounded-full border border-border/60 bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors duration-200 hover:border-secondary/30 hover:bg-secondary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+                    >
+                      <span className="text-muted-foreground">#</span>
+                      <span
+                        className="max-w-[120px] truncate"
+                        title={tag.label}
+                      >
+                        {tag.label}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground tabular-nums">
+                        {compactNumberFormatter.format(tag.searchCount)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* ── Venue Discovery Studio (New Endpoints) ── */}
+            <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-5 sm:p-6 shadow-sm">
               <div className="relative z-10 space-y-5">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
-                    <h2 className="text-xl font-black tracking-tight text-foreground flex items-center gap-2">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/20 text-secondary">
+                    <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/12 text-secondary">
                         <Compass className="h-4 w-4" />
                       </span>
                       Venue Discovery Studio
@@ -259,41 +681,48 @@ const HomePage = () => {
                       rating intelligence.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="rounded-full bg-foreground text-white px-3 py-1 font-semibold">
-                      Top Rated: {globalTopRatedVenues.length}
+                  <div className="flex w-full flex-wrap items-center gap-2 text-xs sm:w-auto sm:justify-end">
+                    <span className="max-w-[180px] truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1.5 font-medium text-foreground">
+                      Top Rated:{" "}
+                      {compactNumberFormatter.format(
+                        globalTopRatedVenues.length,
+                      )}
                     </span>
-                    <span className="rounded-full bg-white/80 border border-border/70 px-3 py-1 font-semibold text-foreground">
-                      {selectedArea}: {topRatedInAreaVenues.length}
+                    <span className="max-w-[180px] truncate rounded-full border border-border/70 bg-background px-3 py-1.5 font-medium text-foreground">
+                      {selectedArea}:{" "}
+                      {compactNumberFormatter.format(
+                        topRatedInAreaVenues.length,
+                      )}
                     </span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                   {DISCOVERY_SOURCE_OPTIONS.map((source) => {
                     const Icon = source.icon;
                     const isActive = activeDiscoverySource === source.id;
                     return (
                       <button
+                        type="button"
                         key={source.id}
                         onClick={() => setActiveDiscoverySource(source.id)}
-                        className={`group rounded-2xl border px-3 py-2.5 text-left transition-all duration-200 ${
+                        className={`group min-h-11 rounded-2xl border px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
                           isActive
-                            ? "border-secondary/60 bg-secondary/15 shadow-md"
-                            : "border-border/60 bg-white/80 hover:border-secondary/30 hover:bg-white"
+                            ? "border-secondary/35 bg-secondary/10"
+                            : "border-border/60 bg-card/90 hover:border-secondary/25"
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <span
                             className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${
                               isActive
-                                ? "bg-secondary/20 text-secondary"
-                                : "bg-muted text-muted-foreground"
+                                ? "bg-secondary/15 text-secondary"
+                                : "bg-muted/80 text-muted-foreground"
                             }`}
                           >
                             <Icon className="h-4 w-4" />
                           </span>
-                          <span className="text-xs font-semibold text-foreground leading-tight">
+                          <span className="text-xs font-medium leading-tight text-foreground">
                             {source.label}
                           </span>
                         </div>
@@ -308,6 +737,7 @@ const HomePage = () => {
                       const isActive = selectedDistrict === district.name;
                       return (
                         <button
+                          type="button"
                           key={district.id}
                           onClick={() => {
                             setSelectedDistrict(
@@ -315,10 +745,10 @@ const HomePage = () => {
                             );
                             setActiveDiscoverySource("district");
                           }}
-                          className={`rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+                          className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
                             isActive
-                              ? "bg-foreground text-white shadow-md"
-                              : "bg-white border border-border/70 text-foreground hover:border-foreground/30"
+                              ? "border-foreground/20 bg-foreground/90 text-background"
+                              : "border-border/70 bg-card text-foreground hover:border-foreground/25"
                           }`}
                         >
                           {district.name}
@@ -334,15 +764,16 @@ const HomePage = () => {
                       const isActive = selectedVenueType === option.id;
                       return (
                         <button
+                          type="button"
                           key={option.id}
                           onClick={() => {
                             setSelectedVenueType(isActive ? null : option.id);
                             setActiveDiscoverySource("type");
                           }}
-                          className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
+                          className={`rounded-xl border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
                             isActive
-                              ? "bg-secondary text-primary shadow-md"
-                              : "bg-white border border-border/70 text-foreground hover:border-secondary/40"
+                              ? "border-secondary/35 bg-secondary/10 text-foreground"
+                              : "border-border/70 bg-card text-foreground hover:border-secondary/30"
                           }`}
                         >
                           {option.label}
@@ -353,20 +784,21 @@ const HomePage = () => {
                 )}
 
                 {activeDiscoverySource === "price-range" && (
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                     {VENUE_PRICE_RANGE_OPTIONS.map((option) => {
                       const isActive = selectedPriceRange === option.id;
                       return (
                         <button
+                          type="button"
                           key={option.id}
                           onClick={() => handlePriceRangeSelect(option.id)}
-                          className={`rounded-2xl border px-3 py-3 text-left transition-all ${
+                          className={`rounded-2xl border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
                             isActive
-                              ? "border-secondary/60 bg-secondary/10 shadow-md"
-                              : "border-border/60 bg-white hover:border-secondary/40"
+                              ? "border-secondary/35 bg-secondary/10"
+                              : "border-border/60 bg-card hover:border-secondary/25"
                           }`}
                         >
-                          <p className="text-sm font-black tracking-tight text-foreground">
+                          <p className="text-sm font-semibold tracking-tight text-foreground">
                             {option.label}
                           </p>
                           <p className="text-[11px] font-medium text-muted-foreground">
@@ -380,7 +812,7 @@ const HomePage = () => {
 
                 {activeDiscoverySource === "top-rated-area" && (
                   <div className="space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+                    <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       Select Area
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -388,15 +820,16 @@ const HomePage = () => {
                         const isActive = selectedArea === district.name;
                         return (
                           <button
+                            type="button"
                             key={`${district.id}-area`}
                             onClick={() => {
                               setSelectedArea(district.name);
                               setActiveDiscoverySource("top-rated-area");
                             }}
-                            className={`rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+                            className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
                               isActive
-                                ? "bg-secondary text-primary"
-                                : "bg-white border border-border/70 text-foreground hover:border-secondary/40"
+                                ? "border-secondary/35 bg-secondary/10 text-foreground"
+                                : "border-border/70 bg-card text-foreground hover:border-secondary/30"
                             }`}
                           >
                             {district.name}
@@ -409,228 +842,317 @@ const HomePage = () => {
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-foreground">
-                      {discoveryResultCount} venue
+                    <p className="text-sm font-medium text-foreground">
+                      {new Intl.NumberFormat().format(discoveryResultCount)}{" "}
+                      venue
                       {discoveryResultCount === 1 ? "" : "s"} found
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground truncate max-w-[170px] text-right">
                       Source: {activeDiscoverySource.replace("-", " ")}
                     </p>
                   </div>
 
-                  {showDiscoverySkeleton ? (
-                    <div className="flex gap-4 overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
+                  <AnimatePresence mode="wait" initial={false}>
+                    {showDiscoverySkeleton ? (
+                      <motion.div
+                        key="discovery-loading"
+                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        transition={stateTransition}
+                      >
+                        <HorizontalScroller
+                          ariaLabel="discovery venues"
+                          className="-mx-2 px-2"
+                        >
+                          {Array.from({ length: 3 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
+                            />
+                          ))}
+                        </HorizontalScroller>
+                      </motion.div>
+                    ) : discoveryError ? (
+                      <motion.div
+                        key="discovery-error"
+                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        transition={stateTransition}
+                        className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
+                      >
+                        <p className="text-sm font-semibold text-destructive">
+                          Could not load discovery venues
+                        </p>
+                        <p className="text-xs text-destructive/80 mt-1">
+                          {discoveryError}
+                        </p>
+                        <Button
+                          type="button"
+                          onClick={retryDiscovery}
+                          variant="outline"
+                          size="sm"
+                          className="mt-3 h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                          Retry discovery
+                        </Button>
+                      </motion.div>
+                    ) : discoveryPlaces.length === 0 ? (
+                      <motion.div
+                        key="discovery-empty"
+                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        transition={stateTransition}
+                        className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
+                      >
+                        <p className="font-semibold text-foreground">
+                          No venues for this filter yet
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Try another district, type, or budget range.
+                        </p>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="discovery-ready"
+                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        transition={stateTransition}
+                      >
+                        <HorizontalScroller
+                          ariaLabel="discovery venues"
+                          className="-mx-2 px-2"
+                        >
+                          {discoveryPlaces.map((place, index) => (
+                            <motion.div
+                              key={`${activeDiscoverySource}-${place.id}`}
+                              className="snap-start"
+                              initial={{
+                                opacity: 0,
+                                y: shouldReduceMotion ? 0 : 12,
+                              }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{
+                                duration: shouldReduceMotion ? 0.01 : 0.3,
+                                ease: EASE_OUT_QUART,
+                                delay: cardDelay(index),
+                              }}
+                            >
+                              <PlaceCard
+                                place={place}
+                                variant="horizontal"
+                                userLocation={userLocation}
+                                onToggleSave={toggleSave}
+                                isSavePending={isPlaceSavePending(place.id)}
+                                onClick={(id) => navigate(`/venue/${id}`)}
+                              />
+                            </motion.div>
+                          ))}
+                        </HorizontalScroller>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </section>
+
+            {/* ── Mood Picks ── */}
+            <AnimatePresence initial={false} mode="wait">
+              {selectedMood && (
+                <motion.section
+                  ref={moodSectionRef}
+                  className="space-y-4"
+                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -10 }}
+                  transition={{
+                    duration: shouldReduceMotion ? 0.01 : 0.28,
+                    ease: EASE_OUT_QUART,
+                  }}
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+                        <div className="rounded-lg bg-secondary/12 p-1.5">
+                          {(() => {
+                            const mood = moodOptions.find(
+                              (m) => m.id === selectedMood,
+                            );
+                            const MoodIcon = mood
+                              ? (MOOD_ICON_MAP[mood.icon] ?? Sparkles)
+                              : Sparkles;
+                            return (
+                              <MoodIcon className="h-5 w-5 text-secondary" />
+                            );
+                          })()}
+                        </div>
+                        {moodOptions.find((m) => m.id === selectedMood)
+                          ?.label ?? "Mood Picks"}
+                      </h2>
+                      <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
+                        {moodOptions.find((m) => m.id === selectedMood)
+                          ?.description ?? "Places that match your vibe"}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => setSelectedMood(null)}
+                      variant="ghost"
+                      size="sm"
+                      className="h-11 px-3 text-xs text-muted-foreground sm:h-8 sm:px-2"
+                    >
+                      Clear mood
+                    </Button>
+                  </div>
+
+                  {isMoodLoading ? (
+                    <HorizontalScroller ariaLabel="mood venues">
                       {Array.from({ length: 3 }).map((_, i) => (
                         <div
                           key={i}
                           className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
                         />
                       ))}
-                    </div>
-                  ) : discoveryError ? (
+                    </HorizontalScroller>
+                  ) : moodError ? (
                     <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
                       <p className="text-sm font-semibold text-destructive">
-                        Could not load discovery venues
+                        Could not load mood picks
                       </p>
                       <p className="text-xs text-destructive/80 mt-1">
-                        {discoveryError}
+                        {moodError}
                       </p>
+                      <Button
+                        type="button"
+                        onClick={retryMood}
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Retry mood picks
+                      </Button>
                     </div>
-                  ) : discoveryPlaces.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-border/70 bg-white/70 px-4 py-8 text-center">
+                  ) : moodPlaces.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-border/60 bg-muted/30">
+                      <span className="text-3xl mb-3">🔍</span>
                       <p className="font-semibold text-foreground">
-                        No venues for this filter yet
+                        No spots found for this mood
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Try another district, type, or budget range.
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Try a different vibe!
                       </p>
                     </div>
                   ) : (
-                    <div className="flex gap-4 overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
-                      {discoveryPlaces.map((place, i) => (
-                        <div
-                          key={`${activeDiscoverySource}-${place.id}`}
-                          className="animate-slide-in-right"
-                          style={{ animationDelay: `${i * 45}ms` }}
-                        >
+                    <HorizontalScroller ariaLabel="mood venues">
+                      {moodPlaces.map((place) => (
+                        <div key={place.id} className="snap-start">
                           <PlaceCard
                             place={place}
                             variant="horizontal"
                             userLocation={userLocation}
                             onToggleSave={toggleSave}
+                            isSavePending={isPlaceSavePending(place.id)}
                             onClick={(id) => navigate(`/venue/${id}`)}
                           />
                         </div>
                       ))}
-                    </div>
+                    </HorizontalScroller>
                   )}
-                </div>
-              </div>
-            </section>
-
-            {/* ── Mood Picks ── */}
-            {selectedMood && (
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-secondary/15">
-                        {(() => {
-                          const mood = moodOptions.find(
-                            (m) => m.id === selectedMood,
-                          );
-                          const MoodIcon = mood
-                            ? (MOOD_ICON_MAP[mood.icon] ?? Sparkles)
-                            : Sparkles;
-                          return (
-                            <MoodIcon className="h-5 w-5 text-secondary" />
-                          );
-                        })()}
-                      </div>
-                      {moodOptions.find((m) => m.id === selectedMood)?.label ??
-                        "Mood Picks"}
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1 ml-10">
-                      {moodOptions.find((m) => m.id === selectedMood)
-                        ?.description ?? "Places that match your vibe"}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedMood(null)}
-                    className="text-xs text-muted-foreground font-semibold hover:text-foreground transition-colors"
-                  >
-                    Clear mood
-                  </button>
-                </div>
-
-                {isMoodLoading ? (
-                  <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
-                      />
-                    ))}
-                  </div>
-                ) : moodPlaces.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-border/60 bg-muted/30">
-                    <span className="text-3xl mb-3">🔍</span>
-                    <p className="font-semibold text-foreground">
-                      No spots found for this mood
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Try a different vibe!
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide">
-                    {moodPlaces.map((place, i) => (
-                      <div
-                        key={place.id}
-                        className="animate-slide-in-right"
-                        style={{ animationDelay: `${i * 60}ms` }}
-                      >
-                        <PlaceCard
-                          place={place}
-                          variant="horizontal"
-                          userLocation={userLocation}
-                          onToggleSave={toggleSave}
-                          onClick={(id) => navigate(`/venue/${id}`)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-            )}
+                </motion.section>
+              )}
+            </AnimatePresence>
 
             {/* ── Curated For You ── */}
             <section className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
                     <div className="p-1.5 rounded-lg bg-secondary/15">
-                      <Sparkles className="h-5 w-5 text-secondary animate-pulse-glow" />
+                      <Sparkles className="h-5 w-5 text-secondary" />
                     </div>
                     Curated for You
                   </h2>
-                  <p className="text-sm text-muted-foreground mt-1 ml-10">
+                  <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
                     AI-powered picks based on your preferences
                   </p>
                 </div>
-                <button
+                <Button
                   onClick={() => navigate("/home/see-all/curated")}
-                  className="text-xs text-secondary font-semibold flex items-center gap-0.5 hover:gap-1.5 transition-all"
+                  variant="ghost"
+                  size="sm"
+                  className="h-11 px-3 text-xs text-muted-foreground hover:text-foreground sm:h-8 sm:px-2"
                 >
                   See all <ChevronRight className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
-              <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide">
-                {curatedPlaces.map((place, i) => (
-                  <div
-                    key={place.id}
-                    className="animate-slide-in-right"
-                    style={{ animationDelay: `${i * 80}ms` }}
-                  >
+              <HorizontalScroller ariaLabel="curated venues">
+                {curatedPlaces.map((place) => (
+                  <div key={place.id} className="snap-start">
                     <PlaceCard
                       place={place}
                       variant="horizontal"
                       userLocation={userLocation}
                       onToggleSave={toggleSave}
+                      isSavePending={isPlaceSavePending(place.id)}
                       onClick={(id) => navigate(`/venue/${id}`)}
                     />
                   </div>
                 ))}
-              </div>
+              </HorizontalScroller>
             </section>
 
             {/* ── Trending Now ── */}
             {trendingPlaces.length > 0 && (
               <section className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-orange-100">
-                        <Flame className="h-5 w-5 text-orange-500" />
+                    <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+                      <div className="p-1.5 rounded-lg bg-secondary/15">
+                        <Flame className="h-5 w-5 text-secondary" />
                       </div>
                       Trending Now
                     </h2>
-                    <p className="text-sm text-muted-foreground mt-1 ml-10">
+                    <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
                       Most popular this week in Cairo
                     </p>
                   </div>
-                  <button
+                  <Button
                     onClick={() => navigate("/home/see-all/trending")}
-                    className="text-xs text-secondary font-semibold flex items-center gap-0.5 hover:gap-1.5 transition-all"
+                    variant="ghost"
+                    size="sm"
+                    className="h-11 px-3 text-xs text-muted-foreground hover:text-foreground sm:h-8 sm:px-2"
                   >
                     See all <ChevronRight className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 </div>
-                <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide">
+                <HorizontalScroller ariaLabel="trending venues">
                   {trendingPlaces.map((place) => (
-                    <PlaceCard
-                      key={place.id}
-                      place={place}
-                      variant="horizontal"
-                      userLocation={userLocation}
-                      onToggleSave={toggleSave}
-                      onClick={(id) => navigate(`/venue/${id}`)}
-                    />
+                    <div key={place.id} className="snap-start">
+                      <PlaceCard
+                        place={place}
+                        variant="horizontal"
+                        userLocation={userLocation}
+                        onToggleSave={toggleSave}
+                        isSavePending={isPlaceSavePending(place.id)}
+                        onClick={(id) => navigate(`/venue/${id}`)}
+                      />
+                    </div>
                   ))}
-                </div>
+                </HorizontalScroller>
               </section>
             )}
 
             {/* ── Similar Places Studio ── */}
-            <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-sky-50/70 via-white to-amber-50/50 p-5 sm:p-6 shadow-sm">
-              <div className="absolute -top-14 -right-14 h-44 w-44 rounded-full bg-sky-200/30 blur-3xl" />
-              <div className="absolute -bottom-20 -left-12 h-48 w-48 rounded-full bg-secondary/20 blur-3xl" />
-
+            <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-5 sm:p-6 shadow-sm">
               <div className="relative z-10 space-y-5">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
-                    <h2 className="text-xl font-black tracking-tight text-foreground flex items-center gap-2">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                    <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/12 text-secondary">
                         <WandSparkles className="h-4 w-4" />
                       </span>
                       Because You Like This Place
@@ -641,7 +1163,10 @@ const HomePage = () => {
                     </p>
                   </div>
                   {selectedSimilarSeedPlace && (
-                    <span className="rounded-full border border-sky-200 bg-white/90 px-3 py-1 text-xs font-semibold text-sky-700">
+                    <span
+                      className="max-w-full truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1 text-xs font-medium text-foreground"
+                      title={selectedSimilarSeedPlace.name}
+                    >
                       Selected: {selectedSimilarSeedPlace.name}
                     </span>
                   )}
@@ -657,43 +1182,60 @@ const HomePage = () => {
                         setTimeout(() => setIsSimilarInputFocused(false), 120);
                       }}
                       placeholder="Type a place you like (name, area, or tag)..."
-                      className="h-12 rounded-2xl border-sky-200 bg-white/90 focus-visible:ring-sky-300"
+                      className="h-12 rounded-2xl border-border/70 bg-card/90 focus-visible:ring-secondary/30"
                     />
 
-                    {showSimilarSuggestions && (
-                      <div className="absolute z-20 mt-2 w-full rounded-2xl border border-border/70 bg-white shadow-xl p-2 max-h-72 overflow-y-auto">
-                        {similarSearchResults.length > 0 ? (
-                          similarSearchResults.map((place) => {
-                            const isActive = selectedSimilarSeedId === place.id;
-                            return (
-                              <button
-                                key={`suggestion-${place.id}`}
-                                onMouseDown={() => {
-                                  setSimilarSearchInput(place.name);
-                                  selectPlaceForSimilar(place.id);
-                                }}
-                                className={`w-full text-left rounded-xl px-3 py-2.5 transition-colors ${
-                                  isActive
-                                    ? "bg-sky-100 text-sky-800"
-                                    : "hover:bg-muted"
-                                }`}
-                              >
-                                <p className="text-sm font-semibold text-foreground">
-                                  {place.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {place.address}
-                                </p>
-                              </button>
-                            );
-                          })
-                        ) : (
-                          <p className="px-3 py-2 text-xs text-muted-foreground">
-                            No matches found. Try another keyword.
-                          </p>
-                        )}
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {showSimilarSuggestions && (
+                        <motion.div
+                          key="similar-suggestions"
+                          initial={{
+                            opacity: 0,
+                            y: shouldReduceMotion ? 0 : -8,
+                          }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                          transition={stateTransition}
+                          className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-lg"
+                        >
+                          {similarSearchResults.length > 0 ? (
+                            similarSearchResults.map((place) => {
+                              const isActive =
+                                selectedSimilarSeedId === place.id;
+                              return (
+                                <button
+                                  type="button"
+                                  key={`suggestion-${place.id}`}
+                                  onMouseDown={(event) => {
+                                    event.preventDefault();
+                                  }}
+                                  onClick={() => {
+                                    setSimilarSearchInput(place.name);
+                                    selectPlaceForSimilar(place.id);
+                                  }}
+                                  className={`w-full rounded-xl px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                                    isActive
+                                      ? "bg-secondary/10 text-foreground"
+                                      : "hover:bg-muted"
+                                  }`}
+                                >
+                                  <p className="text-sm font-semibold text-foreground">
+                                    {place.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                                    {place.address}
+                                  </p>
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <p className="px-3 py-2 text-xs text-muted-foreground">
+                              No matches found. Try another keyword.
+                            </p>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -701,15 +1243,16 @@ const HomePage = () => {
                       const isActive = selectedSimilarSeedId === place.id;
                       return (
                         <button
+                          type="button"
                           key={`quick-seed-${place.id}`}
                           onClick={() => {
                             setSimilarSearchInput(place.name);
                             selectPlaceForSimilar(place.id);
                           }}
-                          className={`rounded-full px-3 py-1.5 text-[11px] font-semibold transition-all ${
+                          className={`rounded-full border px-4 py-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
                             isActive
-                              ? "bg-sky-600 text-white shadow-md"
-                              : "bg-white border border-border/70 text-foreground hover:border-sky-300 hover:bg-sky-50"
+                              ? "border-secondary/35 bg-secondary/10 text-foreground"
+                              : "border-border/70 bg-card text-foreground hover:border-secondary/30 hover:bg-secondary/5"
                           }`}
                         >
                           {place.name}
@@ -719,61 +1262,120 @@ const HomePage = () => {
                   </div>
                 </div>
 
-                {isSimilarLoading ? (
-                  <div className="flex gap-4 overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <div
-                        key={`similar-skeleton-${i}`}
-                        className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
-                      />
-                    ))}
-                  </div>
-                ) : similarError ? (
-                  <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
-                    <p className="text-sm font-semibold text-destructive">
-                      Could not load similar places
-                    </p>
-                    <p className="text-xs text-destructive/80 mt-1">
-                      {similarError}
-                    </p>
-                  </div>
-                ) : similarPlaces.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-border/70 bg-white/70 px-4 py-8 text-center">
-                    <p className="font-semibold text-foreground">
-                      Choose a place to get similar recommendations
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      We will recommend venues with a matching vibe and style.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex gap-4 overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
-                    {similarPlaces.map((place, i) => (
-                      <div
-                        key={`similar-${place.id}`}
-                        className="animate-slide-in-right"
-                        style={{ animationDelay: `${i * 40}ms` }}
+                <AnimatePresence mode="wait" initial={false}>
+                  {isSimilarLoading ? (
+                    <motion.div
+                      key="similar-loading"
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      transition={stateTransition}
+                    >
+                      <HorizontalScroller
+                        ariaLabel="similar venues"
+                        className="-mx-2 px-2"
                       >
-                        <PlaceCard
-                          place={place}
-                          variant="horizontal"
-                          userLocation={userLocation}
-                          onToggleSave={toggleSave}
-                          onClick={(id) => navigate(`/venue/${id}`)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div
+                            key={`similar-skeleton-${i}`}
+                            className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
+                          />
+                        ))}
+                      </HorizontalScroller>
+                    </motion.div>
+                  ) : similarError ? (
+                    <motion.div
+                      key="similar-error"
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      transition={stateTransition}
+                      className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
+                    >
+                      <p className="text-sm font-semibold text-destructive">
+                        Could not load similar places
+                      </p>
+                      <p className="text-xs text-destructive/80 mt-1">
+                        {similarError}
+                      </p>
+                      <Button
+                        type="button"
+                        onClick={retrySimilar}
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Retry similar picks
+                      </Button>
+                    </motion.div>
+                  ) : similarPlaces.length === 0 ? (
+                    <motion.div
+                      key="similar-empty"
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      transition={stateTransition}
+                      className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
+                    >
+                      <p className="font-semibold text-foreground">
+                        Choose a place to get similar recommendations
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        We will recommend venues with a matching vibe and style.
+                      </p>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="similar-ready"
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      transition={stateTransition}
+                    >
+                      <HorizontalScroller
+                        ariaLabel="similar venues"
+                        className="-mx-2 px-2"
+                      >
+                        {similarPlaces.map((place, index) => (
+                          <motion.div
+                            key={`similar-${place.id}`}
+                            className="snap-start"
+                            initial={{
+                              opacity: 0,
+                              y: shouldReduceMotion ? 0 : 12,
+                            }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{
+                              duration: shouldReduceMotion ? 0.01 : 0.3,
+                              ease: EASE_OUT_QUART,
+                              delay: cardDelay(index),
+                            }}
+                          >
+                            <PlaceCard
+                              place={place}
+                              variant="horizontal"
+                              userLocation={userLocation}
+                              onToggleSave={toggleSave}
+                              isSavePending={isPlaceSavePending(place.id)}
+                              hideTopRatedBadge={showSimilarSuggestions}
+                              onClick={(id) => navigate(`/venue/${id}`)}
+                            />
+                          </motion.div>
+                        ))}
+                      </HorizontalScroller>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </section>
           </div>
 
           {/* ── RIGHT SIDEBAR ── */}
-          <aside className="hidden lg:flex flex-col gap-6 w-[280px] flex-shrink-0 sticky top-6">
+          <aside className="sticky top-6 hidden w-[280px] flex-shrink-0 flex-col gap-6 lg:flex">
             {/* Mood Selector Card */}
-            <div className="bg-white rounded-3xl border border-border/50 shadow-sm p-5 space-y-4">
-              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+            <div className="bg-card rounded-3xl border border-border/50 shadow-sm p-5 space-y-4">
+              <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
                 <span className="text-xl">✨</span>
                 What's your mood?
               </h2>
@@ -783,16 +1385,17 @@ const HomePage = () => {
                   const MoodIcon = MOOD_ICON_MAP[mood.icon] ?? Sparkles;
                   return (
                     <button
+                      type="button"
                       key={mood.id}
-                      onClick={() => setSelectedMood(isActive ? null : mood.id)}
-                      className={`flex flex-col items-center gap-1 px-3 py-3 rounded-2xl text-center transition-all duration-200 border ${
+                      onClick={() => handleMoodOptionSelect(mood.id, isActive)}
+                      className={`flex min-h-11 flex-col items-center gap-1 rounded-2xl border px-3 py-3 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
                         isActive
-                          ? "bg-secondary/15 border-secondary/40 shadow-md glow-gold-sm scale-105"
-                          : "bg-background border-border/50 hover:border-secondary/30 hover:shadow-md"
+                          ? "border-secondary/35 bg-secondary/10"
+                          : "bg-background border-border/50 hover:border-secondary/30"
                       }`}
                     >
                       <MoodIcon className="h-5 w-5 text-secondary" />
-                      <span className="text-[11px] font-semibold text-foreground leading-tight">
+                      <span className="text-[11px] font-medium text-foreground leading-tight">
                         {mood.label}
                       </span>
                       <span className="text-[10px] text-muted-foreground leading-tight">
@@ -805,24 +1408,25 @@ const HomePage = () => {
             </div>
 
             {/* Trending Tags Card */}
-            <div className="bg-white rounded-3xl border border-border/50 shadow-sm p-5 space-y-4">
-              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Flame className="h-4 w-4 text-orange-500" />
+            <div className="bg-card rounded-3xl border border-border/50 shadow-sm p-5 space-y-4">
+              <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Flame className="h-4 w-4 text-secondary" />
                 Trending in Cairo
               </h2>
               <div className="flex gap-2 flex-wrap">
                 {trendingTags.map((tag) => (
                   <button
+                    type="button"
                     key={tag.id}
                     onClick={() => setSearch(tag.label)}
-                    className="px-3 py-1.5 rounded-full text-xs font-semibold bg-background border border-border/50 text-foreground hover:border-secondary/40 hover:bg-secondary/5 transition-all duration-200 hover:shadow-sm flex items-center gap-1"
+                    className="inline-flex min-h-11 items-center gap-1 rounded-full border border-border/50 bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors duration-200 hover:border-secondary/30 hover:bg-secondary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
                   >
                     <span className="text-muted-foreground">#</span>
-                    {tag.label}
-                    <span className="text-[10px] text-muted-foreground">
-                      {tag.searchCount >= 1000
-                        ? `${(tag.searchCount / 1000).toFixed(1)}k`
-                        : tag.searchCount}
+                    <span className="max-w-[110px] truncate" title={tag.label}>
+                      {tag.label}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground tabular-nums">
+                      {compactNumberFormatter.format(tag.searchCount)}
                     </span>
                   </button>
                 ))}
@@ -831,7 +1435,7 @@ const HomePage = () => {
           </aside>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

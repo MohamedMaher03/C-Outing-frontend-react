@@ -29,6 +29,7 @@ import {
   AreaChart,
 } from "lucide-react";
 import type { DiscoverySource, FilterType, VenuePriceRange } from "../types";
+import { PRICE_LEVEL_OPTIONS as SHARED_PRICE_LEVEL_OPTIONS } from "@/utils/priceLevels";
 
 // Re-export mock API for convenient access
 export { homeMock } from "./homeMock";
@@ -70,33 +71,12 @@ export interface VenuePriceRangeOption {
   caption: string;
 }
 
-export const VENUE_PRICE_RANGE_OPTIONS: VenuePriceRangeOption[] = [
-  {
-    id: "price_cheapest",
-    label: "$",
-    caption: "Cheapest",
-  },
-  {
-    id: "cheap",
-    label: "$$",
-    caption: "Budget",
-  },
-  {
-    id: "mid_range",
-    label: "$$$",
-    caption: "Mid Range",
-  },
-  {
-    id: "expensive",
-    label: "$$$$",
-    caption: "Premium",
-  },
-  {
-    id: "luxury",
-    label: "$$$$$",
-    caption: "Luxury",
-  },
-];
+export const VENUE_PRICE_RANGE_OPTIONS: VenuePriceRangeOption[] =
+  SHARED_PRICE_LEVEL_OPTIONS.map((option) => ({
+    id: option.value as VenuePriceRange,
+    label: option.label,
+    caption: `${option.caption} · ${option.symbol}`,
+  }));
 
 // ============ Icon Maps ============
 

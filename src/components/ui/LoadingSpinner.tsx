@@ -116,7 +116,7 @@ export function PageLoading({
   subText?: string;
 }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-screen overflow-hidden flex items-center justify-center bg-background">
       <LoadingSpinner size="lg" text={text} subText={subText} />
     </div>
   );

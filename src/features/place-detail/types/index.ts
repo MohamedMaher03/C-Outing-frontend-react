@@ -3,13 +3,9 @@
  */
 
 import type { PaginatedResponse } from "@/types";
+import type { CanonicalPriceLevel } from "@/utils/priceLevels";
 
-export type PriceLevel =
-  | "price_cheapest"
-  | "cheap"
-  | "mid_range"
-  | "expensive"
-  | "luxury";
+export type PriceLevel = CanonicalPriceLevel;
 
 export type InteractionActionType =
   | "Click"

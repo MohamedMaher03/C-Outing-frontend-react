@@ -19,7 +19,6 @@ import {
   Plus,
   X,
   Upload,
-  DollarSign,
   ChevronDown,
   ChevronUp,
   Trash2,
@@ -45,45 +44,12 @@ import { useNavigate } from "react-router-dom";
 import { DISTRICTS } from "@/mocks/mockData";
 import { useModeratePlaces } from "@/features/moderator/hooks/useModeratePlaces";
 import type { PriceLevel } from "@/features/admin/types";
+import {
+  COMMON_PLACE_TAGS,
+  PRICE_LEVEL_OPTIONS,
+} from "@/features/admin/constants/placeManagement";
 
 // ── Constants ─────────────────────────────────────────────────
-
-const COMMON_TAGS = [
-  "Outdoor",
-  "Romantic",
-  "Scenic",
-  "Street Food",
-  "Casual",
-  "Local",
-  "Art",
-  "Culture",
-  "Free Entry",
-  "Co-working",
-  "Tech",
-  "Historical",
-  "Shopping",
-  "Iconic",
-  "Nightlife",
-  "Live Music",
-  "Parks",
-  "Family-friendly",
-  "Rooftop",
-  "Fine Dining",
-  "Nile View",
-  "Late Night",
-  "Hidden Gem",
-  "Budget Friendly",
-  "Pet Friendly",
-  "Instagrammable",
-];
-
-const PRICE_LEVEL_OPTIONS: Array<{ value: PriceLevel; signs: number }> = [
-  { value: "price_cheapest", signs: 1 },
-  { value: "cheap", signs: 2 },
-  { value: "mid_range", signs: 3 },
-  { value: "expensive", signs: 4 },
-  { value: "luxury", signs: 5 },
-];
 
 // ── Config ────────────────────────────────────────────────────
 
@@ -307,7 +273,7 @@ const ModeratePlacesPage = () => {
             {/* Price Level */}
             <div className="space-y-1.5">
               <Label>Price Level</Label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {PRICE_LEVEL_OPTIONS.map((lvl) => (
                   <button
                     key={lvl.value}
@@ -316,15 +282,21 @@ const ModeratePlacesPage = () => {
                       setForm((p) => ({ ...p, priceLevel: lvl.value }))
                     }
                     className={cn(
-                      "flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
+                      "min-h-11 rounded-lg border px-3 py-2 text-left transition-all",
                       form.priceLevel === lvl.value
                         ? "bg-secondary text-secondary-foreground border-secondary"
                         : "border-border text-muted-foreground hover:border-secondary/50",
                     )}
                   >
-                    {Array.from({ length: lvl.signs }).map((_, i) => (
-                      <DollarSign key={i} className="h-3.5 w-3.5" />
-                    ))}
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold leading-tight text-foreground">
+                        {lvl.label}
+                      </p>
+                      <p className="text-[10px] leading-tight text-muted-foreground">
+                        {lvl.caption}
+                        <span className="ml-1 font-semibold">{lvl.symbol}</span>
+                      </p>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -407,7 +379,7 @@ const ModeratePlacesPage = () => {
               </button>
               {showTagPicker && (
                 <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-card border border-border rounded-xl p-3 shadow-lg flex flex-wrap gap-2">
-                  {COMMON_TAGS.map((tag) => (
+                  {COMMON_PLACE_TAGS.map((tag) => (
                     <button
                       key={tag}
                       type="button"

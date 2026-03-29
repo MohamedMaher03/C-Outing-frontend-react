@@ -132,7 +132,14 @@ const moderatorNavItems: DashboardNavItem[] = [
 function App() {
   return (
     <Router>
-      <Suspense fallback={<PageLoading />}>
+      <Suspense
+        fallback={
+          <PageLoading
+            text="Discovering Cairo"
+            subText="Finding the best places for you..."
+          />
+        }
+      >
         <Routes>
           {/* Public Routes - No Layout */}
           <Route

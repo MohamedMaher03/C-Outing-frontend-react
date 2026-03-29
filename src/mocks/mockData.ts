@@ -1,3 +1,5 @@
+import type { CanonicalPriceLevel } from "@/utils/priceLevels";
+
 export interface Place {
   // Core venue metadata (scraped schema)
   id: string;
@@ -24,12 +26,7 @@ export interface Place {
 
   // Pricing
   priceRange?: string; // e.g., "50–200 EGP"
-  priceLevel?:
-    | "price_cheapest"
-    | "cheap"
-    | "mid_range"
-    | "expensive"
-    | "luxury";
+  priceLevel?: CanonicalPriceLevel;
 
   // Hours & open status
   hours?: string; // e.g., "Daily 9:00 AM – 11:00 PM"

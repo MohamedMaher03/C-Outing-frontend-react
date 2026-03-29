@@ -112,7 +112,6 @@ export const homeMock = {
     params?: HomeRecommendationsQuery,
   ): Promise<HomePageData> {
     await delay(800);
-    console.log(`[Mock] Fetching home page data`);
 
     const all: HomePlace[] = normalizedPlaces();
 
@@ -133,9 +132,6 @@ export const homeMock = {
     params?: HomeRecommendationsQuery,
   ): Promise<HomePlace[]> {
     await delay(450);
-    console.log(
-      `[Mock] Fetching personalized recommendations (count: ${params?.count ?? 10})`,
-    );
     return withCount(sortByPersonalized(normalizedPlaces()), params?.count, 10);
   },
 
@@ -143,9 +139,6 @@ export const homeMock = {
     params?: HomeRecommendationsQuery,
   ): Promise<HomePlace[]> {
     await delay(450);
-    console.log(
-      `[Mock] Fetching trending recommendations (count: ${params?.count ?? 10})`,
-    );
     return withCount(
       [...normalizedPlaces()].sort((a, b) => b.reviewCount - a.reviewCount),
       params?.count,
@@ -157,9 +150,6 @@ export const homeMock = {
     params: SimilarRecommendationsParams,
   ): Promise<HomePlace[]> {
     await delay(550);
-    console.log(
-      `[Mock] Fetching similar recommendations for venue: ${params.venueId} (count: ${params.count ?? 5})`,
-    );
 
     const all = normalizedPlaces();
     const seed = all.find((place) => place.id === params.venueId);
@@ -190,11 +180,12 @@ export const homeMock = {
 
   /**
    * Mock POST /venues/:placeId/save
-   * Always succeeds after a short delay.
+   * Always succeeds after a noticeable delay for spinner QA.
    */
   async togglePlaceSave(placeId: string, isSaved: boolean): Promise<void> {
-    await delay(200);
-    console.log(`[Mock] Toggle save for place ${placeId}:`, isSaved);
+    await delay(1400);
+    void placeId;
+    void isSaved;
   },
 
   /**
@@ -204,7 +195,6 @@ export const homeMock = {
    */
   async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
     await delay(2500);
-    console.log(`[Mock] Fetching places for mood: ${moodId}`);
     const filter = MOOD_FILTER_MAP[moodId];
     if (!filter) return [];
     return [...PLACES]
@@ -217,13 +207,11 @@ export const homeMock = {
     params: VenueByDistrictParams,
   ): Promise<HomePlace[]> {
     await delay(700);
-    console.log(`[Mock] Fetching venues in district: ${params.district}`);
     return sortByTopRated(byDistrict(params.district));
   },
 
   async fetchVenuesByType(params: VenueByTypeParams): Promise<HomePlace[]> {
     await delay(700);
-    console.log(`[Mock] Fetching venues by type: ${params.type}`);
     return sortByTopRated(byType(params.type));
   },
 
@@ -231,13 +219,11 @@ export const homeMock = {
     params: VenueByPriceRangeParams,
   ): Promise<HomePlace[]> {
     await delay(700);
-    console.log(`[Mock] Fetching venues by price range: ${params.priceRange}`);
     return sortByTopRated(byPriceRange(params.priceRange));
   },
 
   async fetchVenueTopRated(): Promise<HomePlace[]> {
     await delay(600);
-    console.log("[Mock] Fetching top-rated venues");
     return sortByTopRated(normalizedPlaces()).slice(0, 8);
   },
 
@@ -245,7 +231,6 @@ export const homeMock = {
     params: VenueTopRatedInAreaParams,
   ): Promise<HomePlace[]> {
     await delay(650);
-    console.log(`[Mock] Fetching top-rated venues in area: ${params.area}`);
     return sortByTopRated(byDistrict(params.area)).slice(0, 8);
   },
 };

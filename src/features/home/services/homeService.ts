@@ -14,8 +14,8 @@
  * 🔧 To use mocks during development, swap the import:
  *   import { homeMock as homeApi } from "../mocks/homeMock";
  */
-import { homeApi } from "../api/homeApi";
-//import { homeMock as homeApi } from "../mocks/homeMock";
+//import { homeApi } from "../api/homeApi";
+import { homeMock as homeApi } from "../mocks/homeMock";
 import type {
   HomePageData,
   HomePlace,
@@ -43,8 +43,7 @@ export const homeService = {
   ): Promise<HomePageData> {
     try {
       return await homeApi.fetchHomePageData(params);
-    } catch (error) {
-      console.error("Error fetching home page data:", error);
+    } catch {
       throw new Error("Failed to fetch home page data");
     }
   },
@@ -54,8 +53,7 @@ export const homeService = {
   ): Promise<HomePlace[]> {
     try {
       return await homeApi.fetchPersonalizedRecommendations(params);
-    } catch (error) {
-      console.error("Error fetching personalized recommendations:", error);
+    } catch {
       throw new Error("Failed to fetch personalized recommendations");
     }
   },
@@ -65,8 +63,7 @@ export const homeService = {
   ): Promise<HomePlace[]> {
     try {
       return await homeApi.fetchTrendingRecommendations(params);
-    } catch (error) {
-      console.error("Error fetching trending recommendations:", error);
+    } catch {
       throw new Error("Failed to fetch trending recommendations");
     }
   },
@@ -76,8 +73,7 @@ export const homeService = {
   ): Promise<HomePlace[]> {
     try {
       return await homeApi.fetchSimilarRecommendations(params);
-    } catch (error) {
-      console.error("Error fetching similar recommendations:", error);
+    } catch {
       throw new Error("Failed to fetch similar recommendations");
     }
   },
@@ -88,8 +84,7 @@ export const homeService = {
   async togglePlaceSave(placeId: string, isSaved: boolean): Promise<void> {
     try {
       await homeApi.togglePlaceSave(placeId, isSaved);
-    } catch (error) {
-      console.error("Error toggling place save:", error);
+    } catch {
       throw new Error("Failed to toggle place save");
     }
   },
@@ -102,8 +97,7 @@ export const homeService = {
   async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
     try {
       return await homeApi.fetchPlacesByMood(moodId);
-    } catch (error) {
-      console.error("Error fetching places by mood:", error);
+    } catch {
       throw new Error("Failed to fetch mood-based places");
     }
   },
@@ -113,8 +107,7 @@ export const homeService = {
   ): Promise<HomePlace[]> {
     try {
       return await homeApi.fetchVenuesByDistrict(params);
-    } catch (error) {
-      console.error("Error fetching venues by district:", error);
+    } catch {
       throw new Error("Failed to fetch venues by district");
     }
   },
@@ -122,8 +115,7 @@ export const homeService = {
   async fetchVenuesByType(params: VenueByTypeParams): Promise<HomePlace[]> {
     try {
       return await homeApi.fetchVenuesByType(params);
-    } catch (error) {
-      console.error("Error fetching venues by type:", error);
+    } catch {
       throw new Error("Failed to fetch venues by type");
     }
   },
@@ -133,8 +125,7 @@ export const homeService = {
   ): Promise<HomePlace[]> {
     try {
       return await homeApi.fetchVenuesByPriceRange(params);
-    } catch (error) {
-      console.error("Error fetching venues by price range:", error);
+    } catch {
       throw new Error("Failed to fetch venues by price range");
     }
   },
@@ -142,8 +133,7 @@ export const homeService = {
   async fetchVenueTopRated(): Promise<HomePlace[]> {
     try {
       return await homeApi.fetchVenueTopRated();
-    } catch (error) {
-      console.error("Error fetching top-rated venues:", error);
+    } catch {
       throw new Error("Failed to fetch top-rated venues");
     }
   },
@@ -153,8 +143,7 @@ export const homeService = {
   ): Promise<HomePlace[]> {
     try {
       return await homeApi.fetchVenueTopRatedInArea(params);
-    } catch (error) {
-      console.error("Error fetching top-rated venues in area:", error);
+    } catch {
       throw new Error("Failed to fetch top-rated venues in area");
     }
   },

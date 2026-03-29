@@ -2,6 +2,8 @@
  * Admin Feature — Type Definitions
  */
 
+import type { CanonicalPriceLevel } from "@/utils/priceLevels";
+
 export interface AdminStats {
   totalUsers: number;
   totalPlaces: number;
@@ -16,12 +18,7 @@ export interface AdminStats {
   healthTimestamp?: string;
 }
 
-export type PriceLevel =
-  | "price_cheapest"
-  | "cheap"
-  | "mid_range"
-  | "expensive"
-  | "luxury";
+export type PriceLevel = CanonicalPriceLevel;
 
 export type AdminUserId = string;
 export type AdminUserRole = "user" | "moderator" | "admin";

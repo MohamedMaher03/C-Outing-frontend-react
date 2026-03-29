@@ -3,6 +3,8 @@
  * Shared constants used across the application
  */
 
+import { PRICE_LEVEL_VALUES } from "@/utils/priceLevels";
+
 // Categories
 export const VENUE_CATEGORIES = [
   "Restaurant",
@@ -18,13 +20,7 @@ export const VENUE_CATEGORIES = [
 ];
 
 // Budget Levels
-export const BUDGET_LEVELS = [
-  "price_cheapest",
-  "cheap",
-  "mid_range",
-  "expensive",
-  "luxury",
-] as const;
+export const BUDGET_LEVELS = PRICE_LEVEL_VALUES;
 
 // Moods
 export const MOODS = ["relaxed", "energetic", "social", "romantic"] as const;

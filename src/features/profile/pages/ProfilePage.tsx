@@ -19,14 +19,10 @@ import { INTEREST_ICON_MAP } from "@/features/profile/mocks";
 import type { PriceLevel } from "@/features/admin/types";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { buildDefaultAvatarDataUrl } from "@/features/profile/utils/defaultAvatar";
+import { BUDGET_OPTIONS as SHARED_BUDGET_OPTIONS } from "@/utils/priceLevels";
 
-const BUDGET_OPTIONS: Array<{ value: PriceLevel; label: string }> = [
-  { value: "price_cheapest", label: "Cheapest ($)" },
-  { value: "cheap", label: "Cheap ($$)" },
-  { value: "mid_range", label: "Mid Range ($$$)" },
-  { value: "expensive", label: "Expensive ($$$$)" },
-  { value: "luxury", label: "Luxury ($$$$$)" },
-];
+const BUDGET_OPTIONS: Array<{ value: PriceLevel; label: string }> =
+  SHARED_BUDGET_OPTIONS as Array<{ value: PriceLevel; label: string }>;
 
 const roleLabel = (role: number | undefined): string => {
   if (role === 2) return "Admin";

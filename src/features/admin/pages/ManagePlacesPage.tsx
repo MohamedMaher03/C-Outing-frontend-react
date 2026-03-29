@@ -17,7 +17,6 @@ import {
   Plus,
   X,
   Upload,
-  DollarSign,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -227,7 +226,7 @@ const ManagePlacesPage = () => {
             {/* Price Level */}
             <div className="space-y-1.5">
               <Label>Price Level</Label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {PRICE_LEVEL_OPTIONS.map((lvl) => (
                   <button
                     key={lvl.value}
@@ -236,15 +235,21 @@ const ManagePlacesPage = () => {
                       setForm((p) => ({ ...p, priceLevel: lvl.value }))
                     }
                     className={cn(
-                      "flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
+                      "min-h-11 rounded-lg border px-3 py-2 text-left transition-all",
                       form.priceLevel === lvl.value
                         ? "bg-secondary text-secondary-foreground border-secondary"
                         : "border-border text-muted-foreground hover:border-secondary/50",
                     )}
                   >
-                    {Array.from({ length: lvl.signs }).map((_, i) => (
-                      <DollarSign key={i} className="h-3.5 w-3.5" />
-                    ))}
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold leading-tight text-foreground">
+                        {lvl.label}
+                      </p>
+                      <p className="text-[10px] leading-tight text-muted-foreground">
+                        {lvl.caption}
+                        <span className="ml-1 font-semibold">{lvl.symbol}</span>
+                      </p>
+                    </div>
                   </button>
                 ))}
               </div>
