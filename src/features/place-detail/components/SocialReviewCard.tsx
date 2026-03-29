@@ -1,5 +1,8 @@
+import { memo } from "react";
 import { ThumbsUp, Globe, Instagram, Twitter, Facebook } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import type { SocialMediaReview } from "../types";
+import { formatInteger, formatShortDate } from "../utils/formatters";
 
 /** Platform icon for social reviews */
 const PlatformIcon = ({ platform }: { platform: string }) => {
@@ -35,15 +38,13 @@ const SentimentBadge = ({
   sentiment: "positive" | "neutral" | "negative";
 }) => {
   const config = {
-    positive:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    neutral:
-      "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    negative: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    positive: "border border-secondary/30 bg-secondary/15 text-secondary",
+    neutral: "border border-border bg-muted text-muted-foreground",
+    negative: "border border-destructive/30 bg-destructive/10 text-destructive",
   };
   return (
     <span
-      className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${config[sentiment]}`}
+      className={`pd-type-micro px-2 py-0.5 rounded-full font-semibold ${config[sentiment]}`}
     >
       {sentiment}
     </span>
@@ -51,31 +52,47 @@ const SentimentBadge = ({
 };
 
 /** A single social media review card */
-export const SocialReviewCard = ({ review }: { review: SocialMediaReview }) => (
-  <div className="border border-border rounded-xl p-4 space-y-2 bg-card">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2.5">
+const SocialReviewCardComponent = ({
+  review,
+}: {
+  review: SocialMediaReview;
+}) => (
+  <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm">
+    <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="flex items-center gap-2.5 min-w-0 max-w-full">
         <PlatformIcon platform={review.platform} />
-        <span className="text-sm font-semibold text-foreground">
+        <span
+          className="pd-type-label text-foreground break-words line-clamp-1 max-w-[11rem] sm:max-w-none"
+          dir="auto"
+        >
           {review.author}
         </span>
         <SentimentBadge sentiment={review.sentiment} />
       </div>
-      <span className="text-xs text-muted-foreground">
-        {new Date(review.date).toLocaleDateString("en-US", {
+      <span
+        className="pd-type-micro pd-type-number text-muted-foreground shrink-0"
+        dir="ltr"
+      >
+        {formatShortDate(review.date, {
           month: "short",
           day: "numeric",
         })}
       </span>
     </div>
-    <p className="text-sm text-muted-foreground leading-relaxed">
+    <p
+      className="pd-type-body pd-measure text-muted-foreground break-words whitespace-pre-wrap"
+      dir="auto"
+    >
       {review.content}
     </p>
     {review.likes !== undefined && (
-      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+      <div className="flex items-center gap-1 pd-type-micro pd-type-number text-muted-foreground">
         <ThumbsUp className="h-3 w-3" />
-        <span>{review.likes.toLocaleString()}</span>
+        <span dir="ltr">{formatInteger(review.likes)}</span>
       </div>
     )}
-  </div>
+  </Card>
 );
+
+export const SocialReviewCard = memo(SocialReviewCardComponent);
+SocialReviewCard.displayName = "SocialReviewCard";

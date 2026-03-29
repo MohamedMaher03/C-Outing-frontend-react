@@ -9,6 +9,18 @@ export type { UsePlaceDetailReturn } from "./hooks/usePlaceDetail";
 // API layer (exposed for advanced usage / testing)
 export { placeDetailApi } from "./api/placeDetailApi";
 
+// Mapper layer
+export {
+  normalizePlaceDetail,
+  normalizeReview,
+  normalizeSocialReview,
+  normalizeReviewSummary,
+  normalizePaginatedReviews,
+  normalizeAverageRating,
+  normalizeLikeState,
+  sanitizeReportPayload,
+} from "./mappers/placeDetailMapper";
+
 // Services
 export {
   placeDetailService,

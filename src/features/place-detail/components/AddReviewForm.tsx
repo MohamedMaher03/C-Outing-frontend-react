@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   MessageSquare,
   Send,
@@ -18,6 +18,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card } from "@/components/ui/card";
+import { formatInteger } from "../utils/formatters";
 import { StarRatingInput } from "./StarRatingInput";
 
 interface AddReviewFormProps {
@@ -46,10 +49,16 @@ export const AddReviewForm = ({
   deleting = false,
   errorMessage,
 }: AddReviewFormProps) => {
+  const ratingLabelId = useId();
+  const reviewFieldId = useId();
+  const reviewCounterId = useId();
+  const reviewErrorId = useId();
+
   const [rating, setRating] = useState(initialRating);
   const [comment, setComment] = useState(initialComment);
   const [formError, setFormError] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const effectiveError = formError || errorMessage || "";
 
   const handleSubmit = async () => {
     if (submitting) return; // guard against async double-fire before re-render
@@ -78,53 +87,86 @@ export const AddReviewForm = ({
   };
 
   return (
-    <div className="border border-border rounded-xl p-5 space-y-4 bg-card">
-      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+    <Card className="rounded-2xl border-border/70 bg-card/95 p-5 space-y-4 shadow-sm">
+      <h3 className="text-role-subheading text-foreground flex items-center gap-2">
         <MessageSquare className="h-4 w-4 text-secondary" />
         {mode === "edit" ? "Edit Your Review" : "Write a Review"}
       </h3>
 
       {submitted && (
-        <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2">
+        <Alert
+          role="status"
+          aria-live="polite"
+          className="border-secondary/30 bg-secondary/10 text-secondary"
+        >
           <CheckCircle2 className="h-4 w-4" />
-          Your review has been submitted successfully!
-        </div>
+          <AlertDescription className="pd-type-label break-words">
+            Your review has been submitted successfully.
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">
+        <label
+          id={ratingLabelId}
+          className="pd-type-kicker text-muted-foreground"
+        >
           Your Rating
         </label>
-        <StarRatingInput rating={rating} onRate={setRating} />
+        <StarRatingInput
+          rating={rating}
+          onRate={setRating}
+          ariaLabelledBy={ratingLabelId}
+          hasError={rating === 0 && !!formError}
+          disabled={submitting || deleting}
+        />
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-muted-foreground">
+        <label
+          htmlFor={reviewFieldId}
+          className="pd-type-kicker text-muted-foreground"
+        >
           Your Review
         </label>
         <textarea
+          id={reviewFieldId}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Share your experience about this place..."
           rows={3}
           maxLength={2000}
-          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
+          dir="auto"
+          aria-invalid={!!effectiveError}
+          aria-describedby={`${reviewCounterId}${effectiveError ? ` ${reviewErrorId}` : ""}`}
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 pd-type-body text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
         />
-        <p className="text-[10px] text-muted-foreground text-right">
-          {comment.trim().length}/2000
+        <p
+          id={reviewCounterId}
+          className="pd-type-micro pd-type-number text-muted-foreground text-right"
+          dir="ltr"
+        >
+          {formatInteger(comment.trim().length)}/{formatInteger(2000)}
         </p>
       </div>
 
-      {formError && <p className="text-xs text-destructive">{formError}</p>}
-      {errorMessage && (
-        <p className="text-xs text-destructive">{errorMessage}</p>
+      {effectiveError && (
+        <p
+          id={reviewErrorId}
+          role="alert"
+          className="pd-type-micro text-destructive break-words"
+        >
+          {effectiveError}
+        </p>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <Button
           onClick={handleSubmit}
+          type="button"
+          variant="secondary"
           disabled={submitting || deleting || rating === 0}
-          className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-semibold h-10 gap-2 disabled:opacity-50"
+          className="flex-1 h-11 w-full sm:w-auto gap-2 font-semibold"
         >
           {submitting ? (
             <>
@@ -149,7 +191,7 @@ export const AddReviewForm = ({
                 type="button"
                 variant="destructive"
                 disabled={submitting || deleting}
-                className="h-10 gap-1.5"
+                className="h-11 w-full sm:w-auto gap-1.5"
               >
                 <Trash2 className="h-4 w-4" />
                 {deleting ? "Deleting..." : "Delete"}
@@ -194,15 +236,15 @@ export const AddReviewForm = ({
         {mode === "edit" && onCancelEdit && (
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             onClick={onCancelEdit}
             disabled={submitting || deleting}
-            className="h-10"
+            className="h-11 w-full sm:w-auto"
           >
             Cancel
           </Button>
         )}
       </div>
-    </div>
+    </Card>
   );
 };

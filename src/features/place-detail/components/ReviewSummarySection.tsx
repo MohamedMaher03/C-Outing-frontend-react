@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import {
   Sparkles,
   Star,
@@ -8,7 +8,10 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import type { ReviewSummary } from "../types";
+import { formatCountLabel, formatInteger } from "../utils/formatters";
 
 interface ReviewSummarySectionProps {
   summary: ReviewSummary | null;
@@ -16,7 +19,7 @@ interface ReviewSummarySectionProps {
 }
 
 /** NLP-generated Review Summary section */
-export const ReviewSummarySection = ({
+const ReviewSummarySectionComponent = ({
   summary,
   loading,
 }: ReviewSummarySectionProps) => {
@@ -24,75 +27,98 @@ export const ReviewSummarySection = ({
 
   if (loading) {
     return (
-      <div className="bg-secondary/5 border border-secondary/20 rounded-xl p-5 space-y-3 animate-pulse">
+      <Card className="rounded-2xl border-border/70 bg-card/95 p-5 space-y-3 animate-pulse">
         <div className="h-5 bg-muted rounded w-2/3" />
         <div className="h-4 bg-muted rounded w-full" />
         <div className="h-4 bg-muted rounded w-5/6" />
         <div className="h-4 bg-muted rounded w-4/6" />
-      </div>
+      </Card>
     );
   }
 
   if (!summary) return null;
 
+  const maxTopicCount = summary.commonTopics.reduce(
+    (max, topic) => Math.max(max, topic.count),
+    1,
+  );
+
   const sentimentColor = {
-    positive: "text-emerald-600 dark:text-emerald-400",
-    neutral: "text-amber-600 dark:text-amber-400",
-    negative: "text-red-600 dark:text-red-400",
+    positive: "text-secondary",
+    neutral: "text-muted-foreground",
+    negative: "text-destructive",
   };
 
   return (
-    <div className="bg-secondary/5 border border-secondary/20 rounded-xl p-5 space-y-4">
+    <Card className="rounded-2xl border-border/70 bg-card/95 p-5 space-y-4 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-secondary flex items-center gap-1.5">
+        <h2 className="text-role-subheading text-secondary flex items-center gap-1.5 min-w-0">
           <Sparkles className="h-4 w-4" />
-          AI Review Summary
+          <span className="truncate">Community Pulse</span>
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           <span
-            className={`text-xs font-medium ${sentimentColor[summary.overallSentiment]}`}
+            className={`pd-type-micro ${sentimentColor[summary.overallSentiment]}`}
           >
             {summary.overallSentiment.charAt(0).toUpperCase() +
               summary.overallSentiment.slice(1)}
           </span>
-          <Badge className="bg-secondary/10 text-secondary border-secondary/30 gap-0.5 text-xs">
+          <Badge
+            variant="outline"
+            className="gap-0.5 border-secondary/40 text-secondary pd-type-micro pd-type-number"
+          >
             <Star className="h-3 w-3 fill-secondary" />
-            {summary.averageRating}
+            {summary.averageRating.toFixed(1)}
           </Badge>
-          <span className="text-xs text-muted-foreground">
-            ({summary.totalReviews} reviews)
+          <span
+            className="pd-type-micro pd-type-number text-muted-foreground"
+            dir="ltr"
+          >
+            ({formatCountLabel(summary.totalReviews, "review")})
           </span>
         </div>
       </div>
 
       {/* Summary text */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
+      <p
+        className="pd-type-body pd-measure text-muted-foreground break-words whitespace-pre-wrap"
+        dir="auto"
+      >
         {summary.summary}
       </p>
 
       {/* Highlights */}
       <div className="space-y-2">
-        <p className="text-xs font-semibold text-foreground uppercase tracking-wider">
-          Key Highlights
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {summary.highlights.map((highlight, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-secondary/10 text-secondary font-medium"
-            >
-              <CheckCircle2 className="h-3 w-3" />
-              {highlight}
-            </span>
-          ))}
-        </div>
+        <p className="pd-type-kicker text-foreground">Key Highlights</p>
+        {summary.highlights.length === 0 ? (
+          <p className="pd-type-micro text-muted-foreground">
+            No highlights available yet.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {summary.highlights.map((highlight, i) => (
+              <Badge
+                key={i}
+                variant="outline"
+                className="inline-flex items-center gap-1 border-secondary/30 bg-secondary/10 text-secondary max-w-full"
+                dir="auto"
+              >
+                <CheckCircle2 className="h-3 w-3 shrink-0" />
+                <span className="break-words">{highlight}</span>
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Expandable topics */}
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1 text-xs font-medium text-secondary hover:text-secondary/80 transition-colors"
+        className="h-9 justify-start gap-1 px-2 pd-type-label text-secondary hover:text-secondary"
       >
         <TrendingUp className="h-3.5 w-3.5" />
         {expanded ? "Hide" : "Show"} Common Topics
@@ -101,43 +127,56 @@ export const ReviewSummarySection = ({
         ) : (
           <ChevronDown className="h-3.5 w-3.5" />
         )}
-      </button>
+      </Button>
 
       {expanded && (
         <div className="space-y-2 pt-1">
-          {summary.commonTopics.map((topic, i) => {
-            const barWidth = Math.max(
-              (topic.count /
-                Math.max(...summary.commonTopics.map((t) => t.count))) *
-                100,
-              8,
-            );
-            const barColor = {
-              positive: "bg-emerald-500/70",
-              neutral: "bg-amber-500/70",
-              negative: "bg-red-500/70",
-            };
-            return (
-              <div key={i} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-foreground font-medium">
-                    {topic.topic}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {topic.count} mentions
-                  </span>
+          {summary.commonTopics.length === 0 ? (
+            <p className="pd-type-micro text-muted-foreground">
+              No common topics available yet.
+            </p>
+          ) : (
+            summary.commonTopics.map((topic, i) => {
+              const barWidth = Math.max((topic.count / maxTopicCount) * 100, 8);
+              const barColor = {
+                positive: "bg-secondary/80",
+                neutral: "bg-muted-foreground/50",
+                negative: "bg-destructive/70",
+              };
+              return (
+                <div key={i} className="space-y-1">
+                  <div className="flex items-center justify-between gap-2 pd-type-micro">
+                    <span
+                      className="text-foreground font-medium break-words min-w-0"
+                      dir="auto"
+                    >
+                      {topic.topic}
+                    </span>
+                    <span
+                      className="pd-type-number text-muted-foreground shrink-0"
+                      dir="ltr"
+                    >
+                      {formatCountLabel(topic.count, "mention")}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${barColor[topic.sentiment]}`}
+                      style={{
+                        width: `${Number.isFinite(barWidth) ? barWidth : 8}%`,
+                      }}
+                      aria-label={`${topic.topic}: ${formatInteger(topic.count)} mentions`}
+                    />
+                  </div>
                 </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${barColor[topic.sentiment]}`}
-                    style={{ width: `${barWidth}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       )}
-    </div>
+    </Card>
   );
 };
+
+export const ReviewSummarySection = memo(ReviewSummarySectionComponent);
+ReviewSummarySection.displayName = "ReviewSummarySection";

@@ -1,0 +1,42 @@
+.pd-type-kicker {
+  font-size: var(--text-secondary);
+  line-height: var(--leading-secondary);
+  font-weight: var(--weight-label);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.pd-type-label {
+  font-size: var(--text-secondary);
+  line-height: var(--leading-secondary);
+  font-weight: var(--weight-label);
+}
+
+.pd-type-body {
+  font-size: var(--text-body);
+  line-height: 1.65;
+  font-weight: var(--weight-body);
+}
+
+.pd-type-micro {
+  font-size: var(--text-secondary);
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.pd-type-number {
+  font-variant-numeric: tabular-nums;
+}
+
+.pd-measure {
+  max-width: 65ch;
+}
+
+.pd-focus-ring {
+  border-radius: 0.5rem;
+}
+
+.pd-focus-ring:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}

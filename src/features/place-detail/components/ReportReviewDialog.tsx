@@ -5,7 +5,7 @@
  * per user and collects a required reason + optional description.
  */
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Flag, CheckCircle2 } from "lucide-react";
 import {
   AlertDialog,
@@ -25,6 +25,8 @@ import {
   type ReportPayload,
   type ReportReason,
 } from "../types";
+import { getErrorMessage } from "@/utils/apiError";
+import { formatInteger } from "../utils/formatters";
 
 interface ReportReviewDialogProps {
   reviewId: string;
@@ -39,26 +41,56 @@ export function ReportReviewDialog({
   alreadyReported,
   onReport,
 }: ReportReviewDialogProps) {
+  const reasonGroupLabelId = useId();
+  const descriptionFieldId = useId();
+
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<ReportReason | "">("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const closeTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        window.clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && closeTimeoutRef.current) {
+      window.clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setReason("");
+      setDescription("");
+      setSubmitted(false);
+      setSubmitError(null);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!reason) return;
+
     try {
       setSubmitting(true);
+      setSubmitError(null);
       await onReport({ reviewId, reason: reason as ReportReason, description });
       setSubmitted(true);
-      setTimeout(() => {
+      closeTimeoutRef.current = window.setTimeout(() => {
         setOpen(false);
         setSubmitted(false);
         setReason("");
         setDescription("");
       }, 1800);
-    } catch (err) {
-      console.error("Report submission failed:", err);
+    } catch (error) {
+      setSubmitError(getErrorMessage(error, "Failed to submit report"));
     } finally {
       setSubmitting(false);
     }
@@ -67,70 +99,87 @@ export function ReportReviewDialog({
   // Already reported — show static disabled icon
   if (alreadyReported) {
     return (
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
         disabled
-        className="p-1.5 rounded-full text-destructive/60 cursor-not-allowed"
+        aria-label="You already reported this review"
+        className="h-11 w-11 rounded-full text-muted-foreground"
         title="You already reported this review"
       >
-        <Flag className="h-3.5 w-3.5 fill-destructive/40" />
-      </button>
+        <Flag className="h-3.5 w-3.5" />
+      </Button>
     );
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
+    <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogTrigger asChild>
-        <button
-          className="p-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={`Report review by ${reviewAuthor}`}
+          className="h-11 w-11 rounded-full text-muted-foreground hover:text-destructive"
           title="Report this review"
         >
           <Flag className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </AlertDialogTrigger>
 
-      <AlertDialogContent className="max-w-md">
+      <AlertDialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
+          <AlertDialogTitle className="text-role-subheading flex items-center gap-2">
             <Flag className="h-4 w-4 text-destructive" />
             Report Review
           </AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogDescription className="pd-type-label text-muted-foreground">
             Report a review by{" "}
-            <span className="font-medium text-foreground">{reviewAuthor}</span>{" "}
+            <span className="font-semibold text-foreground">
+              {reviewAuthor}
+            </span>{" "}
             that violates community guidelines.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         {submitted ? (
           <div className="py-6 text-center space-y-2">
-            <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto" />
-            <p className="text-sm font-semibold text-emerald-600">
+            <CheckCircle2 className="h-10 w-10 text-secondary mx-auto" />
+            <p className="pd-type-label font-semibold text-secondary">
               Report submitted — thank you!
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="pd-type-micro text-muted-foreground">
               Our moderators will review this shortly.
             </p>
           </div>
         ) : (
           <div className="space-y-4 py-2">
             {/* Reason selection */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">
+            <div
+              className="space-y-2"
+              role="radiogroup"
+              aria-labelledby={reasonGroupLabelId}
+            >
+              <Label id={reasonGroupLabelId} className="pd-type-label">
                 Reason <span className="text-destructive">*</span>
               </Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {REPORT_REASONS.map((r) => (
                   <button
                     key={r}
+                    type="button"
+                    role="radio"
+                    aria-checked={reason === r}
                     onClick={() => setReason(r)}
                     className={cn(
-                      "px-3 py-2 rounded-lg text-xs text-left border transition-all",
+                      "min-h-11 px-3 py-2 rounded-lg pd-type-micro text-left border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       reason === r
-                        ? "bg-destructive/10 border-destructive/40 text-destructive font-semibold"
-                        : "bg-muted/40 border-border text-muted-foreground hover:border-destructive/20 hover:bg-destructive/5",
+                        ? "bg-secondary/10 border-secondary/40 text-secondary font-semibold"
+                        : "bg-muted/40 border-border text-muted-foreground hover:border-secondary/30 hover:bg-secondary/5",
                     )}
                   >
-                    {r}
+                    <span className="break-words">{r}</span>
                   </button>
                 ))}
               </div>
@@ -138,34 +187,53 @@ export function ReportReviewDialog({
 
             {/* Optional description */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
+              <Label htmlFor={descriptionFieldId} className="pd-type-label">
                 Additional details{" "}
                 <span className="text-muted-foreground font-normal">
                   (optional)
                 </span>
               </Label>
               <textarea
+                id={descriptionFieldId}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe the issue in more detail..."
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                dir="auto"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 pd-type-body text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 rows={3}
                 maxLength={500}
               />
-              <p className="text-[10px] text-muted-foreground text-right">
-                {description.length}/500
+              <p
+                className="pd-type-micro pd-type-number text-muted-foreground text-right"
+                dir="ltr"
+              >
+                {formatInteger(description.length)}/{formatInteger(500)}
               </p>
             </div>
+
+            {submitError && (
+              <p
+                role="alert"
+                className="pd-type-micro text-destructive break-words"
+              >
+                {submitError}
+              </p>
+            )}
           </div>
         )}
 
         {!submitted && (
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={submitting}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </AlertDialogCancel>
             <Button
               onClick={handleSubmit}
               disabled={!reason || submitting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5"
+              className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5"
             >
               {submitting ? (
                 <>

@@ -1,3 +1,4 @@
+import { Suspense, lazy, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -20,21 +21,48 @@ import {
   Accessibility,
   Images,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { usePlaceDetail } from "@/features/place-detail/hooks/usePlaceDetail";
 import { getReviewIdentity } from "@/features/place-detail/utils/reviewIdentity";
 import { PRICE_LEVEL_META } from "@/features/place-detail/utils/priceLevel";
 import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defaultImages";
-import { ReviewCard } from "@/features/place-detail/components/ReviewCard";
-import { SocialReviewCard } from "@/features/place-detail/components/SocialReviewCard";
-import { ReviewSummarySection } from "@/features/place-detail/components/ReviewSummarySection";
-import { AddReviewForm } from "@/features/place-detail/components/AddReviewForm";
+import { formatCountLabel } from "@/features/place-detail/utils/formatters";
 import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleton";
+import "@/features/place-detail/placeDetailTypography.css";
 
-// ============ Main Page ============
+const ReviewCardLazy = lazy(() =>
+  import("@/features/place-detail/components/ReviewCard").then((module) => ({
+    default: module.ReviewCard,
+  })),
+);
+
+const SocialReviewCardLazy = lazy(() =>
+  import("@/features/place-detail/components/SocialReviewCard").then(
+    (module) => ({
+      default: module.SocialReviewCard,
+    }),
+  ),
+);
+
+const ReviewSummarySectionLazy = lazy(() =>
+  import("@/features/place-detail/components/ReviewSummarySection").then(
+    (module) => ({
+      default: module.ReviewSummarySection,
+    }),
+  ),
+);
+
+const AddReviewFormLazy = lazy(() =>
+  import("@/features/place-detail/components/AddReviewForm").then((module) => ({
+    default: module.AddReviewForm,
+  })),
+);
 
 const PlaceDetailPage = () => {
   const { id } = useParams();
@@ -48,6 +76,8 @@ const PlaceDetailPage = () => {
     isLiked,
     savingLike,
     notification,
+    currentUserId,
+    canOpenInMaps,
     reviews,
     reviewsPagination,
     loadingMoreReviews,
@@ -57,7 +87,11 @@ const PlaceDetailPage = () => {
     myReviewLoading,
     reviewsLoading,
     socialReviewsLoading,
+    socialReviewsLoaded,
     summaryLoading,
+    reviewsError,
+    socialReviewsError,
+    summaryError,
     submittingReview,
     deletingReview,
     reportingReview,
@@ -72,7 +106,40 @@ const PlaceDetailPage = () => {
     handleDeleteMyReview,
     handleReportReview,
     loadMoreReviews,
+    refreshPlaceData,
+    retryReviewsLoad,
+    retrySocialReviewsLoad,
+    retrySummaryLoad,
+    ensureSocialReviewsLoaded,
   } = usePlaceDetail(id);
+
+  const [activeReviewTab, setActiveReviewTab] = useState<"website" | "social">(
+    "website",
+  );
+
+  useEffect(() => {
+    if (activeReviewTab !== "social") return;
+    void ensureSocialReviewsLoaded();
+  }, [activeReviewTab, ensureSocialReviewsLoaded]);
+
+  useEffect(() => {
+    if (socialReviewsLoaded) return;
+
+    const timer = window.setTimeout(() => {
+      void ensureSocialReviewsLoaded();
+    }, 900);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [ensureSocialReviewsLoaded, socialReviewsLoaded]);
+
+  const socialCountCompact = socialReviewsLoaded
+    ? socialReviews.length.toString()
+    : "...";
+  const socialCountVerbose = socialReviewsLoaded
+    ? formatCountLabel(socialReviews.length, "review")
+    : "Loading...";
 
   const onDeleteMyReview = async () => {
     await handleDeleteMyReview();
@@ -80,23 +147,6 @@ const PlaceDetailPage = () => {
 
   const onLikeClick = async () => toggleLike();
   const onFavoriteClick = async () => toggleFavorite();
-
-  const currentUserId = (() => {
-    try {
-      const raw = localStorage.getItem("authUser");
-      if (!raw) return null;
-
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
-      const candidate =
-        (typeof parsed.userId === "string" && parsed.userId.trim()) ||
-        (typeof parsed.id === "string" && parsed.id.trim()) ||
-        null;
-
-      return candidate && candidate.length > 0 ? candidate : null;
-    } catch {
-      return null;
-    }
-  })();
 
   if (loading) {
     return (
@@ -110,81 +160,50 @@ const PlaceDetailPage = () => {
 
   if (error || !place) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <p className="text-muted-foreground">{error || "Place not found."}</p>
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="w-full max-w-md space-y-4">
+          <Alert variant="destructive" className="border-destructive/30">
+            <AlertTitle>Could not open this place</AlertTitle>
+            <AlertDescription className="break-words">
+              {error || "Place not found."}
+            </AlertDescription>
+          </Alert>
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 w-full"
+            onClick={() => void refreshPlaceData()}
+          >
+            Retry
+          </Button>
         </div>
       </div>
     );
   }
 
+  const notificationToneClass =
+    notification.type === "like"
+      ? "border-primary/30 bg-primary text-primary-foreground"
+      : notification.type === "report"
+        ? "border-destructive/30 bg-destructive text-destructive-foreground"
+        : "border-secondary/30 bg-secondary text-secondary-foreground";
+
   return (
-    <div className="max-w-3xl mx-auto pb-8">
-      {/* Hero */}
-      <div className="relative h-64 sm:h-80">
-        <img
-          src={place.image}
-          alt={place.name}
-          className="w-full h-full object-cover"
-          onError={(event) => {
-            event.currentTarget.src = getDefaultVenueImageDataUrl(place.name);
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
-        <button
-          onClick={goBack}
-          className="absolute top-4 left-4 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
+    <div className="min-h-screen bg-gradient-to-b from-cream/30 via-background to-background pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:pb-10">
+      {notification.show && (
+        <div
+          className="fixed top-6 left-1/2 z-50 -translate-x-1/2 px-4"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
         >
-          <ArrowLeft className="h-5 w-5 text-foreground" />
-        </button>
-        <div className="absolute top-4 right-4 flex items-center gap-2">
-          {/* Like Button */}
-          <button
-            onClick={onLikeClick}
-            disabled={savingLike}
-            className="p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all hover:scale-110 disabled:opacity-50"
-            title="Like this place"
+          <Card
+            className={cn(
+              "animate-in fade-in slide-in-from-top-2 duration-500 max-w-[min(92vw,32rem)] px-4 py-3 rounded-2xl border shadow-xl",
+              notificationToneClass,
+            )}
           >
-            <ThumbsUp
-              className={`h-5 w-5 transition-colors ${
-                isLiked ? "text-blue-500 fill-blue-500" : "text-foreground"
-              }`}
-            />
-          </button>
-          {/* Favorite Button */}
-          <button
-            onClick={onFavoriteClick}
-            disabled={savingFavorite}
-            className="p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all hover:scale-110 disabled:opacity-50"
-            title="Add to favorites"
-          >
-            <Heart
-              className={`h-5 w-5 transition-colors ${
-                isFavorite ? "text-secondary fill-secondary" : "text-foreground"
-              }`}
-            />
-          </button>
-        </div>
-
-        {/* Match score overlay */}
-        {/* {place.matchScore && (
-          <div className="absolute bottom-4 right-4 bg-secondary/90 backdrop-blur-sm text-secondary-foreground px-3 py-1.5 rounded-full text-xs font-bold">
-            {place.matchScore}% Match
-          </div>
-        )} */}
-
-        {/* Notification Toast */}
-        {notification.show && (
-          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-            <div
-              className={`animate-in fade-in slide-in-from-top-2 duration-500 px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl backdrop-blur-md border ${
-                notification.type === "like"
-                  ? "bg-blue-500/90 text-white border-blue-400/50"
-                  : notification.type === "report"
-                    ? "bg-amber-500/90 text-white border-amber-400/50"
-                    : "bg-secondary/90 text-secondary-foreground border-secondary/50"
-              }`}
-            >
+            <div className="flex items-center gap-3">
               {notification.type === "like" ? (
                 <ThumbsUp className="h-5 w-5 fill-current" />
               ) : notification.type === "report" ? (
@@ -192,386 +211,602 @@ const PlaceDetailPage = () => {
               ) : (
                 <Heart className="h-5 w-5 fill-current" />
               )}
-              <span className="font-semibold text-sm whitespace-nowrap">
+              <span className="pd-type-label font-semibold break-words">
                 {notification.type === "like"
                   ? notification.action === "added"
-                    ? "You liked this place! 👍"
-                    : "You unliked this place 👎"
+                    ? "Place liked"
+                    : "Like removed"
                   : notification.type === "report"
-                    ? "Report submitted — thank you! 🚩"
+                    ? "Report submitted"
                     : notification.action === "added"
-                      ? "Added to favorites! ❤️"
-                      : "Removed from favorites 💔"}
+                      ? "Added to favorites"
+                      : "Removed from favorites"}
               </span>
             </div>
-          </div>
-        )}
-      </div>
+          </Card>
+        </div>
+      )}
 
-      {/* Content */}
-      <div className="px-4 py-6 space-y-6">
-        {/* Title & Info */}
-        <div className="space-y-2">
-          <div className="flex items-start justify-between gap-4">
-            <h1 className="text-2xl font-bold text-foreground">{place.name}</h1>
-            <Badge className="bg-secondary/10 text-secondary border-secondary/30 gap-1 shrink-0">
-              <Star className="h-3 w-3 fill-secondary text-secondary" />
-              {place.rating}
-            </Badge>
-          </div>
+      <div className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 lg:px-8">
+        <Card className="overflow-hidden rounded-3xl border-border/60 shadow-xl">
+          <div className="relative h-[clamp(15rem,48vw,24rem)]">
+            <img
+              src={place.image}
+              alt={place.name}
+              className="h-full w-full object-cover"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              onError={(event) => {
+                event.currentTarget.src = getDefaultVenueImageDataUrl(
+                  place.name,
+                );
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/20 to-black/10" />
 
-          {/* Address row */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4 flex-shrink-0" />
-            <span>{place.address}</span>
-          </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="Go back"
+              onClick={goBack}
+              className="absolute left-4 top-4 h-11 w-11 rounded-full border-white/30 bg-white/85 backdrop-blur-sm"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
 
-          {(place.district || place.type || place.category) && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-              {place.category && (
-                <span className="px-2 py-0.5 rounded-full bg-muted font-medium">
-                  {place.category}
-                </span>
-              )}
-              {place.type && (
-                <span className="px-2 py-0.5 rounded-full bg-muted font-medium">
-                  {place.type}
-                </span>
-              )}
-              {place.district && <span>{place.district}</span>}
-            </div>
-          )}
-
-          {/* Price + hours */}
-          <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground">
-            {place.priceLevel && (
-              <span className="inline-flex items-center gap-1 font-semibold text-secondary">
-                <span>{PRICE_LEVEL_META[place.priceLevel].label}</span>
-                <span className="text-xs font-medium text-secondary/85">
-                  {PRICE_LEVEL_META[place.priceLevel].symbol}
-                </span>
-                {place.priceRange && (
-                  <span className="text-muted-foreground font-normal ml-1">
-                    · {place.priceRange}
-                  </span>
-                )}
-              </span>
-            )}
-            {place.hours && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
-                {place.hours}
-              </span>
-            )}
-            {place.isOpen !== undefined && (
-              <span
-                className={
-                  place.isOpen
-                    ? "text-emerald-600 font-semibold"
-                    : "text-muted-foreground"
-                }
+            <div className="absolute right-4 top-4 flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={onLikeClick}
+                disabled={savingLike}
+                aria-label={isLiked ? "Unlike this place" : "Like this place"}
+                aria-pressed={isLiked}
+                className="h-11 w-11 rounded-full border-white/30 bg-white/85 backdrop-blur-sm"
+                title="Like this place"
               >
-                {place.isOpen ? "Open Now" : "Closed"}
-              </span>
-            )}
-          </div>
-
-          {/* Atmosphere tags */}
-          {(place.atmosphereTags ?? []).length > 0 && (
-            <div className="flex gap-2 flex-wrap pt-1">
-              {place.atmosphereTags!.map((tag) => (
-                <span
-                  key={tag}
-                  className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium"
-                >
-                  {tag}
-                </span>
-              ))}
+                <ThumbsUp
+                  className={cn(
+                    "h-5 w-5 transition-colors",
+                    isLiked ? "text-primary fill-primary" : "text-foreground",
+                  )}
+                />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={onFavoriteClick}
+                disabled={savingFavorite}
+                aria-label={
+                  isFavorite ? "Remove from favorites" : "Add to favorites"
+                }
+                aria-pressed={isFavorite}
+                className="h-11 w-11 rounded-full border-white/30 bg-white/85 backdrop-blur-sm"
+                title="Add to favorites"
+              >
+                <Heart
+                  className={cn(
+                    "h-5 w-5 transition-colors",
+                    isFavorite
+                      ? "text-secondary fill-secondary"
+                      : "text-foreground",
+                  )}
+                />
+              </Button>
             </div>
-          )}
+          </div>
+        </Card>
 
-          {/* Social badges */}
-          {(place.socialBadges ?? []).length > 0 && (
-            <div className="flex gap-2 flex-wrap">
-              {place.socialBadges!.map((badge) => (
-                <span
-                  key={badge}
-                  className="text-xs px-2.5 py-1 rounded-full bg-primary/8 text-primary border border-primary/20 font-medium flex items-center gap-1"
+        <div className="mt-6 space-y-5">
+          <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm sm:p-5">
+            <div className="space-y-4">
+              <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
+                <h1
+                  className="text-role-heading text-foreground break-words min-w-0"
+                  dir="auto"
                 >
-                  <Users className="h-3 w-3" />
-                  {badge}
+                  {place.name}
+                </h1>
+                <Badge
+                  variant="outline"
+                  className="gap-1 border-secondary/40 text-secondary shrink-0 pd-type-number"
+                >
+                  <Star className="h-3 w-3 fill-secondary text-secondary" />
+                  {place.rating}
+                </Badge>
+              </div>
+
+              <div className="flex items-center gap-2 pd-type-label text-muted-foreground min-w-0">
+                <MapPin className="h-4 w-4 shrink-0" />
+                <span className="break-words" dir="auto">
+                  {place.address}
                 </span>
-              ))}
-              {place.accessibilityScore !== undefined &&
-                place.accessibilityScore >= 0.7 && (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200 font-medium flex items-center gap-1">
-                    <Accessibility className="h-3 w-3" />
-                    Accessible
+              </div>
+
+              {(place.district || place.type || place.category) && (
+                <div className="flex items-center gap-2 flex-wrap pd-type-micro text-muted-foreground">
+                  {place.category && (
+                    <Badge
+                      variant="outline"
+                      className="font-semibold border-border/80"
+                    >
+                      {place.category}
+                    </Badge>
+                  )}
+                  {place.type && (
+                    <Badge
+                      variant="outline"
+                      className="font-semibold border-border/80"
+                    >
+                      {place.type}
+                    </Badge>
+                  )}
+                  {place.district && <span>{place.district}</span>}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 flex-wrap text-role-secondary text-muted-foreground">
+                {place.priceLevel && (
+                  <span className="inline-flex items-center gap-1 font-semibold text-secondary">
+                    <span>{PRICE_LEVEL_META[place.priceLevel].label}</span>
+                    <span className="pd-type-micro text-secondary/90">
+                      {PRICE_LEVEL_META[place.priceLevel].symbol}
+                    </span>
+                    {place.priceRange && (
+                      <span className="text-muted-foreground font-normal ml-1">
+                        · {place.priceRange}
+                      </span>
+                    )}
                   </span>
                 )}
-            </div>
-          )}
-        </div>
-
-        {/* About */}
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-            About
-          </h2>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            {place.description}
-          </p>
-        </div>
-
-        {/* Contact & Links */}
-        {(place.phone || place.website || place.bookingUrl) && (
-          <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-              Contact
-            </h2>
-            <div className="flex flex-col gap-2">
-              {place.phone && (
-                <a
-                  href={`tel:${place.phone}`}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Phone className="h-4 w-4 text-secondary flex-shrink-0" />
-                  {place.phone}
-                </a>
-              )}
-              {place.website && (
-                <a
-                  href={place.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-secondary hover:underline"
-                >
-                  <Globe className="h-4 w-4 flex-shrink-0" />
-                  Visit Website
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-              {place.bookingUrl && (
-                <a
-                  href={place.bookingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-secondary hover:underline"
-                >
-                  <CalendarCheck className="h-4 w-4 flex-shrink-0" />
-                  Book a Table
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Menu */}
-        {(place.menuUrl || (place.menuImagesCount ?? 0) > 0) && (
-          <div className="bg-muted/40 border border-border/50 rounded-xl p-4 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <UtensilsCrossed className="h-5 w-5 text-secondary flex-shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-foreground">Menu</p>
-                {(place.menuImagesCount ?? 0) > 0 && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                    <Images className="h-3 w-3" />
-                    {place.menuImagesCount} menu photo
-                    {place.menuImagesCount! > 1 ? "s" : ""} available
-                  </p>
+                {place.hours && (
+                  <span className="inline-flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    {place.hours}
+                  </span>
+                )}
+                {place.isOpen !== undefined && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "font-semibold",
+                      place.isOpen
+                        ? "border-secondary/40 bg-secondary/10 text-secondary"
+                        : "border-border text-muted-foreground",
+                    )}
+                  >
+                    {place.isOpen ? "Open Now" : "Closed"}
+                  </Badge>
                 )}
               </div>
-            </div>
-            {place.menuUrl && (
-              <a
-                href={place.menuUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-primary text-xs font-semibold rounded-lg hover:bg-secondary/90 transition-colors flex-shrink-0"
-              >
-                View Menu
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </div>
-        )}
 
-        {/* Facilities */}
-        {(place.hasWifi ||
-          place.hasToilet ||
-          place.seatingType ||
-          place.parkingAvailable) && (
-          <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-              Facilities
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {place.hasWifi && (
-                <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium">
-                  <Wifi className="h-3.5 w-3.5" />
-                  Free Wi-Fi
-                </span>
-              )}
-              {place.hasToilet && (
-                <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-green-50 text-green-700 border border-green-200 font-medium">
-                  <Toilet className="h-3.5 w-3.5" />
-                  Restrooms
-                </span>
-              )}
-              {place.parkingAvailable && (
-                <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-medium">
-                  <ParkingSquare className="h-3.5 w-3.5" />
-                  Parking
-                </span>
-              )}
-              {(place.seatingType ?? []).map((s) => (
-                <span
-                  key={s}
-                  className="text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground border border-border font-medium capitalize"
-                >
-                  {s} seating
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* AI Review Summary */}
-        <ReviewSummarySection
-          summary={reviewSummary}
-          loading={summaryLoading}
-        />
-
-        {/* Reviews Section */}
-        <div className="space-y-4">
-          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-secondary" />
-            Reviews
-          </h2>
-
-          <Tabs defaultValue="website" className="w-full">
-            <TabsList className="w-full bg-muted/60">
-              <TabsTrigger
-                value="website"
-                className="flex-1 gap-1.5 text-xs sm:text-sm"
-              >
-                <Star className="h-3.5 w-3.5" />
-                User Reviews ({reviews.length})
-              </TabsTrigger>
-              <TabsTrigger
-                value="social"
-                className="flex-1 gap-1.5 text-xs sm:text-sm"
-              >
-                <Globe className="h-3.5 w-3.5" />
-                Social Media ({socialReviews.length})
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Website User Reviews */}
-            <TabsContent value="website" className="space-y-4 mt-4">
-              {/* Add Review Form */}
-              {myReviewLoading ? (
-                <div className="text-xs text-muted-foreground">
-                  Loading your review...
-                </div>
-              ) : myReview ? (
-                <div className="text-xs rounded-lg border border-secondary/30 bg-secondary/10 text-secondary px-3 py-2">
-                  You already reviewed this place. Updating the form will edit
-                  your existing review.
-                </div>
-              ) : null}
-
-              <AddReviewForm
-                key={`${myReview?.reviewId ?? "create"}-${myReview?.createdAt ?? "none"}-${myReview ? "edit" : "create"}`}
-                onSubmit={handleSubmitReview}
-                submitting={submittingReview}
-                submitted={reviewSubmitted}
-                mode={myReview ? "edit" : "create"}
-                initialRating={myReview?.rating ?? 0}
-                initialComment={myReview?.comment ?? ""}
-                onDelete={myReview ? onDeleteMyReview : undefined}
-                deleting={deletingReview || reportingReview}
-                errorMessage={reviewActionError}
-              />
-
-              {/* Reviews list */}
-              {reviewsLoading ? (
-                <ReviewSkeleton />
-              ) : reviews.length === 0 ? (
-                <div className="text-center py-8">
-                  <MessageSquare className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    No reviews yet. Be the first!
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {reviews.map((review) => (
-                    <ReviewCard
-                      key={getReviewIdentity(review)}
-                      review={review}
-                      alreadyReported={isReviewReported(
-                        review.reviewId ?? getReviewIdentity(review),
-                      )}
-                      onReport={
-                        currentUserId && review.userId === currentUserId
-                          ? undefined
-                          : handleReportReview
-                      }
-                    />
-                  ))}
-
-                  {reviewsPagination.hasNextPage && (
-                    <Button
+              {(place.atmosphereTags ?? []).length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {place.atmosphereTags!.map((tag) => (
+                    <Badge
+                      key={tag}
                       variant="outline"
-                      onClick={loadMoreReviews}
-                      disabled={loadingMoreReviews}
-                      className="w-full"
+                      className="pd-type-micro border-border/80 bg-muted/50 text-muted-foreground"
+                      dir="auto"
                     >
-                      {loadingMoreReviews
-                        ? "Loading more..."
-                        : `Load More Reviews (${reviews.length}/${reviewsPagination.totalCount})`}
-                    </Button>
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {(place.socialBadges ?? []).length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {place.socialBadges!.map((item) => (
+                    <Badge
+                      key={item}
+                      variant="outline"
+                      className="gap-1 border-primary/30 bg-primary/10 text-primary"
+                    >
+                      <Users className="h-3 w-3" />
+                      {item}
+                    </Badge>
+                  ))}
+                  {place.accessibilityScore !== undefined &&
+                    place.accessibilityScore >= 0.7 && (
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-secondary/30 bg-secondary/10 text-secondary"
+                      >
+                        <Accessibility className="h-3 w-3" />
+                        Accessible
+                      </Badge>
+                    )}
+                </div>
+              )}
+            </div>
+          </Card>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-2 sm:p-5 lg:col-span-2">
+              <h2 className="pd-type-kicker text-foreground">About</h2>
+              <p className="pd-type-body pd-measure text-muted-foreground break-words">
+                {place.description}
+              </p>
+            </Card>
+
+            {(place.phone || place.website || place.bookingUrl) && (
+              <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5">
+                <h2 className="pd-type-kicker text-foreground">Contact</h2>
+                <div className="flex flex-col gap-2.5">
+                  {place.phone && (
+                    <a
+                      href={`tel:${place.phone}`}
+                      className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-muted-foreground hover:text-foreground transition-colors break-all"
+                    >
+                      <Phone className="h-4 w-4 text-secondary shrink-0" />
+                      {place.phone}
+                    </a>
+                  )}
+                  {place.website && (
+                    <a
+                      href={place.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-secondary hover:underline break-all"
+                    >
+                      <Globe className="h-4 w-4 shrink-0" />
+                      Visit Website
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                  {place.bookingUrl && (
+                    <a
+                      href={place.bookingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-secondary hover:underline"
+                    >
+                      <CalendarCheck className="h-4 w-4 shrink-0" />
+                      Book a Table
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   )}
                 </div>
-              )}
-            </TabsContent>
+              </Card>
+            )}
 
-            {/* Social Media Reviews */}
-            <TabsContent value="social" className="space-y-4 mt-4">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
-                <Globe className="h-3.5 w-3.5 shrink-0" />
-                <span>Reviews collected from social media platforms.</span>
-              </div>
-
-              {socialReviewsLoading ? (
-                <ReviewSkeleton />
-              ) : socialReviews.length === 0 ? (
-                <div className="text-center py-8">
-                  <Globe className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    No social media reviews found for this place yet.
-                  </p>
+            {(place.menuUrl || (place.menuImagesCount ?? 0) > 0) && (
+              <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm flex flex-col gap-3 sm:p-5">
+                <div className="flex items-center gap-3 min-w-0">
+                  <UtensilsCrossed className="h-5 w-5 text-secondary shrink-0" />
+                  <div>
+                    <p className="pd-type-label text-foreground">Menu</p>
+                    {(place.menuImagesCount ?? 0) > 0 && (
+                      <p className="pd-type-micro pd-type-number text-muted-foreground inline-flex items-center gap-1 mt-0.5">
+                        <Images className="h-3 w-3" />
+                        {formatCountLabel(
+                          place.menuImagesCount ?? 0,
+                          "menu photo",
+                        )}{" "}
+                        available
+                      </p>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {socialReviews.map((review) => (
-                    <SocialReviewCard key={review.id} review={review} />
+                {place.menuUrl && (
+                  <Button
+                    asChild
+                    variant="secondary"
+                    className="min-h-11 w-full sm:w-auto sm:self-start"
+                  >
+                    <a
+                      href={place.menuUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      View Menu
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </Button>
+                )}
+              </Card>
+            )}
+
+            {(place.hasWifi ||
+              place.hasToilet ||
+              place.seatingType ||
+              place.parkingAvailable) && (
+              <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5 lg:col-span-2">
+                <h2 className="pd-type-kicker text-foreground">Facilities</h2>
+                <div className="flex flex-wrap gap-2">
+                  {place.hasWifi && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1.5 border-primary/30 bg-primary/10 text-primary"
+                    >
+                      <Wifi className="h-3.5 w-3.5" />
+                      Free Wi-Fi
+                    </Badge>
+                  )}
+                  {place.hasToilet && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1.5 border-secondary/30 bg-secondary/10 text-secondary"
+                    >
+                      <Toilet className="h-3.5 w-3.5" />
+                      Restrooms
+                    </Badge>
+                  )}
+                  {place.parkingAvailable && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1.5 border-border text-foreground"
+                    >
+                      <ParkingSquare className="h-3.5 w-3.5" />
+                      Parking
+                    </Badge>
+                  )}
+                  {(place.seatingType ?? []).map((seat) => (
+                    <Badge
+                      key={seat}
+                      variant="outline"
+                      className="border-border bg-muted/60 text-muted-foreground capitalize"
+                    >
+                      {seat} seating
+                    </Badge>
                   ))}
                 </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+              </Card>
+            )}
+          </div>
 
-        {/* Open in Maps */}
-        <Button
-          className="w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold h-12 gap-2"
-          onClick={openInMaps}
-        >
-          <ExternalLink className="h-4 w-4" /> Open in Google Maps
-        </Button>
+          {summaryError && !summaryLoading && (
+            <Alert variant="destructive" className="border-destructive/30">
+              <AlertTitle>Could not load review summary</AlertTitle>
+              <AlertDescription className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                <span className="break-words">{summaryError}</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void retrySummaryLoad()}
+                >
+                  Retry
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Suspense
+            fallback={
+              <Card className="rounded-2xl border-border/70 bg-card/95 p-5 space-y-3 animate-pulse">
+                <div className="h-5 bg-muted rounded w-2/3" />
+                <div className="h-4 bg-muted rounded w-full" />
+                <div className="h-4 bg-muted rounded w-5/6" />
+              </Card>
+            }
+          >
+            <ReviewSummarySectionLazy
+              summary={reviewSummary}
+              loading={summaryLoading}
+            />
+          </Suspense>
+
+          <Card className="rounded-2xl border-border/70 bg-card/95 p-5 shadow-sm space-y-4">
+            <h2 className="pd-type-kicker text-foreground flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-secondary" />
+              Reviews
+            </h2>
+
+            <Tabs
+              value={activeReviewTab}
+              onValueChange={(value) =>
+                setActiveReviewTab(value as "website" | "social")
+              }
+              className="w-full"
+            >
+              <TabsList className="w-full bg-muted/60 grid grid-cols-2 h-auto p-1">
+                <TabsTrigger
+                  value="website"
+                  className="min-h-11 gap-1 px-2 pd-type-micro sm:gap-1.5 sm:px-3"
+                >
+                  <Star className="h-3.5 w-3.5" />
+                  <span className="sm:hidden whitespace-nowrap pd-type-number">
+                    Users ({reviews.length})
+                  </span>
+                  <span className="hidden sm:inline whitespace-nowrap pd-type-number">
+                    User Reviews ({formatCountLabel(reviews.length, "review")})
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="social"
+                  className="min-h-11 gap-1 px-2 pd-type-micro sm:gap-1.5 sm:px-3"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  <span className="sm:hidden whitespace-nowrap pd-type-number">
+                    Social ({socialCountCompact})
+                  </span>
+                  <span className="hidden sm:inline whitespace-nowrap pd-type-number">
+                    Social Media ({socialCountVerbose})
+                  </span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="website" className="space-y-4 mt-4">
+                {myReviewLoading ? (
+                  <p className="pd-type-micro text-muted-foreground">
+                    Loading your review...
+                  </p>
+                ) : myReview ? (
+                  <Alert className="border-secondary/30 bg-secondary/10 text-secondary">
+                    <AlertDescription className="pd-type-label">
+                      You already reviewed this place. Updating the form will
+                      edit your existing review.
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
+
+                <Suspense
+                  fallback={
+                    <Card className="rounded-2xl border-border/70 bg-card/95 p-5 space-y-3 animate-pulse">
+                      <div className="h-5 bg-muted rounded w-1/3" />
+                      <div className="h-11 bg-muted rounded" />
+                      <div className="h-20 bg-muted rounded" />
+                    </Card>
+                  }
+                >
+                  <AddReviewFormLazy
+                    key={`${myReview?.reviewId ?? "create"}-${myReview?.createdAt ?? "none"}-${myReview ? "edit" : "create"}`}
+                    onSubmit={handleSubmitReview}
+                    submitting={submittingReview}
+                    submitted={reviewSubmitted}
+                    mode={myReview ? "edit" : "create"}
+                    initialRating={myReview?.rating ?? 0}
+                    initialComment={myReview?.comment ?? ""}
+                    onDelete={myReview ? onDeleteMyReview : undefined}
+                    deleting={deletingReview || reportingReview}
+                    errorMessage={reviewActionError}
+                  />
+                </Suspense>
+
+                {reviewsLoading ? (
+                  <ReviewSkeleton />
+                ) : reviewsError ? (
+                  <Alert
+                    variant="destructive"
+                    className="border-destructive/30"
+                  >
+                    <AlertTitle>Could not load user reviews</AlertTitle>
+                    <AlertDescription className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                      <span className="break-words">{reviewsError}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => void retryReviewsLoad()}
+                      >
+                        Retry
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                ) : reviews.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageSquare className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="pd-type-body text-muted-foreground">
+                      No reviews yet. Be the first!
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    className="space-y-3"
+                    style={{ contentVisibility: "auto" }}
+                  >
+                    <Suspense fallback={<ReviewSkeleton />}>
+                      {reviews.map((review) => (
+                        <ReviewCardLazy
+                          key={getReviewIdentity(review)}
+                          review={review}
+                          alreadyReported={isReviewReported(
+                            review.reviewId ?? getReviewIdentity(review),
+                          )}
+                          onReport={
+                            currentUserId && review.userId === currentUserId
+                              ? undefined
+                              : handleReportReview
+                          }
+                        />
+                      ))}
+                    </Suspense>
+
+                    {reviewsPagination.hasNextPage && (
+                      <Button
+                        variant="outline"
+                        onClick={loadMoreReviews}
+                        disabled={loadingMoreReviews}
+                        className="w-full min-h-11"
+                      >
+                        {loadingMoreReviews
+                          ? "Loading more..."
+                          : `Load More Reviews (${reviews.length}/${reviewsPagination.totalCount})`}
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="social" className="space-y-4 mt-4">
+                <Alert className="border-border/70 bg-muted/40">
+                  <AlertDescription className="pd-type-label text-muted-foreground flex items-center gap-2">
+                    <Globe className="h-3.5 w-3.5 shrink-0" />
+                    <span>Reviews collected from social media platforms.</span>
+                  </AlertDescription>
+                </Alert>
+
+                {socialReviewsLoading ? (
+                  <ReviewSkeleton />
+                ) : socialReviewsError ? (
+                  <Alert
+                    variant="destructive"
+                    className="border-destructive/30"
+                  >
+                    <AlertTitle>Could not load social reviews</AlertTitle>
+                    <AlertDescription className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                      <span className="break-words">{socialReviewsError}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => void retrySocialReviewsLoad()}
+                      >
+                        Retry
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                ) : socialReviews.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Globe className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="pd-type-body text-muted-foreground">
+                      No social media reviews found for this place yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    className="space-y-3"
+                    style={{ contentVisibility: "auto" }}
+                  >
+                    <Suspense fallback={<ReviewSkeleton />}>
+                      {socialReviews.map((review) => (
+                        <SocialReviewCardLazy key={review.id} review={review} />
+                      ))}
+                    </Suspense>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </Card>
+
+          <Button
+            className="hidden sm:inline-flex min-h-12 font-semibold gap-2 sm:w-auto sm:min-w-[260px]"
+            onClick={openInMaps}
+            disabled={!canOpenInMaps}
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open in Google Maps
+          </Button>
+        </div>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:hidden">
+        <div className="mx-auto w-full max-w-6xl px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <Button
+            className="w-full min-h-12 font-semibold gap-2"
+            onClick={openInMaps}
+            disabled={!canOpenInMaps}
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open in Google Maps
+          </Button>
+        </div>
       </div>
     </div>
   );
