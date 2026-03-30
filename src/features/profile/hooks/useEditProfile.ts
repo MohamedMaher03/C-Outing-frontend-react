@@ -6,7 +6,7 @@
  * which path is active in the service layer.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getEditProfile,
@@ -43,6 +43,8 @@ interface UseEditProfileReturn {
   ) => void;
   /** Submit the form — saves to service then navigates back */
   handleSubmit: (e: React.FormEvent) => Promise<void>;
+  /** Re-fetch profile settings after a load failure */
+  reloadProfile: () => Promise<void>;
 }
 
 export const useEditProfile = (): UseEditProfileReturn => {
@@ -62,26 +64,55 @@ export const useEditProfile = (): UseEditProfileReturn => {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pendingAvatarFile = useRef<File | null>(null);
+  const submitInFlightRef = useRef(false);
+  const latestLoadRunRef = useRef(0);
+
+  const revokeIfBlobUrl = (url: string | null) => {
+    if (url && url.startsWith("blob:")) {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const reloadProfile = useCallback(async () => {
+    const runId = ++latestLoadRunRef.current;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getEditProfile();
+
+      if (runId !== latestLoadRunRef.current) {
+        return;
+      }
+
+      setFormData(data);
+      setAvatarPreview((previous) => {
+        revokeIfBlobUrl(previous);
+        return data.avatarUrl ?? null;
+      });
+      pendingAvatarFile.current = null;
+    } catch (err) {
+      if (runId !== latestLoadRunRef.current) {
+        return;
+      }
+
+      setError(
+        getErrorMessage(
+          err,
+          "We couldn't load your profile details. Please try again.",
+        ),
+      );
+    } finally {
+      if (runId === latestLoadRunRef.current) {
+        setLoading(false);
+      }
+    }
+  }, []);
 
   // Load current profile data on mount
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getEditProfile();
-        setFormData(data);
-        if (data.avatarUrl) {
-          setAvatarPreview(data.avatarUrl);
-        }
-      } catch (err) {
-        setError(getErrorMessage(err, "Failed to load profile"));
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+    void reloadProfile();
+  }, [reloadProfile]);
 
   // Cleanup blob URLs on unmount
   useEffect(() => {
@@ -116,7 +147,10 @@ export const useEditProfile = (): UseEditProfileReturn => {
 
     // Create instant local preview
     const previewUrl = URL.createObjectURL(file);
-    setAvatarPreview(previewUrl);
+    setAvatarPreview((previous) => {
+      revokeIfBlobUrl(previous);
+      return previewUrl;
+    });
 
     // Store the file so it gets uploaded on form submit
     pendingAvatarFile.current = file;
@@ -133,6 +167,13 @@ export const useEditProfile = (): UseEditProfileReturn => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (submitInFlightRef.current || saving) {
+      return;
+    }
+
+    submitInFlightRef.current = true;
+
     try {
       setSaving(true);
       setError(null);
@@ -145,7 +186,7 @@ export const useEditProfile = (): UseEditProfileReturn => {
         return;
       }
 
-      if (!PHONE_REGEX.test(trimmedPhone)) {
+      if (trimmedPhone && !PHONE_REGEX.test(trimmedPhone)) {
         setError(
           "Phone number must include country code (e.g. +20 123 456 7890).",
         );
@@ -154,6 +195,17 @@ export const useEditProfile = (): UseEditProfileReturn => {
 
       if (!formData.birthDate) {
         setError("Birth date is required.");
+        return;
+      }
+
+      const parsedBirthDate = new Date(formData.birthDate);
+      if (Number.isNaN(parsedBirthDate.getTime())) {
+        setError("Birth date is invalid.");
+        return;
+      }
+
+      if (parsedBirthDate > new Date()) {
+        setError("Birth date cannot be in the future.");
         return;
       }
 
@@ -168,8 +220,14 @@ export const useEditProfile = (): UseEditProfileReturn => {
       pendingAvatarFile.current = null;
       navigate("/profile");
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to save profile"));
+      setError(
+        getErrorMessage(
+          err,
+          "We couldn't save your profile changes. Please try again.",
+        ),
+      );
     } finally {
+      submitInFlightRef.current = false;
       setSaving(false);
     }
   };
@@ -185,5 +243,6 @@ export const useEditProfile = (): UseEditProfileReturn => {
     handleAvatarChange,
     handleChange,
     handleSubmit,
+    reloadProfile,
   };
 };

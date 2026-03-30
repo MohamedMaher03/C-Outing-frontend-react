@@ -1,27 +1,34 @@
 /**
  * Profile Service
  *
- * Business logic layer — composes API calls and applies feature-level mapping.
- * Profile read/update is wired to backend API.
- * Preferences/notifications/privacy remain mock-backed until their API contracts are finalized.
+ * Business logic layer — composes datasource calls and applies
+ * feature-level validation/normalization in a clean architecture flow:
+ *
+ * UI/Hook -> Service -> Mapper -> DataSource -> API/Mock
  */
 
-import { profileApi } from "../api/profileApi";
+import { profileDataSource } from "./profileDataSource";
+import {
+  mapEditProfileToUpdatePayload,
+  mapPreferenceUpdatePayload,
+  mapProfileToEditProfile,
+  mapUpdateProfilePayload,
+  normalizeBirthDateForInput,
+  normalizeNotificationSettings,
+  normalizePreferences,
+  normalizePrivacySettings,
+  normalizeProfile,
+} from "../mappers/profileMapper";
 
 import type {
-  UserProfile,
-  UpdateUserProfileRequest,
-  UserPreferences,
-  UpdatePreferencesRequest,
   EditProfileData,
   NotificationSettings,
   PrivacySettings,
+  UpdatePreferencesRequest,
+  UserProfile,
+  UpdateUserProfileRequest,
+  UserPreferences,
 } from "@/features/profile/types";
-import {
-  MOCK_PREFERENCES as INITIAL_PREFERENCES,
-  MOCK_NOTIFICATION_SETTINGS,
-  MOCK_PRIVACY_SETTINGS,
-} from "@/features/profile/mocks";
 
 // Re-export types for consumers that import from the service directly
 export type {
@@ -34,94 +41,47 @@ export type {
   PrivacySettings,
 };
 
-// ── Mutable mock stores (simulate server state during development) ──────────
-let MOCK_PREFERENCES: UserPreferences = { ...INITIAL_PREFERENCES };
-let MOCK_NOTIFICATIONS: NotificationSettings = {
-  push: { ...MOCK_NOTIFICATION_SETTINGS.push },
-  email: { ...MOCK_NOTIFICATION_SETTINGS.email },
-};
-let MOCK_PRIVACY: PrivacySettings = { ...MOCK_PRIVACY_SETTINGS };
+const FALLBACK_USER_ID = "1";
 
-const CURRENT_USER_ID = "1";
+interface StoredAuthUser {
+  userId?: unknown;
+  name?: unknown;
+}
 
-const getTodayDateString = (): string => new Date().toISOString().slice(0, 10);
+const getStoredAuthUser = (): StoredAuthUser | null => {
+  try {
+    const raw = localStorage.getItem("authUser");
+    if (!raw) return null;
 
-const normalizeBirthDateForInput = (birthDate?: string): string => {
-  if (!birthDate) return getTodayDateString();
-
-  const datePart = birthDate.slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return getTodayDateString();
-
-  const [year] = datePart.split("-");
-  if (!year || Number(year) <= 1) return getTodayDateString();
-
-  return datePart;
+    const parsed = JSON.parse(raw) as StoredAuthUser;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
 };
 
-const buildFallbackProfile = (): UserProfile => ({
-  id: "",
-  name: getFallbackName(),
-  email: "",
-  phoneNumber: "",
-  birthDate: getTodayDateString(),
-  age: 0,
-  role: 0,
-  totalInteractions: 0,
-  isBanned: false,
-  isEmailVerified: false,
-  avatarUrl: undefined,
-  createdAt: "",
-  updatedAt: "",
-});
+const resolveCurrentUserId = (): string => {
+  const userId = getStoredAuthUser()?.userId;
 
-const normalizeProfile = (
-  profile: Partial<UserProfile> | null | undefined,
-  fallback?: UserProfile,
-): UserProfile => {
-  const base = fallback ?? buildFallbackProfile();
+  if (typeof userId === "string" && userId.trim().length > 0) {
+    return userId.trim();
+  }
 
-  const normalizedName =
-    typeof profile?.name === "string" && profile.name.trim().length > 0
-      ? profile.name.trim()
-      : base.name;
-
-  return {
-    ...base,
-    ...profile,
-    name: normalizedName,
-    email: profile?.email ?? base.email,
-    phoneNumber: profile?.phoneNumber ?? base.phoneNumber,
-    birthDate: profile?.birthDate ?? base.birthDate,
-    age: profile?.age ?? base.age,
-    role: profile?.role ?? base.role,
-    totalInteractions: profile?.totalInteractions ?? base.totalInteractions,
-    isBanned: profile?.isBanned ?? base.isBanned,
-    isEmailVerified: profile?.isEmailVerified ?? base.isEmailVerified,
-    avatarUrl: profile?.avatarUrl ?? base.avatarUrl,
-    createdAt: profile?.createdAt ?? base.createdAt,
-    updatedAt: profile?.updatedAt ?? base.updatedAt,
-  };
+  return FALLBACK_USER_ID;
 };
 
 const getFallbackName = (): string => {
-  try {
-    const raw = localStorage.getItem("authUser");
-    if (!raw) return "Guest User";
-
-    const parsed = JSON.parse(raw) as { name?: string };
-    const name = parsed?.name?.trim();
-    return name && name.length >= 2 ? name : "Guest User";
-  } catch {
-    return "Guest User";
-  }
+  const rawName = getStoredAuthUser()?.name;
+  return typeof rawName === "string" && rawName.trim().length > 1
+    ? rawName.trim()
+    : "Guest User";
 };
 
 // ── Profile ─────────────────────────────────────────────────────────────────
 
 export const getUserProfile = async (): Promise<UserProfile> => {
-  const profile = (await profileApi.getProfile()) as UserProfile | null;
-
-  return normalizeProfile(profile);
+  const profile = await profileDataSource.getProfile();
+  return normalizeProfile(profile, getFallbackName());
 };
 
 /**
@@ -132,29 +92,19 @@ export const updateUserProfile = async (
   avatarFile?: File,
 ): Promise<UserProfile> => {
   const current = await getUserProfile();
+  const normalizedPayload = mapUpdateProfilePayload(data);
 
-  const resolvedName =
-    data.name?.trim() || current.name?.trim() || "Guest User";
-  const resolvedPhoneNumber =
-    data.phoneNumber?.trim() || current.phoneNumber || "";
-  const resolvedBirthDate =
-    data.birthDate || normalizeBirthDateForInput(current.birthDate);
+  const payload: UpdateUserProfileRequest = {
+    name: normalizedPayload.name ?? current.name,
+    phoneNumber: normalizedPayload.phoneNumber ?? current.phoneNumber,
+    birthDate:
+      normalizedPayload.birthDate ??
+      normalizeBirthDateForInput(current.birthDate),
+  };
 
-  const updated = (await profileApi.updateProfile(
-    {
-      name: resolvedName,
-      phoneNumber: resolvedPhoneNumber,
-      birthDate: resolvedBirthDate,
-    },
-    avatarFile,
-  )) as UserProfile | null;
+  const updated = await profileDataSource.updateProfile(payload, avatarFile);
 
-  return normalizeProfile(updated, {
-    ...current,
-    name: resolvedName,
-    phoneNumber: resolvedPhoneNumber,
-    birthDate: resolvedBirthDate,
-  });
+  return normalizeProfile(updated, payload.name);
 };
 
 /**
@@ -172,14 +122,7 @@ export const uploadAvatar = async (
 
 /** Fetch edit profile form model mapped from backend profile payload. */
 export const getEditProfile = async (): Promise<EditProfileData> => {
-  const profile = await getUserProfile();
-  return {
-    name: profile.name,
-    email: profile.email,
-    phoneNumber: profile.phoneNumber ?? "",
-    birthDate: normalizeBirthDateForInput(profile.birthDate),
-    avatarUrl: profile.avatarUrl,
-  };
+  return mapProfileToEditProfile(await getUserProfile());
 };
 
 /** Save edit profile form model to backend profile endpoint. */
@@ -187,21 +130,12 @@ export const updateEditProfile = async (
   data: Partial<EditProfileData>,
   avatarFile?: File,
 ): Promise<EditProfileData> => {
-  const payload: UpdateUserProfileRequest = {
-    name: data.name?.trim(),
-    phoneNumber: data.phoneNumber?.trim(),
-    birthDate: data.birthDate,
-  };
+  const updated = await updateUserProfile(
+    mapEditProfileToUpdatePayload(data),
+    avatarFile,
+  );
 
-  const updated = await updateUserProfile(payload, avatarFile);
-
-  return {
-    name: updated.name,
-    email: updated.email,
-    phoneNumber: updated.phoneNumber ?? "",
-    birthDate: normalizeBirthDateForInput(updated.birthDate),
-    avatarUrl: updated.avatarUrl,
-  };
+  return mapProfileToEditProfile(updated);
 };
 
 // ── Preferences ──────────────────────────────────────────────────────────────
@@ -212,10 +146,9 @@ export const updateEditProfile = async (
  *   return profileApi.getPreferences(CURRENT_USER_ID);
  */
 export const getUserPreferences = async (): Promise<UserPreferences> => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return { ...MOCK_PREFERENCES };
-
-  // return profileApi.getPreferences(CURRENT_USER_ID);
+  const userId = resolveCurrentUserId();
+  const preferences = await profileDataSource.getPreferences(userId);
+  return normalizePreferences(preferences);
 };
 
 /**
@@ -226,11 +159,15 @@ export const getUserPreferences = async (): Promise<UserPreferences> => {
 export const updateUserPreferences = async (
   data: UpdatePreferencesRequest,
 ): Promise<UserPreferences> => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  MOCK_PREFERENCES = { ...MOCK_PREFERENCES, ...data };
-  return { ...MOCK_PREFERENCES };
+  const userId = resolveCurrentUserId();
+  const payload = mapPreferenceUpdatePayload(data);
 
-  // return profileApi.updatePreferences(CURRENT_USER_ID, data);
+  if (Object.keys(payload).length === 0) {
+    return getUserPreferences();
+  }
+
+  const updated = await profileDataSource.updatePreferences(userId, payload);
+  return normalizePreferences(updated);
 };
 
 // ── Notifications ────────────────────────────────────────────────────────────
@@ -242,13 +179,8 @@ export const updateUserPreferences = async (
  */
 export const getNotificationSettings =
   async (): Promise<NotificationSettings> => {
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    return {
-      push: { ...MOCK_NOTIFICATIONS.push },
-      email: { ...MOCK_NOTIFICATIONS.email },
-    };
-
-    // return profileApi.getNotifications(CURRENT_USER_ID);
+    const settings = await profileDataSource.getNotifications();
+    return normalizeNotificationSettings(settings);
   };
 
 /**
@@ -259,14 +191,10 @@ export const getNotificationSettings =
 export const updateNotificationSettings = async (
   data: NotificationSettings,
 ): Promise<NotificationSettings> => {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  MOCK_NOTIFICATIONS = {
-    push: { ...data.push },
-    email: { ...data.email },
-  };
-  return { ...MOCK_NOTIFICATIONS };
-
-  // return profileApi.updateNotifications(CURRENT_USER_ID, data);
+  const updated = await profileDataSource.updateNotifications(
+    normalizeNotificationSettings(data),
+  );
+  return normalizeNotificationSettings(updated);
 };
 
 // ── Privacy ──────────────────────────────────────────────────────────────────
@@ -277,10 +205,8 @@ export const updateNotificationSettings = async (
  *   return profileApi.getPrivacy(CURRENT_USER_ID);
  */
 export const getPrivacySettings = async (): Promise<PrivacySettings> => {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  return { ...MOCK_PRIVACY };
-
-  // return profileApi.getPrivacy(CURRENT_USER_ID);
+  const settings = await profileDataSource.getPrivacy();
+  return normalizePrivacySettings(settings);
 };
 
 /**
@@ -291,11 +217,10 @@ export const getPrivacySettings = async (): Promise<PrivacySettings> => {
 export const updatePrivacySettings = async (
   data: PrivacySettings,
 ): Promise<PrivacySettings> => {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  MOCK_PRIVACY = { ...data };
-  return { ...MOCK_PRIVACY };
-
-  // return profileApi.updatePrivacy(CURRENT_USER_ID, data);
+  const updated = await profileDataSource.updatePrivacy(
+    normalizePrivacySettings(data),
+  );
+  return normalizePrivacySettings(updated);
 };
 
 // ── Account Management ───────────────────────────────────────────────────────
@@ -310,14 +235,13 @@ export const updatePrivacySettings = async (
  *   URL.revokeObjectURL(url);
  */
 export const requestDataDownload = async (): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  console.log("[Mock] Data download requested for user", CURRENT_USER_ID);
-
-  // const blob = await profileApi.downloadData(CURRENT_USER_ID);
-  // const url = URL.createObjectURL(blob);
-  // const a = document.createElement("a");
-  // a.href = url; a.download = "my-data.json"; a.click();
-  // URL.revokeObjectURL(url);
+  const blob = await profileDataSource.downloadData();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "c-outing-profile-data.json";
+  anchor.click();
+  URL.revokeObjectURL(url);
 };
 
 /**
@@ -326,10 +250,7 @@ export const requestDataDownload = async (): Promise<void> => {
  *   await profileApi.deleteAccount(CURRENT_USER_ID);
  */
 export const deleteUserAccount = async (): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  console.log("[Mock] Account deletion requested for user", CURRENT_USER_ID);
-
-  // await profileApi.deleteAccount(CURRENT_USER_ID);
+  await profileDataSource.deleteAccount();
 };
 
 /**
@@ -338,7 +259,5 @@ export const deleteUserAccount = async (): Promise<void> => {
  *   await axiosInstance.post(API_ENDPOINTS.auth.logout);
  */
 export const signOut = async (): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
-  // await axiosInstance.post(API_ENDPOINTS.auth.logout);
+  await profileDataSource.signOut();
 };

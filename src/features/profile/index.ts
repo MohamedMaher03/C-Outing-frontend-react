@@ -28,6 +28,7 @@ export {
   deleteUserAccount,
   signOut,
 } from "./services/profileService";
+export { profileDataSource } from "./services/profileDataSource";
 
 // Types
 export type {
@@ -38,3 +39,4 @@ export type {
   NotificationSettings,
   PrivacySettings,
 } from "./types";
+export type { ProfileDataSource } from "./types/dataSource";
