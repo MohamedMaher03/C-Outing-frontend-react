@@ -40,3 +40,5 @@ export interface UserStats {
   reviewCount: number;
   placesVisited: number;
 }
+
+export * from "./dataSource";
