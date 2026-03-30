@@ -15,6 +15,7 @@
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type { OnboardingPreferences } from "../types";
+import type { OnboardingDataSource } from "../types/dataSource";
 
 /** Transformed payload sent to the backend */
 interface OnboardingPayload {
@@ -24,7 +25,7 @@ interface OnboardingPayload {
   budgetRange: string | null;
 }
 
-export const onboardingApi = {
+export const onboardingApi: OnboardingDataSource = {
   /**
    * POST /users/:userId/preferences
    * Submits the initial onboarding preferences.

@@ -4,13 +4,14 @@
  * Separates business logic from UI components
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { submitOnboardingPreferences } from "@/features/onboarding/services/onboardingService";
 import type { OnboardingPreferences } from "@/features/onboarding/types";
 import type { PriceLevel } from "@/features/admin/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getErrorMessage } from "@/utils/apiError";
+import { normalizeVibe } from "../utils/onboardingPreferences";
 
 interface UseOnboardingReturn {
   // State
@@ -41,30 +42,48 @@ interface UseOnboardingReturn {
 export const useOnboarding = (): UseOnboardingReturn => {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
+  const submitInFlightRef = useRef(false);
 
   // State management
   const [step, setStep] = useState(0);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [vibe, setVibe] = useState([50]);
+  const [vibe, setVibeState] = useState([50]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
-  const [budget, setBudget] = useState<PriceLevel | null>(null);
+  const [budget, setBudgetState] = useState<PriceLevel | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const clearError = () => {
+    setError((prev) => (prev ? null : prev));
+  };
+
   // Toggle interest selection
   const toggleInterest = (id: string) => {
+    clearError();
     setSelectedInterests((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
+  const setVibe = (value: number[]) => {
+    clearError();
+    const nextVibe = normalizeVibe(value?.[0]);
+    setVibeState([nextVibe]);
+  };
+
   // Toggle district selection
   const toggleDistrict = (district: string) => {
+    clearError();
     setSelectedDistricts((prev) =>
       prev.includes(district)
         ? prev.filter((d) => d !== district)
         : [...prev, district],
     );
+  };
+
+  const setBudget = (nextBudget: PriceLevel) => {
+    clearError();
+    setBudgetState(nextBudget);
   };
 
   // Validation for each step
@@ -77,6 +96,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
   // Navigate to next step
   const goToNextStep = () => {
     if (step < 3 && canGoNext) {
+      clearError();
       setStep((prev) => prev + 1);
     }
   };
@@ -84,17 +104,29 @@ export const useOnboarding = (): UseOnboardingReturn => {
   // Navigate to previous step
   const goToPreviousStep = () => {
     if (step > 0) {
+      clearError();
       setStep((prev) => prev - 1);
     }
   };
 
   // Complete onboarding and submit preferences
   const handleComplete = async () => {
-    console.log("handle complete called");
-    console.log("can go next:", canGoNext);
-    console.log("user:", user);
-    if (!canGoNext || !user) return;
-    console.log("can go next and user exists");
+    if (submitInFlightRef.current || isSubmitting) {
+      return;
+    }
+
+    if (!user) {
+      setError("Your session expired. Please sign in again.");
+      return;
+    }
+
+    if (!canGoNext) {
+      setError("Please complete this step before continuing.");
+      return;
+    }
+
+    submitInFlightRef.current = true;
+
     try {
       setIsSubmitting(true);
       setError(null);
@@ -117,6 +149,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
     } catch (err) {
       setError(getErrorMessage(err, "Failed to submit preferences"));
     } finally {
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
     }
   };

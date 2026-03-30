@@ -1,23 +1,24 @@
 /**
  * Onboarding Service — Business Logic Layer
  *
- * Sits between hooks/components and the HTTP layer (onboardingApi).
+ * Sits between hooks/components and the datasource layer.
  * Responsibilities:
- *   • Call onboardingApi functions
+ *   • Call onboardingDataSource functions
  *   • Transform DTOs to UI models if needed
- *   • Centralise error handling
+ *   • Validate and normalize payloads
  *
- * ┌──────────────────────────────────────────────────────────────────┐
- * │  useOnboarding  →  onboardingService  →  onboardingApi  →  axios│
- * └──────────────────────────────────────────────────────────────────┘
- *
- * 🔧 To use mocks during development, swap the import:
- *   import { onboardingMock as onboardingApi } from "../mocks/onboardingMock";
+ * ┌────────────────────────────────────────────────────────────────────┐
+ * │ useOnboarding → onboardingService → onboardingDataSource → API/mock │
+ * └────────────────────────────────────────────────────────────────────┘
  */
 
-// import { onboardingApi } from "../api/onboardingApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
-import { onboardingMock as onboardingApi } from "../mocks/onboardingMock";
 import type { OnboardingPreferences } from "@/features/onboarding/types";
+import {
+  mapSubmitPreferences,
+  mapUpdatePreferences,
+} from "../mappers/onboardingMapper";
+import { onboardingDataSource } from "./onboardingDataSource";
+import { normalizeUserId } from "../utils/onboardingPreferences";
 
 // ── Onboarding Service ───────────────────────────────────────
 
@@ -29,12 +30,10 @@ export const onboardingService = {
     userId: string,
     preferences: OnboardingPreferences,
   ): Promise<void> {
-    try {
-      await onboardingApi.submitPreferences(userId, preferences);
-    } catch (error) {
-      console.error("Error submitting onboarding preferences:", error);
-      throw new Error("Failed to submit preferences");
-    }
+    await onboardingDataSource.submitPreferences(
+      normalizeUserId(userId),
+      mapSubmitPreferences(preferences),
+    );
   },
 
   /**
@@ -44,12 +43,16 @@ export const onboardingService = {
     userId: string,
     preferences: Partial<OnboardingPreferences>,
   ): Promise<void> {
-    try {
-      await onboardingApi.updatePreferences(userId, preferences);
-    } catch (error) {
-      console.error("Error updating user preferences:", error);
-      throw new Error("Failed to update preferences");
+    const mappedPreferences = mapUpdatePreferences(preferences);
+
+    if (Object.keys(mappedPreferences).length === 0) {
+      return;
     }
+
+    await onboardingDataSource.updatePreferences(
+      normalizeUserId(userId),
+      mappedPreferences,
+    );
   },
 };
 
