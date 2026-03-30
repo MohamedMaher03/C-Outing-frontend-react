@@ -18,6 +18,7 @@ interface UseLogoutReturn {
   logoutUser: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
+  clearError: () => void;
 }
 
 export const useLogout = (): UseLogoutReturn => {
@@ -45,5 +46,9 @@ export const useLogout = (): UseLogoutReturn => {
     }
   };
 
-  return { logoutUser, isLoading, error };
+  const clearError = (): void => {
+    setError(null);
+  };
+
+  return { logoutUser, isLoading, error, clearError };
 };

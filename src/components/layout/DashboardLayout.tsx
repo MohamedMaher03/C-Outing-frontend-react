@@ -15,7 +15,11 @@ import { LogOut, Menu, X, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useLogout } from "@/features/auth/hooks/useLogout";
 import { useState, type ReactNode } from "react";
+import { InlineLoading } from "@/components/ui/LoadingSpinner";
+import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
+import { LogoutProgressOverlay } from "@/features/auth/components/ui/LogoutProgressOverlay";
 import logo from "@/assets/images/logo3.png";
 
 export interface DashboardNavItem {
@@ -33,12 +37,17 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
+  const {
+    logoutUser,
+    isLoading: isLoggingOut,
+    error: logoutError,
+    clearError: clearLogoutError,
+  } = useLogout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+    await logoutUser();
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -112,10 +121,21 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
       <div className="px-3 py-4 border-t border-border">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+          disabled={isLoggingOut}
+          aria-busy={isLoggingOut}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors disabled:cursor-wait disabled:opacity-75"
         >
-          <LogOut className="h-4.5 w-4.5" />
-          Logout
+          {isLoggingOut ? (
+            <>
+              <InlineLoading size="sm" className="h-4.5 w-4.5" />
+              Logging out...
+            </>
+          ) : (
+            <>
+              <LogOut className="h-4.5 w-4.5" />
+              Logout
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -123,6 +143,16 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background flex">
+      {logoutError && (
+        <div className="fixed left-1/2 top-3 z-[90] w-[min(92vw,30rem)] -translate-x-1/2">
+          <AuthStatusBanner
+            message={logoutError}
+            onDismiss={clearLogoutError}
+          />
+        </div>
+      )}
+      <LogoutProgressOverlay isVisible={isLoggingOut} />
+
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-64 flex-col bg-card border-r border-border fixed inset-y-0 left-0 z-40">
         {sidebarContent}

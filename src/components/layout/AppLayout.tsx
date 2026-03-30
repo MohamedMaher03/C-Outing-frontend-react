@@ -2,9 +2,12 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Home, Heart, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/features/auth/context/AuthContext";
+import { useLogout } from "@/features/auth/hooks/useLogout";
 import NotificationBell from "@/features/notifications/components/NotificationBell";
 import { NotificationsCountProvider } from "@/features/notifications/context/NotificationsCountContext";
+import { InlineLoading } from "@/components/ui/LoadingSpinner";
+import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
+import { LogoutProgressOverlay } from "@/features/auth/components/ui/LogoutProgressOverlay";
 import logo from "@/assets/images/logo3.png";
 
 const NAV_ITEMS = [
@@ -16,16 +19,30 @@ const NAV_ITEMS = [
 const AppLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const {
+    logoutUser,
+    isLoading: isLoggingOut,
+    error: logoutError,
+    clearError: clearLogoutError,
+  } = useLogout();
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+    await logoutUser();
   };
 
   return (
     <NotificationsCountProvider>
       <div className="min-h-screen bg-background flex flex-col">
+        {logoutError && (
+          <div className="fixed left-1/2 top-3 z-[90] w-[min(92vw,30rem)] -translate-x-1/2">
+            <AuthStatusBanner
+              message={logoutError}
+              onDismiss={clearLogoutError}
+            />
+          </div>
+        )}
+        <LogoutProgressOverlay isVisible={isLoggingOut} />
+
         {/* Desktop Top Nav */}
         <header className="hidden md:flex items-center justify-between px-8 py-3 bg-card border-b border-border sticky top-0 z-50">
           <div
@@ -61,10 +78,21 @@ const AppLayout = () => {
             {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors ml-2 border border-destructive/30"
+              disabled={isLoggingOut}
+              aria-busy={isLoggingOut}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors ml-2 border border-destructive/30 disabled:cursor-wait disabled:opacity-75"
             >
-              <LogOut className="h-4 w-4" />
-              Logout
+              {isLoggingOut ? (
+                <>
+                  <InlineLoading size="sm" className="h-4 w-4" />
+                  Logging out...
+                </>
+              ) : (
+                <>
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </>
+              )}
             </button>
           </nav>
         </header>
@@ -109,10 +137,23 @@ const AppLayout = () => {
             {/* Mobile Logout Button */}
             <button
               onClick={handleLogout}
-              className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors min-w-[60px] text-destructive hover:bg-destructive/10"
+              disabled={isLoggingOut}
+              aria-busy={isLoggingOut}
+              className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors min-w-[60px] text-destructive hover:bg-destructive/10 disabled:cursor-wait disabled:opacity-75"
             >
-              <LogOut className="h-5 w-5" />
-              <span className="text-[10px] font-medium">Logout</span>
+              {isLoggingOut ? (
+                <>
+                  <InlineLoading size="sm" className="h-5 w-5" />
+                  <span className="text-[10px] font-medium">
+                    Logging out...
+                  </span>
+                </>
+              ) : (
+                <>
+                  <LogOut className="h-5 w-5" />
+                  <span className="text-[10px] font-medium">Logout</span>
+                </>
+              )}
             </button>
           </div>
         </nav>
