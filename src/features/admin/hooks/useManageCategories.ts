@@ -3,7 +3,7 @@
  * Manages state and actions for the Manage Categories admin page.
  */
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { AdminCategory } from "@/features/admin/types";
 import { getErrorMessage } from "@/utils/apiError";
@@ -13,6 +13,7 @@ interface UseManageCategoriesReturn {
   categories: AdminCategory[];
   loading: boolean;
   error: string | null;
+  processingCategoryId: string | null;
   editingId: string | null;
   editLabel: string;
   editIcon: string;
@@ -28,6 +29,7 @@ interface UseManageCategoriesReturn {
   setNewIcon: (value: string) => void;
 
   // Actions
+  retry: () => Promise<void>;
   handleToggleStatus: (catId: string) => Promise<void>;
   handleStartEdit: (cat: AdminCategory) => void;
   handleSaveEdit: (catId: string) => Promise<void>;
@@ -39,66 +41,161 @@ export const useManageCategories = (): UseManageCategoriesReturn => {
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [processingCategoryId, setProcessingCategoryId] = useState<
+    string | null
+  >(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editIcon, setEditIcon] = useState<string>("Compass");
   const [showAdd, setShowAdd] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [newIcon, setNewIcon] = useState<string>("Compass");
+  const mountedRef = useRef(true);
+  const inFlightRef = useRef(new Set<string>());
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await adminService.getCategories();
-        setCategories(data);
-      } catch (err) {
-        setError(getErrorMessage(err, "Failed to load categories"));
-      } finally {
+  const loadCategories = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await adminService.getCategories();
+      if (!mountedRef.current) return;
+      setCategories(data);
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setError(getErrorMessage(err, "Failed to load categories"));
+    } finally {
+      if (mountedRef.current) {
         setLoading(false);
       }
-    };
-    load();
+    }
   }, []);
 
+  useEffect(() => {
+    mountedRef.current = true;
+    void loadCategories();
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [loadCategories]);
+
   const handleToggleStatus = async (catId: string) => {
+    if (inFlightRef.current.has(catId)) {
+      return;
+    }
+
     const cat = categories.find((c) => c.id === catId);
     if (!cat) return;
+
     const newStatus = cat.status === "active" ? "inactive" : "active";
-    await adminService.updateCategory(catId, { status: newStatus });
-    setCategories((prev) =>
-      prev.map((c) => (c.id === catId ? { ...c, status: newStatus } : c)),
-    );
+
+    inFlightRef.current.add(catId);
+    setProcessingCategoryId(catId);
+    setError(null);
+
+    try {
+      await adminService.updateCategory(catId, { status: newStatus });
+      if (!mountedRef.current) return;
+
+      setCategories((prev) =>
+        prev.map((c) => (c.id === catId ? { ...c, status: newStatus } : c)),
+      );
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setError(getErrorMessage(err, "Failed to update category status"));
+    } finally {
+      inFlightRef.current.delete(catId);
+      if (mountedRef.current) {
+        setProcessingCategoryId((prev) => (prev === catId ? null : prev));
+      }
+    }
   };
 
   const handleStartEdit = (cat: AdminCategory) => {
+    setError(null);
     setEditingId(cat.id);
     setEditLabel(cat.label);
     setEditIcon(cat.icon ?? "Compass");
   };
 
   const handleSaveEdit = async (catId: string) => {
-    if (!editLabel.trim()) return;
-    await adminService.updateCategory(catId, {
-      label: editLabel.trim(),
-      icon: editIcon,
-    });
-    setCategories((prev) =>
-      prev.map((c) =>
-        c.id === catId ? { ...c, label: editLabel.trim(), icon: editIcon } : c,
-      ),
-    );
-    setEditingId(null);
+    const normalizedLabel = editLabel.trim();
+
+    if (!normalizedLabel) {
+      setError("Category name cannot be empty.");
+      return;
+    }
+
+    if (normalizedLabel.length > 60) {
+      setError("Category name must be 60 characters or less.");
+      return;
+    }
+
+    if (inFlightRef.current.has(catId)) {
+      return;
+    }
+
+    inFlightRef.current.add(catId);
+    setProcessingCategoryId(catId);
+    setError(null);
+
+    try {
+      await adminService.updateCategory(catId, {
+        label: normalizedLabel,
+        icon: editIcon,
+      });
+
+      if (!mountedRef.current) return;
+
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === catId ? { ...c, label: normalizedLabel, icon: editIcon } : c,
+        ),
+      );
+      setEditingId(null);
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setError(getErrorMessage(err, "Failed to save category changes"));
+    } finally {
+      inFlightRef.current.delete(catId);
+      if (mountedRef.current) {
+        setProcessingCategoryId((prev) => (prev === catId ? null : prev));
+      }
+    }
   };
 
   const handleCancelEdit = () => {
+    setError(null);
     setEditingId(null);
   };
 
   const handleAddCategory = () => {
-    if (!newLabel.trim()) return;
+    const normalizedLabel = newLabel.trim();
+
+    if (!normalizedLabel) {
+      setError("Category name cannot be empty.");
+      return;
+    }
+
+    if (normalizedLabel.length > 60) {
+      setError("Category name must be 60 characters or less.");
+      return;
+    }
+
+    const normalizedId = normalizedLabel.toLowerCase().replace(/\s+/g, "-");
+    const hasDuplicate = categories.some((cat) => cat.id === normalizedId);
+
+    if (hasDuplicate) {
+      setError("A category with this name already exists.");
+      return;
+    }
+
+    setError(null);
+
     const newCat: AdminCategory = {
-      id: newLabel.toLowerCase().replace(/\s+/g, "-"),
-      label: newLabel.trim(),
+      id: normalizedId,
+      label: normalizedLabel,
       icon: newIcon,
       count: 0,
       color: "bg-gray-100",
@@ -114,6 +211,7 @@ export const useManageCategories = (): UseManageCategoriesReturn => {
     categories,
     loading,
     error,
+    processingCategoryId,
     editingId,
     editLabel,
     editIcon,
@@ -125,6 +223,7 @@ export const useManageCategories = (): UseManageCategoriesReturn => {
     setShowAdd,
     setNewLabel,
     setNewIcon,
+    retry: loadCategories,
     handleToggleStatus,
     handleStartEdit,
     handleSaveEdit,

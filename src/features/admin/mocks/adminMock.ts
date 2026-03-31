@@ -454,7 +454,6 @@ export const adminMock = {
     await delay(400);
     const idx = MOCK_ADMIN_PLACES.findIndex((p) => p.id === placeId);
     if (idx !== -1) MOCK_ADMIN_PLACES.splice(idx, 1);
-    console.log(`[Mock] Deleted place ${placeId}`);
   },
 
   async addPlace(data: CreateAdminPlaceInput): Promise<AdminPlace> {
@@ -487,7 +486,8 @@ export const adminMock = {
 
   async deleteReview(reviewId: string): Promise<void> {
     await delay(400);
-    console.log(`[Mock] Deleted review ${reviewId}`);
+    const idx = MOCK_ADMIN_REVIEWS.findIndex((r) => r.id === reviewId);
+    if (idx !== -1) MOCK_ADMIN_REVIEWS.splice(idx, 1);
   },
 
   async getCategories(): Promise<AdminCategory[]> {
@@ -500,7 +500,10 @@ export const adminMock = {
     data: Partial<AdminCategory>,
   ): Promise<void> {
     await delay(400);
-    console.log(`[Mock] Updated category ${categoryId}`, data);
+    const category = MOCK_ADMIN_CATEGORIES.find((c) => c.id === categoryId);
+    if (category) {
+      Object.assign(category, data);
+    }
   },
 
   async getSettings(): Promise<SystemSettings> {
@@ -511,7 +514,6 @@ export const adminMock = {
   async updateSettings(settings: Partial<SystemSettings>): Promise<void> {
     await delay(500);
     Object.assign(MOCK_SYSTEM_SETTINGS, settings);
-    console.log("[Mock] Updated system settings", settings);
   },
 
   async getRecentActivity(): Promise<RecentActivity[]> {

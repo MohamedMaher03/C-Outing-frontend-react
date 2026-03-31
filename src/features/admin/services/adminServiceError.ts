@@ -5,10 +5,14 @@ export const withAdminServiceError = async <T>(
   try {
     return await operation();
   } catch (error) {
-    console.error(fallbackMessage, error);
-    const details = error instanceof Error ? error.message : "";
-    if (!details || details === fallbackMessage) {
+    const details = error instanceof Error ? error.message.trim() : "";
+
+    if (!details) {
       throw new Error(fallbackMessage);
+    }
+
+    if (details.toLowerCase().includes(fallbackMessage.toLowerCase())) {
+      throw new Error(details);
     }
 
     throw new Error(`${fallbackMessage}. ${details}`);

@@ -1,18 +1,15 @@
 /**
  * Admin Service — Business Logic Layer
  *
- * Sits between hooks and the HTTP layer (adminApi).
+ * Sits between hooks and the datasource layer.
  * Responsibilities:
- *   • Call adminApi functions
+ *   • Call adminDataSource functions
  *   • Transform DTOs to UI models if needed
  *   • Centralise error handling
  *
  * ┌───────────────────────────────────────────────────────────────┐
- * │  useAdmin*  →  adminService  →  adminApi  →  axios            │
+ * │ useAdmin* → adminService → adminDataSource → API/mock         │
  * └───────────────────────────────────────────────────────────────┘
- *
- * 🔧 To use mocks during development, swap the import:
- *   import { adminMock as adminApi } from "../mocks/adminMock";
  */
 
 import type {
