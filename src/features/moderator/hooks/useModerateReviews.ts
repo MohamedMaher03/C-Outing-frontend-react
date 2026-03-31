@@ -2,13 +2,21 @@
  * useModerateReviews Hook
  * Manages state and actions for the Moderate Reviews moderator page.
  *
- * Note: Reviews are an admin-managed resource, so this hook delegates
- * data fetching and status updates to adminService.
+ * Data access is delegated to moderatorService to keep hook concerns focused on UI state.
  */
 
-import { useState, useEffect } from "react";
-import { adminService } from "@/features/admin/services/adminService";
-import type { AdminReview } from "@/features/admin/types";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type { AdminReview, AdminReviewStatus } from "@/features/admin/types";
+import { moderatorService } from "@/features/moderator/services/moderatorService";
+import type { ModeratorReviewStatusFilter } from "@/features/moderator/types";
+import { filterModerationReviews } from "@/features/moderator/utils/moderatorFilters";
 import { getErrorMessage } from "@/utils/apiError";
 
 interface UseModerateReviewsReturn {
@@ -16,15 +24,18 @@ interface UseModerateReviewsReturn {
   reviews: AdminReview[];
   loading: boolean;
   error: string | null;
+  pendingReviewIds: string[];
+  pendingReviewIdSet: ReadonlySet<string>;
   search: string;
-  statusFilter: string;
+  statusFilter: ModeratorReviewStatusFilter;
   filteredReviews: AdminReview[];
 
   // Setters
   setSearch: (value: string) => void;
-  setStatusFilter: (value: string) => void;
+  setStatusFilter: (value: ModeratorReviewStatusFilter) => void;
 
   // Actions
+  retry: () => Promise<void>;
   handleApprove: (reviewId: string) => Promise<void>;
   handleReject: (reviewId: string) => Promise<void>;
   handleFlag: (reviewId: string) => Promise<void>;
@@ -34,68 +45,126 @@ export const useModerateReviews = (): UseModerateReviewsReturn => {
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pendingReviewIds, setPendingReviewIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("pending");
+  const [statusFilter, setStatusFilter] =
+    useState<ModeratorReviewStatusFilter>("pending");
+  const deferredSearch = useDeferredValue(search);
+  const mountedRef = useRef(true);
+  const inFlightRef = useRef(new Set<string>());
+  const pendingReviewIdSet = useMemo(
+    () => new Set(pendingReviewIds),
+    [pendingReviewIds],
+  );
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await adminService.getReviews();
-        setReviews(data);
-      } catch (err) {
-        setError(getErrorMessage(err, "Failed to load reviews"));
-      } finally {
+  const loadReviews = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await moderatorService.getReviews();
+      if (!mountedRef.current) return;
+      setReviews(data);
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setError(getErrorMessage(err, "Failed to load reviews"));
+      setReviews([]);
+    } finally {
+      if (mountedRef.current) {
         setLoading(false);
       }
-    };
-    load();
+    }
   }, []);
 
-  const handleApprove = async (reviewId: string) => {
-    await adminService.updateReviewStatus(reviewId, "published");
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === reviewId ? { ...r, status: "published" as const } : r,
-      ),
-    );
-  };
+  useEffect(() => {
+    mountedRef.current = true;
+    void loadReviews();
 
-  const handleReject = async (reviewId: string) => {
-    await adminService.updateReviewStatus(reviewId, "removed");
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === reviewId ? { ...r, status: "removed" as const } : r,
-      ),
-    );
-  };
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [loadReviews]);
 
-  const handleFlag = async (reviewId: string) => {
-    await adminService.updateReviewStatus(reviewId, "flagged");
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === reviewId ? { ...r, status: "flagged" as const } : r,
-      ),
+  const addPendingReview = useCallback((reviewId: string) => {
+    setPendingReviewIds((prev) =>
+      prev.includes(reviewId) ? prev : [...prev, reviewId],
     );
-  };
+  }, []);
 
-  const filteredReviews = reviews.filter((r) => {
-    const matchesSearch =
-      r.userName.toLowerCase().includes(search.toLowerCase()) ||
-      r.placeName.toLowerCase().includes(search.toLowerCase()) ||
-      r.comment.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const removePendingReview = useCallback((reviewId: string) => {
+    setPendingReviewIds((prev) => prev.filter((id) => id !== reviewId));
+  }, []);
+
+  const handleStatusChange = useCallback(
+    async (reviewId: string, status: AdminReviewStatus) => {
+      if (inFlightRef.current.has(reviewId)) {
+        return;
+      }
+
+      inFlightRef.current.add(reviewId);
+      addPendingReview(reviewId);
+      setError(null);
+
+      try {
+        await moderatorService.updateReviewStatus(reviewId, status);
+        if (!mountedRef.current) return;
+
+        setReviews((prev) =>
+          prev.map((review) =>
+            review.id === reviewId ? { ...review, status } : review,
+          ),
+        );
+      } catch (err) {
+        if (!mountedRef.current) return;
+        setError(getErrorMessage(err, "Failed to update review status"));
+      } finally {
+        inFlightRef.current.delete(reviewId);
+        if (mountedRef.current) {
+          removePendingReview(reviewId);
+        }
+      }
+    },
+    [addPendingReview, removePendingReview],
+  );
+
+  const handleApprove = useCallback(
+    async (reviewId: string) => {
+      await handleStatusChange(reviewId, "published");
+    },
+    [handleStatusChange],
+  );
+
+  const handleReject = useCallback(
+    async (reviewId: string) => {
+      await handleStatusChange(reviewId, "removed");
+    },
+    [handleStatusChange],
+  );
+
+  const handleFlag = useCallback(
+    async (reviewId: string) => {
+      await handleStatusChange(reviewId, "flagged");
+    },
+    [handleStatusChange],
+  );
+
+  const filteredReviews = useMemo(
+    () => filterModerationReviews(reviews, deferredSearch, statusFilter),
+    [reviews, deferredSearch, statusFilter],
+  );
 
   return {
     reviews,
     loading,
     error,
+    pendingReviewIds,
+    pendingReviewIdSet,
     search,
     statusFilter,
     filteredReviews,
     setSearch,
     setStatusFilter,
+    retry: loadReviews,
     handleApprove,
     handleReject,
     handleFlag,

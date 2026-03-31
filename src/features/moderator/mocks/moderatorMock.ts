@@ -223,7 +223,6 @@ export const moderatorMock = {
       report.status = "resolved";
       report.resolvedAt = new Date();
     }
-    console.log(`[Mock] Deleted review for report ${reportId}`);
   },
 
   async warnUser(reportId: string): Promise<void> {
@@ -233,7 +232,6 @@ export const moderatorMock = {
       report.status = "resolved";
       report.resolvedAt = new Date();
     }
-    console.log(`[Mock] Warned user for report ${reportId}`);
   },
 
   async banUser(reportId: string): Promise<void> {
@@ -243,6 +241,5 @@ export const moderatorMock = {
       report.status = "resolved";
       report.resolvedAt = new Date();
     }
-    console.log(`[Mock] Escalated/banned user for report ${reportId}`);
   },
 };

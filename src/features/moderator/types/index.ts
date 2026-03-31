@@ -3,6 +3,11 @@
  */
 
 import type { PriceLevel } from "@/features/admin/types";
+import type {
+  AdminFilterValue,
+  AdminPlaceStatus,
+  AdminReviewStatus,
+} from "@/features/admin/types";
 
 export interface ModeratorStats {
   pendingReviews: number;
@@ -51,9 +56,9 @@ export interface ModerationAction {
 // ── Shared UI Types ───────────────────────────────────────────
 
 export interface ModeratorToast {
-  id: number;
+  id: string;
   message: string;
-  variant: "success" | "warning" | "destructive";
+  variant: "success" | "warning" | "destructive" | "error" | "info";
 }
 
 export interface ModeratePlaceFormData {
@@ -74,6 +79,8 @@ export interface ModeratePlaceFormErrors {
   district?: string;
   description?: string;
   image?: string;
+  phone?: string;
+  website?: string;
 }
 
 export interface ModeratePlaceToast {
@@ -81,3 +88,12 @@ export interface ModeratePlaceToast {
   message: string;
   variant: "success" | "error" | "info" | "warning";
 }
+
+export type ModeratorPlaceStatusFilter = AdminFilterValue<AdminPlaceStatus>;
+export type ModeratorReviewStatusFilter = AdminFilterValue<AdminReviewStatus>;
+export type ReportedContentStatusFilter = AdminFilterValue<
+  ReportedContent["status"]
+>;
+export type ReportedContentTypeFilter = AdminFilterValue<
+  ReportedContent["type"]
+>;

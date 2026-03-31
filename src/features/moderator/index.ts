@@ -7,8 +7,27 @@ export { useModeratePlaces } from "./hooks/useModeratePlaces";
 // ── API layer ───────────────────────────────────────────────────────────────
 export { moderatorApi } from "./api/moderatorApi";
 
+// ── Components ──────────────────────────────────────────────────────────────
+export {
+  ModeratorPageLayout,
+  ModeratorSection,
+  ModeratorPageHeader,
+  ModeratorErrorBanner,
+  ModeratorFilterChips,
+  ModeratorEmptyState,
+} from "./components";
+
+// ── Constants ───────────────────────────────────────────────────────────────
+export {
+  MODERATOR_PLACE_STATUS_FILTER_OPTIONS,
+  MODERATOR_REVIEW_STATUS_FILTER_OPTIONS,
+  MODERATOR_REPORT_STATUS_FILTER_OPTIONS,
+  MODERATOR_REPORT_TYPE_FILTER_OPTIONS,
+} from "./constants/filterOptions";
+
 // ── Services ────────────────────────────────────────────────────────────────
 export { moderatorService } from "./services/moderatorService";
+export { moderatorDataSource } from "./services/moderatorDataSource";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 export type {
@@ -20,7 +39,13 @@ export type {
   ModeratePlaceFormData,
   ModeratePlaceFormErrors,
   ModeratePlaceToast,
+  ModeratorPlaceStatusFilter,
+  ModeratorReviewStatusFilter,
+  ReportedContentStatusFilter,
+  ReportedContentTypeFilter,
 } from "./types";
+
+export type { ModeratorDataSource } from "./types/dataSource";
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 export { moderatorMock } from "./mocks/moderatorMock";
