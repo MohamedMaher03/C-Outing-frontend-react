@@ -7,6 +7,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +50,7 @@ export const AddReviewForm = ({
   deleting = false,
   errorMessage,
 }: AddReviewFormProps) => {
+  const { t } = useI18n();
   const ratingLabelId = useId();
   const reviewFieldId = useId();
   const reviewCounterId = useId();
@@ -64,15 +66,15 @@ export const AddReviewForm = ({
     if (submitting) return; // guard against async double-fire before re-render
     setFormError("");
     if (rating === 0) {
-      setFormError("Please select a rating");
+      setFormError(t("placeDetail.reviewForm.error.selectRating"));
       return;
     }
     if (comment.trim().length < 10) {
-      setFormError("Review must be at least 10 characters");
+      setFormError(t("placeDetail.reviewForm.error.minLength"));
       return;
     }
     if (comment.trim().length > 2000) {
-      setFormError("Review must be 2000 characters or less");
+      setFormError(t("placeDetail.reviewForm.error.maxLength"));
       return;
     }
     try {
@@ -82,7 +84,7 @@ export const AddReviewForm = ({
         setComment("");
       }
     } catch {
-      setFormError("Failed to submit review. Please try again.");
+      setFormError(t("placeDetail.reviewForm.error.submitFailed"));
     }
   };
 
@@ -90,7 +92,9 @@ export const AddReviewForm = ({
     <Card className="rounded-2xl border-border/70 bg-card/95 p-5 space-y-4 shadow-sm">
       <h3 className="text-role-subheading text-foreground flex items-center gap-2">
         <MessageSquare className="h-4 w-4 text-secondary" />
-        {mode === "edit" ? "Edit Your Review" : "Write a Review"}
+        {mode === "edit"
+          ? t("placeDetail.reviewForm.editTitle")
+          : t("placeDetail.reviewForm.createTitle")}
       </h3>
 
       {submitted && (
@@ -101,7 +105,7 @@ export const AddReviewForm = ({
         >
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription className="pd-type-label break-words">
-            Your review has been submitted successfully.
+            {t("placeDetail.reviewForm.submitted")}
           </AlertDescription>
         </Alert>
       )}
@@ -111,7 +115,7 @@ export const AddReviewForm = ({
           id={ratingLabelId}
           className="pd-type-kicker text-muted-foreground"
         >
-          Your Rating
+          {t("placeDetail.reviewForm.ratingLabel")}
         </label>
         <StarRatingInput
           rating={rating}
@@ -127,13 +131,13 @@ export const AddReviewForm = ({
           htmlFor={reviewFieldId}
           className="pd-type-kicker text-muted-foreground"
         >
-          Your Review
+          {t("placeDetail.reviewForm.commentLabel")}
         </label>
         <textarea
           id={reviewFieldId}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="Share your experience about this place..."
+          placeholder={t("placeDetail.reviewForm.placeholder")}
           rows={3}
           maxLength={2000}
           dir="auto"
@@ -171,12 +175,16 @@ export const AddReviewForm = ({
           {submitting ? (
             <>
               <div className="h-4 w-4 border-2 border-secondary-foreground/30 border-t-secondary-foreground rounded-full animate-spin" />
-              {mode === "edit" ? "Saving..." : "Submitting..."}
+              {mode === "edit"
+                ? t("placeDetail.reviewForm.saving")
+                : t("placeDetail.reviewForm.submitting")}
             </>
           ) : (
             <>
               <Send className="h-4 w-4" />
-              {mode === "edit" ? "Save Changes" : "Submit Review"}
+              {mode === "edit"
+                ? t("placeDetail.reviewForm.saveChanges")
+                : t("placeDetail.reviewForm.submit")}
             </>
           )}
         </Button>
@@ -194,7 +202,9 @@ export const AddReviewForm = ({
                 className="h-11 w-full sm:w-auto gap-1.5"
               >
                 <Trash2 className="h-4 w-4" />
-                {deleting ? "Deleting..." : "Delete"}
+                {deleting
+                  ? t("placeDetail.reviewForm.deleting")
+                  : t("placeDetail.reviewForm.delete")}
               </Button>
             </AlertDialogTrigger>
 
@@ -202,17 +212,16 @@ export const AddReviewForm = ({
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                   <AlertTriangle className="h-4 w-4" />
-                  Delete Your Review?
+                  {t("placeDetail.reviewForm.deleteDialog.title")}
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. Your rating and comment will be
-                  permanently removed.
+                  {t("placeDetail.reviewForm.deleteDialog.description")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
 
               <AlertDialogFooter>
                 <AlertDialogCancel disabled={deleting}>
-                  Keep Review
+                  {t("placeDetail.reviewForm.deleteDialog.keep")}
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={async (event) => {
@@ -226,7 +235,9 @@ export const AddReviewForm = ({
                   }}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  {deleting ? "Deleting..." : "Yes, Delete"}
+                  {deleting
+                    ? t("placeDetail.reviewForm.deleting")
+                    : t("placeDetail.reviewForm.deleteDialog.confirm")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -241,7 +252,7 @@ export const AddReviewForm = ({
             disabled={submitting || deleting}
             className="h-11 w-full sm:w-auto"
           >
-            Cancel
+            {t("placeDetail.reviewForm.cancel")}
           </Button>
         )}
       </div>

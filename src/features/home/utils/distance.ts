@@ -24,29 +24,14 @@ export const calculateDistanceKm = (
   return EARTH_RADIUS_KM * c;
 };
 
-const formatDistance = (distanceKm: number): string => {
-  if (!Number.isFinite(distanceKm) || distanceKm < 0)
-    return "Distance unavailable";
-
-  if (distanceKm < 1) {
-    return `${Math.max(1, Math.round(distanceKm * 1000))} m away`;
-  }
-
-  if (distanceKm < 10) {
-    return `${distanceKm.toFixed(1)} km away`;
-  }
-
-  return `${Math.round(distanceKm)} km away`;
-};
-
 export type DistanceDisplayState =
-  | { kind: "distance"; text: string; valueKm: number }
-  | { kind: "locating"; text: string }
-  | { kind: "permission-denied"; text: string }
-  | { kind: "unsupported"; text: string }
-  | { kind: "position-unavailable"; text: string }
-  | { kind: "error"; text: string }
-  | { kind: "place-coordinates-missing"; text: string };
+  | { kind: "distance"; valueKm: number }
+  | { kind: "locating" }
+  | { kind: "permission-denied" }
+  | { kind: "unsupported" }
+  | { kind: "position-unavailable" }
+  | { kind: "error" }
+  | { kind: "place-coordinates-missing" };
 
 export const getDistanceDisplayState = (
   userLocation: UserLocationState | null | undefined,
@@ -62,12 +47,11 @@ export const getDistanceDisplayState = (
   if (!hasPlaceCoordinates) {
     return {
       kind: "place-coordinates-missing",
-      text: "Distance unavailable",
     };
   }
 
   if (!userLocation) {
-    return { kind: "locating", text: "Locating you..." };
+    return { kind: "locating" };
   }
 
   if (userLocation.status === "granted" && userLocation.coordinates) {
@@ -80,7 +64,6 @@ export const getDistanceDisplayState = (
 
     return {
       kind: "distance",
-      text: formatDistance(distanceKm),
       valueKm: distanceKm,
     };
   }
@@ -88,19 +71,16 @@ export const getDistanceDisplayState = (
   switch (userLocation.status) {
     case "idle":
     case "loading":
-      return { kind: "locating", text: "Locating you..." };
+      return { kind: "locating" };
     case "denied":
-      return { kind: "permission-denied", text: "Location permission denied" };
+      return { kind: "permission-denied" };
     case "unsupported":
-      return { kind: "unsupported", text: "Geolocation not supported" };
+      return { kind: "unsupported" };
     case "unavailable":
-      return { kind: "position-unavailable", text: "Location unavailable" };
+      return { kind: "position-unavailable" };
     case "error":
-      return {
-        kind: "error",
-        text: userLocation.message ?? "Location unavailable",
-      };
+      return { kind: "error" };
     default:
-      return { kind: "locating", text: "Locating you..." };
+      return { kind: "locating" };
   }
 };

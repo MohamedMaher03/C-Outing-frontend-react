@@ -60,7 +60,8 @@ import {
   ModeratorPageLayout,
   ModeratorSection,
 } from "@/features/moderator/components";
-import { formatCount, pluralize } from "@/features/moderator/utils/formatters";
+import { formatCount } from "@/features/moderator/utils/formatters";
+import { useI18n } from "@/components/i18n";
 
 const PLACE_PLACEHOLDER_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' fill='%23f4efe5'/%3E%3Crect x='14' y='18' width='68' height='60' rx='10' fill='%23e5d8bf'/%3E%3Ccircle cx='38' cy='42' r='9' fill='%23967f59'/%3E%3Cpath d='M24 67c4-8 12-12 20-12s16 4 20 12' stroke='%23806a49' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E";
@@ -87,6 +88,7 @@ const ModeratePlacesPage = () => {
   const navigate = useNavigate();
   const formRef = useRef<HTMLDivElement>(null);
   const tagPickerRef = useRef<HTMLDivElement>(null);
+  const { t, locale } = useI18n();
 
   const {
     places,
@@ -115,6 +117,18 @@ const ModeratePlacesPage = () => {
     handleAddPlace,
     toggleTag,
   } = useModeratePlaces();
+
+  const statusFilterOptions = useMemo(
+    () =>
+      MODERATOR_PLACE_STATUS_FILTER_OPTIONS.map((option) => ({
+        ...option,
+        label:
+          option.value === "all"
+            ? t("admin.filter.all")
+            : t(`admin.status.${option.value}`),
+      })),
+    [t],
+  );
 
   useEffect(() => {
     let timerId: number | null = null;
@@ -180,7 +194,13 @@ const ModeratePlacesPage = () => {
   );
 
   if (loading) {
-    return <LoadingSpinner size="md" text="Loading places..." fullScreen />;
+    return (
+      <LoadingSpinner
+        size="md"
+        text={t("moderator.places.loading")}
+        fullScreen
+      />
+    );
   }
 
   return (
@@ -204,7 +224,7 @@ const ModeratePlacesPage = () => {
       </div>
 
       <ModeratorErrorBanner
-        title="Couldn't update places"
+        title={t("moderator.places.error.updateTitle")}
         message={error}
         onRetry={() => {
           void retry();
@@ -212,8 +232,11 @@ const ModeratePlacesPage = () => {
       />
 
       <ModeratorPageHeader
-        title="Moderate Places"
-        description={`${formatCount(placeSummary.pending)} pending · ${formatCount(placeSummary.flagged)} flagged`}
+        title={t("moderator.places.header.title")}
+        description={t("moderator.places.header.description", {
+          pending: formatCount(placeSummary.pending, locale),
+          flagged: formatCount(placeSummary.flagged, locale),
+        })}
         icon={MapPin}
         actions={
           <Button
@@ -228,7 +251,9 @@ const ModeratePlacesPage = () => {
             ) : (
               <Plus className="h-4 w-4" />
             )}
-            {showAddForm ? "Cancel" : "Add Place"}
+            {showAddForm
+              ? t("admin.places.actions.cancel")
+              : t("admin.places.actions.addPlace")}
           </Button>
         }
       />
@@ -246,15 +271,17 @@ const ModeratePlacesPage = () => {
           >
             <h2 className="text-role-body font-semibold text-foreground flex items-center gap-2">
               <Plus className="h-4 w-4 text-secondary" />
-              Submit New Place
+              {t("moderator.places.form.title")}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="mod-place-name">Place Name *</Label>
+                <Label htmlFor="mod-place-name">
+                  {t("admin.places.form.nameLabel")}
+                </Label>
                 <Input
                   id="mod-place-name"
-                  placeholder="e.g. Al-Azhar Park"
+                  placeholder={t("admin.places.form.namePlaceholder")}
                   value={form.name}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, name: event.target.value }))
@@ -269,7 +296,9 @@ const ModeratePlacesPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="mod-place-category">Category *</Label>
+                <Label htmlFor="mod-place-category">
+                  {t("admin.places.form.categoryLabel")}
+                </Label>
                 <select
                   id="mod-place-category"
                   value={form.category}
@@ -284,7 +313,9 @@ const ModeratePlacesPage = () => {
                     formErrors.category && "border-destructive",
                   )}
                 >
-                  <option value="">Select category...</option>
+                  <option value="">
+                    {t("admin.places.form.selectCategory")}
+                  </option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.label}>
                       {category.label}
@@ -299,7 +330,9 @@ const ModeratePlacesPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="mod-place-district">District *</Label>
+                <Label htmlFor="mod-place-district">
+                  {t("admin.places.form.districtLabel")}
+                </Label>
                 <select
                   id="mod-place-district"
                   value={form.district}
@@ -314,7 +347,9 @@ const ModeratePlacesPage = () => {
                     formErrors.district && "border-destructive",
                   )}
                 >
-                  <option value="">Select district...</option>
+                  <option value="">
+                    {t("admin.places.form.selectDistrict")}
+                  </option>
                   {DISTRICTS.map((district) => (
                     <option key={district} value={district}>
                       {district}
@@ -329,7 +364,7 @@ const ModeratePlacesPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Price Level</Label>
+                <Label>{t("admin.places.form.priceLevelLabel")}</Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {PRICE_LEVEL_OPTIONS.map((level) => (
                     <button
@@ -350,10 +385,14 @@ const ModeratePlacesPage = () => {
                     >
                       <div className="space-y-0.5">
                         <p className="text-role-caption font-semibold leading-tight text-foreground">
-                          {level.label}
+                          {t(`budget.${level.value}`, undefined, level.label)}
                         </p>
                         <p className="text-[10px] leading-tight text-muted-foreground">
-                          {level.caption}
+                          {t(
+                            `moderator.places.priceCaption.${level.value}`,
+                            undefined,
+                            level.caption,
+                          )}
                           <span className="ml-1 font-semibold">
                             {level.symbol}
                           </span>
@@ -365,10 +404,12 @@ const ModeratePlacesPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="mod-place-phone">Phone</Label>
+                <Label htmlFor="mod-place-phone">
+                  {t("admin.places.form.phoneLabel")}
+                </Label>
                 <Input
                   id="mod-place-phone"
-                  placeholder="+20 2 1234 5678"
+                  placeholder={t("admin.places.form.phonePlaceholder")}
                   value={form.phone}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, phone: event.target.value }))
@@ -383,10 +424,12 @@ const ModeratePlacesPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="mod-place-website">Website</Label>
+                <Label htmlFor="mod-place-website">
+                  {t("admin.places.form.websiteLabel")}
+                </Label>
                 <Input
                   id="mod-place-website"
-                  placeholder="https://example.com"
+                  placeholder={t("admin.places.form.websitePlaceholder")}
                   value={form.website}
                   onChange={(event) =>
                     setForm((prev) => ({
@@ -405,11 +448,13 @@ const ModeratePlacesPage = () => {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="mod-place-desc">About *</Label>
+              <Label htmlFor="mod-place-desc">
+                {t("admin.places.form.aboutLabel")}
+              </Label>
               <textarea
                 id="mod-place-desc"
                 rows={3}
-                placeholder="Describe the place (at least 20 characters)..."
+                placeholder={t("admin.places.form.aboutPlaceholder")}
                 value={form.description}
                 onChange={(event) =>
                   setForm((prev) => ({
@@ -431,13 +476,15 @@ const ModeratePlacesPage = () => {
                   <span />
                 )}
                 <span className="text-role-caption text-muted-foreground shrink-0">
-                  {formatCount(form.description.length)} chars
+                  {t("admin.places.form.charCount", {
+                    count: formatCount(form.description.length, locale),
+                  })}
                 </span>
               </div>
             </div>
 
             <div className="space-y-1.5" ref={tagPickerRef}>
-              <Label>Tags</Label>
+              <Label>{t("admin.places.form.tagsLabel")}</Label>
               <div className="relative">
                 <button
                   type="button"
@@ -449,8 +496,10 @@ const ModeratePlacesPage = () => {
                 >
                   <span className="text-muted-foreground">
                     {form.tags.length === 0
-                      ? "Select tags..."
-                      : `${formatCount(form.tags.length)} ${pluralize(form.tags.length, "tag")} selected`}
+                      ? t("admin.places.form.tagsPlaceholder")
+                      : t("admin.places.form.tagsSelected", {
+                          count: formatCount(form.tags.length, locale),
+                        })}
                   </span>
                   {showTagPicker ? (
                     <ChevronUp className="h-4 w-4" />
@@ -497,7 +546,9 @@ const ModeratePlacesPage = () => {
                       <button
                         type="button"
                         onClick={() => toggleTag(tag)}
-                        aria-label={`Remove tag ${tag}`}
+                        aria-label={t("admin.places.form.removeTagAria", {
+                          tag,
+                        })}
                         className="rounded-sm text-secondary transition-colors motion-reduce:transition-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <X className="h-3 w-3" />
@@ -509,12 +560,14 @@ const ModeratePlacesPage = () => {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="mod-place-image">Image URL *</Label>
+              <Label htmlFor="mod-place-image">
+                {t("admin.places.form.imageLabel")}
+              </Label>
               <div className="flex gap-3">
                 <div className="flex-1">
                   <Input
                     id="mod-place-image"
-                    placeholder="https://images.example.com/place.jpg"
+                    placeholder={t("admin.places.form.imagePlaceholder")}
                     value={form.image}
                     onChange={(event) =>
                       setForm((prev) => ({
@@ -535,7 +588,7 @@ const ModeratePlacesPage = () => {
                   <div className="h-16 w-16 rounded-xl overflow-hidden border border-border flex-shrink-0">
                     <img
                       src={form.image}
-                      alt="Preview of selected place image"
+                      alt={t("admin.places.form.imagePreviewAlt")}
                       className="h-full w-full object-cover"
                       loading="lazy"
                       decoding="async"
@@ -563,7 +616,7 @@ const ModeratePlacesPage = () => {
                   setForm(EMPTY_FORM);
                 }}
               >
-                Cancel
+                {t("admin.places.actions.cancel")}
               </Button>
               <Button
                 onClick={handleAddPlace}
@@ -572,11 +625,13 @@ const ModeratePlacesPage = () => {
               >
                 {submittingForm ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Submitting...
+                    <Loader2 className="h-4 w-4 animate-spin" />{" "}
+                    {t("moderator.places.actions.submitting")}
                   </>
                 ) : (
                   <>
-                    <Plus className="h-4 w-4" /> Submit Place
+                    <Plus className="h-4 w-4" />{" "}
+                    {t("moderator.places.actions.submit")}
                   </>
                 )}
               </Button>
@@ -587,14 +642,14 @@ const ModeratePlacesPage = () => {
 
       <ModeratorSection
         tone="muted"
-        title="Moderation Filters"
-        description="Find places quickly across mobile and desktop with search and status segments."
+        title={t("moderator.places.filters.title")}
+        description={t("moderator.places.filters.description")}
       >
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search places, categories, or districts..."
+              placeholder={t("moderator.places.filters.searchPlaceholder")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="pl-10"
@@ -602,8 +657,8 @@ const ModeratePlacesPage = () => {
           </div>
           <div className="lg:min-w-[16rem]">
             <ModeratorFilterChips
-              label="Status"
-              options={MODERATOR_PLACE_STATUS_FILTER_OPTIONS}
+              label={t("admin.filter.status")}
+              options={statusFilterOptions}
               value={statusFilter}
               onChange={setStatusFilter}
             />
@@ -612,18 +667,20 @@ const ModeratePlacesPage = () => {
       </ModeratorSection>
 
       <ModeratorSection
-        title="Places Queue"
-        description={`${formatCount(filtered.length)} places in current view`}
+        title={t("moderator.places.queue.title")}
+        description={t("moderator.places.queue.description", {
+          count: formatCount(filtered.length, locale),
+        })}
         contentClassName="gap-4"
       >
         {filtered.length === 0 ? (
           <ModeratorEmptyState
             icon={MapPin}
-            title="No places in this segment"
+            title={t("moderator.places.empty.title")}
             description={
               search.trim().length > 0
-                ? "No places match your search and selected status chips."
-                : "No places match the current moderation filter."
+                ? t("moderator.places.empty.withSearch")
+                : t("moderator.places.empty.default")
             }
           />
         ) : (
@@ -668,7 +725,7 @@ const ModeratePlacesPage = () => {
                         )}
                       >
                         <StatusIcon className="h-2.5 w-2.5 mr-0.5" />{" "}
-                        {config.label}
+                        {t(`admin.status.${place.status}`)}
                       </Badge>
                     </div>
 
@@ -689,8 +746,9 @@ const ModeratePlacesPage = () => {
 
                       <span>·</span>
                       <span>
-                        {formatCount(place.reviewCount)}{" "}
-                        {pluralize(place.reviewCount, "review")}
+                        {t("moderator.places.meta.reviews", {
+                          count: formatCount(place.reviewCount, locale),
+                        })}
                       </span>
                     </div>
                   </div>
@@ -703,7 +761,8 @@ const ModeratePlacesPage = () => {
                     onClick={() => navigate(`/venue/${place.id}`)}
                     className="text-role-secondary gap-1 min-h-11 sm:h-8"
                   >
-                    <Eye className="h-3.5 w-3.5" /> View
+                    <Eye className="h-3.5 w-3.5" />{" "}
+                    {t("admin.places.actions.view")}
                   </Button>
 
                   {place.status === "pending" || place.status === "flagged" ? (
@@ -719,7 +778,7 @@ const ModeratePlacesPage = () => {
                       ) : (
                         <CheckCircle className="h-3.5 w-3.5" />
                       )}
-                      Approve
+                      {t("admin.places.actions.approve")}
                     </Button>
                   ) : null}
 
@@ -736,7 +795,7 @@ const ModeratePlacesPage = () => {
                       ) : (
                         <Flag className="h-3.5 w-3.5" />
                       )}
-                      Flag
+                      {t("moderator.places.actions.flag")}
                     </Button>
                   ) : null}
 
@@ -747,34 +806,43 @@ const ModeratePlacesPage = () => {
                         size="sm"
                         disabled={isPending}
                         className="text-role-secondary gap-1 min-h-11 sm:h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        aria-label={`Delete ${place.name}`}
-                        title={`Delete ${place.name}`}
+                        aria-label={t("admin.places.actions.deleteAria", {
+                          name: place.name,
+                        })}
+                        title={t("admin.places.actions.deleteAria", {
+                          name: place.name,
+                        })}
                       >
                         {isPending ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
                           <Trash2 className="h-3.5 w-3.5" />
                         )}
-                        Delete
+                        {t("admin.places.actions.delete")}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete place</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          {t("admin.places.dialog.deleteTitle")}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will permanently delete "{place.name}". This
-                          action cannot be undone.
+                          {t("admin.places.dialog.deleteDescription", {
+                            name: place.name,
+                          })}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>
+                          {t("admin.places.actions.cancel")}
+                        </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() =>
                             handleDeletePlace(place.id, place.name)
                           }
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                          Delete
+                          {t("admin.places.actions.delete")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -788,9 +856,10 @@ const ModeratePlacesPage = () => {
 
       <ModeratorSection tone="muted" contentClassName="gap-0">
         <p className="text-role-secondary text-foreground break-words">
-          <span className="font-medium">Note:</span> As a moderator, you can
-          approve, flag, delete, or submit new places. Flagged places are sent
-          to admin for follow-up.
+          <span className="font-medium">
+            {t("moderator.places.note.label")}
+          </span>{" "}
+          {t("moderator.places.note.body")}
         </p>
       </ModeratorSection>
     </ModeratorPageLayout>

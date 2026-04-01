@@ -27,6 +27,7 @@ import type {
 } from "@/features/moderator/types";
 import { filterModerationPlaces } from "@/features/moderator/utils/moderatorFilters";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 const EMPTY_FORM: ModeratePlaceFormData = {
   name: "",
@@ -85,6 +86,7 @@ interface UseModeratePlacesReturn {
 }
 
 export const useModeratePlaces = (): UseModeratePlacesReturn => {
+  const { t } = useI18n();
   const [places, setPlaces] = useState<AdminPlace[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,7 +126,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
       setCategories(categoriesData);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to load places"));
+      setError(getErrorMessage(err, t("moderator.error.loadPlaces")));
       setPlaces([]);
       setCategories([]);
     } finally {
@@ -132,7 +134,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -200,7 +202,10 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
       } catch (err) {
         if (!mountedRef.current) return;
 
-        const message = getErrorMessage(err, "Failed to update place status");
+        const message = getErrorMessage(
+          err,
+          t("moderator.error.updatePlaceStatus"),
+        );
         setError(message);
         showToast(message, "error");
       } finally {
@@ -210,7 +215,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
         }
       }
     },
-    [addPendingPlace, removePendingPlace],
+    [addPendingPlace, removePendingPlace, t],
   );
 
   const validateForm = (): boolean => {
@@ -220,34 +225,39 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     const trimmedImage = form.image.trim();
 
     if (!trimmedName) {
-      errors.name = "Place name is required.";
+      errors.name = t("admin.places.form.error.nameRequired");
     } else if (trimmedName.length > 120) {
-      errors.name = "Place name must be 120 characters or less.";
+      errors.name = t("admin.places.form.error.nameMax", { max: 120 });
     }
 
-    if (!form.category) errors.category = "Please select a category.";
-    if (!form.district) errors.district = "Please select a district.";
+    if (!form.category)
+      errors.category = t("admin.places.form.error.categoryRequired");
+    if (!form.district)
+      errors.district = t("admin.places.form.error.districtRequired");
 
     if (!trimmedDescription) {
-      errors.description = "Description is required.";
+      errors.description = t("admin.places.form.error.descriptionRequired");
     } else if (trimmedDescription.length < 20) {
-      errors.description = "Description must be at least 20 characters.";
+      errors.description = t("admin.places.form.error.descriptionMin", {
+        min: 20,
+      });
     } else if (trimmedDescription.length > 1200) {
-      errors.description = "Description must be 1200 characters or less.";
+      errors.description = t("admin.places.form.error.descriptionMax", {
+        max: 1200,
+      });
     }
 
     if (!trimmedImage) {
-      errors.image = "Image URL is required.";
+      errors.image = t("admin.places.form.error.imageRequired");
     } else {
       const isValidImageUrl = /^https?:\/\//i.test(trimmedImage);
       if (!isValidImageUrl) {
-        errors.image =
-          "Use a full image URL starting with http:// or https://.";
+        errors.image = t("admin.places.form.error.imageUrlInvalid");
       }
     }
 
     if (form.website.trim() && !/^https?:\/\//i.test(form.website.trim())) {
-      errors.website = "Website URL should start with http:// or https://.";
+      errors.website = t("admin.places.form.error.websiteUrlInvalid");
     }
 
     setFormErrors(errors);
@@ -259,10 +269,10 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
       await handleStatusChange(
         placeId,
         "active",
-        "Place approved successfully.",
+        t("moderator.places.toast.approved"),
       );
     },
-    [handleStatusChange],
+    [handleStatusChange, t],
   );
 
   const handleFlag = useCallback(
@@ -270,10 +280,10 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
       await handleStatusChange(
         placeId,
         "flagged",
-        "Place flagged and sent to admin review queue.",
+        t("moderator.places.toast.flagged"),
       );
     },
-    [handleStatusChange],
+    [handleStatusChange, t],
   );
 
   const handleDeletePlace = useCallback(
@@ -291,11 +301,14 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
         if (!mountedRef.current) return;
 
         setPlaces((prev) => prev.filter((place) => place.id !== placeId));
-        showToast(`"${placeName}" deleted successfully.`, "warning");
+        showToast(
+          t("moderator.places.toast.deleted", { name: placeName }),
+          "warning",
+        );
       } catch (err) {
         if (!mountedRef.current) return;
 
-        const message = getErrorMessage(err, "Failed to delete place");
+        const message = getErrorMessage(err, t("moderator.error.deletePlace"));
         setError(message);
         showToast(message, "error");
       } finally {
@@ -305,7 +318,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
         }
       }
     },
-    [addPendingPlace, removePendingPlace],
+    [addPendingPlace, removePendingPlace, t],
   );
 
   const handleAddPlace = async () => {
@@ -314,7 +327,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     }
 
     if (!validateForm()) {
-      setError("Please fix validation errors before submitting.");
+      setError(t("moderator.error.fixValidation"));
       return;
     }
 
@@ -341,11 +354,11 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
       setFormErrors({});
       setShowAddForm(false);
       setShowTagPicker(false);
-      showToast(`"${newPlace.name}" submitted for admin review.`);
+      showToast(t("moderator.places.toast.submitted", { name: newPlace.name }));
     } catch (err) {
       if (!mountedRef.current) return;
 
-      const message = getErrorMessage(err, "Failed to submit place");
+      const message = getErrorMessage(err, t("moderator.error.addPlace"));
       setError(message);
       showToast(message, "error");
     } finally {

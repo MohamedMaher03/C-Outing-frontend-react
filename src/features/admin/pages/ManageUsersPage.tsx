@@ -35,13 +35,10 @@ import {
   userRoleBadge,
   userStatusBadge,
 } from "@/features/admin/constants/statusConfigs";
-
-const monthYearFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  year: "numeric",
-});
+import { useI18n } from "@/components/i18n";
 
 const ManageUsersPage = () => {
+  const { t, locale, formatNumber } = useI18n();
   const {
     users,
     loading,
@@ -57,6 +54,34 @@ const ManageUsersPage = () => {
     retry,
     handleStatusChange,
   } = useManageUsers();
+
+  const monthYearFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: "short",
+        year: "numeric",
+      }),
+    [locale],
+  );
+
+  const roleFilterOptions = useMemo(
+    () =>
+      USER_ROLE_FILTER_OPTIONS.map((option) => ({
+        ...option,
+        label:
+          option.value === "all"
+            ? t("admin.filter.all")
+            : t(`admin.role.${option.value}`),
+      })),
+    [t],
+  );
+
+  const getStatusLabel = (status: keyof typeof userStatusBadge): string =>
+    t(`admin.status.${status}`);
+
+  const getRoleLabel = (role: keyof typeof userRoleBadge): string =>
+    t(`admin.role.${role}`);
+
   useEffect(() => {
     if (!actionMenu) return;
 
@@ -92,20 +117,25 @@ const ManageUsersPage = () => {
   );
 
   if (loading) {
-    return <LoadingSpinner size="md" text="Loading users..." fullScreen />;
+    return (
+      <LoadingSpinner size="md" text={t("admin.users.loading")} fullScreen />
+    );
   }
 
   return (
     <AdminPageLayout>
       {/* Header */}
       <AdminPageHeader
-        title="Manage Users"
-        description={`${users.length} total users · ${activeUsersCount} active`}
+        title={t("admin.users.header.title")}
+        description={t("admin.users.header.description", {
+          total: formatNumber(users.length),
+          active: formatNumber(activeUsersCount),
+        })}
         icon={ShieldCheck}
       />
 
       <AdminErrorBanner
-        title="Couldn't update users"
+        title={t("admin.users.error.updateTitle")}
         message={error}
         onRetry={() => {
           void retry();
@@ -114,14 +144,14 @@ const ManageUsersPage = () => {
 
       <AdminSection
         tone="muted"
-        title="Directory Filters"
-        description="Narrow results by role or quickly search by name and email"
+        title={t("admin.users.filters.title")}
+        description={t("admin.users.filters.description")}
       >
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by name or email..."
+              placeholder={t("admin.users.filters.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -129,8 +159,8 @@ const ManageUsersPage = () => {
           </div>
           <div className="lg:w-auto">
             <AdminFilterChips
-              label="Role"
-              options={USER_ROLE_FILTER_OPTIONS}
+              label={t("admin.filter.role")}
+              options={roleFilterOptions}
               value={roleFilter}
               onChange={setRoleFilter}
             />
@@ -139,15 +169,17 @@ const ManageUsersPage = () => {
       </AdminSection>
 
       <AdminSection
-        title="User Records"
-        description={`${filteredUsers.length} matching accounts`}
+        title={t("admin.users.records.title")}
+        description={t("admin.users.records.description", {
+          count: formatNumber(filteredUsers.length),
+        })}
         contentClassName="gap-3"
       >
         {filteredUsers.length === 0 ? (
           <AdminEmptyState
             icon={User}
-            title="No users match this view"
-            description="Try changing the search term or role filter to reveal more accounts."
+            title={t("admin.users.empty.title")}
+            description={t("admin.users.empty.description")}
           />
         ) : (
           filteredUsers.map((user) => {
@@ -188,7 +220,7 @@ const ManageUsersPage = () => {
                         role.class,
                       )}
                     >
-                      {role.label}
+                      {getRoleLabel(user.role)}
                     </Badge>
                   </div>
                   <p className="truncate text-role-caption text-muted-foreground">
@@ -198,13 +230,18 @@ const ManageUsersPage = () => {
                     <span
                       className={cn("flex items-center gap-1", status.class)}
                     >
-                      <StatusIcon className="h-3 w-3" /> {status.label}
+                      <StatusIcon className="h-3 w-3" />
+                      {getStatusLabel(user.status)}
                     </span>
                     <span>·</span>
-                    <span>{user.reviewCount} reviews</span>
+                    <span>
+                      {t("admin.users.meta.reviews", {
+                        count: formatNumber(user.reviewCount),
+                      })}
+                    </span>
                     <span>·</span>
                     <span>
-                      Joined{" "}
+                      {t("admin.users.meta.joined")}{" "}
                       {monthYearFormatter.format(new Date(user.joinedDate))}
                     </span>
                   </div>
@@ -233,11 +270,12 @@ const ManageUsersPage = () => {
                     {updatingUserId === user.userId ? (
                       <>
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Updating...
+                        {t("admin.users.actions.updating")}
                       </>
                     ) : (
                       <>
-                        Actions <ChevronDown className="h-3 w-3" />
+                        {t("admin.users.actions.menu")}{" "}
+                        <ChevronDown className="h-3 w-3" />
                       </>
                     )}
                   </Button>
@@ -249,7 +287,7 @@ const ManageUsersPage = () => {
                       className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-border bg-card py-2 shadow-lg"
                     >
                       <p className="px-3 py-1 text-role-caption uppercase text-muted-foreground">
-                        Status
+                        {t("admin.filter.status")}
                       </p>
                       {user.status !== "active" && (
                         <button
@@ -262,7 +300,8 @@ const ManageUsersPage = () => {
                           disabled={updatingUserId === user.userId}
                           aria-disabled={updatingUserId === user.userId}
                         >
-                          <CheckCircle className="h-3.5 w-3.5" /> Activate
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          {t("admin.users.actions.activate")}
                         </button>
                       )}
                       {user.status !== "banned" && (
@@ -276,7 +315,8 @@ const ManageUsersPage = () => {
                           disabled={updatingUserId === user.userId}
                           aria-disabled={updatingUserId === user.userId}
                         >
-                          <Ban className="h-3.5 w-3.5" /> Ban User
+                          <Ban className="h-3.5 w-3.5" />
+                          {t("admin.users.actions.ban")}
                         </button>
                       )}
                     </div>

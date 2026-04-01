@@ -16,6 +16,7 @@ import {
   AuthSurface,
 } from "@/features/auth/components/layout/AuthShell";
 import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
+import { useI18n } from "@/components/i18n";
 
 const OTP_LENGTH = AUTH_OTP_LENGTH;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -28,6 +29,7 @@ function maskEmail(email: string): string {
 }
 
 export default function VerifyEmailPage() {
+  const { t, formatNumber } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const email = (location.state as { email?: string } | null)?.email ?? "";
@@ -115,6 +117,7 @@ export default function VerifyEmailPage() {
 
   const otp = digits.join("");
   const isComplete = otp.length === OTP_LENGTH && digits.every((d) => d !== "");
+  const maskedEmail = `\u2068${maskEmail(email)}\u2069`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +135,7 @@ export default function VerifyEmailPage() {
       setCountdown(RESEND_COOLDOWN_SECONDS);
       setCanResend(false);
       setDigits(Array(OTP_LENGTH).fill(""));
-      setSuccessMessage("A new code has been sent to your email.");
+      setSuccessMessage(t("auth.verify.newCodeSent"));
       inputRefs.current[0]?.focus();
       if (successTimeoutRef.current !== null) {
         window.clearTimeout(successTimeoutRef.current);
@@ -153,8 +156,8 @@ export default function VerifyEmailPage() {
           onClick={() => navigate("/register")}
           className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 text-sm text-muted-foreground transition-colors hover:text-foreground/90"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Register
+          <ArrowLeft className="rtl-mirror h-4 w-4" />
+          {t("auth.backToRegister")}
         </button>
 
         {/* Header */}
@@ -165,14 +168,12 @@ export default function VerifyEmailPage() {
             </div>
           </div>
           <h2 className="text-2xl font-semibold text-foreground">
-            Verify Your Email
+            {t("auth.verify.title")}
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            We sent a 6-digit verification code to{" "}
-            <span className="font-medium text-foreground break-all" dir="auto">
-              {maskEmail(email)}
-            </span>
-            . Enter it below to confirm your account.
+            {t("auth.verify.subtitle", {
+              email: maskedEmail,
+            })}
           </p>
         </div>
 
@@ -204,7 +205,10 @@ export default function VerifyEmailPage() {
                 maxLength={1}
                 value={digit}
                 autoFocus={index === 0}
-                aria-label={`Digit ${index + 1} of ${OTP_LENGTH}`}
+                aria-label={t("auth.otpDigit", {
+                  current: index + 1,
+                  total: OTP_LENGTH,
+                })}
                 onChange={(e) => handleDigitChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 onPaste={handlePaste}
@@ -232,10 +236,10 @@ export default function VerifyEmailPage() {
             {isLoading ? (
               <span className="flex items-center gap-2">
                 <InlineLoading />
-                Verifying…
+                {t("auth.verify.submitting")}
               </span>
             ) : (
-              "Verify Email"
+              t("auth.verify.submit")
             )}
           </Button>
         </form>
@@ -243,7 +247,7 @@ export default function VerifyEmailPage() {
         {/* Resend Section */}
         <div className="text-center space-y-2">
           <p className="text-sm text-muted-foreground">
-            Didn't receive the code?
+            {t("auth.verify.noCode")}
           </p>
           {canResend ? (
             <button
@@ -255,21 +259,20 @@ export default function VerifyEmailPage() {
               {isResending ? (
                 <>
                   <InlineLoading />
-                  Sending…
+                  {t("auth.verify.sending")}
                 </>
               ) : (
                 <>
                   <RotateCcw className="h-3.5 w-3.5" />
-                  Resend Code
+                  {t("auth.verify.resend")}
                 </>
               )}
             </button>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Resend in{" "}
-              <span className="font-semibold tabular-nums text-foreground">
-                {countdown}s
-              </span>
+              {t("auth.verify.resendIn", {
+                seconds: formatNumber(countdown),
+              })}
             </p>
           )}
         </div>

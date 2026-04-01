@@ -49,13 +49,19 @@ const toValidDate = (input: Date | string | number): Date | null => {
   return Number.isFinite(date.getTime()) ? date : null;
 };
 
+const getRecentlyLabel = (locale: string): string =>
+  locale.toLowerCase().startsWith("ar") ? "مؤخرًا" : "Recently";
+
 export function formatRelativeNotificationTime(
   input: Date | string | number,
 ): string {
   const date = toValidDate(input);
-  if (!date) return "Recently";
-
   const locale = getLocale();
+
+  if (!date) {
+    return getRecentlyLabel(locale);
+  }
+
   const formatter = getRelativeFormatter(locale);
   const diffMs = date.getTime() - Date.now();
   const absMs = Math.abs(diffMs);

@@ -7,20 +7,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useNotifications } from "@/features/profile/hooks/useNotifications";
 import type { NotificationSettings } from "@/features/profile/types";
+import { useI18n } from "@/components/i18n";
 
 type PushNotificationKey = keyof NotificationSettings["push"];
 type EmailNotificationKey = keyof NotificationSettings["email"];
 
 type NotificationItem = {
   key: PushNotificationKey | EmailNotificationKey;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
 };
 
 type NotificationGroup = {
   id: "push" | "email";
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
   icon: LucideIcon;
   items: NotificationItem[];
   type: "push" | "email";
@@ -29,53 +30,57 @@ type NotificationGroup = {
 const NOTIFICATION_GROUPS: NotificationGroup[] = [
   {
     id: "push",
-    title: "Push Notifications",
-    description: "Alerts sent to your phone",
+    titleKey: "profile.notifications.group.push.title",
+    descriptionKey: "profile.notifications.group.push.description",
     icon: Bell,
     items: [
       {
         key: "recommendations",
-        label: "New Recommendations",
-        description: "Know when we find new spots that match your preferences.",
+        labelKey: "profile.notifications.group.push.recommendations.label",
+        descriptionKey:
+          "profile.notifications.group.push.recommendations.description",
       },
       {
         key: "favorites",
-        label: "Favorites Updates",
-        description: "Get updates about places you have saved.",
+        labelKey: "profile.notifications.group.push.favorites.label",
+        descriptionKey:
+          "profile.notifications.group.push.favorites.description",
       },
       {
         key: "reviews",
-        label: "Review Responses",
-        description: "Know when there is new activity on places you reviewed.",
+        labelKey: "profile.notifications.group.push.reviews.label",
+        descriptionKey: "profile.notifications.group.push.reviews.description",
       },
       {
         key: "updates",
-        label: "App Updates",
-        description: "Get product updates and important changes.",
+        labelKey: "profile.notifications.group.push.updates.label",
+        descriptionKey: "profile.notifications.group.push.updates.description",
       },
     ],
     type: "push",
   },
   {
     id: "email",
-    title: "Email Notifications",
-    description: "Updates sent to your inbox",
+    titleKey: "profile.notifications.group.email.title",
+    descriptionKey: "profile.notifications.group.email.description",
     icon: Mail,
     items: [
       {
         key: "monthlyDigest",
-        label: "Monthly Digest",
-        description: "A monthly roundup of trending places and updates.",
+        labelKey: "profile.notifications.group.email.monthlyDigest.label",
+        descriptionKey:
+          "profile.notifications.group.email.monthlyDigest.description",
       },
       {
         key: "promotions",
-        label: "Promotions & Offers",
-        description: "Special offers from partner venues.",
+        labelKey: "profile.notifications.group.email.promotions.label",
+        descriptionKey:
+          "profile.notifications.group.email.promotions.description",
       },
       {
         key: "tips",
-        label: "Tips & Tricks",
-        description: "Simple tips to get more from C-Outing.",
+        labelKey: "profile.notifications.group.email.tips.label",
+        descriptionKey: "profile.notifications.group.email.tips.description",
       },
     ],
     type: "email",
@@ -84,6 +89,7 @@ const NOTIFICATION_GROUPS: NotificationGroup[] = [
 
 const NotificationsPage = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const {
     pushNotifications,
     emailNotifications,
@@ -114,13 +120,13 @@ const NotificationsPage = () => {
             variant="ghost"
             size="icon"
             onClick={() => navigate("/profile")}
-            aria-label="Back to profile"
+            aria-label={t("profile.notifications.backToProfileAria")}
             className="h-11 w-11 rounded-full"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
           </Button>
           <h1 className="text-role-subheading text-foreground">
-            Notifications
+            {t("profile.notifications.title")}
           </h1>
         </div>
       </div>
@@ -143,14 +149,14 @@ const NotificationsPage = () => {
                 onClick={() => void reloadSettings()}
                 disabled={loading || saving}
               >
-                Try again
+                {t("common.retry")}
               </Button>
             </div>
           </div>
         )}
         <div className="grid gap-[clamp(1rem,2vw,1.75rem)] xl:grid-cols-2">
           {NOTIFICATION_GROUPS.map((group) => (
-            <section key={group.title} className="space-y-3">
+            <section key={group.id} className="space-y-3">
               {/* Section Header */}
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
@@ -158,10 +164,10 @@ const NotificationsPage = () => {
                 </div>
                 <div>
                   <h2 className="text-role-body font-semibold text-foreground">
-                    {group.title}
+                    {t(group.titleKey)}
                   </h2>
                   <p className="text-role-caption text-muted-foreground">
-                    {group.description}
+                    {t(group.descriptionKey)}
                   </p>
                 </div>
               </div>
@@ -200,10 +206,10 @@ const NotificationsPage = () => {
                             htmlFor={itemId}
                             className="block py-1 text-role-secondary font-semibold text-foreground cursor-pointer break-words"
                           >
-                            {item.label}
+                            {t(item.labelKey)}
                           </Label>
                           <p className="text-role-caption text-muted-foreground break-words">
-                            {item.description}
+                            {t(item.descriptionKey)}
                           </p>
                         </div>
                       </div>
@@ -219,8 +225,10 @@ const NotificationsPage = () => {
         <Card className="rounded-xl border-secondary/20 bg-secondary/5">
           <CardContent className="p-4">
             <p className="text-role-secondary text-foreground">
-              <span className="font-semibold">Tip:</span> You can change these
-              at any time. We only send what you keep enabled.
+              <span className="font-semibold">
+                {t("profile.notifications.tipLabel")}
+              </span>{" "}
+              {t("profile.notifications.tipBody")}
             </p>
           </CardContent>
         </Card>
@@ -233,14 +241,16 @@ const NotificationsPage = () => {
             onClick={() => navigate("/profile")}
             className="flex-1"
           >
-            Cancel
+            {t("profile.notifications.cancel")}
           </Button>
           <Button
             onClick={handleSave}
             disabled={saving}
             className="flex-1 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
           >
-            {saving ? "Saving changes..." : "Save notification settings"}
+            {saving
+              ? t("profile.notifications.saving")
+              : t("profile.notifications.save")}
           </Button>
         </div>
       </div>
@@ -254,14 +264,16 @@ const NotificationsPage = () => {
               onClick={() => navigate("/profile")}
               className="flex-1"
             >
-              Cancel
+              {t("profile.notifications.cancel")}
             </Button>
             <Button
               onClick={handleSave}
               disabled={saving}
               className="flex-1 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
             >
-              {saving ? "Saving changes..." : "Save notification settings"}
+              {saving
+                ? t("profile.notifications.saving")
+                : t("profile.notifications.save")}
             </Button>
           </div>
         </div>

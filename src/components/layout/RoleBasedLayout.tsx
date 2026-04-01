@@ -7,11 +7,15 @@ import type { DashboardNavItem } from "@/components/layout/DashboardLayout";
 interface Props {
   adminNavItems: DashboardNavItem[];
   moderatorNavItems: DashboardNavItem[];
+  adminTitle: string;
+  moderatorTitle: string;
 }
 
 export default function RoleBasedLayout({
   adminNavItems,
   moderatorNavItems,
+  adminTitle,
+  moderatorTitle,
 }: Props) {
   const { user } = useAuth();
 
@@ -19,7 +23,7 @@ export default function RoleBasedLayout({
 
   if (user.role === "admin") {
     return (
-      <DashboardLayout navItems={adminNavItems} title="Admin Panel">
+      <DashboardLayout navItems={adminNavItems} title={adminTitle}>
         <Outlet />
       </DashboardLayout>
     );
@@ -27,7 +31,7 @@ export default function RoleBasedLayout({
 
   if (user.role === "moderator") {
     return (
-      <DashboardLayout navItems={moderatorNavItems} title="Moderator">
+      <DashboardLayout navItems={moderatorNavItems} title={moderatorTitle}>
         <Outlet />
       </DashboardLayout>
     );

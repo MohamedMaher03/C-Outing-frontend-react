@@ -29,6 +29,12 @@ const NotificationsPage = () => {
     refresh,
   } = useNotifications();
 
+  const displayError = actionError ?? error;
+  const groupedNotifications = useMemo(
+    () => groupNotificationsByDate(filteredNotifications),
+    [filteredNotifications],
+  );
+
   if (loading) {
     return (
       <PageLoading
@@ -37,12 +43,6 @@ const NotificationsPage = () => {
       />
     );
   }
-
-  const displayError = actionError ?? error;
-  const groupedNotifications = useMemo(
-    () => groupNotificationsByDate(filteredNotifications),
-    [filteredNotifications],
-  );
 
   return (
     <div className="min-h-screen bg-background">

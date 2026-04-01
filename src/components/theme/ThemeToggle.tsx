@@ -3,6 +3,7 @@ import type { KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "./useTheme";
 import type { ThemePreference } from "./theme.context";
+import { useI18n } from "@/components/i18n";
 
 type ThemeToggleMode = "segmented" | "compact";
 
@@ -16,26 +17,26 @@ interface ThemeToggleProps {
 
 const THEME_OPTIONS: Array<{
   value: ThemePreference;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   Icon: typeof Sun;
 }> = [
   {
     value: "system",
-    label: "System",
-    description: "Follow your device's appearance settings (Light or Dark)",
+    labelKey: "theme.option.system.label",
+    descriptionKey: "theme.option.system.description",
     Icon: Monitor,
   },
   {
     value: "light",
-    label: "Light",
-    description: "Always use light theme",
+    labelKey: "theme.option.light.label",
+    descriptionKey: "theme.option.light.description",
     Icon: Sun,
   },
   {
     value: "dark",
-    label: "Dark",
-    description: "Always use dark theme",
+    labelKey: "theme.option.dark.label",
+    descriptionKey: "theme.option.dark.description",
     Icon: Moon,
   },
 ];
@@ -46,22 +47,10 @@ const NEXT_THEME_PREFERENCE: Record<ThemePreference, ThemePreference> = {
   dark: "system",
 };
 
-const THEME_LABEL: Record<ThemePreference, string> = {
-  system: "system",
-  light: "light",
-  dark: "dark",
-};
-
 const THEME_ICON: Record<ThemePreference, typeof Sun> = {
   system: Monitor,
   light: Sun,
   dark: Moon,
-};
-
-const THEME_DESCRIPTION: Record<ThemePreference, string> = {
-  system: "Follow your device's appearance settings (Light or Dark)",
-  light: "Always use light theme",
-  dark: "Always use dark theme",
 };
 
 export function ThemeToggle({
@@ -72,6 +61,7 @@ export function ThemeToggle({
   alwaysShowLabels = false,
 }: ThemeToggleProps) {
   const { themePreference, setThemePreference } = useTheme();
+  const { t, direction } = useI18n();
 
   const handleSegmentedKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (
@@ -101,10 +91,15 @@ export function ThemeToggle({
       return;
     }
 
-    const nextIndex =
-      event.key === "ArrowRight" || event.key === "ArrowDown"
-        ? (currentIndex + 1) % THEME_OPTIONS.length
-        : (currentIndex - 1 + THEME_OPTIONS.length) % THEME_OPTIONS.length;
+    const isForwardKey =
+      event.key === "ArrowDown" ||
+      (direction === "rtl"
+        ? event.key === "ArrowLeft"
+        : event.key === "ArrowRight");
+
+    const nextIndex = isForwardKey
+      ? (currentIndex + 1) % THEME_OPTIONS.length
+      : (currentIndex - 1 + THEME_OPTIONS.length) % THEME_OPTIONS.length;
 
     setThemePreference(THEME_OPTIONS[nextIndex].value);
   };
@@ -112,17 +107,28 @@ export function ThemeToggle({
   if (mode === "compact") {
     const CompactIcon = THEME_ICON[themePreference];
     const nextPreference = NEXT_THEME_PREFERENCE[themePreference];
-    const currentThemeLabel = THEME_LABEL[themePreference];
-    const currentDescription = THEME_DESCRIPTION[themePreference];
-    const nextDescription =
-      THEME_DESCRIPTION[nextPreference as keyof typeof THEME_DESCRIPTION];
+    const currentDescription = t(
+      `theme.option.${themePreference}.description`,
+      undefined,
+      "",
+    );
+    const nextDescription = t(
+      `theme.option.${nextPreference}.description`,
+      undefined,
+      "",
+    );
 
     // Better label for system mode
     const getCompactModeLabel = (): string => {
       if (themePreference === "system") {
-        return "Device Setting";
+        return t("theme.mode.system");
       }
-      return `${currentThemeLabel.charAt(0).toUpperCase()}${currentThemeLabel.slice(1)} mode`;
+
+      if (themePreference === "light") {
+        return t("theme.mode.light");
+      }
+
+      return t("theme.mode.dark");
     };
 
     return (
@@ -134,8 +140,14 @@ export function ThemeToggle({
           showCompactLabel ? "min-w-fit gap-2 px-3" : "w-11",
           className,
         )}
-        aria-label={`Color theme switcher. Current: ${currentDescription}. Click to switch to: ${nextDescription}.`}
-        title={`${currentDescription}\n\nClick to switch to: ${nextDescription}`}
+        aria-label={t("theme.switcher", {
+          current: currentDescription,
+          next: nextDescription,
+        })}
+        title={t("theme.switcher", {
+          current: currentDescription,
+          next: nextDescription,
+        })}
       >
         <CompactIcon
           className={cn("h-5 w-5 shrink-0", compactIconClassName)}
@@ -157,11 +169,13 @@ export function ThemeToggle({
         className,
       )}
       role="radiogroup"
-      aria-label="Color theme selector"
+      aria-label={t("theme.selector")}
       onKeyDown={handleSegmentedKeyDown}
     >
-      {THEME_OPTIONS.map(({ value, label, description, Icon }) => {
+      {THEME_OPTIONS.map(({ value, labelKey, descriptionKey, Icon }) => {
         const isActive = themePreference === value;
+        const label = t(labelKey);
+        const description = t(descriptionKey);
 
         return (
           <button
@@ -192,7 +206,7 @@ export function ThemeToggle({
               <span
                 className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-current opacity-50 transition-opacity group-hover:opacity-75"
                 aria-hidden="true"
-                title="Follows your device settings"
+                title={t("theme.option.system.description")}
               />
             )}
           </button>

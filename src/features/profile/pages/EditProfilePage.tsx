@@ -14,9 +14,11 @@ import { Label } from "@/components/ui/label";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useEditProfile } from "@/features/profile/hooks/useEditProfile";
 import { buildDefaultAvatarDataUrl } from "@/features/profile/utils/defaultAvatar";
+import { useI18n } from "@/components/i18n";
 
 const EditProfilePage = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const {
     formData,
     avatarPreview,
@@ -51,12 +53,14 @@ const EditProfilePage = () => {
             variant="ghost"
             size="icon"
             onClick={() => navigate("/profile")}
-            aria-label="Back to profile"
+            aria-label={t("profile.edit.backToProfileAria")}
             className="h-11 w-11 rounded-full"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
           </Button>
-          <h1 className="text-role-subheading text-foreground">Edit profile</h1>
+          <h1 className="text-role-subheading text-foreground">
+            {t("profile.edit.title")}
+          </h1>
         </div>
       </div>
 
@@ -78,7 +82,7 @@ const EditProfilePage = () => {
                 onClick={() => void reloadProfile()}
                 disabled={loading || saving}
               >
-                Try again
+                {t("common.retry")}
               </Button>
             </div>
           </div>
@@ -96,9 +100,11 @@ const EditProfilePage = () => {
                 <img
                   src={
                     avatarPreview ||
-                    buildDefaultAvatarDataUrl(formData.name || "User")
+                    buildDefaultAvatarDataUrl(
+                      formData.name || t("profile.userFallback"),
+                    )
                   }
-                  alt="Profile avatar"
+                  alt={t("profile.edit.avatarAlt")}
                   className="h-full w-full object-cover"
                 />
               </div>
@@ -114,7 +120,7 @@ const EditProfilePage = () => {
                 type="button"
                 onClick={triggerFilePicker}
                 disabled={saving}
-                aria-label="Change profile photo"
+                aria-label={t("profile.edit.changePhotoAria")}
                 className="absolute bottom-0 right-0 h-11 w-11 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center hover:bg-secondary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors disabled:opacity-50"
               >
                 {saving ? (
@@ -126,8 +132,8 @@ const EditProfilePage = () => {
             </div>
             <p className="text-role-secondary text-muted-foreground">
               {avatarPreview
-                ? "Tap the camera icon to choose a different photo."
-                : "Tap the camera icon to add a profile photo."}
+                ? t("profile.edit.photoHint.withPhoto")
+                : t("profile.edit.photoHint.withoutPhoto")}
             </p>
           </section>
 
@@ -138,7 +144,7 @@ const EditProfilePage = () => {
                 htmlFor="name"
                 className="text-role-secondary font-semibold text-foreground"
               >
-                Name
+                {t("profile.edit.name")}
               </Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -150,7 +156,7 @@ const EditProfilePage = () => {
                   maxLength={100}
                   autoComplete="name"
                   className="pl-10"
-                  placeholder="Enter your full name"
+                  placeholder={t("profile.edit.namePlaceholder")}
                 />
               </div>
             </div>
@@ -160,7 +166,7 @@ const EditProfilePage = () => {
                 htmlFor="phoneNumber"
                 className="text-role-secondary font-semibold text-foreground"
               >
-                Phone Number
+                {t("profile.edit.phone")}
               </Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -174,11 +180,11 @@ const EditProfilePage = () => {
                   inputMode="tel"
                   autoComplete="tel"
                   className="pl-10"
-                  placeholder="e.g. +20 123 456 7890"
+                  placeholder={t("profile.edit.phonePlaceholder")}
                 />
               </div>
               <p className="text-role-caption text-muted-foreground">
-                Include your country code, for example +20 123 456 7890.
+                {t("profile.edit.phoneHint")}
               </p>
             </div>
 
@@ -187,7 +193,7 @@ const EditProfilePage = () => {
                 htmlFor="email"
                 className="text-role-secondary font-semibold text-foreground"
               >
-                Email
+                {t("profile.edit.email")}
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -199,12 +205,11 @@ const EditProfilePage = () => {
                   readOnly
                   autoComplete="email"
                   className="pl-10"
-                  placeholder="Email"
+                  placeholder={t("profile.edit.email")}
                 />
               </div>
               <p className="text-role-caption text-muted-foreground">
-                You can view your email here, but changes are managed in account
-                settings.
+                {t("profile.edit.emailHint")}
               </p>
             </div>
 
@@ -213,7 +218,7 @@ const EditProfilePage = () => {
                 htmlFor="birthDate"
                 className="text-role-secondary font-semibold text-foreground"
               >
-                Date of birth
+                {t("profile.edit.birthDate")}
               </Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -225,7 +230,7 @@ const EditProfilePage = () => {
                   onChange={handleChange}
                   max={maxBirthDate}
                   className="pl-10"
-                  placeholder="Select your birth date"
+                  placeholder={t("profile.edit.birthDatePlaceholder")}
                 />
               </div>
             </div>
@@ -239,14 +244,14 @@ const EditProfilePage = () => {
               onClick={() => navigate("/profile")}
               className="flex-1"
             >
-              Cancel
+              {t("profile.edit.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={saving}
               className="flex-1 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
             >
-              {saving ? "Saving changes..." : "Save changes"}
+              {saving ? t("profile.edit.saving") : t("profile.edit.save")}
             </Button>
           </div>
         </form>
@@ -261,7 +266,7 @@ const EditProfilePage = () => {
               onClick={() => navigate("/profile")}
               className="flex-1"
             >
-              Cancel
+              {t("profile.edit.cancel")}
             </Button>
             <Button
               type="submit"
@@ -269,7 +274,7 @@ const EditProfilePage = () => {
               disabled={saving}
               className="flex-1 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
             >
-              {saving ? "Saving changes..." : "Save changes"}
+              {saving ? t("profile.edit.saving") : t("profile.edit.save")}
             </Button>
           </div>
         </div>

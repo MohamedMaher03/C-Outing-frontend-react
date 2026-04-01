@@ -1,5 +1,6 @@
 import { CheckCircle2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/i18n";
 
 type AuthStatusBannerProps = {
   message: string;
@@ -14,6 +15,7 @@ export const AuthStatusBanner = ({
   onDismiss,
   className,
 }: AuthStatusBannerProps) => {
+  const { t } = useI18n();
   const isError = variant === "error";
 
   return (
@@ -52,7 +54,7 @@ export const AuthStatusBanner = ({
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Dismiss message"
+          aria-label={t("common.dismiss")}
           className="shrink-0 opacity-70 transition-opacity hover:opacity-100"
         >
           <X className="h-4 w-4" />

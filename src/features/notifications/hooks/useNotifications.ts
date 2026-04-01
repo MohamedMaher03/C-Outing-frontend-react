@@ -194,6 +194,7 @@ export const useNotifications = (
 
   useEffect(() => {
     mountedRef.current = true;
+    const itemActionsInFlight = itemActionsInFlightRef.current;
 
     try {
       if (autoFetch && !hasFetchedOnceRef.current) {
@@ -208,7 +209,7 @@ export const useNotifications = (
     return () => {
       mountedRef.current = false;
       fetchRequestIdRef.current += 1;
-      itemActionsInFlightRef.current.clear();
+      itemActionsInFlight.clear();
       markAllInFlightRef.current = false;
     };
   }, [autoFetch, fetchNotifications]);

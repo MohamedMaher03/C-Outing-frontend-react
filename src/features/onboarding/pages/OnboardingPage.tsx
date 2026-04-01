@@ -26,12 +26,14 @@ import {
 } from "@/features/onboarding/mocks";
 import { AuthShell, AuthSurface } from "@/components/layout/AuthShell";
 import { OnboardingOptionButton } from "../components/OnboardingOptionButton";
+import { useI18n } from "@/components/i18n";
 
 const INTEREST_LABEL_BY_ID = new Map(
   INTERESTS.map((interest) => [interest.id, interest.label]),
 );
 
 const OnboardingPage = () => {
+  const { t, formatNumber } = useI18n();
   const shouldReduceMotion = useReducedMotion();
   const vibeHeadingId = useId();
   const vibeHintId = useId();
@@ -62,6 +64,26 @@ const OnboardingPage = () => {
     handleComplete,
   } = useOnboarding();
 
+  const localizedStepLabels = [
+    t("onboarding.step.interests"),
+    t("onboarding.step.vibe"),
+    t("onboarding.step.areas"),
+    t("onboarding.step.budget"),
+  ];
+
+  const getInterestLabel = (interestId: string, fallback: string): string =>
+    t(`onboarding.interest.${interestId}`, undefined, fallback);
+
+  const getDistrictLabel = (district: string): string =>
+    t(
+      `onboarding.district.${district.toLowerCase().replace(/\s+/g, "-")}`,
+      undefined,
+      district,
+    );
+
+  const getBudgetLabel = (value: string): string =>
+    t(`budget.${value}`, undefined, value);
+
   const handleNext = async () => {
     if (step < 3) {
       goToNextStep();
@@ -71,9 +93,13 @@ const OnboardingPage = () => {
     await handleComplete();
   };
 
-  const currentStepLabel = ONBOARDING_STEPS[step] ?? "Step";
-  const selectedBudgetLabel =
-    BUDGET_OPTIONS.find((option) => option.value === budget)?.label ?? null;
+  const currentStepLabel = localizedStepLabels[step] ?? localizedStepLabels[0];
+  const selectedBudgetValue = BUDGET_OPTIONS.find(
+    (option) => option.value === budget,
+  )?.value;
+  const selectedBudgetLabel = selectedBudgetValue
+    ? getBudgetLabel(selectedBudgetValue)
+    : null;
 
   const selectedInterestsSet = new Set(selectedInterests);
   const selectedDistrictsSet = new Set(selectedDistricts);
@@ -82,56 +108,63 @@ const OnboardingPage = () => {
     vibeValue < 30 ? "calm" : vibeValue < 70 ? "balanced" : "energetic";
   const vibeBandLabel =
     vibeBand === "calm"
-      ? "Calm"
+      ? t("onboarding.vibe.calm")
       : vibeBand === "balanced"
-        ? "Balanced"
-        : "Energetic";
+        ? t("onboarding.vibe.balanced")
+        : t("onboarding.vibe.energetic");
   const interestsRemaining = Math.max(0, 2 - selectedInterests.length);
   const districtsRemaining = Math.max(0, 1 - selectedDistricts.length);
 
   const selectedInterestLabels = selectedInterests
-    .map((interestId) => INTEREST_LABEL_BY_ID.get(interestId) ?? interestId)
+    .map((interestId) =>
+      getInterestLabel(
+        interestId,
+        INTEREST_LABEL_BY_ID.get(interestId) ?? interestId,
+      ),
+    )
     .join(", ");
 
-  const selectedDistrictLabels = selectedDistricts.join(", ");
+  const selectedDistrictLabels = selectedDistricts
+    .map((district) => getDistrictLabel(district))
+    .join(", ");
 
   const trackerSelections = [
     {
-      label: "Interests",
+      label: t("onboarding.selection.interests"),
       value:
         selectedInterestLabels.length > 0
           ? selectedInterestLabels
-          : "No interests chosen yet",
+          : t("onboarding.selection.noneInterests"),
     },
     {
-      label: "Districts",
+      label: t("onboarding.selection.districts"),
       value:
         selectedDistrictLabels.length > 0
           ? selectedDistrictLabels
-          : "No districts chosen yet",
+          : t("onboarding.selection.noneDistricts"),
     },
     {
-      label: "Vibe",
+      label: t("onboarding.selection.vibe"),
       value: vibeBandLabel,
     },
     {
-      label: "Budget",
-      value: selectedBudgetLabel ?? "Choose in step 4",
+      label: t("onboarding.selection.budget"),
+      value: selectedBudgetLabel ?? t("onboarding.selection.pending"),
     },
   ];
 
   const vibeSummaryTitle =
     vibeBand === "calm"
-      ? "Calm and Quiet"
+      ? t("onboarding.vibe.summary.calm.title")
       : vibeBand === "balanced"
-        ? "Balanced and Social"
-        : "Buzzing and Energetic";
+        ? t("onboarding.vibe.summary.balanced.title")
+        : t("onboarding.vibe.summary.energetic.title");
   const vibeSummaryDescription =
     vibeBand === "calm"
-      ? "Great for cozy cafes, riverside walks, and low-noise hangouts."
+      ? t("onboarding.vibe.summary.calm.description")
       : vibeBand === "balanced"
-        ? "A mix of relaxed spots and lively places that keeps your options open."
-        : "Ideal for nightlife, packed venues, and high-energy experiences.";
+        ? t("onboarding.vibe.summary.balanced.description")
+        : t("onboarding.vibe.summary.energetic.description");
 
   return (
     <AuthShell maxWidth="4xl">
@@ -139,15 +172,15 @@ const OnboardingPage = () => {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] lg:gap-7">
           <aside
             className="hidden lg:flex lg:items-center"
-            aria-label="Onboarding context"
+            aria-label={t("onboarding.context")}
           >
             <Card className="w-full rounded-xl border-border/50 bg-card/60 p-4 shadow-none">
               <h3 className="text-role-caption text-foreground/80">
-                Personalization tracker
+                {t("onboarding.trackerTitle")}
               </h3>
 
               <ol className="mt-3 space-y-2" aria-hidden="true">
-                {ONBOARDING_STEPS.map((label, index) => {
+                {localizedStepLabels.map((label, index) => {
                   const isCompleted = index < step;
                   const isActive = index === step;
 
@@ -163,7 +196,7 @@ const OnboardingPage = () => {
                               : "bg-muted/70 text-muted-foreground",
                         )}
                       >
-                        {index + 1}
+                        {formatNumber(index + 1)}
                       </span>
                       <span
                         className={cn(
@@ -182,7 +215,7 @@ const OnboardingPage = () => {
 
               <div className="mt-4 space-y-2 border-t border-border/60 pt-3">
                 <p className="text-role-caption text-foreground/70">
-                  Selections
+                  {t("onboarding.selections")}
                 </p>
                 <dl className="space-y-2">
                   {trackerSelections.map((entry) => (
@@ -206,20 +239,23 @@ const OnboardingPage = () => {
                 variant="secondary"
                 className="mx-auto rounded-full px-3 py-1 text-role-caption"
               >
-                Step {step + 1} of {ONBOARDING_STEPS.length}
+                {t("onboarding.stepLabel", {
+                  current: formatNumber(step + 1),
+                  total: formatNumber(ONBOARDING_STEPS.length),
+                })}
               </Badge>
               <h2 className="text-role-subheading text-foreground">
-                Let&apos;s personalize your Cairo feed
+                {t("onboarding.title")}
               </h2>
               <p className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[52ch]">
-                This takes less than a minute and helps us tailor better picks.
+                {t("onboarding.subtitle")}
               </p>
             </header>
 
             <div
               className="space-y-2"
               role="progressbar"
-              aria-label="Onboarding progress"
+              aria-label={t("onboarding.progress")}
               aria-valuemin={1}
               aria-valuemax={ONBOARDING_STEPS.length}
               aria-valuenow={step + 1}
@@ -228,7 +264,7 @@ const OnboardingPage = () => {
               <div className="flex items-center justify-center gap-2">
                 {ONBOARDING_STEPS.map((label, index) => (
                   <div
-                    key={label}
+                    key={`${label}-${index}`}
                     className="flex items-center gap-2"
                     aria-hidden="true"
                   >
@@ -246,31 +282,33 @@ const OnboardingPage = () => {
                 className="text-center text-role-caption text-foreground/70"
                 aria-live="polite"
               >
-                Current step: {currentStepLabel}
+                {t("onboarding.currentStep", { step: currentStepLabel })}
               </p>
             </div>
 
             <div className="grid grid-cols-3 gap-2 lg:hidden">
               <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none">
                 <p className="text-role-caption text-foreground/70">
-                  Interests
+                  {t("onboarding.selection.interests")}
                 </p>
                 <p className="text-role-secondary font-medium text-foreground/90">
-                  {selectedInterests.length}
+                  {formatNumber(selectedInterests.length)}
                 </p>
               </Card>
               <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none">
                 <p className="text-role-caption text-foreground/70">
-                  Districts
+                  {t("onboarding.selection.districts")}
                 </p>
                 <p className="text-role-secondary font-medium text-foreground/90">
-                  {selectedDistricts.length}
+                  {formatNumber(selectedDistricts.length)}
                 </p>
               </Card>
               <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none">
-                <p className="text-role-caption text-foreground/70">Budget</p>
+                <p className="text-role-caption text-foreground/70">
+                  {t("onboarding.selection.budget")}
+                </p>
                 <p className="text-role-caption break-words font-medium text-foreground/90">
-                  {selectedBudgetLabel ?? "Pending"}
+                  {selectedBudgetLabel ?? t("onboarding.selection.pending")}
                 </p>
               </Card>
             </div>
@@ -297,19 +335,19 @@ const OnboardingPage = () => {
                   <div className="space-y-4">
                     <div className="text-center">
                       <h3 className="text-role-subheading text-foreground">
-                        What do you love?
+                        {t("onboarding.interests.title")}
                       </h3>
                       <p
                         id={interestsHintId}
                         className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[48ch]"
                       >
-                        Pick at least 2 interests to personalize your feed.
+                        {t("onboarding.interests.hint")}
                       </p>
                     </div>
 
                     <fieldset aria-describedby={interestsHintId}>
                       <legend id={interestsLegendId} className="sr-only">
-                        Select your interests
+                        {t("onboarding.interests.legend")}
                       </legend>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                         {INTERESTS.map((item) => {
@@ -325,7 +363,7 @@ const OnboardingPage = () => {
                               className="justify-center px-3 py-2"
                               icon={<InterestIcon className="h-4 w-4" />}
                             >
-                              {item.label}
+                              {getInterestLabel(item.id, item.label)}
                             </OnboardingOptionButton>
                           );
                         })}
@@ -335,8 +373,16 @@ const OnboardingPage = () => {
                         aria-live="polite"
                       >
                         {interestsRemaining === 0
-                          ? `${selectedInterests.length} interests selected`
-                          : `Choose ${interestsRemaining} more interest${interestsRemaining > 1 ? "s" : ""} at least to continue`}
+                          ? t("onboarding.interests.selected", {
+                              count: formatNumber(selectedInterests.length),
+                            })
+                          : t("onboarding.interests.remaining", {
+                              count: formatNumber(interestsRemaining),
+                              label:
+                                interestsRemaining > 1
+                                  ? t("onboarding.interests.unit.plural")
+                                  : t("onboarding.interests.unit.singular"),
+                            })}
                       </p>
                     </fieldset>
                   </div>
@@ -349,13 +395,13 @@ const OnboardingPage = () => {
                         id={vibeHeadingId}
                         className="text-role-subheading text-foreground"
                       >
-                        What&apos;s your vibe?
+                        {t("onboarding.vibe.title")}
                       </h3>
                       <p
                         id={vibeHintId}
                         className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[44ch]"
                       >
-                        Drag the slider to match your energy.
+                        {t("onboarding.vibe.hint")}
                       </p>
                     </div>
 
@@ -393,7 +439,7 @@ const OnboardingPage = () => {
                                 : "text-foreground/80",
                             )}
                           >
-                            Calm
+                            {t("onboarding.vibe.calm")}
                           </p>
                         </div>
                         <div
@@ -428,7 +474,7 @@ const OnboardingPage = () => {
                                 : "text-foreground/80",
                             )}
                           >
-                            Balanced
+                            {t("onboarding.vibe.balanced")}
                           </p>
                         </div>
                         <div
@@ -463,15 +509,17 @@ const OnboardingPage = () => {
                                 : "text-foreground/80",
                             )}
                           >
-                            Energetic
+                            {t("onboarding.vibe.energetic")}
                           </p>
                         </div>
                       </div>
 
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-role-caption text-foreground/70">
-                          <span>Quiet and chilled</span>
-                          <span className="text-right">Loud and social</span>
+                          <span>{t("onboarding.vibe.rangeLow")}</span>
+                          <span className="text-right">
+                            {t("onboarding.vibe.rangeHigh")}
+                          </span>
                         </div>
                         <Slider
                           value={vibe}
@@ -486,7 +534,9 @@ const OnboardingPage = () => {
                             variant="outline"
                             className="rounded-full border-border/60 bg-background/70 px-2.5 py-0.5 text-role-caption text-foreground/80"
                           >
-                            Vibe score {vibeValue}/100
+                            {t("onboarding.vibe.score", {
+                              score: formatNumber(vibeValue),
+                            })}
                           </Badge>
                           <p
                             id={vibeValueId}
@@ -501,7 +551,7 @@ const OnboardingPage = () => {
 
                     <div className="rounded-xl border border-border/55 bg-background/55 px-4 py-3">
                       <p className="text-role-caption uppercase tracking-wide text-foreground/60">
-                        Your current preference
+                        {t("onboarding.vibe.current")}
                       </p>
                       <p className="mt-1 text-role-secondary font-medium text-foreground">
                         {vibeSummaryTitle}
@@ -520,19 +570,19 @@ const OnboardingPage = () => {
                   <div className="space-y-4">
                     <div className="text-center">
                       <h3 className="text-role-subheading text-foreground">
-                        Where in Cairo?
+                        {t("onboarding.districts.title")}
                       </h3>
                       <p
                         id={districtsHintId}
                         className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[44ch]"
                       >
-                        Select your favorite districts.
+                        {t("onboarding.districts.hint")}
                       </p>
                     </div>
 
                     <fieldset aria-describedby={districtsHintId}>
                       <legend id={districtsLegendId} className="sr-only">
-                        Select your preferred districts
+                        {t("onboarding.districts.legend")}
                       </legend>
                       <div className="max-h-[38vh] overflow-y-auto rounded-xl border border-border/45 p-2 sm:max-h-none sm:overflow-visible sm:border-0 sm:p-0">
                         <div className="flex flex-wrap justify-center gap-2">
@@ -547,7 +597,7 @@ const OnboardingPage = () => {
                                 shape="pill"
                                 className="px-4 py-2"
                               >
-                                {district}
+                                {getDistrictLabel(district)}
                               </OnboardingOptionButton>
                             );
                           })}
@@ -558,8 +608,16 @@ const OnboardingPage = () => {
                         aria-live="polite"
                       >
                         {districtsRemaining === 0
-                          ? `${selectedDistricts.length} district${selectedDistricts.length > 1 ? "s" : ""} selected`
-                          : `Choose at least ${districtsRemaining} district to continue`}
+                          ? t("onboarding.districts.selected", {
+                              count: formatNumber(selectedDistricts.length),
+                              label:
+                                selectedDistricts.length > 1
+                                  ? t("onboarding.districts.unit.plural")
+                                  : t("onboarding.districts.unit.singular"),
+                            })
+                          : t("onboarding.districts.remaining", {
+                              count: formatNumber(districtsRemaining),
+                            })}
                       </p>
                     </fieldset>
                   </div>
@@ -569,19 +627,19 @@ const OnboardingPage = () => {
                   <div className="space-y-4">
                     <div className="text-center">
                       <h3 className="text-role-subheading text-foreground">
-                        What&apos;s your budget?
+                        {t("onboarding.budget.title")}
                       </h3>
                       <p
                         id={budgetHintId}
                         className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[42ch]"
                       >
-                        Select a price range that suits you.
+                        {t("onboarding.budget.hint")}
                       </p>
                     </div>
 
                     <fieldset aria-describedby={budgetHintId}>
                       <legend id={budgetLegendId} className="sr-only">
-                        Select your budget level
+                        {t("onboarding.budget.legend")}
                       </legend>
                       <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
                         {BUDGET_OPTIONS.map((option) => (
@@ -591,7 +649,7 @@ const OnboardingPage = () => {
                             onClick={() => setBudget(option.value)}
                             className="justify-center px-4 py-2.5"
                           >
-                            {option.label}
+                            {getBudgetLabel(option.value)}
                           </OnboardingOptionButton>
                         ))}
                       </div>
@@ -600,8 +658,10 @@ const OnboardingPage = () => {
                         aria-live="polite"
                       >
                         {selectedBudgetLabel
-                          ? `Selected budget: ${selectedBudgetLabel}`
-                          : "Select one option to continue"}
+                          ? t("onboarding.budget.selected", {
+                              budget: selectedBudgetLabel,
+                            })
+                          : t("onboarding.budget.empty")}
                       </p>
                     </fieldset>
                   </div>
@@ -628,7 +688,7 @@ const OnboardingPage = () => {
                       disabled={isSubmitting}
                       className="min-h-10"
                     >
-                      Retry
+                      {t("onboarding.action.retry")}
                     </Button>
                   )}
                 </AlertDescription>
@@ -643,7 +703,8 @@ const OnboardingPage = () => {
                   disabled={step === 0 || isSubmitting}
                   className="order-2 h-11 w-full touch-manipulation gap-1 rounded-xl px-6 font-medium whitespace-nowrap bg-secondary text-secondary-foreground hover:bg-secondary/85 sm:order-1"
                 >
-                  <ArrowLeft className="h-4 w-4" /> Back
+                  <ArrowLeft className="rtl-mirror h-4 w-4" />
+                  {t("onboarding.action.back")}
                 </Button>
 
                 <Button
@@ -654,16 +715,18 @@ const OnboardingPage = () => {
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Saving
-                      preferences...
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("onboarding.action.saving")}
                     </>
                   ) : step === 3 ? (
                     <>
-                      Save & Start Exploring <ArrowRight className="h-4 w-4" />
+                      {t("onboarding.action.finish")}
+                      <ArrowRight className="rtl-mirror h-4 w-4" />
                     </>
                   ) : (
                     <>
-                      Next <ArrowRight className="h-4 w-4" />
+                      {t("onboarding.action.next")}
+                      <ArrowRight className="rtl-mirror h-4 w-4" />
                     </>
                   )}
                 </Button>

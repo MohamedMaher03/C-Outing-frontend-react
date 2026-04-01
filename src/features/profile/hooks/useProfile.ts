@@ -13,6 +13,7 @@ import {
 import type { UserProfile, UserPreferences } from "@/features/profile/types";
 import type { PriceLevel } from "@/features/admin/types";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseProfileReturn {
   // State
@@ -39,6 +40,7 @@ interface UseProfileReturn {
 }
 
 export const useProfile = (): UseProfileReturn => {
+  const { t } = useI18n();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,18 +88,13 @@ export const useProfile = (): UseProfileReturn => {
         return;
       }
 
-      setError(
-        getErrorMessage(
-          err,
-          "We couldn't load your profile right now. Check your connection and try again.",
-        ),
-      );
+      setError(getErrorMessage(err, t("profile.error.loadFallback")));
     } finally {
       if (runId === latestLoadRunRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   // Fetch profile and preferences on mount
   useEffect(() => {
@@ -141,10 +138,7 @@ export const useProfile = (): UseProfileReturn => {
       setPreferences(updatedPreferences);
     } catch (err) {
       setError(
-        getErrorMessage(
-          err,
-          "We couldn't save your preferences. Please try again.",
-        ),
+        getErrorMessage(err, t("profile.error.savePreferencesFallback")),
       );
       throw err;
     } finally {

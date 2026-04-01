@@ -18,6 +18,7 @@ import { moderatorService } from "@/features/moderator/services/moderatorService
 import type { ModeratorReviewStatusFilter } from "@/features/moderator/types";
 import { filterModerationReviews } from "@/features/moderator/utils/moderatorFilters";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseModerateReviewsReturn {
   // State
@@ -42,6 +43,7 @@ interface UseModerateReviewsReturn {
 }
 
 export const useModerateReviews = (): UseModerateReviewsReturn => {
+  const { t } = useI18n();
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,14 +69,14 @@ export const useModerateReviews = (): UseModerateReviewsReturn => {
       setReviews(data);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to load reviews"));
+      setError(getErrorMessage(err, t("moderator.error.loadReviews")));
       setReviews([]);
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -116,7 +118,7 @@ export const useModerateReviews = (): UseModerateReviewsReturn => {
         );
       } catch (err) {
         if (!mountedRef.current) return;
-        setError(getErrorMessage(err, "Failed to update review status"));
+        setError(getErrorMessage(err, t("moderator.error.updateReviewStatus")));
       } finally {
         inFlightRef.current.delete(reviewId);
         if (mountedRef.current) {
@@ -124,7 +126,7 @@ export const useModerateReviews = (): UseModerateReviewsReturn => {
         }
       }
     },
-    [addPendingReview, removePendingReview],
+    [addPendingReview, removePendingReview, t],
   );
 
   const handleApprove = useCallback(

@@ -12,6 +12,7 @@ import type { PriceLevel } from "@/features/admin/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getErrorMessage } from "@/utils/apiError";
 import { normalizeVibe } from "../utils/onboardingPreferences";
+import { useI18n } from "@/components/i18n";
 
 interface UseOnboardingReturn {
   // State
@@ -40,6 +41,7 @@ interface UseOnboardingReturn {
  * Custom hook for onboarding page logic
  */
 export const useOnboarding = (): UseOnboardingReturn => {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   const submitInFlightRef = useRef(false);
@@ -116,12 +118,12 @@ export const useOnboarding = (): UseOnboardingReturn => {
     }
 
     if (!user) {
-      setError("Your session expired. Please sign in again.");
+      setError(t("onboarding.error.sessionExpired"));
       return;
     }
 
     if (!canGoNext) {
-      setError("Please complete this step before continuing.");
+      setError(t("onboarding.error.completeStep"));
       return;
     }
 
@@ -147,7 +149,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
       // Navigate to home page after successful submission
       navigate("/");
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to submit preferences"));
+      setError(getErrorMessage(err, t("onboarding.error.submitFailed")));
     } finally {
       submitInFlightRef.current = false;
       setIsSubmitting(false);

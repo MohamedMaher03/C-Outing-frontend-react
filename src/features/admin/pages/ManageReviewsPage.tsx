@@ -46,11 +46,7 @@ import {
   reviewRowStateClass,
   reviewStatusConfig,
 } from "@/features/admin/constants/statusConfigs";
-
-const monthDayFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-});
+import { useI18n } from "@/components/i18n";
 
 const ADMIN_REVIEW_ROW_STYLE: CSSProperties = {
   contentVisibility: "auto",
@@ -59,6 +55,7 @@ const ADMIN_REVIEW_ROW_STYLE: CSSProperties = {
 };
 
 const ManageReviewsPage = () => {
+  const { t, locale, formatNumber } = useI18n();
   const {
     reviews,
     loading,
@@ -74,6 +71,30 @@ const ManageReviewsPage = () => {
     handleDelete,
   } = useManageReviews();
 
+  const monthDayFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: "short",
+        day: "numeric",
+      }),
+    [locale],
+  );
+
+  const statusFilterOptions = useMemo(
+    () =>
+      REVIEW_STATUS_FILTER_OPTIONS.map((option) => ({
+        ...option,
+        label:
+          option.value === "all"
+            ? t("admin.filter.all")
+            : t(`admin.status.${option.value}`),
+      })),
+    [t],
+  );
+
+  const getStatusLabel = (status: keyof typeof reviewStatusConfig): string =>
+    t(`admin.status.${status}`);
+
   const reviewSummary = useMemo(
     () => ({
       flagged: reviews.filter((review) => review.status === "flagged").length,
@@ -83,19 +104,25 @@ const ManageReviewsPage = () => {
   );
 
   if (loading) {
-    return <LoadingSpinner size="md" text="Loading reviews..." fullScreen />;
+    return (
+      <LoadingSpinner size="md" text={t("admin.reviews.loading")} fullScreen />
+    );
   }
 
   return (
     <AdminPageLayout>
       <AdminPageHeader
-        title="Manage Reviews"
-        description={`${reviews.length} total reviews · ${reviewSummary.flagged} flagged · ${reviewSummary.pending} pending`}
+        title={t("admin.reviews.header.title")}
+        description={t("admin.reviews.header.description", {
+          total: formatNumber(reviews.length),
+          flagged: formatNumber(reviewSummary.flagged),
+          pending: formatNumber(reviewSummary.pending),
+        })}
         icon={MessageSquare}
       />
 
       <AdminErrorBanner
-        title="Couldn't update reviews"
+        title={t("admin.reviews.error.updateTitle")}
         message={error}
         onRetry={() => {
           void retry();
@@ -104,14 +131,14 @@ const ManageReviewsPage = () => {
 
       <AdminSection
         tone="muted"
-        title="Moderation Filters"
-        description="Slice the moderation queue by status and keywords"
+        title={t("admin.reviews.filters.title")}
+        description={t("admin.reviews.filters.description")}
       >
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search reviews, users, or places..."
+              placeholder={t("admin.reviews.filters.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -119,8 +146,8 @@ const ManageReviewsPage = () => {
           </div>
           <div className="lg:w-auto">
             <AdminFilterChips
-              label="Status"
-              options={REVIEW_STATUS_FILTER_OPTIONS}
+              label={t("admin.filter.status")}
+              options={statusFilterOptions}
               value={statusFilter}
               onChange={setStatusFilter}
             />
@@ -129,15 +156,17 @@ const ManageReviewsPage = () => {
       </AdminSection>
 
       <AdminSection
-        title="Review Records"
-        description={`${filtered.length} reviews in current view`}
+        title={t("admin.reviews.records.title")}
+        description={t("admin.reviews.records.description", {
+          count: formatNumber(filtered.length),
+        })}
         contentClassName="gap-3"
       >
         {filtered.length === 0 ? (
           <AdminEmptyState
             icon={MessageSquare}
-            title="No reviews in this segment"
-            description="Adjust the search query or status chips to inspect another moderation queue."
+            title={t("admin.reviews.empty.title")}
+            description={t("admin.reviews.empty.description")}
           />
         ) : (
           filtered.map((review) => {
@@ -175,7 +204,7 @@ const ManageReviewsPage = () => {
                         {review.userName}
                       </p>
                       <p className="text-role-caption text-muted-foreground">
-                        on{" "}
+                        {t("admin.reviews.meta.on")}{" "}
                         <span className="font-medium text-foreground">
                           {review.placeName}
                         </span>
@@ -206,7 +235,7 @@ const ManageReviewsPage = () => {
                       )}
                     >
                       <StatusIcon className="h-2.5 w-2.5 mr-0.5" />{" "}
-                      {config.label}
+                      {getStatusLabel(review.status)}
                     </Badge>
                   </div>
                 </div>
@@ -220,8 +249,10 @@ const ManageReviewsPage = () => {
                 {review.reportCount > 0 && (
                   <div className="pl-0 sm:pl-12">
                     <span className="flex items-center gap-1 text-role-caption font-semibold text-destructive">
-                      <AlertTriangle className="h-3 w-3" /> {review.reportCount}{" "}
-                      report{review.reportCount > 1 ? "s" : ""}
+                      <AlertTriangle className="h-3 w-3" />{" "}
+                      {t("admin.reviews.meta.reports", {
+                        count: formatNumber(review.reportCount),
+                      })}
                     </span>
                   </div>
                 )}
@@ -242,11 +273,12 @@ const ManageReviewsPage = () => {
                       {isProcessing ? (
                         <>
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />{" "}
-                          Working
+                          {t("admin.reviews.actions.working")}
                         </>
                       ) : (
                         <>
-                          <CheckCircle className="h-3.5 w-3.5" /> Approve
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          {t("admin.reviews.actions.approve")}
                         </>
                       )}
                     </Button>
@@ -261,7 +293,8 @@ const ManageReviewsPage = () => {
                       className="min-h-11 gap-1 text-role-secondary text-destructive hover:text-destructive"
                       disabled={isProcessing}
                     >
-                      <XCircle className="h-3.5 w-3.5" /> Remove
+                      <XCircle className="h-3.5 w-3.5" />
+                      {t("admin.reviews.actions.remove")}
                     </Button>
                   )}
                   <AlertDialog>
@@ -272,25 +305,31 @@ const ManageReviewsPage = () => {
                         className="min-h-11 gap-1 text-role-secondary text-destructive hover:text-destructive"
                         disabled={isProcessing}
                       >
-                        <Trash2 className="h-3.5 w-3.5" /> Delete
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {t("admin.reviews.actions.delete")}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Review</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          {t("admin.reviews.dialog.deleteTitle")}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          Permanently delete this review by {review.userName}?
-                          This cannot be undone.
+                          {t("admin.reviews.dialog.deleteDescription", {
+                            user: review.userName,
+                          })}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>
+                          {t("admin.reviews.actions.cancel")}
+                        </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => void handleDelete(review.id)}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           disabled={isProcessing}
                         >
-                          Delete
+                          {t("admin.reviews.actions.delete")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { InlineLoading } from "@/components/ui/LoadingSpinner";
+import { useI18n } from "@/components/i18n";
 
 interface LogoutProgressOverlayProps {
   isVisible: boolean;
@@ -11,6 +12,8 @@ export const LogoutProgressOverlay = ({
   isVisible,
   className,
 }: LogoutProgressOverlayProps) => {
+  const { t } = useI18n();
+
   return (
     <AnimatePresence>
       {isVisible && (
@@ -26,7 +29,7 @@ export const LogoutProgressOverlay = ({
           )}
           role="status"
           aria-live="polite"
-          aria-label="Logging out"
+          aria-label={t("layout.loggingOut")}
           aria-busy="true"
         >
           <motion.div
@@ -40,10 +43,10 @@ export const LogoutProgressOverlay = ({
               <InlineLoading size="sm" className="h-4 w-4" />
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  Signing out
+                  {t("layout.loggingOut")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Please wait a moment...
+                  {t("common.pleaseWait")}
                 </p>
               </div>
             </div>

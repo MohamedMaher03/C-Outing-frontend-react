@@ -25,13 +25,18 @@ export const FormField = ({
   disabled,
   register,
 }: Props) => {
+  const shouldForceLtr = type === "email" || type === "tel" || type === "date";
+
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
 
       <div className="relative">
         {icon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+          <div
+            className="absolute top-1/2 -translate-y-1/2 text-muted-foreground"
+            style={{ insetInlineStart: "0.75rem" }}
+          >
             {icon}
           </div>
         )}
@@ -39,11 +44,13 @@ export const FormField = ({
         <Input
           id={id}
           type={type}
+          dir={shouldForceLtr ? "ltr" : "auto"}
           placeholder={placeholder}
           {...register}
           disabled={disabled}
           aria-invalid={!!error}
-          className={`h-11 text-base sm:text-sm ${icon ? "pl-10" : ""} ${
+          style={icon ? { paddingInlineStart: "2.5rem" } : undefined}
+          className={`h-11 text-base sm:text-sm ${
             error ? "border-destructive focus-visible:ring-destructive" : ""
           }`}
         />

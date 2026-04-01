@@ -15,7 +15,7 @@ import {
   CheckCircle,
   Activity,
 } from "lucide-react";
-import { type CSSProperties } from "react";
+import { type CSSProperties, useMemo } from "react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import {
   AdminErrorBanner,
@@ -24,15 +24,7 @@ import {
   AdminSection,
 } from "@/features/admin/components";
 import { useAdminDashboard } from "@/features/admin/hooks/useAdminDashboard";
-
-const integerFormatter = new Intl.NumberFormat();
-
-const activityDateTimeFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
+import { useI18n } from "@/components/i18n";
 
 const ADMIN_ACTIVITY_ROW_STYLE: CSSProperties = {
   contentVisibility: "auto",
@@ -55,18 +47,36 @@ const activityColors: Record<string, string> = {
 };
 
 const AdminDashboardPage = () => {
+  const { t, locale, formatNumber } = useI18n();
   const { stats, activity, loading, error, retry } = useAdminDashboard();
 
+  const activityDateTimeFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    [locale],
+  );
+
   if (loading) {
-    return <LoadingSpinner size="md" text="Loading dashboard..." fullScreen />;
+    return (
+      <LoadingSpinner
+        size="md"
+        text={t("admin.dashboard.loading")}
+        fullScreen
+      />
+    );
   }
 
   if (!stats) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <AdminErrorBanner
-          title="Dashboard data unavailable"
-          message={error ?? "Failed to load dashboard data."}
+          title={t("admin.dashboard.unavailableTitle")}
+          message={error ?? t("admin.dashboard.unavailableMessage")}
           onRetry={() => {
             void retry();
           }}
@@ -77,74 +87,86 @@ const AdminDashboardPage = () => {
 
   const statCards = [
     {
-      label: "Total Users",
+      label: t("admin.dashboard.stat.totalUsers"),
       value: stats.totalUsers,
       icon: Users,
       color: "bg-primary/10 text-primary",
     },
     {
-      label: "Total Places",
+      label: t("admin.dashboard.stat.totalPlaces"),
       value: stats.totalPlaces,
       icon: MapPin,
       color: "bg-secondary/18 text-foreground",
     },
     {
-      label: "Total Reviews",
+      label: t("admin.dashboard.stat.totalReviews"),
       value: stats.totalReviews,
       icon: MessageSquare,
       color: "bg-muted text-foreground",
     },
     {
-      label: "Open Reports",
+      label: t("admin.dashboard.stat.openReports"),
       value: stats.totalReports,
       icon: AlertTriangle,
       color: "bg-destructive/10 text-destructive",
     },
     {
-      label: "Active Today",
+      label: t("admin.dashboard.stat.activeToday"),
       value: stats.activeUsersToday,
       icon: TrendingUp,
       color: "bg-primary/10 text-primary",
     },
     {
-      label: "New This Week",
+      label: t("admin.dashboard.stat.newThisWeek"),
       value: stats.newUsersThisWeek,
       icon: UserPlus,
       color: "bg-secondary/18 text-foreground",
     },
     {
-      label: "Pending Reviews",
+      label: t("admin.dashboard.stat.pendingReviews"),
       value: stats.pendingReviews,
       icon: Clock,
       color: "bg-secondary/25 text-foreground",
     },
     {
-      label: "Resolved Reports",
+      label: t("admin.dashboard.stat.resolvedReports"),
       value: stats.resolvedReportsThisWeek,
       icon: CheckCircle,
       color: "bg-primary/15 text-primary",
     },
   ];
 
-  const isHealthy =
-    (stats.systemStatus ?? "Healthy").toLowerCase() === "healthy";
+  const normalizedSystemStatus = (
+    stats.systemStatus ?? "healthy"
+  ).toLowerCase();
+  const isHealthy = normalizedSystemStatus === "healthy";
+  const systemStatusLabel =
+    normalizedSystemStatus === "healthy"
+      ? t("admin.status.healthy")
+      : normalizedSystemStatus === "degraded"
+        ? t("admin.status.degraded")
+        : normalizedSystemStatus === "down"
+          ? t("admin.status.down")
+          : (stats.systemStatus ?? t("admin.status.unknown"));
   const primaryStatCards = statCards.slice(0, 4);
   const secondaryStatCards = statCards.slice(4);
 
   return (
     <AdminPageLayout>
       <AdminPageHeader
-        title="Admin Dashboard"
-        description="System overview and moderation activity"
+        title={t("admin.dashboard.header.title")}
+        description={t("admin.dashboard.header.description")}
         meta={
           <p className="text-role-caption uppercase text-muted-foreground">
-            {activity.length} events synced in this snapshot
+            {t("admin.dashboard.header.syncedEvents", {
+              count: formatNumber(activity.length),
+            })}
           </p>
         }
       />
 
       <AdminErrorBanner
-        title="Couldn't refresh dashboard data"
+        title={t("admin.dashboard.errorRefreshTitle")}
         message={error}
         onRetry={() => {
           void retry();
@@ -153,8 +175,8 @@ const AdminDashboardPage = () => {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] xl:items-start">
         <AdminSection
-          title="Core Metrics"
-          description="Primary platform counts and growth indicators"
+          title={t("admin.dashboard.section.coreMetrics.title")}
+          description={t("admin.dashboard.section.coreMetrics.description")}
           tone="surface"
           contentClassName="gap-5"
         >
@@ -171,7 +193,7 @@ const AdminDashboardPage = () => {
                 </div>
                 <div>
                   <p className="text-role-subheading text-numeric-tabular text-foreground">
-                    {integerFormatter.format(stat.value)}
+                    {formatNumber(stat.value)}
                   </p>
                   <p className="text-role-caption text-muted-foreground">
                     {stat.label}
@@ -196,7 +218,7 @@ const AdminDashboardPage = () => {
                     {stat.label}
                   </p>
                   <p className="text-role-secondary text-numeric-tabular font-semibold text-foreground">
-                    {integerFormatter.format(stat.value)}
+                    {formatNumber(stat.value)}
                   </p>
                 </div>
               </article>
@@ -205,15 +227,15 @@ const AdminDashboardPage = () => {
         </AdminSection>
 
         <AdminSection
-          title="Recent Activity"
-          description="Latest user and moderation events"
+          title={t("admin.dashboard.section.recentActivity.title")}
+          description={t("admin.dashboard.section.recentActivity.description")}
           tone="surface"
           contentClassName="gap-2"
         >
           {activity.length === 0 ? (
             <div className="flex min-h-28 items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-4 py-5 text-center">
               <p className="text-role-secondary text-muted-foreground">
-                No recent activity has been recorded yet.
+                {t("admin.dashboard.section.recentActivity.empty")}
               </p>
             </div>
           ) : (
@@ -253,14 +275,14 @@ const AdminDashboardPage = () => {
       </div>
 
       <AdminSection
-        title="Operational Snapshot"
-        description="Health and queue indicators for this reporting window"
+        title={t("admin.dashboard.section.operational.title")}
+        description={t("admin.dashboard.section.operational.description")}
         tone="muted"
       >
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-border bg-card px-4 py-3">
             <p className="text-role-caption text-muted-foreground">
-              Server Status
+              {t("admin.dashboard.operational.serverStatus")}
             </p>
             <p
               className={
@@ -276,23 +298,23 @@ const AdminDashboardPage = () => {
                     : "h-2 w-2 rounded-full bg-destructive"
                 }
               />
-              {stats.systemStatus ?? "Unknown"}
+              {systemStatusLabel}
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card px-4 py-3">
             <p className="text-role-caption text-muted-foreground">
-              API Response Time
+              {t("admin.dashboard.operational.apiResponse")}
             </p>
             <p className="mt-1 text-role-secondary text-numeric-tabular font-semibold text-foreground">
-              142ms
+              {t("admin.dashboard.operational.apiResponseValue")}
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card px-4 py-3">
             <p className="text-role-caption text-muted-foreground">
-              Flagged Content
+              {t("admin.dashboard.operational.flaggedContent")}
             </p>
             <p className="mt-1 text-role-secondary text-numeric-tabular font-semibold text-destructive">
-              {stats.pendingReviews}
+              {formatNumber(stats.pendingReviews)}
             </p>
           </div>
         </div>

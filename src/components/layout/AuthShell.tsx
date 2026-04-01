@@ -3,6 +3,7 @@ import logo from "@/assets/images/logo6.png";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { LanguageToggle } from "@/components/i18n";
 
 type AuthShellProps = {
   children: ReactNode;
@@ -32,10 +33,13 @@ export const AuthShell = ({
       />
       <div className="absolute inset-0 bg-[rgba(17,39,73,0.58)] dark:bg-[rgba(6,14,27,0.72)]" />
 
-      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+      <div className="absolute top-4 z-20 flex items-center gap-2 [inset-inline-end:1rem] sm:top-6 sm:[inset-inline-end:1.5rem]">
+        <LanguageToggle
+          mode="compact"
+          className="border-white/30 bg-black/35 text-white backdrop-blur-sm hover:bg-black/50"
+        />
         <ThemeToggle
           mode="compact"
-          showCompactLabel
           compactIconClassName="text-white"
           className="border-white/30 bg-black/35 text-white backdrop-blur-sm hover:bg-black/50"
         />

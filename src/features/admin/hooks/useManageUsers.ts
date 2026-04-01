@@ -20,6 +20,7 @@ import type {
 } from "@/features/admin/types";
 import { filterUsers } from "@/features/admin/utils/adminFilters";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseManageUsersReturn {
   // State
@@ -46,6 +47,7 @@ interface UseManageUsersReturn {
 }
 
 export const useManageUsers = (): UseManageUsersReturn => {
+  const { t } = useI18n();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,13 +71,13 @@ export const useManageUsers = (): UseManageUsersReturn => {
       setUsers(data);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to load users"));
+      setError(getErrorMessage(err, t("admin.error.loadUsers")));
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -108,7 +110,7 @@ export const useManageUsers = (): UseManageUsersReturn => {
       setActionMenu(null);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to update user status"));
+      setError(getErrorMessage(err, t("admin.error.updateUserStatus")));
     } finally {
       inFlightRef.current.delete(userId);
       if (mountedRef.current) {

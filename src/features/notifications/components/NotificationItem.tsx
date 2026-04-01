@@ -20,21 +20,27 @@ import {
 import { cn } from "@/lib/utils";
 import { formatRelativeNotificationTime } from "../utils/notificationPresentation";
 import type { Notification, NotificationType } from "../types";
+import { useI18n } from "@/components/i18n";
 
 // ── Type → visual config ─────────────────────────────────────
 
-const TYPE_ICON: Record<NotificationType, React.ElementType> = {
-  recommendation: Star,
-  favorite_update: Heart,
-  review_response: MessageSquare,
-  like: ThumbsUp,
-  new_place: MapPin,
-  system: Bell,
+const renderNotificationTypeIcon = (type: string, className: string) => {
+  switch (type as NotificationType) {
+    case "recommendation":
+      return <Star className={className} />;
+    case "favorite_update":
+      return <Heart className={className} />;
+    case "review_response":
+      return <MessageSquare className={className} />;
+    case "like":
+      return <ThumbsUp className={className} />;
+    case "new_place":
+      return <MapPin className={className} />;
+    case "system":
+    default:
+      return <Bell className={className} />;
+  }
 };
-
-function getTypeIcon(type: string) {
-  return TYPE_ICON[type as NotificationType] ?? TYPE_ICON.system;
-}
 
 // ── Component ────────────────────────────────────────────────
 
@@ -51,8 +57,8 @@ const NotificationItem = ({
   onDelete,
   pending = false,
 }: NotificationItemProps) => {
+  const { t } = useI18n();
   const navigate = useNavigate();
-  const Icon = getTypeIcon(notification.type);
 
   const handleClick = useCallback(() => {
     if (pending) return;
@@ -97,7 +103,7 @@ const NotificationItem = ({
       role="button"
       tabIndex={0}
       aria-busy={pending}
-      aria-label={notification.title || "Notification"}
+      aria-label={notification.title || t("notifications.item")}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={cn(
@@ -110,7 +116,7 @@ const NotificationItem = ({
     >
       {/* Unread indicator dot */}
       {!notification.isRead && (
-        <span className="absolute right-14 top-4 h-2 w-2 shrink-0 rounded-full bg-secondary sm:right-12" />
+        <span className="absolute top-4 h-2 w-2 shrink-0 rounded-full bg-secondary [inset-inline-end:3.5rem] sm:[inset-inline-end:3rem]" />
       )}
 
       {/* Type icon */}
@@ -122,7 +128,7 @@ const NotificationItem = ({
             : "bg-secondary/15 text-secondary-foreground",
         )}
       >
-        <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+        {renderNotificationTypeIcon(notification.type, "h-4 w-4 sm:h-5 sm:w-5")}
       </div>
 
       {/* Content */}
@@ -147,11 +153,11 @@ const NotificationItem = ({
 
       {/* Delete button */}
       <button
-        aria-label="Delete notification"
+        aria-label={t("notifications.delete")}
         type="button"
         disabled={pending}
         onClick={handleDelete}
-        className="absolute right-1 top-1 inline-flex h-11 w-11 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition-opacity hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed sm:top-2 sm:right-2 md:opacity-0 md:group-hover:opacity-100 group-focus-within:opacity-100"
+        className="absolute top-1 inline-flex h-11 w-11 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition-opacity hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed sm:top-2 md:opacity-0 md:group-hover:opacity-100 group-focus-within:opacity-100 [inset-inline-end:0.25rem] sm:[inset-inline-end:0.5rem]"
       >
         <X className="h-4 w-4" />
       </button>

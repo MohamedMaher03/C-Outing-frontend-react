@@ -19,6 +19,7 @@ import { useLogout } from "@/features/auth/hooks/useLogout";
 import { useEffect, useState, type ReactNode } from "react";
 import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { LanguageToggle, useI18n } from "@/components/i18n";
 import logo from "@/assets/images/logo3.png";
 
 export interface DashboardNavItem {
@@ -34,6 +35,7 @@ interface DashboardLayoutProps {
 }
 
 const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
+  const { t, direction } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -45,6 +47,14 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
   } = useLogout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const shouldReduceMotion = useReducedMotion();
+  const sidebarOffset = direction === "rtl" ? 280 : -280;
+
+  const userRoleLabel =
+    user?.role === "admin"
+      ? t("layout.adminPanel")
+      : user?.role === "moderator"
+        ? t("layout.moderator")
+        : t("layout.userFallback");
 
   const handleLogout = async () => {
     await logoutUser();
@@ -89,7 +99,8 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
         </div>
       </div>
 
-      <div className="px-5 py-3 border-b border-border">
+      <div className="space-y-2 px-5 py-3 border-b border-border">
+        <LanguageToggle className="w-full" />
         <ThemeToggle alwaysShowLabels className="w-full" />
       </div>
 
@@ -97,9 +108,9 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
       <div className="px-5 py-4 border-b border-border">
         <p
           className="text-sm font-semibold text-foreground break-words"
-          title={user?.name || "User"}
+          title={user?.name || t("layout.userFallback")}
         >
-          {user?.name || "User"}
+          {user?.name || t("layout.userFallback")}
         </p>
         <p
           className="text-xs text-muted-foreground break-words"
@@ -116,7 +127,7 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
               : "border-primary/25 bg-primary/12 text-primary",
           )}
         >
-          {user?.role}
+          {userRoleLabel}
         </span>
       </div>
 
@@ -162,11 +173,11 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
           className="w-full flex items-center gap-3 rounded-xl border border-red-300/80 bg-red-50/70 px-3 py-2.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 disabled:cursor-wait disabled:opacity-75 dark:border-red-500/45 dark:bg-red-900/35 dark:text-red-100 dark:hover:bg-red-900/55"
         >
           {isLoggingOut ? (
-            <>Logging out...</>
+            <>{t("layout.loggingOut")}</>
           ) : (
             <>
               <LogOut className="h-4.5 w-4.5" />
-              Logout
+              {t("layout.logout")}
             </>
           )}
         </button>
@@ -177,7 +188,7 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
   return (
     <div className="min-h-screen bg-background flex">
       {logoutError && (
-        <div className="fixed left-1/2 top-[4.5rem] z-[90] w-[min(92vw,30rem)] -translate-x-1/2 md:left-auto md:right-4 md:top-4 md:w-[min(28rem,calc(100vw-2rem))] md:translate-x-0">
+        <div className="fixed left-1/2 top-[4.5rem] z-[90] w-[min(92vw,30rem)] -translate-x-1/2 md:left-auto md:top-4 md:w-[min(28rem,calc(100vw-2rem))] md:translate-x-0 md:[inset-inline-end:1rem]">
           <AuthStatusBanner
             message={logoutError}
             onDismiss={clearLogoutError}
@@ -187,7 +198,7 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
       )}
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:w-64 flex-col bg-card border-r border-border fixed inset-y-0 left-0 z-40">
+      <aside className="hidden md:flex md:w-64 flex-col bg-card border-border fixed inset-y-0 z-40 [inset-inline-start:0] [border-inline-end-width:1px]">
         {sidebarContent}
       </aside>
 
@@ -204,16 +215,18 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
             />
             <motion.aside
               id="dashboard-mobile-sidebar"
-              initial={shouldReduceMotion ? { opacity: 0 } : { x: -280 }}
+              initial={
+                shouldReduceMotion ? { opacity: 0 } : { x: sidebarOffset }
+              }
               animate={{ x: 0 }}
-              exit={shouldReduceMotion ? { opacity: 0 } : { x: -280 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { x: sidebarOffset }}
               transition={
                 shouldReduceMotion
                   ? { duration: 0 }
                   : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
               }
-              className="fixed inset-y-0 left-0 w-64 bg-card border-r border-border z-50 md:hidden"
-              aria-label={`${title} navigation`}
+              className="fixed inset-y-0 w-64 bg-card border-border z-50 md:hidden [inset-inline-start:0] [border-inline-end-width:1px]"
+              aria-label={t("layout.navigation", { title })}
             >
               {sidebarContent}
             </motion.aside>
@@ -222,7 +235,7 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen md:[margin-inline-start:16rem]">
         {/* Top Bar (mobile) */}
         <header className="md:hidden flex items-center justify-between px-4 py-3 bg-card border-b border-border sticky top-0 z-30">
           <button
@@ -230,7 +243,7 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="inline-flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             aria-label={
-              sidebarOpen ? "Close navigation menu" : "Open navigation menu"
+              sidebarOpen ? t("layout.closeMenu") : t("layout.openMenu")
             }
             aria-expanded={sidebarOpen}
             aria-controls="dashboard-mobile-sidebar"
@@ -250,7 +263,10 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
               {title}
             </span>
           </div>
-          <ThemeToggle mode="compact" />
+          <div className="flex items-center gap-2">
+            <LanguageToggle mode="compact" />
+            <ThemeToggle mode="compact" />
+          </div>
         </header>
 
         {/* Page Content */}

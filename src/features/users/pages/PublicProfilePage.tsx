@@ -19,6 +19,7 @@ import {
   User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
@@ -27,22 +28,27 @@ import { usePublicProfile } from "../hooks/usePublicProfile";
 const toDisplayDate = (
   value: string | Date,
   formatter: Intl.DateTimeFormat,
+  fallback: string,
 ): string => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
-    return "Date unavailable";
+    return fallback;
   }
   return formatter.format(parsed);
 };
 
 function StarRow({ rating }: { rating: number }) {
+  const { t } = useI18n();
   const safeRating = Math.min(5, Math.max(0, Math.round(rating)));
+  const ratingLabel = t("users.publicProfile.ratingLabel", {
+    rating: safeRating,
+  });
 
   return (
     <div
       className="flex items-center gap-0.5"
       role="img"
-      aria-label={`Rated ${safeRating} out of 5`}
+      aria-label={ratingLabel}
     >
       {Array.from({ length: 5 }).map((_, index) => (
         <Star
@@ -55,7 +61,7 @@ function StarRow({ rating }: { rating: number }) {
           }`}
         />
       ))}
-      <span className="sr-only">Rated {safeRating} out of 5</span>
+      <span className="sr-only">{ratingLabel}</span>
     </div>
   );
 }
@@ -84,6 +90,7 @@ function StatPill({
 }
 
 const PublicProfilePage = () => {
+  const { t, locale, formatNumber } = useI18n();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -99,22 +106,25 @@ const PublicProfilePage = () => {
     clearReviewsWarning,
   } = usePublicProfile(id ?? "");
 
-  const numberFormatter = useMemo(() => new Intl.NumberFormat(), []);
+  const numberFormatter = useMemo(
+    () => new Intl.NumberFormat(locale),
+    [locale],
+  );
   const dateFormatter = useMemo(
     () =>
-      new Intl.DateTimeFormat(undefined, {
+      new Intl.DateTimeFormat(locale, {
         year: "numeric",
         month: "short",
         day: "numeric",
       }),
-    [],
+    [locale],
   );
 
   if (loading) {
     return (
       <PageLoading
-        text="Loading profile"
-        subText="Checking profile and recent activity..."
+        text={t("users.publicProfile.loading")}
+        subText={t("users.publicProfile.loadingSubtitle")}
       />
     );
   }
@@ -125,9 +135,9 @@ const PublicProfilePage = () => {
         <div className="w-full space-y-4">
           <Alert variant="destructive" className="border-destructive/40">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Profile unavailable</AlertTitle>
+            <AlertTitle>{t("users.publicProfile.errorTitle")}</AlertTitle>
             <AlertDescription className="break-words">
-              {error ?? "This profile could not be loaded."}
+              {error ?? t("users.publicProfile.errorDescription")}
             </AlertDescription>
           </Alert>
 
@@ -138,7 +148,9 @@ const PublicProfilePage = () => {
               disabled={isReloading}
               className="min-h-11 w-full touch-manipulation sm:w-auto"
             >
-              {isReloading ? "Retrying..." : "Try again"}
+              {isReloading
+                ? t("users.publicProfile.retrying")
+                : t("common.retry")}
             </Button>
             <Button
               type="button"
@@ -147,7 +159,7 @@ const PublicProfilePage = () => {
               disabled={isReloading}
               className="min-h-11 w-full touch-manipulation sm:w-auto"
             >
-              Go back
+              {t("users.publicProfile.goBack")}
             </Button>
           </div>
         </div>
@@ -174,10 +186,10 @@ const PublicProfilePage = () => {
     >
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {isReloading
-          ? "Refreshing public profile data."
+          ? t("users.publicProfile.live.refreshing")
           : reviewsWarning
-            ? "Some review data is unavailable."
-            : "Profile data is up to date."}
+            ? t("users.publicProfile.live.partial")
+            : t("users.publicProfile.live.upToDate")}
       </p>
 
       <div className="px-4 pt-4 md:pt-5">
@@ -188,7 +200,7 @@ const PublicProfilePage = () => {
           className="min-h-11 touch-manipulation gap-2 px-3 text-sm text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground motion-reduce:transition-none"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back
+          {t("auth.back")}
         </Button>
       </div>
 
@@ -221,14 +233,16 @@ const PublicProfilePage = () => {
                   <div className="flex flex-wrap items-center justify-center gap-1.5 text-role-caption sm:justify-start">
                     {hasAgeBadge && (
                       <span className="inline-flex items-center rounded-full bg-primary-foreground/12 px-2.5 py-1 font-medium">
-                        Age {profile.age}
+                        {t("users.publicProfile.ageBadge", {
+                          age: profile.age ?? 0,
+                        })}
                       </span>
                     )}
 
                     {isBanned && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-destructive/18 px-2.5 py-1 font-medium text-primary-foreground/92">
                         <ShieldAlert className="h-3 w-3" aria-hidden="true" />
-                        Restricted
+                        {t("users.publicProfile.restricted")}
                       </span>
                     )}
                   </div>
@@ -237,7 +251,11 @@ const PublicProfilePage = () => {
                 {joinedYear && (
                   <div className="flex items-center justify-center gap-1 text-role-caption text-primary-foreground/74 sm:justify-start">
                     <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                    <span>Member since {joinedYear}</span>
+                    <span>
+                      {t("users.publicProfile.memberSince", {
+                        year: joinedYear,
+                      })}
+                    </span>
                   </div>
                 )}
 
@@ -260,11 +278,17 @@ const PublicProfilePage = () => {
             </div>
 
             <div className="relative mt-5 grid grid-cols-2 gap-3 border-t border-primary-foreground/18 pt-4 sm:grid-cols-3">
-              <StatPill value={reviewCount} label="Reviews" />
-              <StatPill value={recentCount} label="Recent" />
+              <StatPill
+                value={reviewCount}
+                label={t("users.publicProfile.stats.reviews")}
+              />
+              <StatPill
+                value={recentCount}
+                label={t("users.publicProfile.stats.recent")}
+              />
               <StatPill
                 value={interactionCount}
-                label="Interactions"
+                label={t("users.publicProfile.stats.interactions")}
                 className="col-span-2 sm:col-span-1"
               />
             </div>
@@ -279,7 +303,7 @@ const PublicProfilePage = () => {
               >
                 <Link to="/profile">
                   <User className="h-4 w-4" aria-hidden="true" />
-                  View your full profile
+                  {t("users.publicProfile.viewOwnProfile")}
                 </Link>
               </Button>
             ) : (
@@ -287,10 +311,10 @@ const PublicProfilePage = () => {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0 space-y-1">
                     <p className="text-sm font-semibold text-foreground">
-                      Community activity snapshot
+                      {t("users.publicProfile.snapshotTitle")}
                     </p>
                     <p className="text-role-secondary text-muted-foreground">
-                      Pull latest profile and review data.
+                      {t("users.publicProfile.snapshotDescription")}
                     </p>
                   </div>
                   <Button
@@ -301,7 +325,9 @@ const PublicProfilePage = () => {
                     className="min-h-11 w-full touch-manipulation gap-1.5 transition-colors duration-200 ease-out motion-reduce:transition-none sm:w-auto"
                   >
                     <Activity className="h-3.5 w-3.5" aria-hidden="true" />
-                    {isReloading ? "Refreshing..." : "Refresh"}
+                    {isReloading
+                      ? t("users.publicProfile.refreshing")
+                      : t("users.publicProfile.refresh")}
                   </Button>
                 </div>
               </section>
@@ -310,7 +336,7 @@ const PublicProfilePage = () => {
             {reviewsWarning && (
               <Alert className="border-border/80">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Partial data loaded</AlertTitle>
+                <AlertTitle>{t("users.publicProfile.partialData")}</AlertTitle>
                 <AlertDescription className="space-y-2 text-role-secondary">
                   <p className="break-words">{reviewsWarning}</p>
                   <div className="flex flex-wrap gap-2">
@@ -322,7 +348,9 @@ const PublicProfilePage = () => {
                       disabled={isReloading}
                       className="min-h-11 w-full touch-manipulation sm:w-auto"
                     >
-                      {isReloading ? "Retrying..." : "Retry"}
+                      {isReloading
+                        ? t("users.publicProfile.retrying")
+                        : t("common.retry")}
                     </Button>
                     <Button
                       type="button"
@@ -331,7 +359,7 @@ const PublicProfilePage = () => {
                       onClick={clearReviewsWarning}
                       className="min-h-11 w-full touch-manipulation sm:w-auto"
                     >
-                      Dismiss
+                      {t("common.dismiss")}
                     </Button>
                   </div>
                 </AlertDescription>
@@ -343,10 +371,10 @@ const PublicProfilePage = () => {
         <section className="space-y-3 px-4 lg:px-0">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-role-secondary font-medium tracking-[0.05em] text-foreground/88">
-              Recent Reviews
+              {t("users.publicProfile.recentReviews")}
             </h2>
             <span className="text-role-secondary text-muted-foreground text-numeric-tabular">
-              {recentCount} shown
+              {t("users.publicProfile.shownCount", { count: recentCount })}
             </span>
           </div>
 
@@ -354,7 +382,7 @@ const PublicProfilePage = () => {
             <div className="rounded-xl border border-border bg-card p-6 text-center sm:p-8">
               <MapPin className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
               <p className="text-role-secondary text-muted-foreground">
-                No review activity available yet.
+                {t("users.publicProfile.emptyReviews")}
               </p>
             </div>
           ) : (
@@ -363,7 +391,9 @@ const PublicProfilePage = () => {
                 <Link
                   key={review.reviewId}
                   to={`/venue/${encodeURIComponent(review.placeId)}`}
-                  aria-label={`Open ${review.placeName} review details`}
+                  aria-label={t("users.publicProfile.openReview", {
+                    place: review.placeName,
+                  })}
                   className="block rounded-xl border border-border/90 bg-card p-4 transition-[border-color,background-color] duration-200 ease-out hover:border-secondary/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -385,12 +415,20 @@ const PublicProfilePage = () => {
 
                   {typeof review.sentimentScore === "number" && (
                     <div className="text-role-caption mt-2 inline-flex rounded-full bg-secondary/12 px-2.5 py-1 text-secondary/85">
-                      Sentiment score: {review.sentimentScore.toFixed(1)}
+                      {t("users.publicProfile.sentimentScore", {
+                        score: formatNumber(
+                          Number(review.sentimentScore.toFixed(1)),
+                        ),
+                      })}
                     </div>
                   )}
 
                   <p className="text-role-caption mt-2 text-muted-foreground/70">
-                    {toDisplayDate(review.date, dateFormatter)}
+                    {toDisplayDate(
+                      review.date,
+                      dateFormatter,
+                      t("users.publicProfile.dateUnavailable"),
+                    )}
                   </p>
                 </Link>
               ))}

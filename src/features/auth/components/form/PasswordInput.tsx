@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/components/i18n";
 
 type Props = {
   id: string;
@@ -19,12 +20,14 @@ export const PasswordInput = ({
   register,
 }: Props) => {
   const [visible, setVisible] = useState(false);
+  const { t } = useI18n();
 
   return (
     <div className="relative">
       <Input
         id={id}
         type={visible ? "text" : "password"}
+        dir="ltr"
         placeholder={placeholder}
         {...register}
         disabled={disabled}
@@ -38,9 +41,10 @@ export const PasswordInput = ({
         type="button"
         onClick={() => setVisible((v) => !v)}
         disabled={disabled}
-        aria-label={visible ? "Hide password" : "Show password"}
+        aria-label={visible ? t("auth.hidePassword") : t("auth.showPassword")}
         aria-pressed={visible}
-        className="absolute right-1 top-1/2 -translate-y-1/2 flex min-h-11 min-w-11 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+        className="absolute top-1/2 -translate-y-1/2 flex min-h-11 min-w-11 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+        style={{ insetInlineEnd: "0.25rem" }}
       >
         {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
       </button>

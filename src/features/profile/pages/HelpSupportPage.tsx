@@ -12,14 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/i18n";
 
 const SUPPORT_EMAIL = "farouqdiaaeldin@gmail.com";
 const SUPPORT_EMAIL_HREF = `mailto:${SUPPORT_EMAIL}`;
 
 type ContactOption = {
   icon: LucideIcon;
-  label: string;
-  description: string;
+  labelKey: string;
   action: () => void;
   available: boolean;
 };
@@ -31,8 +31,7 @@ const openSupportEmail = () => {
 const CONTACT_OPTIONS: ContactOption[] = [
   {
     icon: Mail,
-    label: "Email Support",
-    description: SUPPORT_EMAIL,
+    labelKey: "profile.help.contact.emailLabel",
     action: openSupportEmail,
     available: true,
   },
@@ -40,80 +39,110 @@ const CONTACT_OPTIONS: ContactOption[] = [
 
 type FaqItem = {
   id: string;
-  question: string;
-  answer: string;
+  questionKey: string;
+  answerKey: string;
 };
 
 const FAQS: FaqItem[] = [
   {
     id: "recommendations",
-    question: "How do personalized recommendations work?",
-    answer:
-      "Recommendations are based on your onboarding choices, vibe level, preferred areas, and activity such as saved places and reviews.",
+    questionKey: "profile.help.faq.recommendations.question",
+    answerKey: "profile.help.faq.recommendations.answer",
   },
   {
     id: "update-preferences",
-    question: "How do I update my interests, vibe, budget, or areas?",
-    answer:
-      "Open Profile, go to Preferences, and update your selections. New recommendations will reflect your latest choices.",
+    questionKey: "profile.help.faq.updatePreferences.question",
+    answerKey: "profile.help.faq.updatePreferences.answer",
   },
   {
     id: "manage-favorites",
-    question: "How do I save and manage favorite places?",
-    answer:
-      "Tap the heart icon on any place to save it. You can remove saved places anytime from Favorites or from the place card.",
+    questionKey: "profile.help.faq.manageFavorites.question",
+    answerKey: "profile.help.faq.manageFavorites.answer",
   },
   {
     id: "write-review",
-    question: "How do I write or edit my review for a place?",
-    answer:
-      "Open a place details page to add your rating and comment. If you already reviewed that place, use Edit on your existing review.",
+    questionKey: "profile.help.faq.writeReview.question",
+    answerKey: "profile.help.faq.writeReview.answer",
   },
   {
     id: "notifications",
-    question: "How can I control my notifications?",
-    answer:
-      "Go to Profile > Notifications to turn push and email updates on or off.",
+    questionKey: "profile.help.faq.notifications.question",
+    answerKey: "profile.help.faq.notifications.answer",
   },
   {
     id: "privacy-settings",
-    question: "What privacy settings can I change?",
-    answer:
-      "In Profile > Privacy & Data, you can control visibility, analytics, and personalized recommendations.",
+    questionKey: "profile.help.faq.privacySettings.question",
+    answerKey: "profile.help.faq.privacySettings.answer",
   },
   {
     id: "delete-account",
-    question: "How do I delete my account?",
-    answer:
-      "Go to Profile > Privacy & Data and choose Delete my account. This is permanent and removes your profile, favorites, and preferences.",
+    questionKey: "profile.help.faq.deleteAccount.question",
+    answerKey: "profile.help.faq.deleteAccount.answer",
   },
 ];
 
 const QUICK_TOPICS = [
-  { label: "Recommendations", query: "recommendations" },
-  { label: "Reviews", query: "review" },
-  { label: "Privacy", query: "privacy" },
-  { label: "Account", query: "account" },
+  {
+    id: "recommendations",
+    labelKey: "profile.help.topic.recommendations.label",
+    queryKey: "profile.help.topic.recommendations.query",
+  },
+  {
+    id: "reviews",
+    labelKey: "profile.help.topic.reviews.label",
+    queryKey: "profile.help.topic.reviews.query",
+  },
+  {
+    id: "privacy",
+    labelKey: "profile.help.topic.privacy.label",
+    queryKey: "profile.help.topic.privacy.query",
+  },
+  {
+    id: "account",
+    labelKey: "profile.help.topic.account.label",
+    queryKey: "profile.help.topic.account.query",
+  },
 ];
 
 const HelpSupportPage = () => {
   const navigate = useNavigate();
+  const { t, direction } = useI18n();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
+
+  const quickTopics = useMemo(
+    () =>
+      QUICK_TOPICS.map((topic) => ({
+        ...topic,
+        label: t(topic.labelKey),
+        query: t(topic.queryKey),
+      })),
+    [t],
+  );
+
+  const localizedFaqs = useMemo(
+    () =>
+      FAQS.map((faq) => ({
+        id: faq.id,
+        question: t(faq.questionKey),
+        answer: t(faq.answerKey),
+      })),
+    [t],
+  );
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
   const filteredFaqs = useMemo(() => {
     if (!normalizedQuery) {
-      return FAQS;
+      return localizedFaqs;
     }
 
-    return FAQS.filter(
+    return localizedFaqs.filter(
       (faq) =>
         faq.question.toLowerCase().includes(normalizedQuery) ||
         faq.answer.toLowerCase().includes(normalizedQuery),
     );
-  }, [normalizedQuery]);
+  }, [localizedFaqs, normalizedQuery]);
 
   const toggleFaq = useCallback((faqId: string) => {
     setExpandedFaq((previous) => (previous === faqId ? null : faqId));
@@ -129,7 +158,7 @@ const HelpSupportPage = () => {
             variant="ghost"
             size="icon"
             onClick={() => navigate("/profile")}
-            aria-label="Back to profile"
+            aria-label={t("profile.help.backToProfileAria")}
             className="h-11 w-11 rounded-full"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
@@ -137,7 +166,7 @@ const HelpSupportPage = () => {
           <div className="flex items-center gap-3">
             <HelpCircle className="h-5 w-5 text-secondary" />
             <h1 className="text-role-subheading text-foreground">
-              Help & Support
+              {t("profile.help.title")}
             </h1>
           </div>
         </div>
@@ -147,12 +176,12 @@ const HelpSupportPage = () => {
         {/* Contact Support */}
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <h2 className="text-role-body font-semibold text-foreground">
-            Contact Support
+            {t("profile.help.contactTitle")}
           </h2>
           <div className="grid gap-3">
             {CONTACT_OPTIONS.map((option) => (
               <Card
-                key={option.label}
+                key={option.labelKey}
                 className={cn(
                   "rounded-xl border-border transition-colors",
                   option.available
@@ -173,15 +202,15 @@ const HelpSupportPage = () => {
                       </div>
                       <div className="text-left min-w-0">
                         <p className="text-role-secondary font-semibold text-foreground break-words">
-                          {option.label}
+                          {t(option.labelKey)}
                           {!option.available && (
                             <span className="ml-2 text-role-caption text-muted-foreground">
-                              (Coming Soon)
+                              ({t("profile.help.contact.comingSoon")})
                             </span>
                           )}
                         </p>
                         <p className="text-role-caption text-muted-foreground break-all">
-                          {option.description}
+                          {SUPPORT_EMAIL}
                         </p>
                       </div>
                     </div>
@@ -197,10 +226,10 @@ const HelpSupportPage = () => {
           <Card className="rounded-xl border-border/70 bg-card/60">
             <CardContent className="space-y-2 p-3 text-center lg:text-left">
               <p className="text-role-caption text-muted-foreground">
-                C-Outing App v1.0.0
+                {t("profile.help.version", { version: "1.0.0" })}
               </p>
               <p className="text-role-caption text-muted-foreground/80">
-                We usually reply within one business day.
+                {t("profile.help.replyTime")}
               </p>
             </CardContent>
           </Card>
@@ -210,26 +239,31 @@ const HelpSupportPage = () => {
         <section className="space-y-[clamp(0.75rem,1.8vw,1.25rem)]">
           <div className="flex items-center justify-between">
             <h2 className="text-role-body font-semibold text-foreground">
-              Frequently Asked Questions
+              {t("profile.help.faqTitle")}
             </h2>
           </div>
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search
+              className={cn(
+                "absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground",
+                direction === "rtl" ? "right-3" : "left-3",
+              )}
+            />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search help topics"
+              placeholder={t("profile.help.searchPlaceholder")}
               maxLength={120}
-              className="pl-10"
+              className={cn(direction === "rtl" ? "pr-10" : "pl-10")}
             />
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {QUICK_TOPICS.map((topic) => (
+            {quickTopics.map((topic) => (
               <Button
-                key={topic.label}
+                key={topic.id}
                 type="button"
                 variant="outline"
                 size="sm"
@@ -283,8 +317,11 @@ const HelpSupportPage = () => {
             ) : (
               <div className="text-center py-10">
                 <p className="text-role-secondary text-muted-foreground">
-                  No results for "{searchQuery}". Try keywords like "reviews" or
-                  "privacy".
+                  {t("profile.help.noResults", {
+                    query: searchQuery,
+                    first: t("profile.help.topic.reviews.query"),
+                    second: t("profile.help.topic.privacy.query"),
+                  })}
                 </p>
               </div>
             )}

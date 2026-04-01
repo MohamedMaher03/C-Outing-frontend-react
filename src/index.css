@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -45,6 +45,9 @@
     --font-family-body: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
     --font-family-display:
       "Fraunces", "Iowan Old Style", "Times New Roman", serif;
+    --font-family-body-ar: "Cairo", "Segoe UI", "Tahoma", system-ui, sans-serif;
+    --font-family-display-ar:
+      "Cairo", "Segoe UI", "Tahoma", system-ui, sans-serif;
     --text-caption: 0.8125rem;
     --text-secondary: 0.9375rem;
     --text-body: 1rem;
@@ -137,9 +140,34 @@
       "liga" 1,
       "calt" 1;
   }
+
+  html[lang="ar"],
+  html[lang^="ar-"] {
+    direction: rtl;
+  }
+
+  html[lang="ar"] body,
+  html[lang^="ar-"] body {
+    font-family: var(--font-family-body-ar);
+    text-align: start;
+  }
+
+  html[lang="ar"] .text-role-heading,
+  html[lang^="ar-"] .text-role-heading {
+    font-family: var(--font-family-display-ar);
+    letter-spacing: 0;
+  }
 }
 
 @layer utilities {
+  .rtl-mirror {
+    transform-origin: center;
+  }
+
+  html[dir="rtl"] .rtl-mirror {
+    transform: scaleX(-1);
+  }
+
   .text-role-heading {
     font-family: var(--font-family-display);
     font-size: var(--text-heading);

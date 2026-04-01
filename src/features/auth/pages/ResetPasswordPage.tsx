@@ -25,6 +25,7 @@ import {
   AuthSurface,
 } from "@/features/auth/components/layout/AuthShell";
 import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
+import { useI18n } from "@/components/i18n";
 
 const OTP_LENGTH = AUTH_OTP_LENGTH;
 
@@ -36,6 +37,7 @@ function maskEmail(email: string): string {
 }
 
 export default function ResetPasswordPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const email = (location.state as { email?: string } | null)?.email ?? "";
@@ -138,17 +140,16 @@ export default function ResetPasswordPage() {
             </div>
           </div>
           <h2 className="text-2xl font-semibold text-foreground" role="status">
-            Password Reset!
+            {t("auth.reset.successTitle")}
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Your password has been updated successfully. You can now log in with
-            your new password.
+            {t("auth.reset.successBody")}
           </p>
           <Button
             className="h-11 w-full font-medium shadow-sm hover:bg-primary/95"
             onClick={() => navigate("/login", { replace: true })}
           >
-            Back to Login
+            {t("auth.backToLogin")}
           </Button>
         </AuthSurface>
       </AuthShell>
@@ -159,6 +160,7 @@ export default function ResetPasswordPage() {
 
   const otpComplete =
     digits.length === OTP_LENGTH && digits.every((d) => d !== "");
+  const maskedEmail = `\u2068${maskEmail(email)}\u2069`;
 
   return (
     <AuthShell>
@@ -169,8 +171,8 @@ export default function ResetPasswordPage() {
           onClick={() => navigate("/forgot-password")}
           className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 text-sm text-muted-foreground transition-colors hover:text-foreground/90"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back
+          <ArrowLeft className="rtl-mirror h-4 w-4" />
+          {t("auth.back")}
         </button>
 
         {/* Header */}
@@ -181,14 +183,12 @@ export default function ResetPasswordPage() {
             </div>
           </div>
           <h2 className="text-2xl font-semibold text-foreground">
-            Reset Password
+            {t("auth.reset.title")}
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Enter the 6-digit code sent to{" "}
-            <span className="font-medium text-foreground break-all" dir="auto">
-              {maskEmail(email)}
-            </span>{" "}
-            and choose a new password.
+            {t("auth.reset.subtitle", {
+              email: maskedEmail,
+            })}
           </p>
         </div>
 
@@ -207,7 +207,7 @@ export default function ResetPasswordPage() {
 
           {/* OTP Boxes */}
           <div className="space-y-2">
-            <Label>Reset Code</Label>
+            <Label>{t("auth.reset.codeLabel")}</Label>
             <Controller
               name="otp"
               control={control}
@@ -224,7 +224,10 @@ export default function ResetPasswordPage() {
                       maxLength={1}
                       value={digit}
                       autoFocus={index === 0}
-                      aria-label={`Digit ${index + 1} of ${OTP_LENGTH}`}
+                      aria-label={t("auth.otpDigit", {
+                        current: index + 1,
+                        total: OTP_LENGTH,
+                      })}
                       onChange={(e) => handleDigitChange(index, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(index, e)}
                       onPaste={handlePaste}
@@ -249,12 +252,13 @@ export default function ResetPasswordPage() {
 
           {/* New Password */}
           <div className="space-y-2">
-            <Label htmlFor="newPassword">New Password</Label>
+            <Label htmlFor="newPassword">{t("auth.reset.newPassword")}</Label>
             <div className="relative">
               <Input
                 id="newPassword"
                 type={showPassword ? "text" : "password"}
-                placeholder="Min. 8 characters"
+                dir="ltr"
+                placeholder={t("auth.reset.minChars")}
                 disabled={isLoading}
                 aria-invalid={!!errors.newPassword}
                 className={`h-11 pr-10 text-base sm:text-sm ${errors.newPassword ? "border-destructive" : ""}`}
@@ -264,9 +268,12 @@ export default function ResetPasswordPage() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 disabled={isLoading}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={
+                  showPassword ? t("auth.hidePassword") : t("auth.showPassword")
+                }
                 aria-pressed={showPassword}
-                className="absolute right-1 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                className="absolute top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                style={{ insetInlineEnd: "0.25rem" }}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -280,12 +287,15 @@ export default function ResetPasswordPage() {
 
           {/* Confirm Password */}
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">
+              {t("auth.reset.confirmPassword")}
+            </Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
                 type={showConfirm ? "text" : "password"}
-                placeholder="Repeat your new password"
+                dir="ltr"
+                placeholder={t("auth.reset.repeatPassword")}
                 disabled={isLoading}
                 aria-invalid={!!errors.confirmPassword}
                 className={`h-11 pr-10 text-base sm:text-sm ${errors.confirmPassword ? "border-destructive" : ""}`}
@@ -295,9 +305,12 @@ export default function ResetPasswordPage() {
                 type="button"
                 onClick={() => setShowConfirm((v) => !v)}
                 disabled={isLoading}
-                aria-label={showConfirm ? "Hide password" : "Show password"}
+                aria-label={
+                  showConfirm ? t("auth.hidePassword") : t("auth.showPassword")
+                }
                 aria-pressed={showConfirm}
-                className="absolute right-1 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                className="absolute top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+                style={{ insetInlineEnd: "0.25rem" }}
               >
                 {showConfirm ? (
                   <EyeOff className="h-4 w-4" />
@@ -317,17 +330,17 @@ export default function ResetPasswordPage() {
             {isLoading ? (
               <span className="flex items-center gap-2">
                 <InlineLoading size="lg" />
-                Resetting Password…
+                {t("auth.reset.submitting")}
               </span>
             ) : (
-              "Reset Password"
+              t("auth.reset.submit")
             )}
           </Button>
         </form>
 
         {/* Footer */}
         <p className="text-center text-sm text-muted-foreground">
-          Didn't receive a code?{" "}
+          {t("auth.reset.noCode")}{" "}
           <button
             type="button"
             onClick={() => {
@@ -336,7 +349,7 @@ export default function ResetPasswordPage() {
             className="inline-flex min-h-11 items-center px-1 font-medium text-foreground/80 transition-colors hover:text-foreground"
             disabled={isLoading}
           >
-            Request a new one
+            {t("auth.reset.requestNew")}
           </button>
         </p>
       </AuthSurface>

@@ -10,6 +10,7 @@ import type {
   ModerationAction,
 } from "@/features/moderator/types";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseModeratorDashboardReturn {
   stats: ModeratorStats | null;
@@ -20,6 +21,7 @@ interface UseModeratorDashboardReturn {
 }
 
 export const useModeratorDashboard = (): UseModeratorDashboardReturn => {
+  const { t } = useI18n();
   const [stats, setStats] = useState<ModeratorStats | null>(null);
   const [actions, setActions] = useState<ModerationAction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ export const useModeratorDashboard = (): UseModeratorDashboardReturn => {
     } catch (err) {
       if (!mountedRef.current) return;
 
-      setError(getErrorMessage(err, "Failed to load dashboard data"));
+      setError(getErrorMessage(err, t("moderator.error.loadDashboardData")));
       setStats(null);
       setActions([]);
     } finally {
@@ -51,7 +53,7 @@ export const useModeratorDashboard = (): UseModeratorDashboardReturn => {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     mountedRef.current = true;

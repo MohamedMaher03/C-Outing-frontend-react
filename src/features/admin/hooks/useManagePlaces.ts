@@ -27,6 +27,7 @@ import {
   validatePlaceForm,
 } from "@/features/admin/utils/placeForm";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseManagePlacesReturn {
   // Data state
@@ -72,6 +73,7 @@ interface UseManagePlacesReturn {
 }
 
 export const useManagePlaces = (): UseManagePlacesReturn => {
+  const { t } = useI18n();
   const [places, setPlaces] = useState<AdminPlace[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,6 +103,9 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     setPendingPlaceIds((prev) => prev.filter((id) => id !== placeId));
   };
 
+  const getStatusLabel = (status: AdminPlace["status"]): string =>
+    t(`admin.status.${status}`, undefined, status);
+
   const loadPlaces = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -117,13 +122,13 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
       setCategories(catsData);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to load places"));
+      setError(getErrorMessage(err, t("admin.error.loadPlaces")));
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -172,10 +177,14 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
       setPlaces((prev) =>
         prev.map((p) => (p.id === placeId ? { ...p, status } : p)),
       );
-      showToast(`Place status updated to ${status}.`);
+      showToast(
+        t("admin.places.toast.statusUpdated", {
+          status: getStatusLabel(status),
+        }),
+      );
     } catch (err) {
       if (!mountedRef.current) return;
-      const message = getErrorMessage(err, "Failed to update place status");
+      const message = getErrorMessage(err, t("admin.error.updatePlaceStatus"));
       setError(message);
       showToast(message, "error");
     } finally {
@@ -200,10 +209,13 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
       if (!mountedRef.current) return;
 
       setPlaces((prev) => prev.filter((p) => p.id !== placeId));
-      showToast(`"${placeName}" has been permanently deleted.`, "warning");
+      showToast(
+        t("admin.places.toast.deleted", { name: placeName }),
+        "warning",
+      );
     } catch (err) {
       if (!mountedRef.current) return;
-      const message = getErrorMessage(err, "Failed to delete place");
+      const message = getErrorMessage(err, t("admin.error.deletePlace"));
       setError(message);
       showToast(message, "error");
     } finally {
@@ -219,10 +231,10 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
       return;
     }
 
-    const errors = validatePlaceForm(form);
+    const errors = validatePlaceForm(form, t);
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) {
-      setError("Please fix validation errors before submitting.");
+      setError(t("admin.places.error.fixValidation"));
       return;
     }
 
@@ -238,12 +250,10 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
       setFormErrors({});
       setShowAddForm(false);
       setShowTagPicker(false);
-      showToast(
-        `"${newPlace.name}" added successfully! Status: pending review.`,
-      );
+      showToast(t("admin.places.toast.added", { name: newPlace.name }));
     } catch (err) {
       if (!mountedRef.current) return;
-      const message = getErrorMessage(err, "Failed to add place");
+      const message = getErrorMessage(err, t("admin.error.addPlace"));
       setError(message);
       showToast(message, "error");
     } finally {

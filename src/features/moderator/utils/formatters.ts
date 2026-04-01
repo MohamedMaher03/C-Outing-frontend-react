@@ -1,62 +1,66 @@
-const numberFormatter = new Intl.NumberFormat(undefined);
+export const formatCount = (value: number, locale?: string): string =>
+  new Intl.NumberFormat(locale).format(value);
 
-const shortDateFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-});
-
-const longDateFormatter = new Intl.DateTimeFormat(undefined, {
-  year: "numeric",
-  month: "short",
-  day: "numeric",
-});
-
-const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-const pluralRules = new Intl.PluralRules(undefined);
-
-export const formatCount = (value: number): string =>
-  numberFormatter.format(value);
-
-export const formatShortDate = (value: Date | string): string => {
+export const formatShortDate = (
+  value: Date | string,
+  locale?: string,
+): string => {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
-  return shortDateFormatter.format(date);
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+  }).format(date);
 };
 
-export const formatLongDate = (value: Date | string): string => {
+export const formatLongDate = (
+  value: Date | string,
+  locale?: string,
+): string => {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
-  return longDateFormatter.format(date);
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(date);
 };
 
-export const formatDateTime = (value: Date | string): string => {
+export const formatDateTime = (
+  value: Date | string,
+  locale?: string,
+): string => {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
-  return dateTimeFormatter.format(date);
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 };
 
-export const formatRelativeTime = (value: Date | string): string => {
+export const formatRelativeTime = (
+  value: Date | string,
+  locale?: string,
+): string => {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
 
   const now = Date.now();
   const diffMs = now - date.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
 
-  if (diffHours < 1) return "Just now";
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffMinutes < 1) return formatter.format(0, "minute");
+  if (diffHours < 1) return formatter.format(-diffMinutes, "minute");
+  if (diffHours < 24) return formatter.format(-diffHours, "hour");
 
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 7) return formatter.format(-diffDays, "day");
 
-  return shortDateFormatter.format(date);
+  return formatShortDate(date, locale);
 };
 
 export const pluralize = (
@@ -64,6 +68,6 @@ export const pluralize = (
   singular: string,
   plural = `${singular}s`,
 ): string => {
-  const category = pluralRules.select(count);
+  const category = new Intl.PluralRules().select(count);
   return category === "one" ? singular : plural;
 };

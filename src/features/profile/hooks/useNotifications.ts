@@ -14,6 +14,7 @@ import {
 } from "@/features/profile/services/profileService";
 import type { NotificationSettings } from "@/features/profile/types";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseNotificationsReturn {
   /** Current push notification toggles */
@@ -37,6 +38,7 @@ interface UseNotificationsReturn {
 }
 
 export const useNotifications = (): UseNotificationsReturn => {
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const [pushNotifications, setPushNotifications] = useState<
@@ -81,18 +83,13 @@ export const useNotifications = (): UseNotificationsReturn => {
         return;
       }
 
-      setError(
-        getErrorMessage(
-          err,
-          "We couldn't load your notification settings. Please try again.",
-        ),
-      );
+      setError(getErrorMessage(err, t("profile.notifications.error.load")));
     } finally {
       if (runId === latestLoadRunRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   // Load current settings on mount
   useEffect(() => {
@@ -125,12 +122,7 @@ export const useNotifications = (): UseNotificationsReturn => {
       });
       navigate("/profile");
     } catch (err) {
-      setError(
-        getErrorMessage(
-          err,
-          "We couldn't save your notification settings. Please try again.",
-        ),
-      );
+      setError(getErrorMessage(err, t("profile.notifications.error.save")));
     } finally {
       saveInFlightRef.current = false;
       setSaving(false);

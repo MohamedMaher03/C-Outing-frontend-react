@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -17,6 +17,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import type { DashboardNavItem } from "@/components/layout/DashboardLayout";
 import RoleBasedLayout from "./components/layout/RoleBasedLayout";
+import { useI18n } from "@/components/i18n";
 
 // Admin pages
 import {
@@ -101,28 +102,6 @@ const ReportedContentPage = lazy(
   () => import("@/features/moderator/pages/ReportedContentPage"),
 );
 
-// ── Nav Configs ──────────────────────────────────────────────
-
-const adminNavItems: DashboardNavItem[] = [
-  { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/admin/users", label: "Manage Users", icon: Users },
-  { path: "/admin/places", label: "Manage Places", icon: MapPin },
-  { path: "/admin/reviews", label: "Manage Reviews", icon: MessageSquare },
-  { path: "/admin/categories", label: "Categories", icon: Tags },
-  { path: "/admin/settings", label: "Settings", icon: Settings },
-];
-
-const moderatorNavItems: DashboardNavItem[] = [
-  { path: "/moderator", label: "Dashboard", icon: LayoutDashboard },
-  {
-    path: "/moderator/reviews",
-    label: "Moderate Reviews",
-    icon: MessageSquare,
-  },
-  { path: "/moderator/places", label: "Moderate Places", icon: MapPin },
-  { path: "/moderator/reports", label: "Reported Content", icon: ShieldAlert },
-];
-
 /**
  * Main App Component with Routing
  *
@@ -130,13 +109,53 @@ const moderatorNavItems: DashboardNavItem[] = [
  * Context providers (Auth, Theme) should be added here for global state.
  */
 function App() {
+  const { t } = useI18n();
+
+  const adminNavItems = useMemo<DashboardNavItem[]>(
+    () => [
+      { path: "/admin", label: t("nav.dashboard"), icon: LayoutDashboard },
+      { path: "/admin/users", label: t("nav.manageUsers"), icon: Users },
+      { path: "/admin/places", label: t("nav.managePlaces"), icon: MapPin },
+      {
+        path: "/admin/reviews",
+        label: t("nav.manageReviews"),
+        icon: MessageSquare,
+      },
+      { path: "/admin/categories", label: t("nav.categories"), icon: Tags },
+      { path: "/admin/settings", label: t("nav.settings"), icon: Settings },
+    ],
+    [t],
+  );
+
+  const moderatorNavItems = useMemo<DashboardNavItem[]>(
+    () => [
+      { path: "/moderator", label: t("nav.dashboard"), icon: LayoutDashboard },
+      {
+        path: "/moderator/reviews",
+        label: t("nav.moderateReviews"),
+        icon: MessageSquare,
+      },
+      {
+        path: "/moderator/places",
+        label: t("nav.moderatePlaces"),
+        icon: MapPin,
+      },
+      {
+        path: "/moderator/reports",
+        label: t("nav.reportedContent"),
+        icon: ShieldAlert,
+      },
+    ],
+    [t],
+  );
+
   return (
     <Router>
       <Suspense
         fallback={
           <PageLoading
-            text="Discovering Cairo"
-            subText="Finding the best places for you..."
+            text={t("app.loading.discovering")}
+            subText={t("app.loading.finding")}
           />
         }
       >
@@ -216,6 +235,8 @@ function App() {
                 <RoleBasedLayout
                   adminNavItems={adminNavItems}
                   moderatorNavItems={moderatorNavItems}
+                  adminTitle={t("layout.adminPanel")}
+                  moderatorTitle={t("layout.moderator")}
                 />
               </ProtectedRoute>
             }
@@ -229,7 +250,10 @@ function App() {
           <Route
             element={
               <RoleBasedRoute allowedRoles={["admin"]} redirectTo="/not-found">
-                <DashboardLayout navItems={adminNavItems} title="Admin Panel" />
+                <DashboardLayout
+                  navItems={adminNavItems}
+                  title={t("layout.adminPanel")}
+                />
               </RoleBasedRoute>
             }
           >
@@ -253,7 +277,7 @@ function App() {
               >
                 <DashboardLayout
                   navItems={moderatorNavItems}
-                  title="Moderator"
+                  title={t("layout.moderator")}
                 />
               </RoleBasedRoute>
             }

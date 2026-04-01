@@ -1,6 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n";
 
 interface AdminErrorBannerProps {
   title: string;
@@ -13,6 +14,8 @@ const AdminErrorBanner = ({
   message,
   onRetry,
 }: AdminErrorBannerProps) => {
+  const { t } = useI18n();
+
   if (!message) {
     return null;
   }
@@ -30,7 +33,7 @@ const AdminErrorBanner = ({
             onClick={onRetry}
             className="h-9"
           >
-            <RotateCcw className="h-3.5 w-3.5" /> Retry
+            <RotateCcw className="h-3.5 w-3.5" /> {t("common.retry")}
           </Button>
         ) : null}
       </AlertDescription>

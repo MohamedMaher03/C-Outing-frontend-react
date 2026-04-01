@@ -29,6 +29,7 @@ import {
   AdminSection,
 } from "@/features/admin/components";
 import { CURATED_CATEGORY_ICONS } from "@/features/admin/constants/categoryIcons";
+import { useI18n } from "@/components/i18n";
 
 // ── Icon Picker Data ───────────────────────────────────────────
 
@@ -53,6 +54,7 @@ const CategoryIcon = ({
 // ── Component ─────────────────────────────────────────────────
 
 const ManageCategoriesPage = () => {
+  const { t, formatNumber } = useI18n();
   const {
     categories,
     loading,
@@ -77,16 +79,32 @@ const ManageCategoriesPage = () => {
     handleAddCategory,
   } = useManageCategories();
 
+  const activeCategoriesCount = categories.filter(
+    (category) => category.status === "active",
+  ).length;
+
+  const getCategoryStatusLabel = (status: string): string =>
+    t(`admin.status.${status}`, undefined, status);
+
   if (loading) {
-    return <LoadingSpinner size="md" text="Loading categories..." fullScreen />;
+    return (
+      <LoadingSpinner
+        size="md"
+        text={t("admin.categories.loading")}
+        fullScreen
+      />
+    );
   }
 
   return (
     <AdminPageLayout maxWidth="4xl">
       {/* Header */}
       <AdminPageHeader
-        title="Manage Categories"
-        description={`${categories.length} categories · ${categories.filter((c) => c.status === "active").length} active`}
+        title={t("admin.categories.header.title")}
+        description={t("admin.categories.header.description", {
+          total: formatNumber(categories.length),
+          active: formatNumber(activeCategoriesCount),
+        })}
         icon={Layers}
         actions={
           <Button
@@ -96,13 +114,13 @@ const ManageCategoriesPage = () => {
             aria-expanded={showAdd}
             aria-controls="category-add-panel"
           >
-            <Plus className="h-4 w-4" /> Add Category
+            <Plus className="h-4 w-4" /> {t("admin.categories.actions.add")}
           </Button>
         }
       />
 
       <AdminErrorBanner
-        title="Couldn't update categories"
+        title={t("admin.categories.error.updateTitle")}
         message={error}
         onRetry={() => {
           void retry();
@@ -112,18 +130,20 @@ const ManageCategoriesPage = () => {
       {/* Add Category Form */}
       {showAdd && (
         <AdminSection
-          title="Create Category"
-          description="Add a new category and assign a fitting icon"
+          title={t("admin.categories.create.title")}
+          description={t("admin.categories.create.description")}
           tone="surface"
           className="py-0"
         >
           <div id="category-add-panel" className="space-y-1.5">
-            <Label className="text-sm font-medium">New Category Name</Label>
+            <Label className="text-sm font-medium">
+              {t("admin.categories.create.nameLabel")}
+            </Label>
             <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:gap-3">
               <Input
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
-                placeholder="e.g., Rooftop Lounges"
+                placeholder={t("admin.categories.create.namePlaceholder")}
                 className="flex-1"
               />
               <Button
@@ -131,13 +151,14 @@ const ManageCategoriesPage = () => {
                 size="sm"
                 className="w-full gap-1 sm:w-auto"
               >
-                <Save className="h-4 w-4" /> Save
+                <Save className="h-4 w-4" />{" "}
+                {t("admin.categories.actions.save")}
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 className="w-full sm:w-auto"
-                aria-label="Cancel adding category"
+                aria-label={t("admin.categories.actions.cancelAddAria")}
                 onClick={() => {
                   setShowAdd(false);
                   setNewLabel("");
@@ -149,14 +170,18 @@ const ManageCategoriesPage = () => {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-sm font-medium">Icon</Label>
+            <Label className="text-sm font-medium">
+              {t("admin.categories.create.iconLabel")}
+            </Label>
             <div className="grid grid-cols-6 sm:grid-cols-10 gap-1.5">
               {CURATED_CATEGORY_ICONS.map(({ name, icon: IconComp }) => (
                 <button
                   key={name}
                   type="button"
                   title={name}
-                  aria-label={`Choose icon ${name}`}
+                  aria-label={t("admin.categories.create.chooseIconAria", {
+                    icon: name,
+                  })}
                   onClick={() => setNewIcon(name)}
                   className={cn(
                     "flex min-h-11 min-w-11 items-center justify-center rounded-lg border transition-all motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:h-9 sm:w-9",
@@ -174,8 +199,8 @@ const ManageCategoriesPage = () => {
       )}
 
       <AdminSection
-        title="Category Records"
-        description="Toggle activation and keep labels/iconography up to date"
+        title={t("admin.categories.records.title")}
+        description={t("admin.categories.records.description")}
         contentClassName="gap-3"
       >
         {categories.map((cat) => {
@@ -225,13 +250,15 @@ const ManageCategoriesPage = () => {
                         ) : (
                           <Save className="h-3 w-3" />
                         )}{" "}
-                        Save
+                        {t("admin.categories.actions.save")}
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-8"
-                        aria-label="Cancel editing category"
+                        aria-label={t(
+                          "admin.categories.actions.cancelEditAria",
+                        )}
                         onClick={() => handleCancelEdit()}
                         disabled={isProcessing}
                       >
@@ -245,7 +272,12 @@ const ManageCategoriesPage = () => {
                             key={name}
                             type="button"
                             title={name}
-                            aria-label={`Set icon to ${name}`}
+                            aria-label={t(
+                              "admin.categories.actions.setIconAria",
+                              {
+                                icon: name,
+                              },
+                            )}
                             onClick={() => setEditIcon(name)}
                             disabled={isProcessing}
                             className={cn(
@@ -267,7 +299,9 @@ const ManageCategoriesPage = () => {
                       {cat.label}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {cat.count} places
+                      {t("admin.categories.records.placeCount", {
+                        count: formatNumber(cat.count),
+                      })}
                     </p>
                   </div>
                 )}
@@ -284,7 +318,7 @@ const ManageCategoriesPage = () => {
                       : "bg-muted text-muted-foreground border-border",
                   )}
                 >
-                  {cat.status}
+                  {getCategoryStatusLabel(cat.status)}
                 </Badge>
 
                 {editingId !== cat.id && (
@@ -293,7 +327,9 @@ const ManageCategoriesPage = () => {
                     size="sm"
                     onClick={() => handleStartEdit(cat)}
                     className="min-h-11 min-w-11 sm:h-8 sm:w-8 p-0"
-                    aria-label={`Edit ${cat.label}`}
+                    aria-label={t("admin.categories.actions.editAria", {
+                      name: cat.label,
+                    })}
                     disabled={isProcessing}
                   >
                     <Edit2 className="h-3.5 w-3.5" />
@@ -304,11 +340,19 @@ const ManageCategoriesPage = () => {
                   type="button"
                   onClick={() => void handleToggleStatus(cat.id)}
                   className="min-h-11 min-w-11 text-muted-foreground transition-colors motion-reduce:transition-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-0 sm:min-w-0"
-                  title={cat.status === "active" ? "Deactivate" : "Activate"}
+                  title={
+                    cat.status === "active"
+                      ? t("admin.categories.actions.deactivate")
+                      : t("admin.categories.actions.activate")
+                  }
                   aria-label={
                     cat.status === "active"
-                      ? `Deactivate ${cat.label}`
-                      : `Activate ${cat.label}`
+                      ? t("admin.categories.actions.deactivateAria", {
+                          name: cat.label,
+                        })
+                      : t("admin.categories.actions.activateAria", {
+                          name: cat.label,
+                        })
                   }
                   disabled={isProcessing}
                 >

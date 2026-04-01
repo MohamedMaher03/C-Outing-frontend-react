@@ -26,9 +26,11 @@ export const onboardingMock: OnboardingDataSource = {
    * Mock POST /users/:userId/preferences
    */
   async submitPreferences(
-    _userId: string,
-    _preferences: OnboardingPreferences,
+    userId: string,
+    preferences: OnboardingPreferences,
   ): Promise<void> {
+    void userId;
+    void preferences;
     await delay(500);
   },
 
@@ -36,9 +38,11 @@ export const onboardingMock: OnboardingDataSource = {
    * Mock PATCH /users/:userId/preferences
    */
   async updatePreferences(
-    _userId: string,
-    _preferences: Partial<OnboardingPreferences>,
+    userId: string,
+    preferences: Partial<OnboardingPreferences>,
   ): Promise<void> {
+    void userId;
+    void preferences;
     await delay(400);
   },
 };

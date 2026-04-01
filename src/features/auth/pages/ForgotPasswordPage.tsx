@@ -17,8 +17,10 @@ import {
   AuthSurface,
 } from "@/features/auth/components/layout/AuthShell";
 import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
+import { useI18n } from "@/components/i18n";
 
 export default function ForgotPasswordPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { sendResetOtp, isLoading, error, clearError } = useForgotPassword();
 
@@ -46,8 +48,8 @@ export default function ForgotPasswordPage() {
           onClick={() => navigate("/login")}
           className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 text-sm text-muted-foreground transition-colors hover:text-foreground/90"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Login
+          <ArrowLeft className="rtl-mirror h-4 w-4" />
+          {t("auth.backToLogin")}
         </button>
 
         {/* Header */}
@@ -58,11 +60,10 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
           <h2 className="text-2xl font-semibold text-foreground">
-            Forgot Password?
+            {t("auth.forgotPassword.title")}
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            No worries! Enter your email address and we'll send you a reset
-            code.
+            {t("auth.forgotPassword.subtitle")}
           </p>
         </div>
 
@@ -77,11 +78,12 @@ export default function ForgotPasswordPage() {
           aria-busy={isLoading}
         >
           <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="email">{t("auth.forgotPassword.emailLabel")}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              dir="ltr"
+              placeholder={t("auth.placeholders.email")}
               disabled={isLoading}
               aria-invalid={!!errors.email}
               className={`h-11 text-base sm:text-sm ${errors.email ? "border-destructive" : ""}`}
@@ -98,10 +100,10 @@ export default function ForgotPasswordPage() {
             {isLoading ? (
               <span className="flex items-center gap-2">
                 <InlineLoading size="lg" />
-                Sending Code…
+                {t("auth.forgotPassword.sendingCode")}
               </span>
             ) : (
-              "Send Reset Code"
+              t("auth.forgotPassword.sendCode")
             )}
           </Button>
         </form>

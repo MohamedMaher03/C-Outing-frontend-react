@@ -24,9 +24,11 @@ import {
   AdminSection,
 } from "@/features/admin/components";
 import { useSystemSettings } from "@/features/admin/hooks/useSystemSettings";
+import { useI18n } from "@/components/i18n";
 
 const SystemSettingsPage = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const {
     settings,
     loading,
@@ -39,21 +41,44 @@ const SystemSettingsPage = () => {
     handleSave,
   } = useSystemSettings();
 
+  const settingItems = [
+    {
+      key: "enableNotifications" as const,
+      labelKey: "admin.settings.toggle.notifications.label",
+      descriptionKey: "admin.settings.toggle.notifications.description",
+      icon: Bell,
+    },
+    {
+      key: "enableReviews" as const,
+      labelKey: "admin.settings.toggle.reviews.label",
+      descriptionKey: "admin.settings.toggle.reviews.description",
+      icon: MessageSquare,
+    },
+    {
+      key: "moderationRequired" as const,
+      labelKey: "admin.settings.toggle.moderation.label",
+      descriptionKey: "admin.settings.toggle.moderation.description",
+      icon: Shield,
+    },
+  ];
+
   if (loading) {
-    return <LoadingSpinner size="md" text="Loading settings..." fullScreen />;
+    return (
+      <LoadingSpinner size="md" text={t("admin.settings.loading")} fullScreen />
+    );
   }
 
   if (!settings) {
     return (
       <AdminPageLayout maxWidth="3xl" className="py-8">
         <AdminPageHeader
-          title="System Settings"
-          description="Configure application-wide settings"
+          title={t("admin.settings.header.title")}
+          description={t("admin.settings.header.description")}
           icon={Settings}
         />
         <AdminErrorBanner
-          title="Couldn't load settings"
-          message={error ?? "Failed to load system settings."}
+          title={t("admin.settings.error.loadTitle")}
+          message={error ?? t("admin.settings.error.loadMessage")}
           onRetry={() => {
             void retry();
           }}
@@ -66,13 +91,13 @@ const SystemSettingsPage = () => {
     <AdminPageLayout maxWidth="3xl">
       {/* Header */}
       <AdminPageHeader
-        title="System Settings"
-        description="Configure application-wide settings"
+        title={t("admin.settings.header.title")}
+        description={t("admin.settings.header.description")}
         icon={Settings}
       />
 
       <AdminErrorBanner
-        title="Couldn't load or save settings"
+        title={t("admin.settings.error.syncTitle")}
         message={error}
         onRetry={() => {
           void retry();
@@ -80,8 +105,8 @@ const SystemSettingsPage = () => {
       />
 
       <AdminSection
-        title="Feature Toggles"
-        description="Control global behavior for communication and moderation"
+        title={t("admin.settings.section.toggles.title")}
+        description={t("admin.settings.section.toggles.description")}
         tone="surface"
         contentClassName="gap-4"
       >
@@ -90,31 +115,12 @@ const SystemSettingsPage = () => {
             <Shield className="h-5 w-5 text-secondary" />
           </div>
           <p className="text-role-secondary text-muted-foreground">
-            Changes take effect after saving this page.
+            {t("admin.settings.section.toggles.notice")}
           </p>
         </div>
 
         <div className="space-y-2">
-          {[
-            {
-              key: "enableNotifications" as const,
-              label: "Enable Notifications",
-              desc: "Allow push and email notifications to users",
-              icon: Bell,
-            },
-            {
-              key: "enableReviews" as const,
-              label: "Enable Reviews",
-              desc: "Allow users to post reviews on places",
-              icon: MessageSquare,
-            },
-            {
-              key: "moderationRequired" as const,
-              label: "Require Moderation",
-              desc: "New reviews must be approved before publishing",
-              icon: Shield,
-            },
-          ].map((item) => (
+          {settingItems.map((item) => (
             <div
               key={item.key}
               className="flex items-start gap-4 p-3 rounded-xl hover:bg-muted/30 transition-colors"
@@ -134,10 +140,10 @@ const SystemSettingsPage = () => {
                   htmlFor={item.key}
                   className="cursor-pointer text-role-secondary font-medium text-foreground"
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Label>
                 <p className="text-role-caption text-muted-foreground">
-                  {item.desc}
+                  {t(item.descriptionKey)}
                 </p>
               </div>
             </div>
@@ -157,10 +163,10 @@ const SystemSettingsPage = () => {
           </div>
           <div>
             <h2 className="text-role-body font-semibold text-foreground">
-              Maintenance Mode
+              {t("admin.settings.maintenance.title")}
             </h2>
             <p className="text-role-caption text-muted-foreground">
-              When enabled, only admins can access the app
+              {t("admin.settings.maintenance.description")}
             </p>
           </div>
         </div>
@@ -176,7 +182,7 @@ const SystemSettingsPage = () => {
             htmlFor="maintenanceMode"
             className="cursor-pointer text-role-secondary font-medium text-destructive"
           >
-            Enable Maintenance Mode
+            {t("admin.settings.maintenance.toggle")}
           </Label>
         </div>
       </AdminSection>
@@ -188,7 +194,7 @@ const SystemSettingsPage = () => {
           onClick={() => navigate(-1)}
           className="flex-1 w-full"
         >
-          Cancel
+          {t("admin.settings.actions.cancel")}
         </Button>
         <Button
           onClick={() => void handleSave()}
@@ -196,7 +202,11 @@ const SystemSettingsPage = () => {
           className="w-full flex-1 gap-2 font-semibold"
         >
           <Save className="h-4 w-4" />
-          {saved ? "Saved ✓" : saving ? "Saving..." : "Save Settings"}
+          {saved
+            ? t("admin.settings.actions.saved")
+            : saving
+              ? t("admin.settings.actions.saving")
+              : t("admin.settings.actions.save")}
         </Button>
       </div>
     </AdminPageLayout>

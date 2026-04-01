@@ -25,6 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useI18n } from "@/components/i18n";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -65,6 +66,7 @@ const AddReviewFormLazy = lazy(() =>
 );
 
 const PlaceDetailPage = () => {
+  const { t, formatNumber } = useI18n();
   const { id } = useParams();
 
   const {
@@ -135,11 +137,13 @@ const PlaceDetailPage = () => {
   }, [ensureSocialReviewsLoaded, socialReviewsLoaded]);
 
   const socialCountCompact = socialReviewsLoaded
-    ? socialReviews.length.toString()
+    ? formatNumber(socialReviews.length)
     : "...";
   const socialCountVerbose = socialReviewsLoaded
-    ? formatCountLabel(socialReviews.length, "review")
-    : "Loading...";
+    ? t("placeDetail.reviews.countLabel", {
+        count: formatNumber(socialReviews.length),
+      })
+    : t("common.loading");
 
   const onDeleteMyReview = async () => {
     await handleDeleteMyReview();
@@ -152,7 +156,7 @@ const PlaceDetailPage = () => {
     return (
       <LoadingSpinner
         size="md"
-        text="Loading place details..."
+        text={t("placeDetail.loading")}
         fullScreen={true}
       />
     );
@@ -163,9 +167,9 @@ const PlaceDetailPage = () => {
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="w-full max-w-md space-y-4">
           <Alert variant="destructive" className="border-destructive/30">
-            <AlertTitle>Could not open this place</AlertTitle>
+            <AlertTitle>{t("placeDetail.error.openTitle")}</AlertTitle>
             <AlertDescription className="break-words">
-              {error || "Place not found."}
+              {error || t("placeDetail.error.notFound")}
             </AlertDescription>
           </Alert>
           <Button
@@ -174,7 +178,7 @@ const PlaceDetailPage = () => {
             className="min-h-11 w-full"
             onClick={() => void refreshPlaceData()}
           >
-            Retry
+            {t("common.retry")}
           </Button>
         </div>
       </div>
@@ -214,13 +218,13 @@ const PlaceDetailPage = () => {
               <span className="pd-type-label font-semibold break-words">
                 {notification.type === "like"
                   ? notification.action === "added"
-                    ? "Place liked"
-                    : "Like removed"
+                    ? t("placeDetail.notice.placeLiked")
+                    : t("placeDetail.notice.likeRemoved")
                   : notification.type === "report"
-                    ? "Report submitted"
+                    ? t("placeDetail.notice.reportSubmitted")
                     : notification.action === "added"
-                      ? "Added to favorites"
-                      : "Removed from favorites"}
+                      ? t("placeDetail.notice.addedToFavorites")
+                      : t("placeDetail.notice.removedFromFavorites")}
               </span>
             </div>
           </Card>
@@ -249,7 +253,7 @@ const PlaceDetailPage = () => {
               type="button"
               variant="outline"
               size="icon"
-              aria-label="Go back"
+              aria-label={t("placeDetail.action.goBack")}
               onClick={goBack}
               className="absolute left-4 top-4 h-11 w-11 rounded-full border-border/60 bg-card/90 text-foreground backdrop-blur-sm"
             >
@@ -263,10 +267,18 @@ const PlaceDetailPage = () => {
                 size="icon"
                 onClick={onLikeClick}
                 disabled={savingLike}
-                aria-label={isLiked ? "Unlike this place" : "Like this place"}
+                aria-label={
+                  isLiked
+                    ? t("placeDetail.action.unlike")
+                    : t("placeDetail.action.like")
+                }
                 aria-pressed={isLiked}
                 className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
-                title="Like this place"
+                title={
+                  isLiked
+                    ? t("placeDetail.action.unlike")
+                    : t("placeDetail.action.like")
+                }
               >
                 <ThumbsUp
                   className={cn(
@@ -282,11 +294,17 @@ const PlaceDetailPage = () => {
                 onClick={onFavoriteClick}
                 disabled={savingFavorite}
                 aria-label={
-                  isFavorite ? "Remove from favorites" : "Add to favorites"
+                  isFavorite
+                    ? t("home.place.removeFavorite")
+                    : t("home.place.addFavorite")
                 }
                 aria-pressed={isFavorite}
                 className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
-                title="Add to favorites"
+                title={
+                  isFavorite
+                    ? t("home.place.removeFavorite")
+                    : t("home.place.addFavorite")
+                }
               >
                 <Heart
                   className={cn(
@@ -379,7 +397,9 @@ const PlaceDetailPage = () => {
                         : "border-border text-muted-foreground",
                     )}
                   >
-                    {place.isOpen ? "Open Now" : "Closed"}
+                    {place.isOpen
+                      ? t("placeDetail.status.openNow")
+                      : t("home.place.closed")}
                   </Badge>
                 )}
               </div>
@@ -418,7 +438,7 @@ const PlaceDetailPage = () => {
                         className="gap-1 border-secondary/30 bg-secondary/10 text-secondary"
                       >
                         <Accessibility className="h-3 w-3" />
-                        Accessible
+                        {t("placeDetail.badge.accessible")}
                       </Badge>
                     )}
                 </div>
@@ -428,7 +448,9 @@ const PlaceDetailPage = () => {
 
           <div className="grid gap-5 lg:grid-cols-2">
             <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-2 sm:p-5 lg:col-span-2">
-              <h2 className="pd-type-kicker text-foreground">About</h2>
+              <h2 className="pd-type-kicker text-foreground">
+                {t("placeDetail.about")}
+              </h2>
               <p className="pd-type-body pd-measure text-muted-foreground break-words">
                 {place.description}
               </p>
@@ -436,7 +458,9 @@ const PlaceDetailPage = () => {
 
             {(place.phone || place.website || place.bookingUrl) && (
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5">
-                <h2 className="pd-type-kicker text-foreground">Contact</h2>
+                <h2 className="pd-type-kicker text-foreground">
+                  {t("placeDetail.contact")}
+                </h2>
                 <div className="flex flex-col gap-2.5">
                   {place.phone && (
                     <a
@@ -455,7 +479,7 @@ const PlaceDetailPage = () => {
                       className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-secondary hover:underline break-all"
                     >
                       <Globe className="h-4 w-4 shrink-0" />
-                      Visit Website
+                      {t("placeDetail.contact.visitWebsite")}
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
@@ -467,7 +491,7 @@ const PlaceDetailPage = () => {
                       className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-secondary hover:underline"
                     >
                       <CalendarCheck className="h-4 w-4 shrink-0" />
-                      Book a Table
+                      {t("placeDetail.contact.bookTable")}
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
@@ -480,15 +504,18 @@ const PlaceDetailPage = () => {
                 <div className="flex items-center gap-3 min-w-0">
                   <UtensilsCrossed className="h-5 w-5 text-secondary shrink-0" />
                   <div>
-                    <p className="pd-type-label text-foreground">Menu</p>
+                    <p className="pd-type-label text-foreground">
+                      {t("placeDetail.menu")}
+                    </p>
                     {(place.menuImagesCount ?? 0) > 0 && (
                       <p className="pd-type-micro pd-type-number text-muted-foreground inline-flex items-center gap-1 mt-0.5">
                         <Images className="h-3 w-3" />
                         {formatCountLabel(
                           place.menuImagesCount ?? 0,
-                          "menu photo",
+                          t("placeDetail.menuPhotoSingular"),
+                          t("placeDetail.menuPhotoPlural"),
                         )}{" "}
-                        available
+                        {t("placeDetail.available")}
                       </p>
                     )}
                   </div>
@@ -504,7 +531,7 @@ const PlaceDetailPage = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      View Menu
+                      {t("placeDetail.menu.view")}
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                   </Button>
@@ -517,7 +544,9 @@ const PlaceDetailPage = () => {
               place.seatingType ||
               place.parkingAvailable) && (
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5 lg:col-span-2">
-                <h2 className="pd-type-kicker text-foreground">Facilities</h2>
+                <h2 className="pd-type-kicker text-foreground">
+                  {t("placeDetail.facilities")}
+                </h2>
                 <div className="flex flex-wrap gap-2">
                   {place.hasWifi && (
                     <Badge
@@ -525,7 +554,7 @@ const PlaceDetailPage = () => {
                       className="gap-1.5 border-primary/30 bg-primary/10 text-primary"
                     >
                       <Wifi className="h-3.5 w-3.5" />
-                      Free Wi-Fi
+                      {t("placeDetail.facilities.wifi")}
                     </Badge>
                   )}
                   {place.hasToilet && (
@@ -534,7 +563,7 @@ const PlaceDetailPage = () => {
                       className="gap-1.5 border-secondary/30 bg-secondary/10 text-secondary"
                     >
                       <Toilet className="h-3.5 w-3.5" />
-                      Restrooms
+                      {t("placeDetail.facilities.restrooms")}
                     </Badge>
                   )}
                   {place.parkingAvailable && (
@@ -543,7 +572,7 @@ const PlaceDetailPage = () => {
                       className="gap-1.5 border-border text-foreground"
                     >
                       <ParkingSquare className="h-3.5 w-3.5" />
-                      Parking
+                      {t("placeDetail.facilities.parking")}
                     </Badge>
                   )}
                   {(place.seatingType ?? []).map((seat) => (
@@ -552,7 +581,7 @@ const PlaceDetailPage = () => {
                       variant="outline"
                       className="border-border bg-muted/60 text-muted-foreground capitalize"
                     >
-                      {seat} seating
+                      {`${seat} ${t("placeDetail.facilities.seatingSuffix")}`}
                     </Badge>
                   ))}
                 </div>
@@ -562,7 +591,7 @@ const PlaceDetailPage = () => {
 
           {summaryError && !summaryLoading && (
             <Alert variant="destructive" className="border-destructive/30">
-              <AlertTitle>Could not load review summary</AlertTitle>
+              <AlertTitle>{t("placeDetail.summary.error")}</AlertTitle>
               <AlertDescription className="mt-2 flex flex-wrap items-center justify-between gap-3">
                 <span className="break-words">{summaryError}</span>
                 <Button
@@ -571,7 +600,7 @@ const PlaceDetailPage = () => {
                   variant="outline"
                   onClick={() => void retrySummaryLoad()}
                 >
-                  Retry
+                  {t("common.retry")}
                 </Button>
               </AlertDescription>
             </Alert>
@@ -595,7 +624,7 @@ const PlaceDetailPage = () => {
           <Card className="rounded-2xl border-border/70 bg-card/95 p-5 shadow-sm space-y-4">
             <h2 className="pd-type-kicker text-foreground flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-secondary" />
-              Reviews
+              {t("placeDetail.reviews.title")}
             </h2>
 
             <Tabs
@@ -612,10 +641,14 @@ const PlaceDetailPage = () => {
                 >
                   <Star className="h-3.5 w-3.5" />
                   <span className="sm:hidden whitespace-nowrap pd-type-number">
-                    Users ({reviews.length})
+                    {t("placeDetail.reviews.usersShort", {
+                      count: formatNumber(reviews.length),
+                    })}
                   </span>
                   <span className="hidden sm:inline whitespace-nowrap pd-type-number">
-                    User Reviews ({formatCountLabel(reviews.length, "review")})
+                    {t("placeDetail.reviews.usersLong", {
+                      count: formatNumber(reviews.length),
+                    })}
                   </span>
                 </TabsTrigger>
                 <TabsTrigger
@@ -624,10 +657,14 @@ const PlaceDetailPage = () => {
                 >
                   <Globe className="h-3.5 w-3.5" />
                   <span className="sm:hidden whitespace-nowrap pd-type-number">
-                    Social ({socialCountCompact})
+                    {t("placeDetail.reviews.socialShort", {
+                      count: socialCountCompact,
+                    })}
                   </span>
                   <span className="hidden sm:inline whitespace-nowrap pd-type-number">
-                    Social Media ({socialCountVerbose})
+                    {t("placeDetail.reviews.socialLong", {
+                      count: socialCountVerbose,
+                    })}
                   </span>
                 </TabsTrigger>
               </TabsList>
@@ -635,13 +672,12 @@ const PlaceDetailPage = () => {
               <TabsContent value="website" className="space-y-4 mt-4">
                 {myReviewLoading ? (
                   <p className="pd-type-micro text-muted-foreground">
-                    Loading your review...
+                    {t("placeDetail.reviews.loadingYourReview")}
                   </p>
                 ) : myReview ? (
                   <Alert className="border-secondary/30 bg-secondary/10 text-secondary">
                     <AlertDescription className="pd-type-label">
-                      You already reviewed this place. Updating the form will
-                      edit your existing review.
+                      {t("placeDetail.reviews.alreadyReviewed")}
                     </AlertDescription>
                   </Alert>
                 ) : null}
@@ -676,7 +712,9 @@ const PlaceDetailPage = () => {
                     variant="destructive"
                     className="border-destructive/30"
                   >
-                    <AlertTitle>Could not load user reviews</AlertTitle>
+                    <AlertTitle>
+                      {t("placeDetail.reviews.userError")}
+                    </AlertTitle>
                     <AlertDescription className="mt-2 flex flex-wrap items-center justify-between gap-3">
                       <span className="break-words">{reviewsError}</span>
                       <Button
@@ -685,7 +723,7 @@ const PlaceDetailPage = () => {
                         variant="outline"
                         onClick={() => void retryReviewsLoad()}
                       >
-                        Retry
+                        {t("common.retry")}
                       </Button>
                     </AlertDescription>
                   </Alert>
@@ -693,7 +731,7 @@ const PlaceDetailPage = () => {
                   <div className="text-center py-8">
                     <MessageSquare className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
                     <p className="pd-type-body text-muted-foreground">
-                      No reviews yet. Be the first!
+                      {t("placeDetail.reviews.empty")}
                     </p>
                   </div>
                 ) : (
@@ -726,8 +764,11 @@ const PlaceDetailPage = () => {
                         className="w-full min-h-11"
                       >
                         {loadingMoreReviews
-                          ? "Loading more..."
-                          : `Load More Reviews (${reviews.length}/${reviewsPagination.totalCount})`}
+                          ? t("placeDetail.reviews.loadingMore")
+                          : t("placeDetail.reviews.loadMore", {
+                              shown: formatNumber(reviews.length),
+                              total: formatNumber(reviewsPagination.totalCount),
+                            })}
                       </Button>
                     )}
                   </div>
@@ -738,7 +779,7 @@ const PlaceDetailPage = () => {
                 <Alert className="border-border/70 bg-muted/40">
                   <AlertDescription className="pd-type-label text-muted-foreground flex items-center gap-2">
                     <Globe className="h-3.5 w-3.5 shrink-0" />
-                    <span>Reviews collected from social media platforms.</span>
+                    <span>{t("placeDetail.reviews.socialDescription")}</span>
                   </AlertDescription>
                 </Alert>
 
@@ -749,7 +790,9 @@ const PlaceDetailPage = () => {
                     variant="destructive"
                     className="border-destructive/30"
                   >
-                    <AlertTitle>Could not load social reviews</AlertTitle>
+                    <AlertTitle>
+                      {t("placeDetail.reviews.socialError")}
+                    </AlertTitle>
                     <AlertDescription className="mt-2 flex flex-wrap items-center justify-between gap-3">
                       <span className="break-words">{socialReviewsError}</span>
                       <Button
@@ -758,7 +801,7 @@ const PlaceDetailPage = () => {
                         variant="outline"
                         onClick={() => void retrySocialReviewsLoad()}
                       >
-                        Retry
+                        {t("common.retry")}
                       </Button>
                     </AlertDescription>
                   </Alert>
@@ -766,7 +809,7 @@ const PlaceDetailPage = () => {
                   <div className="text-center py-8">
                     <Globe className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
                     <p className="pd-type-body text-muted-foreground">
-                      No social media reviews found for this place yet.
+                      {t("placeDetail.reviews.socialEmpty")}
                     </p>
                   </div>
                 ) : (
@@ -791,7 +834,7 @@ const PlaceDetailPage = () => {
             disabled={!canOpenInMaps}
           >
             <ExternalLink className="h-4 w-4" />
-            Open in Google Maps
+            {t("placeDetail.action.openMaps")}
           </Button>
         </div>
       </div>
@@ -804,7 +847,7 @@ const PlaceDetailPage = () => {
             disabled={!canOpenInMaps}
           >
             <ExternalLink className="h-4 w-4" />
-            Open in Google Maps
+            {t("placeDetail.action.openMaps")}
           </Button>
         </div>
       </div>

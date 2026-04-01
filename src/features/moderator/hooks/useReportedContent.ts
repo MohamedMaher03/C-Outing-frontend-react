@@ -20,6 +20,7 @@ import type {
 } from "@/features/moderator/types";
 import { filterReportedContent } from "@/features/moderator/utils/moderatorFilters";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseReportedContentReturn {
   // State
@@ -54,6 +55,7 @@ interface UseReportedContentReturn {
 }
 
 export const useReportedContent = (): UseReportedContentReturn => {
+  const { t } = useI18n();
   const [reports, setReports] = useState<ReportedContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,14 +87,14 @@ export const useReportedContent = (): UseReportedContentReturn => {
       setReports(data);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to load reported content"));
+      setError(getErrorMessage(err, t("moderator.error.loadReportedContent")));
       setReports([]);
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -165,11 +167,19 @@ export const useReportedContent = (): UseReportedContentReturn => {
         ),
       );
 
-      showToast(`Report marked as ${status}.`, "info");
+      showToast(
+        t("moderator.reports.toast.statusUpdated", {
+          status: t(`moderator.report.status.${status}`),
+        }),
+        "info",
+      );
     } catch (err) {
       if (!mountedRef.current) return;
 
-      const message = getErrorMessage(err, "Failed to update report status");
+      const message = getErrorMessage(
+        err,
+        t("moderator.error.updateReportStatus"),
+      );
       setError(message);
       showToast(message, "error");
     } finally {
@@ -205,11 +215,11 @@ export const useReportedContent = (): UseReportedContentReturn => {
         ),
       );
       setExpandedId(null);
-      showToast("Review deleted successfully.", "destructive");
+      showToast(t("moderator.reports.toast.reviewDeleted"), "destructive");
     } catch (err) {
       if (!mountedRef.current) return;
 
-      const message = getErrorMessage(err, "Failed to delete review");
+      const message = getErrorMessage(err, t("moderator.error.deleteReview"));
       setError(message);
       showToast(message, "error");
     } finally {
@@ -243,11 +253,16 @@ export const useReportedContent = (): UseReportedContentReturn => {
             : r,
         ),
       );
-      showToast(`Warning sent to ${authorName ?? "user"}.`, "warning");
+      showToast(
+        t("moderator.reports.toast.warningSent", {
+          name: authorName ?? t("profile.userFallback"),
+        }),
+        "warning",
+      );
     } catch (err) {
       if (!mountedRef.current) return;
 
-      const message = getErrorMessage(err, "Failed to send warning");
+      const message = getErrorMessage(err, t("moderator.error.warnUser"));
       setError(message);
       showToast(message, "error");
     } finally {
@@ -282,13 +297,15 @@ export const useReportedContent = (): UseReportedContentReturn => {
         ),
       );
       showToast(
-        `${authorName ?? "User"} escalated to admin for ban review.`,
+        t("moderator.reports.toast.banEscalated", {
+          name: authorName ?? t("profile.userFallback"),
+        }),
         "destructive",
       );
     } catch (err) {
       if (!mountedRef.current) return;
 
-      const message = getErrorMessage(err, "Failed to escalate user ban");
+      const message = getErrorMessage(err, t("moderator.error.banUser"));
       setError(message);
       showToast(message, "error");
     } finally {

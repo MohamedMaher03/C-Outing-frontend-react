@@ -19,6 +19,7 @@ import { SIGN_UP_FORM_FIELDS } from "@/features/auth/mocks";
 import type { SignUpFieldConfig } from "@/features/auth/types";
 import { AuthShell, AuthSurface } from "./layout/AuthShell";
 import { AuthStatusBanner } from "./ui/AuthStatusBanner";
+import { useI18n } from "@/components/i18n";
 
 const SIGN_UP_BACKEND_FIELD_MAP: Record<string, FieldPath<SignUpFormInput>> = {
   name: "fullName",
@@ -47,6 +48,7 @@ const toSignUpFieldName = (
 };
 
 const SignUpForm = () => {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { registerUser, isLoading, error, validationErrors, clearError } =
     useSignUp();
@@ -98,17 +100,15 @@ const SignUpForm = () => {
           onClick={() => navigate("/login")}
           className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 text-sm text-muted-foreground transition-colors hover:text-foreground/90"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Login
+          <ArrowLeft className="rtl-mirror h-4 w-4" />
+          {t("auth.backToLogin")}
         </button>
 
         <div className="text-center space-y-1">
           <h2 className="text-2xl font-semibold text-foreground">
-            Create Account
+            {t("auth.createAccount")}
           </h2>
-          <p className="text-muted-foreground text-sm">
-            Join us and discover the best places Cairo has to offer
-          </p>
+          <p className="text-muted-foreground text-sm">{t("auth.joinUs")}</p>
         </div>
 
         {/* Social Login */}
@@ -136,7 +136,7 @@ const SignUpForm = () => {
                 fill="#EA4335"
               />
             </svg>
-            Continue with Google
+            {t("auth.continueWithGoogle")}
           </Button>
         </div>
 
@@ -144,7 +144,7 @@ const SignUpForm = () => {
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-border" />
           <span className="px-1 text-xs tracking-[0.1em] text-muted-foreground sm:text-sm">
-            or continue with email
+            {t("auth.orContinueWithEmail")}
           </span>
           <div className="flex-1 h-px bg-border" />
         </div>
@@ -165,8 +165,26 @@ const SignUpForm = () => {
               <FormField
                 key={field.id}
                 id={field.id}
-                label={field.label}
-                placeholder={field.placeholder}
+                label={
+                  field.id === "fullName"
+                    ? t("auth.fields.fullName")
+                    : field.id === "email"
+                      ? t("auth.fields.email")
+                      : field.id === "phone"
+                        ? t("auth.fields.phone")
+                        : field.id === "dateOfBirth"
+                          ? t("auth.fields.dateOfBirth")
+                          : field.label
+                }
+                placeholder={
+                  field.id === "fullName"
+                    ? t("auth.placeholders.fullName")
+                    : field.id === "email"
+                      ? t("auth.placeholders.email")
+                      : field.id === "phone"
+                        ? t("auth.placeholders.phone")
+                        : field.placeholder
+                }
                 type={field.type}
                 icon={field.Icon && <field.Icon className="h-4 w-4" />}
                 error={errors[field.id]?.message}
@@ -178,7 +196,7 @@ const SignUpForm = () => {
 
           {/* Password */}
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("auth.password")}</Label>
 
             <PasswordInput
               id="password"
@@ -193,7 +211,7 @@ const SignUpForm = () => {
 
           {/* Confirm Password */}
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t("auth.confirmPassword")}</Label>
 
             <PasswordInput
               id="confirmPassword"
@@ -208,7 +226,7 @@ const SignUpForm = () => {
 
           {/* Avatar (Optional) */}
           <div className="space-y-2">
-            <Label htmlFor="avatar">Avatar (Optional)</Label>
+            <Label htmlFor="avatar">{t("auth.avatarOptional")}</Label>
             <Input
               id="avatar"
               type="file"
@@ -223,8 +241,7 @@ const SignUpForm = () => {
               }
             />
             <p className="text-role-micro text-muted-foreground">
-              If you skip this, we will upload a default avatar for your
-              account.
+              {t("auth.defaultAvatarHint")}
             </p>
             <FormError message={errors.avatar?.message} />
           </div>
@@ -251,21 +268,21 @@ const SignUpForm = () => {
                   htmlFor="acceptTerms"
                   className="text-sm font-normal cursor-pointer"
                 >
-                  I accept the{" "}
+                  {t("auth.acceptTermsPrefix")}{" "}
                   <button
                     type="button"
                     disabled={isLoading}
                     className="inline-flex min-h-11 items-center font-medium text-foreground/80 transition-colors hover:text-foreground"
                   >
-                    Terms and Conditions
+                    {t("auth.terms")}
                   </button>{" "}
-                  and{" "}
+                  {t("auth.and")}{" "}
                   <button
                     type="button"
                     disabled={isLoading}
                     className="inline-flex min-h-11 items-center font-medium text-foreground/80 transition-colors hover:text-foreground"
                   >
-                    Privacy Policy
+                    {t("auth.privacy")}
                   </button>
                 </Label>
               </div>
@@ -279,32 +296,32 @@ const SignUpForm = () => {
             disabled={isLoading}
           >
             {isLoading ? (
-              <>
-                <InlineLoading size="lg" className="mr-2" />
-                Creating account...
-              </>
+              <span className="inline-flex items-center gap-2">
+                <InlineLoading size="lg" />
+                {t("auth.creatingAccount")}
+              </span>
             ) : (
-              "Create Account"
+              t("auth.createAccount")
             )}
           </Button>
         </form>
 
         {/* Login link */}
         <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
+          {t("auth.alreadyHaveAccount")}{" "}
           <button
             type="button"
             onClick={() => navigate("/login")}
             className="inline-flex min-h-11 items-center font-medium text-foreground/80 transition-colors hover:text-foreground"
           >
-            Sign in
+            {t("auth.signIn")}
           </button>
         </p>
       </AuthSurface>
 
       {/* Footer */}
       <p className="mt-4 pb-2 text-center text-sm text-cream/75 sm:mt-6 sm:pb-0">
-        © 2026 C-Outing. Explore Cairo like never before.
+        {t("auth.footer")}
       </p>
     </AuthShell>
   );

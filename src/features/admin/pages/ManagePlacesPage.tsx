@@ -59,6 +59,7 @@ import {
   placeStatusConfig,
 } from "@/features/admin/constants/statusConfigs";
 import { EMPTY_PLACE_FORM } from "@/features/admin/utils/placeForm";
+import { useI18n } from "@/components/i18n";
 
 const ADMIN_LIST_ROW_STYLE: CSSProperties = {
   contentVisibility: "auto",
@@ -72,6 +73,7 @@ const ADMIN_LIST_ROW_STYLE: CSSProperties = {
 
 const ManagePlacesPage = () => {
   const navigate = useNavigate();
+  const { t, formatNumber } = useI18n();
   const formRef = useRef<HTMLDivElement>(null);
   const tagPickerRef = useRef<HTMLDivElement>(null);
 
@@ -101,6 +103,28 @@ const ManagePlacesPage = () => {
     handleAddPlace,
     toggleTag,
   } = useManagePlaces();
+
+  const statusFilterOptions = useMemo(
+    () =>
+      PLACE_STATUS_FILTER_OPTIONS.map((option) => ({
+        ...option,
+        label:
+          option.value === "all"
+            ? t("admin.filter.all")
+            : t(`admin.status.${option.value}`),
+      })),
+    [t],
+  );
+
+  const getStatusLabel = (status: string): string =>
+    t(`admin.status.${status}`, undefined, status);
+
+  const getDistrictLabel = (district: string): string =>
+    t(
+      `onboarding.district.${district.toLowerCase().replace(/\s+/g, "-")}`,
+      undefined,
+      district,
+    );
 
   // Scroll to form when opened (DOM-specific side effect stays in the component)
   useEffect(() => {
@@ -157,7 +181,9 @@ const ManagePlacesPage = () => {
   );
 
   if (loading) {
-    return <LoadingSpinner size="md" text="Loading places..." fullScreen />;
+    return (
+      <LoadingSpinner size="md" text={t("admin.places.loading")} fullScreen />
+    );
   }
 
   return (
@@ -182,7 +208,7 @@ const ManagePlacesPage = () => {
       </div>
 
       <AdminErrorBanner
-        title="Couldn't update places"
+        title={t("admin.places.error.updateTitle")}
         message={error}
         onRetry={() => {
           void retry();
@@ -191,8 +217,11 @@ const ManagePlacesPage = () => {
 
       {/* Header */}
       <AdminPageHeader
-        title="Manage Places"
-        description={`${places.length} total places · ${placeSummary.flagged} flagged`}
+        title={t("admin.places.header.title")}
+        description={t("admin.places.header.description", {
+          total: formatNumber(places.length),
+          flagged: formatNumber(placeSummary.flagged),
+        })}
         icon={MapPin}
         actions={
           <Button
@@ -207,7 +236,9 @@ const ManagePlacesPage = () => {
             ) : (
               <Plus className="h-4 w-4" />
             )}
-            {showAddForm ? "Cancel" : "Add Place"}
+            {showAddForm
+              ? t("admin.places.actions.cancel")
+              : t("admin.places.actions.addPlace")}
           </Button>
         }
       />
@@ -218,16 +249,18 @@ const ManagePlacesPage = () => {
           <div id="admin-add-place-form" ref={formRef} className="space-y-5">
             <h2 className="flex items-center gap-2 text-role-body font-semibold text-foreground">
               <Plus className="h-4 w-4 text-secondary" />
-              New Place
+              {t("admin.places.form.title")}
             </h2>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Name */}
               <div className="space-y-1.5">
-                <Label htmlFor="place-name">Place Name *</Label>
+                <Label htmlFor="place-name">
+                  {t("admin.places.form.nameLabel")}
+                </Label>
                 <Input
                   id="place-name"
-                  placeholder="e.g. Al-Azhar Park"
+                  placeholder={t("admin.places.form.namePlaceholder")}
                   value={form.name}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, name: e.target.value }))
@@ -243,7 +276,9 @@ const ManagePlacesPage = () => {
 
               {/* Category */}
               <div className="space-y-1.5">
-                <Label htmlFor="place-category">Category *</Label>
+                <Label htmlFor="place-category">
+                  {t("admin.places.form.categoryLabel")}
+                </Label>
                 <select
                   id="place-category"
                   value={form.category}
@@ -255,7 +290,9 @@ const ManagePlacesPage = () => {
                     formErrors.category && "border-destructive",
                   )}
                 >
-                  <option value="">Select category…</option>
+                  <option value="">
+                    {t("admin.places.form.selectCategory")}
+                  </option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.label}>
                       {c.label}
@@ -271,7 +308,9 @@ const ManagePlacesPage = () => {
 
               {/* District */}
               <div className="space-y-1.5">
-                <Label htmlFor="place-district">District *</Label>
+                <Label htmlFor="place-district">
+                  {t("admin.places.form.districtLabel")}
+                </Label>
                 <select
                   id="place-district"
                   value={form.district}
@@ -283,10 +322,12 @@ const ManagePlacesPage = () => {
                     formErrors.district && "border-destructive",
                   )}
                 >
-                  <option value="">Select district…</option>
+                  <option value="">
+                    {t("admin.places.form.selectDistrict")}
+                  </option>
                   {DISTRICTS.map((d) => (
                     <option key={d} value={d}>
-                      {d}
+                      {getDistrictLabel(d)}
                     </option>
                   ))}
                 </select>
@@ -299,7 +340,7 @@ const ManagePlacesPage = () => {
 
               {/* Price Level */}
               <div className="space-y-1.5">
-                <Label>Price Level</Label>
+                <Label>{t("admin.places.form.priceLevelLabel")}</Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {PRICE_LEVEL_OPTIONS.map((lvl) => (
                     <button
@@ -317,10 +358,14 @@ const ManagePlacesPage = () => {
                     >
                       <div className="space-y-0.5">
                         <p className="text-xs font-semibold leading-tight text-foreground">
-                          {lvl.label}
+                          {t(`budget.${lvl.value}`, undefined, lvl.label)}
                         </p>
                         <p className="text-[10px] leading-tight text-muted-foreground">
-                          {lvl.caption}
+                          {t(
+                            `home.price.caption.${lvl.value}`,
+                            undefined,
+                            lvl.caption,
+                          )}
                           <span className="ml-1 font-semibold">
                             {lvl.symbol}
                           </span>
@@ -333,10 +378,12 @@ const ManagePlacesPage = () => {
 
               {/* Phone */}
               <div className="space-y-1.5">
-                <Label htmlFor="place-phone">Phone</Label>
+                <Label htmlFor="place-phone">
+                  {t("admin.places.form.phoneLabel")}
+                </Label>
                 <Input
                   id="place-phone"
-                  placeholder="+20 2 1234 5678"
+                  placeholder={t("admin.places.form.phonePlaceholder")}
                   value={form.phone}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, phone: e.target.value }))
@@ -352,10 +399,12 @@ const ManagePlacesPage = () => {
 
               {/* Website */}
               <div className="space-y-1.5">
-                <Label htmlFor="place-website">Website</Label>
+                <Label htmlFor="place-website">
+                  {t("admin.places.form.websiteLabel")}
+                </Label>
                 <Input
                   id="place-website"
-                  placeholder="https://example.com"
+                  placeholder={t("admin.places.form.websitePlaceholder")}
                   value={form.website}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, website: e.target.value }))
@@ -372,11 +421,13 @@ const ManagePlacesPage = () => {
 
             {/* About */}
             <div className="space-y-1.5">
-              <Label htmlFor="place-desc">About *</Label>
+              <Label htmlFor="place-desc">
+                {t("admin.places.form.aboutLabel")}
+              </Label>
               <textarea
                 id="place-desc"
                 rows={3}
-                placeholder="Describe the place (at least 20 characters)…"
+                placeholder={t("admin.places.form.aboutPlaceholder")}
                 value={form.description}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, description: e.target.value }))
@@ -395,18 +446,22 @@ const ManagePlacesPage = () => {
                   <span />
                 )}
                 <span className="text-role-caption text-muted-foreground">
-                  {form.description.length} chars
+                  {t("admin.places.form.charCount", {
+                    count: formatNumber(form.description.length),
+                  })}
                 </span>
               </div>
             </div>
 
             {/* Why Recommend */}
             <div className="space-y-1.5">
-              <Label htmlFor="place-why">Why Recommend</Label>
+              <Label htmlFor="place-why">
+                {t("admin.places.form.whyRecommendLabel")}
+              </Label>
               <textarea
                 id="place-why"
                 rows={2}
-                placeholder="What makes this place special?"
+                placeholder={t("admin.places.form.whyRecommendPlaceholder")}
                 value={form.whyRecommend}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, whyRecommend: e.target.value }))
@@ -425,7 +480,7 @@ const ManagePlacesPage = () => {
 
             {/* Tags */}
             <div className="space-y-1.5">
-              <Label>Tags</Label>
+              <Label>{t("admin.places.form.tagsLabel")}</Label>
               <div className="relative" ref={tagPickerRef}>
                 <button
                   type="button"
@@ -437,8 +492,10 @@ const ManagePlacesPage = () => {
                 >
                   <span className="text-muted-foreground">
                     {form.tags.length === 0
-                      ? "Select tags…"
-                      : `${form.tags.length} tag(s) selected`}
+                      ? t("admin.places.form.tagsPlaceholder")
+                      : t("admin.places.form.tagsSelected", {
+                          count: formatNumber(form.tags.length),
+                        })}
                   </span>
                   {showTagPicker ? (
                     <ChevronUp className="h-4 w-4" />
@@ -483,7 +540,9 @@ const ManagePlacesPage = () => {
                       <button
                         type="button"
                         onClick={() => toggleTag(tag)}
-                        aria-label={`Remove tag ${tag}`}
+                        aria-label={t("admin.places.form.removeTagAria", {
+                          tag,
+                        })}
                         className="rounded-sm text-secondary transition-colors motion-reduce:transition-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <X className="h-3 w-3" />
@@ -496,12 +555,14 @@ const ManagePlacesPage = () => {
 
             {/* Image URL */}
             <div className="space-y-1.5">
-              <Label htmlFor="place-image">Image URL *</Label>
+              <Label htmlFor="place-image">
+                {t("admin.places.form.imageLabel")}
+              </Label>
               <div className="flex gap-3">
                 <div className="flex-1">
                   <Input
                     id="place-image"
-                    placeholder="https://images.example.com/place.jpg"
+                    placeholder={t("admin.places.form.imagePlaceholder")}
                     value={form.image}
                     onChange={(e) =>
                       setForm((p) => ({ ...p, image: e.target.value }))
@@ -518,7 +579,7 @@ const ManagePlacesPage = () => {
                   <div className="h-16 w-16 rounded-xl overflow-hidden border border-border flex-shrink-0">
                     <img
                       src={form.image}
-                      alt="Place image preview"
+                      alt={t("admin.places.form.imagePreviewAlt")}
                       className="h-full w-full object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = "";
@@ -547,7 +608,7 @@ const ManagePlacesPage = () => {
                 }}
                 className="w-full sm:w-auto"
               >
-                Cancel
+                {t("admin.places.actions.cancel")}
               </Button>
               <Button
                 onClick={handleAddPlace}
@@ -557,11 +618,12 @@ const ManagePlacesPage = () => {
                 {submittingForm ? (
                   <>
                     <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{" "}
-                    Saving…
+                    {t("admin.places.actions.saving")}
                   </>
                 ) : (
                   <>
-                    <Plus className="h-4 w-4" /> Add Place
+                    <Plus className="h-4 w-4" />{" "}
+                    {t("admin.places.actions.addPlace")}
                   </>
                 )}
               </Button>
@@ -572,14 +634,14 @@ const ManagePlacesPage = () => {
 
       <AdminSection
         tone="muted"
-        title="Place Filters"
-        description="Search by name or district, then slice the queue by status"
+        title={t("admin.places.filters.title")}
+        description={t("admin.places.filters.description")}
       >
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search places or districts..."
+              placeholder={t("admin.places.filters.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -587,8 +649,8 @@ const ManagePlacesPage = () => {
           </div>
           <div className="lg:w-auto">
             <AdminFilterChips
-              label="Status"
-              options={PLACE_STATUS_FILTER_OPTIONS}
+              label={t("admin.filter.status")}
+              options={statusFilterOptions}
               value={statusFilter}
               onChange={setStatusFilter}
             />
@@ -597,15 +659,17 @@ const ManagePlacesPage = () => {
       </AdminSection>
 
       <AdminSection
-        title="Place Records"
-        description={`${filtered.length} places in current view`}
+        title={t("admin.places.records.title")}
+        description={t("admin.places.records.description", {
+          count: formatNumber(filtered.length),
+        })}
         contentClassName="gap-3"
       >
         {filtered.length === 0 ? (
           <AdminEmptyState
             icon={MapPin}
-            title="No places found"
-            description="No records match your search or status filter."
+            title={t("admin.places.empty.title")}
+            description={t("admin.places.empty.description")}
           />
         ) : (
           filtered.map((place) => {
@@ -642,7 +706,7 @@ const ManagePlacesPage = () => {
                       )}
                     >
                       <StatusIcon className="h-2.5 w-2.5 mr-0.5" />{" "}
-                      {config.label}
+                      {getStatusLabel(place.status)}
                     </Badge>
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-3 text-role-caption text-muted-foreground">
@@ -655,7 +719,11 @@ const ManagePlacesPage = () => {
                       {place.rating}
                     </span>
                     <span>·</span>
-                    <span>{place.reviewCount} reviews</span>
+                    <span>
+                      {t("admin.places.records.reviewCount", {
+                        count: formatNumber(place.reviewCount),
+                      })}
+                    </span>
                   </div>
                 </div>
 
@@ -668,7 +736,8 @@ const ManagePlacesPage = () => {
                     className="text-xs gap-1 min-h-11 sm:h-8"
                     disabled={isPendingAction}
                   >
-                    <Eye className="h-3.5 w-3.5" /> View
+                    <Eye className="h-3.5 w-3.5" />{" "}
+                    {t("admin.places.actions.view")}
                   </Button>
 
                   {place.status === "pending" && (
@@ -686,7 +755,7 @@ const ManagePlacesPage = () => {
                       ) : (
                         <CheckCircle className="h-3.5 w-3.5" />
                       )}{" "}
-                      Approve
+                      {t("admin.places.actions.approve")}
                     </Button>
                   )}
 
@@ -701,7 +770,8 @@ const ManagePlacesPage = () => {
                         className="min-h-11 gap-1 text-role-secondary text-primary hover:text-primary sm:h-8"
                         disabled={isPendingAction}
                       >
-                        <CheckCircle className="h-3.5 w-3.5" /> Clear
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        {t("admin.places.actions.clear")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -712,7 +782,8 @@ const ManagePlacesPage = () => {
                         className="min-h-11 gap-1 text-role-secondary text-destructive hover:text-destructive sm:h-8"
                         disabled={isPendingAction}
                       >
-                        <XCircle className="h-3.5 w-3.5" /> Remove
+                        <XCircle className="h-3.5 w-3.5" />
+                        {t("admin.places.actions.remove")}
                       </Button>
                     </>
                   )}
@@ -724,21 +795,28 @@ const ManagePlacesPage = () => {
                         size="sm"
                         className="text-xs gap-1 min-h-11 sm:h-8 text-destructive hover:text-destructive"
                         disabled={isPendingAction}
-                        aria-label={`Delete ${place.name}`}
+                        aria-label={t("admin.places.actions.deleteAria", {
+                          name: place.name,
+                        })}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Place</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          {t("admin.places.dialog.deleteTitle")}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to permanently delete "
-                          {place.name}"? This action cannot be undone.
+                          {t("admin.places.dialog.deleteDescription", {
+                            name: place.name,
+                          })}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>
+                          {t("admin.places.actions.cancel")}
+                        </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() =>
                             void handleDelete(place.id, place.name)
@@ -746,7 +824,7 @@ const ManagePlacesPage = () => {
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           disabled={isPendingAction}
                         >
-                          Delete
+                          {t("admin.places.actions.delete")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

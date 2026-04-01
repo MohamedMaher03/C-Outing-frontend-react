@@ -15,6 +15,7 @@ import {
 } from "@/features/profile/services/profileService";
 import type { PrivacySettings } from "@/features/profile/types";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UsePrivacyReturn {
   /** Current privacy toggle values */
@@ -38,6 +39,7 @@ interface UsePrivacyReturn {
 }
 
 export const usePrivacy = (): UsePrivacyReturn => {
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
@@ -72,18 +74,13 @@ export const usePrivacy = (): UsePrivacyReturn => {
         return;
       }
 
-      setError(
-        getErrorMessage(
-          err,
-          "We couldn't load your privacy settings. Please try again.",
-        ),
-      );
+      setError(getErrorMessage(err, t("profile.privacy.error.load")));
     } finally {
       if (runId === latestLoadRunRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   // Load current settings on mount
   useEffect(() => {
@@ -108,12 +105,7 @@ export const usePrivacy = (): UsePrivacyReturn => {
       await updatePrivacySettings(privacySettings);
       navigate("/profile");
     } catch (err) {
-      setError(
-        getErrorMessage(
-          err,
-          "We couldn't save your privacy settings. Please try again.",
-        ),
-      );
+      setError(getErrorMessage(err, t("profile.privacy.error.save")));
     } finally {
       saveInFlightRef.current = false;
       setSaving(false);
@@ -136,12 +128,7 @@ export const usePrivacy = (): UsePrivacyReturn => {
       localStorage.removeItem("authUser");
       navigate("/login");
     } catch (err) {
-      setError(
-        getErrorMessage(
-          err,
-          "We couldn't delete your account right now. Please try again or contact support.",
-        ),
-      );
+      setError(getErrorMessage(err, t("profile.privacy.error.delete")));
     } finally {
       deleteInFlightRef.current = false;
       setDeleting(false);

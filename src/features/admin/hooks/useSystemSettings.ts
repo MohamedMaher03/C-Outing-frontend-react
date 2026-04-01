@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { SystemSettings } from "@/features/admin/types";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseSystemSettingsReturn {
   // State
@@ -27,6 +28,7 @@ interface UseSystemSettingsReturn {
 }
 
 export const useSystemSettings = (): UseSystemSettingsReturn => {
+  const { t } = useI18n();
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,13 +51,13 @@ export const useSystemSettings = (): UseSystemSettingsReturn => {
       initialSettingsRef.current = data;
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to load settings"));
+      setError(getErrorMessage(err, t("admin.error.loadSettings")));
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -118,7 +120,7 @@ export const useSystemSettings = (): UseSystemSettingsReturn => {
       }, 2000);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to save settings"));
+      setError(getErrorMessage(err, t("admin.error.saveSettings")));
     } finally {
       saveInFlightRef.current = false;
       if (mountedRef.current) {

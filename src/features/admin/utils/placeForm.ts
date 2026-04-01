@@ -35,7 +35,28 @@ const isReasonablePhone = (value: string): boolean => {
   return /^[+()\-\s\d]{6,30}$/.test(value);
 };
 
-export const validatePlaceForm = (form: PlaceFormData): PlaceFormErrors => {
+type PlaceFormTranslator = (
+  key: string,
+  values?: Record<string, string | number>,
+  fallback?: string,
+) => string;
+
+export const validatePlaceForm = (
+  form: PlaceFormData,
+  translate?: PlaceFormTranslator,
+): PlaceFormErrors => {
+  const message = (
+    key: string,
+    fallback: string,
+    values?: Record<string, string | number>,
+  ): string => {
+    if (!translate) {
+      return fallback;
+    }
+
+    return translate(key, values, fallback);
+  };
+
   const errors: PlaceFormErrors = {};
   const normalizedName = form.name.trim();
   const normalizedDescription = form.description.trim();
@@ -45,50 +66,94 @@ export const validatePlaceForm = (form: PlaceFormData): PlaceFormErrors => {
   const normalizedWhyRecommend = form.whyRecommend.trim();
 
   if (!normalizedName) {
-    errors.name = "Place name is required.";
+    errors.name = message(
+      "admin.places.form.error.nameRequired",
+      "Place name is required.",
+    );
   } else if (normalizedName.length > MAX_NAME_LENGTH) {
-    errors.name = `Place name must be ${MAX_NAME_LENGTH} characters or less.`;
+    errors.name = message(
+      "admin.places.form.error.nameMax",
+      `Place name must be ${MAX_NAME_LENGTH} characters or less.`,
+      { max: MAX_NAME_LENGTH },
+    );
   }
 
   if (!form.category) {
-    errors.category = "Please select a category.";
+    errors.category = message(
+      "admin.places.form.error.categoryRequired",
+      "Please select a category.",
+    );
   }
 
   if (!form.district) {
-    errors.district = "Please select a district.";
+    errors.district = message(
+      "admin.places.form.error.districtRequired",
+      "Please select a district.",
+    );
   }
 
   if (!normalizedDescription) {
-    errors.description = "Description is required.";
+    errors.description = message(
+      "admin.places.form.error.descriptionRequired",
+      "Description is required.",
+    );
   } else if (normalizedDescription.length < 20) {
-    errors.description = "Description must be at least 20 characters.";
+    errors.description = message(
+      "admin.places.form.error.descriptionMin",
+      "Description must be at least 20 characters.",
+      { min: 20 },
+    );
   } else if (normalizedDescription.length > MAX_DESCRIPTION_LENGTH) {
-    errors.description = `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`;
+    errors.description = message(
+      "admin.places.form.error.descriptionMax",
+      `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`,
+      { max: MAX_DESCRIPTION_LENGTH },
+    );
   }
 
   if (!normalizedImage) {
-    errors.image = "Image URL is required.";
+    errors.image = message(
+      "admin.places.form.error.imageRequired",
+      "Image URL is required.",
+    );
   } else if (!isValidUrl(normalizedImage)) {
-    errors.image = "Image URL must start with http:// or https://.";
+    errors.image = message(
+      "admin.places.form.error.imageUrlInvalid",
+      "Image URL must start with http:// or https://.",
+    );
   }
 
   if (
     normalizedWhyRecommend &&
     normalizedWhyRecommend.length > MAX_WHY_RECOMMEND_LENGTH
   ) {
-    errors.whyRecommend = `Why recommend must be ${MAX_WHY_RECOMMEND_LENGTH} characters or less.`;
+    errors.whyRecommend = message(
+      "admin.places.form.error.whyRecommendMax",
+      `Why recommend must be ${MAX_WHY_RECOMMEND_LENGTH} characters or less.`,
+      { max: MAX_WHY_RECOMMEND_LENGTH },
+    );
   }
 
   if (normalizedPhone) {
     if (normalizedPhone.length > MAX_PHONE_LENGTH) {
-      errors.phone = `Phone number must be ${MAX_PHONE_LENGTH} characters or less.`;
+      errors.phone = message(
+        "admin.places.form.error.phoneMax",
+        `Phone number must be ${MAX_PHONE_LENGTH} characters or less.`,
+        { max: MAX_PHONE_LENGTH },
+      );
     } else if (!isReasonablePhone(normalizedPhone)) {
-      errors.phone = "Phone number contains unsupported characters or format.";
+      errors.phone = message(
+        "admin.places.form.error.phoneInvalid",
+        "Phone number contains unsupported characters or format.",
+      );
     }
   }
 
   if (normalizedWebsite && !isValidUrl(normalizedWebsite)) {
-    errors.website = "Website URL must start with http:// or https://.";
+    errors.website = message(
+      "admin.places.form.error.websiteUrlInvalid",
+      "Website URL must start with http:// or https://.",
+    );
   }
 
   return errors;

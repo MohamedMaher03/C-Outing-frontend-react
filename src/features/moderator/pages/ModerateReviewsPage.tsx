@@ -39,8 +39,8 @@ import {
 import {
   formatCount,
   formatShortDate,
-  pluralize,
 } from "@/features/moderator/utils/formatters";
+import { useI18n } from "@/components/i18n";
 
 const REVIEW_PLACEHOLDER_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' fill='%23f4efe5'/%3E%3Ccircle cx='48' cy='36' r='16' fill='%23c8b088'/%3E%3Crect x='22' y='58' width='52' height='24' rx='12' fill='%23967f59'/%3E%3C/svg%3E";
@@ -52,6 +52,7 @@ const MODERATOR_REVIEW_ROW_STYLE: CSSProperties = {
 };
 
 const ModerateReviewsPage = () => {
+  const { t, locale } = useI18n();
   const {
     reviews,
     loading,
@@ -67,6 +68,18 @@ const ModerateReviewsPage = () => {
     handleReject,
     handleFlag,
   } = useModerateReviews();
+
+  const statusFilterOptions = useMemo(
+    () =>
+      MODERATOR_REVIEW_STATUS_FILTER_OPTIONS.map((option) => ({
+        ...option,
+        label:
+          option.value === "all"
+            ? t("admin.filter.all")
+            : t(`admin.status.${option.value}`),
+      })),
+    [t],
+  );
 
   const reviewSummary = useMemo(
     () =>
@@ -87,20 +100,28 @@ const ModerateReviewsPage = () => {
 
   if (loading) {
     return (
-      <LoadingSpinner size="md" text="Loading review queue..." fullScreen />
+      <LoadingSpinner
+        size="md"
+        text={t("moderator.reviews.loading")}
+        fullScreen
+      />
     );
   }
 
   return (
     <ModeratorPageLayout>
       <ModeratorPageHeader
-        title="Review Moderation"
-        description={`${formatCount(reviews.length)} total reviews · ${formatCount(reviewSummary.pending)} pending · ${formatCount(reviewSummary.flagged)} flagged`}
+        title={t("moderator.reviews.header.title")}
+        description={t("moderator.reviews.header.description", {
+          total: formatCount(reviews.length, locale),
+          pending: formatCount(reviewSummary.pending, locale),
+          flagged: formatCount(reviewSummary.flagged, locale),
+        })}
         icon={MessageSquare}
       />
 
       <ModeratorErrorBanner
-        title="Couldn't load review moderation queue"
+        title={t("moderator.reviews.error.loadTitle")}
         message={error}
         onRetry={() => {
           void retry();
@@ -109,14 +130,14 @@ const ModerateReviewsPage = () => {
 
       <ModeratorSection
         tone="muted"
-        title="Moderation Filters"
-        description="Use keywords and status chips to adapt the queue for quick mobile moderation or deeper desktop review."
+        title={t("moderator.reviews.filters.title")}
+        description={t("moderator.reviews.filters.description")}
       >
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search reviews, users, or places..."
+              placeholder={t("moderator.reviews.filters.searchPlaceholder")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="pl-10"
@@ -124,8 +145,8 @@ const ModerateReviewsPage = () => {
           </div>
           <div className="lg:min-w-[16rem]">
             <ModeratorFilterChips
-              label="Status"
-              options={MODERATOR_REVIEW_STATUS_FILTER_OPTIONS}
+              label={t("admin.filter.status")}
+              options={statusFilterOptions}
               value={statusFilter}
               onChange={setStatusFilter}
             />
@@ -134,18 +155,20 @@ const ModerateReviewsPage = () => {
       </ModeratorSection>
 
       <ModeratorSection
-        title="Review Queue"
-        description={`${formatCount(filtered.length)} reviews in current view`}
+        title={t("moderator.reviews.queue.title")}
+        description={t("moderator.reviews.queue.description", {
+          count: formatCount(filtered.length, locale),
+        })}
         contentClassName="gap-4"
       >
         {filtered.length === 0 ? (
           <ModeratorEmptyState
             icon={MessageSquare}
-            title="Queue is clear"
+            title={t("moderator.reviews.empty.title")}
             description={
               search.trim().length > 0
-                ? "No reviews match your current search and status filters."
-                : "No reviews match the current moderation segment."
+                ? t("moderator.reviews.empty.withSearch")
+                : t("moderator.reviews.empty.default")
             }
           />
         ) : (
@@ -189,12 +212,12 @@ const ModerateReviewsPage = () => {
                         {review.userName}
                       </p>
                       <p className="text-role-caption text-muted-foreground">
-                        on{" "}
+                        {t("moderator.reviews.meta.on")}{" "}
                         <span className="font-medium text-foreground">
                           {review.placeName}
                         </span>
                         {" · "}
-                        {formatShortDate(review.createdAt)}
+                        {formatShortDate(review.createdAt, locale)}
                       </p>
                     </div>
                   </div>
@@ -220,7 +243,7 @@ const ModerateReviewsPage = () => {
                       )}
                     >
                       <StatusIcon className="h-2.5 w-2.5 mr-0.5" />{" "}
-                      {config.label}
+                      {t(`admin.status.${review.status}`)}
                     </Badge>
                   </div>
                 </div>
@@ -233,8 +256,9 @@ const ModerateReviewsPage = () => {
                   {review.reportCount > 0 && (
                     <span className="flex items-center gap-1 text-role-caption font-semibold text-destructive">
                       <AlertTriangle className="h-3 w-3" />
-                      {formatCount(review.reportCount)}{" "}
-                      {pluralize(review.reportCount, "report")}
+                      {t("moderator.reviews.meta.reports", {
+                        count: formatCount(review.reportCount, locale),
+                      })}
                     </span>
                   )}
 
@@ -253,7 +277,7 @@ const ModerateReviewsPage = () => {
                           ) : (
                             <CheckCircle className="h-3.5 w-3.5" />
                           )}
-                          Approve
+                          {t("moderator.reviews.actions.approve")}
                         </Button>
                       )}
                       {review.status !== "flagged" && (
@@ -269,7 +293,7 @@ const ModerateReviewsPage = () => {
                           ) : (
                             <Flag className="h-3.5 w-3.5" />
                           )}
-                          Flag
+                          {t("moderator.reviews.actions.flag")}
                         </Button>
                       )}
                       <Button
@@ -284,7 +308,7 @@ const ModerateReviewsPage = () => {
                         ) : (
                           <XCircle className="h-3.5 w-3.5" />
                         )}
-                        Reject
+                        {t("moderator.reviews.actions.reject")}
                       </Button>
                     </div>
                   )}

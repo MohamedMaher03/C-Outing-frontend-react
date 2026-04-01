@@ -15,8 +15,10 @@ import { PasswordInput } from "./form/PasswordInput";
 import { useLogin } from "@/features/auth/hooks/useLogin";
 import { LOGIN_FORM_FIELDS } from "@/features/auth/mocks";
 import type { LoginField } from "../types";
+import { useI18n } from "@/components/i18n";
 
 const LoginForm = () => {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { loginUser, isLoading, error, clearError } = useLogin();
 
@@ -38,10 +40,10 @@ const LoginForm = () => {
       <AuthSurface>
         <div className="space-y-1 text-center">
           <h2 className="text-2xl font-semibold text-foreground">
-            Welcome back
+            {t("auth.welcomeBack")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            Discover the best places Cairo has to offer
+            {t("auth.discoverCairo")}
           </p>
         </div>
 
@@ -70,7 +72,7 @@ const LoginForm = () => {
                 fill="#EA4335"
               />
             </svg>
-            Google
+            {t("auth.continueWithGoogle")}
           </Button>
         </div>
 
@@ -78,7 +80,7 @@ const LoginForm = () => {
         <div className="flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
           <span className="px-1 text-xs tracking-[0.1em] text-muted-foreground sm:text-sm">
-            or continue with email
+            {t("auth.orContinueWithEmail")}
           </span>
           <div className="h-px flex-1 bg-border" />
         </div>
@@ -98,8 +100,14 @@ const LoginForm = () => {
             <FormField
               key={field.id}
               id={field.id}
-              label={field.label}
-              placeholder={field.placeholder}
+              label={
+                field.id === "email" ? t("auth.fields.email") : field.label
+              }
+              placeholder={
+                field.id === "email"
+                  ? t("auth.placeholders.email")
+                  : field.placeholder
+              }
               type={field.type}
               error={errors[field.id]?.message}
               disabled={isLoading}
@@ -110,14 +118,14 @@ const LoginForm = () => {
           {/* Password Field */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.password")}</Label>
               <button
                 type="button"
                 disabled={isLoading}
                 onClick={() => navigate("/forgot-password")}
                 className="-mx-2 inline-flex min-h-11 items-center px-2 text-sm font-medium text-foreground/75 transition-colors hover:text-foreground/95"
               >
-                Forgot password?
+                {t("auth.forgotPassword")}
               </button>
             </div>
             <PasswordInput
@@ -136,32 +144,32 @@ const LoginForm = () => {
             disabled={isLoading}
           >
             {isLoading ? (
-              <>
-                <InlineLoading size="lg" className="mr-2" />
-                Signing in...
-              </>
+              <span className="inline-flex items-center gap-2">
+                <InlineLoading size="lg" />
+                {t("auth.signingIn")}
+              </span>
             ) : (
-              "Sign in"
+              t("auth.signIn")
             )}
           </Button>
         </form>
 
         {/* Sign up link */}
         <p className="text-center text-sm text-muted-foreground">
-          Don't have an account?{" "}
+          {t("auth.noAccount")}{" "}
           <button
             type="button"
             onClick={() => navigate("/register")}
             className="inline-flex min-h-11 items-center font-medium text-foreground/80 transition-colors hover:text-foreground"
           >
-            Create one
+            {t("auth.createOne")}
           </button>
         </p>
       </AuthSurface>
 
       {/* Footer */}
       <p className="mt-4 pb-2 text-center text-sm text-cream/75 sm:mt-6 sm:pb-0">
-        © 2026 C-Outing. Explore Cairo like never before.
+        {t("auth.footer")}
       </p>
     </AuthShell>
   );

@@ -31,12 +31,20 @@ import {
   formatCount,
   formatDateTime,
 } from "@/features/moderator/utils/formatters";
+import { useI18n } from "@/components/i18n";
 
 const ModeratorDashboardPage = () => {
+  const { t, locale } = useI18n();
   const { stats, actions, loading, error, retry } = useModeratorDashboard();
 
   if (loading) {
-    return <LoadingSpinner size="md" text="Loading dashboard..." fullScreen />;
+    return (
+      <LoadingSpinner
+        size="md"
+        text={t("moderator.dashboard.loading")}
+        fullScreen
+      />
+    );
   }
 
   if (!stats) {
@@ -47,8 +55,8 @@ const ModeratorDashboardPage = () => {
       >
         <ModeratorEmptyState
           icon={AlertTriangle}
-          title="Couldn't load moderator dashboard"
-          description={error ?? "The dashboard data is unavailable right now."}
+          title={t("moderator.dashboard.unavailableTitle")}
+          description={error ?? t("moderator.dashboard.unavailableMessage")}
           action={
             <Button
               type="button"
@@ -58,7 +66,7 @@ const ModeratorDashboardPage = () => {
                 void retry();
               }}
             >
-              Retry
+              {t("common.retry")}
             </Button>
           }
         />
@@ -68,37 +76,37 @@ const ModeratorDashboardPage = () => {
 
   const statCards = [
     {
-      label: "Pending Reviews",
+      label: t("moderator.dashboard.stat.pendingReviews"),
       value: stats.pendingReviews,
       icon: MessageSquare,
       color: "bg-secondary/18 text-foreground",
     },
     {
-      label: "Flagged Places",
+      label: t("moderator.dashboard.stat.flaggedPlaces"),
       value: stats.flaggedPlaces,
       icon: AlertTriangle,
       color: "bg-destructive/10 text-destructive",
     },
     {
-      label: "Open Reports",
+      label: t("moderator.dashboard.stat.openReports"),
       value: stats.openReports,
       icon: Shield,
       color: "bg-destructive/10 text-destructive",
     },
     {
-      label: "Resolved Today",
+      label: t("moderator.dashboard.stat.resolvedToday"),
       value: stats.resolvedToday,
       icon: Activity,
       color: "bg-primary/10 text-primary",
     },
     {
-      label: "Resolved This Week",
+      label: t("moderator.dashboard.stat.resolvedThisWeek"),
       value: stats.resolvedThisWeek,
       icon: Activity,
       color: "bg-primary/10 text-primary",
     },
     {
-      label: "Total Moderated",
+      label: t("moderator.dashboard.stat.totalModerated"),
       value: stats.totalModerated,
       icon: Shield,
       color: "bg-primary/20 text-primary",
@@ -107,22 +115,28 @@ const ModeratorDashboardPage = () => {
 
   const quickLinks = [
     {
-      label: "Review Queue",
-      subtitle: `${formatCount(stats.pendingReviews)} pending`,
+      label: t("moderator.dashboard.quick.reviewQueue"),
+      subtitle: t("moderator.dashboard.quick.pending", {
+        count: formatCount(stats.pendingReviews, locale),
+      }),
       to: "/moderator/reviews",
       icon: MessageSquare,
       iconClass: "bg-secondary/18 text-foreground",
     },
     {
-      label: "Flagged Places",
-      subtitle: `${formatCount(stats.flaggedPlaces)} to review`,
+      label: t("moderator.dashboard.quick.flaggedPlaces"),
+      subtitle: t("moderator.dashboard.quick.toReview", {
+        count: formatCount(stats.flaggedPlaces, locale),
+      }),
       to: "/moderator/places",
       icon: MapPin,
       iconClass: "bg-destructive/10 text-destructive",
     },
     {
-      label: "Reports",
-      subtitle: `${formatCount(stats.openReports)} open`,
+      label: t("moderator.dashboard.quick.reports"),
+      subtitle: t("moderator.dashboard.quick.open", {
+        count: formatCount(stats.openReports, locale),
+      }),
       to: "/moderator/reports",
       icon: AlertTriangle,
       iconClass: "bg-destructive/10 text-destructive",
@@ -135,13 +149,13 @@ const ModeratorDashboardPage = () => {
   return (
     <ModeratorPageLayout>
       <ModeratorPageHeader
-        title="Moderator Dashboard"
-        description="Content moderation overview and queue status"
+        title={t("moderator.dashboard.header.title")}
+        description={t("moderator.dashboard.header.description")}
         icon={Shield}
       />
 
       <ModeratorErrorBanner
-        title="Showing cached dashboard data"
+        title={t("moderator.dashboard.errorRefreshTitle")}
         message={error}
         onRetry={() => {
           void retry();
@@ -151,8 +165,8 @@ const ModeratorDashboardPage = () => {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] xl:items-start">
         <ModeratorSection
           tone="surface"
-          title="Queue Snapshot"
-          description="Key moderation workload indicators optimized for quick scanning"
+          title={t("moderator.dashboard.section.queue.title")}
+          description={t("moderator.dashboard.section.queue.description")}
           contentClassName="gap-4"
         >
           <div className="grid gap-3 sm:grid-cols-3">
@@ -171,7 +185,7 @@ const ModeratorDashboardPage = () => {
                 </div>
                 <div>
                   <p className="text-role-subheading text-numeric-tabular font-bold text-foreground">
-                    {formatCount(stat.value)}
+                    {formatCount(stat.value, locale)}
                   </p>
                   <p className="text-role-caption text-muted-foreground">
                     {stat.label}
@@ -200,7 +214,7 @@ const ModeratorDashboardPage = () => {
                     {stat.label}
                   </p>
                   <p className="text-role-secondary text-numeric-tabular font-semibold text-foreground">
-                    {formatCount(stat.value)}
+                    {formatCount(stat.value, locale)}
                   </p>
                 </div>
               </article>
@@ -210,8 +224,10 @@ const ModeratorDashboardPage = () => {
 
         <ModeratorSection
           tone="surface"
-          title="Quick Navigation"
-          description="Jump straight into the right moderation stream"
+          title={t("moderator.dashboard.section.quickNavigation.title")}
+          description={t(
+            "moderator.dashboard.section.quickNavigation.description",
+          )}
           contentClassName="gap-3"
         >
           {quickLinks.map((link) => (
@@ -239,7 +255,7 @@ const ModeratorDashboardPage = () => {
                 </div>
               </div>
               <span className="text-role-caption font-semibold text-muted-foreground transition-colors group-hover:text-foreground">
-                Open
+                {t("moderator.dashboard.quick.openAction")}
               </span>
             </Link>
           ))}
@@ -248,15 +264,17 @@ const ModeratorDashboardPage = () => {
 
       <ModeratorSection
         tone="muted"
-        title="Recent Actions"
-        description="Latest moderation activity across reports, places, and reviews"
+        title={t("moderator.dashboard.section.recentActions.title")}
+        description={t("moderator.dashboard.section.recentActions.description")}
         contentClassName="gap-2"
       >
         {actions.length === 0 ? (
           <ModeratorEmptyState
             icon={Activity}
-            title="No recent moderator actions"
-            description="New moderation activity will appear here once actions are performed."
+            title={t("moderator.dashboard.section.recentActions.emptyTitle")}
+            description={t(
+              "moderator.dashboard.section.recentActions.emptyDescription",
+            )}
           />
         ) : (
           <div className="max-h-[32rem] space-y-2 overflow-auto pr-1">
@@ -285,12 +303,22 @@ const ModeratorDashboardPage = () => {
                         {action.moderatorName}
                       </span>{" "}
                       <span className="text-muted-foreground">
-                        {action.action}
+                        {t(
+                          `moderator.dashboard.action.${action.action}`,
+                          undefined,
+                          action.action,
+                        )}
                       </span>{" "}
                       <span className="font-medium">{action.itemName}</span>
                       <span className="text-muted-foreground">
                         {" "}
-                        ({action.itemType})
+                        (
+                        {t(
+                          `moderator.dashboard.itemType.${action.itemType}`,
+                          undefined,
+                          action.itemType,
+                        )}
+                        )
                       </span>
                     </p>
                     {action.note ? (
@@ -299,7 +327,7 @@ const ModeratorDashboardPage = () => {
                       </p>
                     ) : null}
                     <p className="mt-0.5 text-role-caption text-muted-foreground">
-                      {formatDateTime(action.timestamp)}
+                      {formatDateTime(action.timestamp, locale)}
                     </p>
                   </div>
                 </div>

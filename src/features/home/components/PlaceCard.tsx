@@ -1,6 +1,7 @@
 import { Heart, MapPin, Star, Clock, Wifi, Navigation } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/components/i18n";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import type { PlaceCardProps } from "@/features/home/types";
@@ -34,13 +35,15 @@ const PlaceCard = ({
   hideTopRatedBadge = false,
   onClick,
 }: PlaceCardProps) => {
+  const { t, formatNumber } = useI18n();
   const shouldReduceMotion = useReducedMotion();
   const [isImageBroken, setIsImageBroken] = useState(false);
   const isHorizontal = variant === "horizontal";
   const rating = toSafeNumber(place.rating);
   const reviewCount = toSafeNumber(place.reviewCount);
-  const safeName = place.name?.trim() || "Untitled venue";
-  const safeAddress = place.address?.trim() || "Address unavailable";
+  const safeName = place.name?.trim() || t("home.place.untitled");
+  const safeAddress =
+    place.address?.trim() || t("home.place.addressUnavailable");
   const safeTagList = (place.atmosphereTags ?? [])
     .filter((tag): tag is string => typeof tag === "string")
     .slice(0, 2);
@@ -48,12 +51,15 @@ const PlaceCard = ({
   const reviewCountDisplay = useMemo(
     () =>
       Number.isFinite(reviewCount)
-        ? new Intl.NumberFormat().format(Math.max(0, reviewCount))
-        : "0",
-    [reviewCount],
+        ? formatNumber(Math.max(0, reviewCount))
+        : formatNumber(0),
+    [formatNumber, reviewCount],
   );
   const isTopRated = rating >= TOP_RATED_MIN_RATING;
-  const cardAriaLabel = `View ${safeName} rated ${ratingDisplay}`;
+  const cardAriaLabel = t("home.place.cardAria", {
+    name: safeName,
+    rating: ratingDisplay,
+  });
   const distanceState = getDistanceDisplayState(
     userLocation,
     place.latitude,
@@ -62,6 +68,53 @@ const PlaceCard = ({
   const priceMeta = place.priceLevel
     ? PRICE_LEVEL_META[place.priceLevel]
     : null;
+
+  const distanceLabel = useMemo(() => {
+    if (distanceState.kind === "distance") {
+      const distanceKm = distanceState.valueKm;
+      if (!Number.isFinite(distanceKm) || distanceKm < 0) {
+        return t("home.distance.unavailable");
+      }
+
+      if (distanceKm < 1) {
+        return t("home.distance.metersAway", {
+          distance: formatNumber(Math.max(1, Math.round(distanceKm * 1000))),
+        });
+      }
+
+      if (distanceKm < 10) {
+        return t("home.distance.kmAway", {
+          distance: formatNumber(Number(distanceKm.toFixed(1))),
+        });
+      }
+
+      return t("home.distance.kmAway", {
+        distance: formatNumber(Math.round(distanceKm)),
+      });
+    }
+
+    if (distanceState.kind === "locating") {
+      return t("home.distance.locating");
+    }
+
+    if (distanceState.kind === "permission-denied") {
+      return t("home.distance.permissionDenied");
+    }
+
+    if (distanceState.kind === "unsupported") {
+      return t("home.distance.unsupported");
+    }
+
+    if (distanceState.kind === "position-unavailable") {
+      return t("home.distance.positionUnavailable");
+    }
+
+    if (distanceState.kind === "error") {
+      return t("home.distance.error");
+    }
+
+    return t("home.distance.unavailable");
+  }, [distanceState, formatNumber, t]);
 
   const distanceClassName = cn(
     "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold",
@@ -115,12 +168,14 @@ const PlaceCard = ({
       {isTopRated && !hideTopRatedBadge && (
         <div
           className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-cream/35 bg-primary/95 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.08em] text-cream shadow-lg shadow-black/35 backdrop-blur-sm"
-          title={`Top Rated appears when rating is ${TOP_RATED_MIN_RATING.toFixed(1)} or higher.`}
+          title={t("home.place.topRatedHint", {
+            rating: TOP_RATED_MIN_RATING.toFixed(1),
+          })}
         >
-          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-secondary/20">
-            <Star className="h-2.5 w-2.5 fill-secondary text-secondary" />
+          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-secondary/20 dark:bg-primary-foreground/24">
+            <Star className="h-2.5 w-2.5 fill-secondary text-secondary dark:fill-cream dark:text-cream" />
           </span>
-          TOP RATED
+          {t("home.place.topRatedBadge")}
         </div>
       )}
 
@@ -141,7 +196,7 @@ const PlaceCard = ({
         {isImageBroken && (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/70 px-4 text-center">
             <span className="text-sm font-semibold text-muted-foreground break-words">
-              Image unavailable
+              {t("home.place.imageUnavailable")}
             </span>
           </div>
         )}
@@ -156,7 +211,9 @@ const PlaceCard = ({
             onToggleSave?.(place.id);
           }}
           aria-label={
-            place.isSaved ? "Remove from favorites" : "Add to favorites"
+            place.isSaved
+              ? t("home.place.removeFavorite")
+              : t("home.place.addFavorite")
           }
           aria-pressed={place.isSaved}
           aria-busy={isSavePending}
@@ -211,7 +268,7 @@ const PlaceCard = ({
 
         {/* Rating Badge */}
         <Badge className="absolute bottom-3 left-3 border-0 bg-card/95 px-2.5 py-1 font-semibold text-foreground shadow-sm backdrop-blur-md gap-1">
-          <Star className="h-3.5 w-3.5 fill-secondary text-secondary" />
+          <Star className="h-3.5 w-3.5 fill-secondary text-secondary dark:fill-primary dark:text-primary" />
           {ratingDisplay}
           <span className="text-muted-foreground font-normal ml-0.5">
             ({reviewCountDisplay})
@@ -221,7 +278,7 @@ const PlaceCard = ({
         {/* Wi-Fi badge */}
         {place.hasWifi && (
           <Badge className="absolute bottom-3 right-3 border-0 bg-card/90 px-2 py-1 text-foreground shadow-sm backdrop-blur-md gap-1">
-            <Wifi className="h-3 w-3 text-muted-foreground" />
+            <Wifi className="h-3 w-3 text-muted-foreground dark:text-foreground/95" />
           </Badge>
         )}
       </div>
@@ -238,7 +295,7 @@ const PlaceCard = ({
         {/* Address row */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-1.5 text-role-micro text-muted-foreground min-w-0">
-            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <MapPin className="h-3 w-3 flex-shrink-0 text-muted-foreground dark:text-foreground/85" />
             <span className="truncate" title={safeAddress}>
               {safeAddress}
             </span>
@@ -247,18 +304,20 @@ const PlaceCard = ({
             <div
               className={cn(
                 "ml-1 flex flex-shrink-0 items-center gap-1 text-xs font-semibold",
-                place.isOpen ? "text-emerald-600" : "text-muted-foreground",
+                place.isOpen
+                  ? "text-emerald-600 dark:text-emerald-300"
+                  : "text-muted-foreground dark:text-foreground/75",
               )}
             >
               <Clock className="h-3 w-3" />
-              {place.isOpen ? "Open" : "Closed"}
+              {place.isOpen ? t("home.place.open") : t("home.place.closed")}
             </div>
           )}
         </div>
 
         <div className={distanceClassName} aria-live="polite">
           <Navigation className="h-3 w-3" />
-          <span>{distanceState.text}</span>
+          <span>{distanceLabel}</span>
         </div>
 
         {/* Tags & price */}
@@ -278,11 +337,13 @@ const PlaceCard = ({
           {priceMeta && (
             <span
               className="ml-auto inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-secondary/20 bg-secondary/10 px-2.5 py-1 text-[11px] font-medium text-foreground"
-              aria-label={`Budget level: ${priceMeta.label}`}
-              title={`Budget level: ${priceMeta.label}`}
+              aria-label={t("home.place.budgetLevel", {
+                label: priceMeta.label,
+              })}
+              title={t("home.place.budgetLevel", { label: priceMeta.label })}
             >
               <span>{priceMeta.label}</span>
-              <span className="text-[11px] font-semibold text-secondary/80">
+              <span className="text-[11px] font-semibold text-secondary/80 dark:text-primary">
                 {priceMeta.symbol}
               </span>
             </span>

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { AdminCategory } from "@/features/admin/types";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseManageCategoriesReturn {
   // State
@@ -38,6 +39,7 @@ interface UseManageCategoriesReturn {
 }
 
 export const useManageCategories = (): UseManageCategoriesReturn => {
+  const { t } = useI18n();
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,13 +65,13 @@ export const useManageCategories = (): UseManageCategoriesReturn => {
       setCategories(data);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to load categories"));
+      setError(getErrorMessage(err, t("admin.error.loadCategories")));
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -103,7 +105,7 @@ export const useManageCategories = (): UseManageCategoriesReturn => {
       );
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to update category status"));
+      setError(getErrorMessage(err, t("admin.error.updateCategoryStatus")));
     } finally {
       inFlightRef.current.delete(catId);
       if (mountedRef.current) {
@@ -123,12 +125,12 @@ export const useManageCategories = (): UseManageCategoriesReturn => {
     const normalizedLabel = editLabel.trim();
 
     if (!normalizedLabel) {
-      setError("Category name cannot be empty.");
+      setError(t("admin.categories.error.nameRequired"));
       return;
     }
 
     if (normalizedLabel.length > 60) {
-      setError("Category name must be 60 characters or less.");
+      setError(t("admin.categories.error.nameMax", { max: 60 }));
       return;
     }
 
@@ -156,7 +158,7 @@ export const useManageCategories = (): UseManageCategoriesReturn => {
       setEditingId(null);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to save category changes"));
+      setError(getErrorMessage(err, t("admin.error.saveCategoryChanges")));
     } finally {
       inFlightRef.current.delete(catId);
       if (mountedRef.current) {
@@ -174,12 +176,12 @@ export const useManageCategories = (): UseManageCategoriesReturn => {
     const normalizedLabel = newLabel.trim();
 
     if (!normalizedLabel) {
-      setError("Category name cannot be empty.");
+      setError(t("admin.categories.error.nameRequired"));
       return;
     }
 
     if (normalizedLabel.length > 60) {
-      setError("Category name must be 60 characters or less.");
+      setError(t("admin.categories.error.nameMax", { max: 60 }));
       return;
     }
 
@@ -187,7 +189,7 @@ export const useManageCategories = (): UseManageCategoriesReturn => {
     const hasDuplicate = categories.some((cat) => cat.id === normalizedId);
 
     if (hasDuplicate) {
-      setError("A category with this name already exists.");
+      setError(t("admin.categories.error.nameDuplicate"));
       return;
     }
 

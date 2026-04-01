@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import NotificationItem from "@/features/notifications/components/NotificationItem";
 import { useNotifications } from "@/features/notifications/hooks/useNotifications";
+import { useI18n } from "@/components/i18n";
 
 interface NotificationBellProps {
   mobile?: boolean;
 }
 
 const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
+  const { t, formatNumber } = useI18n();
   const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -131,20 +133,27 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
   const panelTransition = shouldReduceMotion
     ? { duration: 0 }
     : { duration: 0.2 };
+  const unreadDisplay =
+    unreadCount > 99 ? "99+" : formatNumber(Math.max(0, unreadCount));
+  const unreadLabel = t("notifications.unread", {
+    count: unreadDisplay,
+  });
 
   return (
     <div ref={rootRef} className="relative">
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {unreadCount > 0
-          ? `${unreadCount} unread notifications`
-          : "No unread notifications"}
+          ? t("notifications.unreadStatus", {
+              count: unreadDisplay,
+            })
+          : t("notifications.noUnreadStatus")}
       </p>
       <button
         type="button"
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls={dialogId}
-        aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+        aria-label={`${t("nav.notifications")}${unreadCount > 0 ? `, ${unreadLabel}` : ""}`}
         onClick={() => setOpenForCurrentPath(!open)}
         className={cn(
           "relative transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -166,17 +175,19 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
               : "hidden lg:inline",
           )}
         >
-          Notifications
+          {t("nav.notifications")}
         </span>
 
         {unreadCount > 0 && (
           <span
             className={cn(
               "absolute h-4 min-w-4 px-1 rounded-full bg-secondary text-primary text-[11px] font-bold flex items-center justify-center leading-none shadow-sm",
-              mobile ? "right-1.5 top-0" : "-top-1 -right-1",
+              mobile
+                ? "top-0 [inset-inline-end:0.375rem]"
+                : "-top-1 [inset-inline-end:-0.25rem]",
             )}
           >
-            {unreadCount > 99 ? "99+" : unreadCount}
+            {unreadDisplay}
           </span>
         )}
       </button>
@@ -200,7 +211,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
               role="dialog"
               aria-modal={mobile || undefined}
               aria-busy={loading}
-              aria-label="Notifications panel"
+              aria-label={t("notifications.panel")}
               tabIndex={-1}
               initial={
                 mobile ? { y: "100%", opacity: 0.6 } : { y: -8, opacity: 0 }
@@ -214,17 +225,17 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                 "border border-border bg-card z-[60] overflow-hidden",
                 mobile
                   ? "fixed inset-x-0 bottom-0 rounded-t-2xl max-h-[min(84svh,36rem)] pb-[max(env(safe-area-inset-bottom),0.75rem)] md:hidden"
-                  : "absolute right-0 top-[calc(100%+10px)] w-[min(92vw,22.5rem)] lg:w-[24rem] rounded-2xl shadow-2xl",
+                  : "absolute top-[calc(100%+10px)] w-[min(92vw,22.5rem)] lg:w-[24rem] rounded-2xl shadow-2xl [inset-inline-end:0]",
               )}
             >
               <div className="border-b border-border bg-background px-4 py-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-role-secondary font-semibold text-foreground">
-                    Notifications
+                    {t("nav.notifications")}
                   </p>
                   {unreadCount > 0 && (
                     <p className="text-role-caption text-muted-foreground text-numeric-tabular">
-                      {unreadCount} unread
+                      {unreadLabel}
                     </p>
                   )}
                 </div>
@@ -249,7 +260,9 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                       ) : (
                         <CheckCheck className="h-3.5 w-3.5" />
                       )}
-                      {markAllPending ? "Updating..." : "Mark all read"}
+                      {markAllPending
+                        ? t("notifications.updating")
+                        : t("notifications.markAllRead")}
                     </Button>
                   )}
                   {mobile && (
@@ -259,7 +272,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                       size="icon"
                       onClick={() => setOpenForCurrentPath(false)}
                       className="h-11 w-11 rounded-full"
-                      aria-label="Close notifications"
+                      aria-label={t("notifications.close")}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -282,7 +295,9 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                           : "text-muted-foreground hover:text-foreground",
                       )}
                     >
-                      {tab === "all" ? "All" : "Unread"}
+                      {tab === "all"
+                        ? t("notifications.filter.all")
+                        : t("notifications.filter.unread")}
                     </button>
                   ))}
                 </div>
@@ -296,7 +311,10 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
               >
                 {loading && (
                   <div className="py-10">
-                    <LoadingSpinner size="sm" text="Loading notifications..." />
+                    <LoadingSpinner
+                      size="sm"
+                      text={t("notifications.loading")}
+                    />
                   </div>
                 )}
 
@@ -307,8 +325,8 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                   >
                     <AlertTitle className="text-role-secondary">
                       {actionError
-                        ? "Could not update notifications"
-                        : "Could not load notifications"}
+                        ? t("notifications.updateError")
+                        : t("notifications.loadError")}
                     </AlertTitle>
                     <AlertDescription className="mt-2 space-y-2 text-role-secondary">
                       <p className="break-words">{panelError}</p>
@@ -320,7 +338,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                           className="min-h-10"
                           onClick={handleRetry}
                         >
-                          Retry
+                          {t("common.retry")}
                         </Button>
                       </div>
                     </AlertDescription>
@@ -336,11 +354,11 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                       </div>
                       <p className="text-role-secondary font-semibold text-foreground">
                         {filterTab === "unread"
-                          ? "No unread notifications"
-                          : "No notifications yet"}
+                          ? t("notifications.empty.unread")
+                          : t("notifications.empty.all")}
                       </p>
                       <p className="text-role-secondary text-muted-foreground">
-                        New activity will appear here.
+                        {t("notifications.empty.hint")}
                       </p>
                     </div>
                   )}

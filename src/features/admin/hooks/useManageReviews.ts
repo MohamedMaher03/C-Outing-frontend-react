@@ -18,6 +18,7 @@ import type {
 } from "@/features/admin/types";
 import { filterReviews } from "@/features/admin/utils/adminFilters";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseManageReviewsReturn {
   // State
@@ -43,6 +44,7 @@ interface UseManageReviewsReturn {
 }
 
 export const useManageReviews = (): UseManageReviewsReturn => {
+  const { t } = useI18n();
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,13 +76,13 @@ export const useManageReviews = (): UseManageReviewsReturn => {
       setReviews(data);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to load reviews"));
+      setError(getErrorMessage(err, t("admin.error.loadReviews")));
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -112,7 +114,7 @@ export const useManageReviews = (): UseManageReviewsReturn => {
       );
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to update review status"));
+      setError(getErrorMessage(err, t("admin.error.updateReviewStatus")));
     } finally {
       inFlightRef.current.delete(reviewId);
       if (mountedRef.current) {
@@ -136,7 +138,7 @@ export const useManageReviews = (): UseManageReviewsReturn => {
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to delete review"));
+      setError(getErrorMessage(err, t("admin.error.deleteReview")));
     } finally {
       inFlightRef.current.delete(reviewId);
       if (mountedRef.current) {

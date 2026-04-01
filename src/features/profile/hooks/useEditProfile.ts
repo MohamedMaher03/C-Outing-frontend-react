@@ -14,6 +14,7 @@ import {
 } from "@/features/profile/services/profileService";
 import type { EditProfileData } from "@/features/profile/types";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 /** Max file size: 5 MB */
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -48,6 +49,7 @@ interface UseEditProfileReturn {
 }
 
 export const useEditProfile = (): UseEditProfileReturn => {
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<EditProfileData>({
@@ -96,18 +98,13 @@ export const useEditProfile = (): UseEditProfileReturn => {
         return;
       }
 
-      setError(
-        getErrorMessage(
-          err,
-          "We couldn't load your profile details. Please try again.",
-        ),
-      );
+      setError(getErrorMessage(err, t("profile.edit.error.load")));
     } finally {
       if (runId === latestLoadRunRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   // Load current profile data on mount
   useEffect(() => {
@@ -133,13 +130,13 @@ export const useEditProfile = (): UseEditProfileReturn => {
 
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setError("Please select a JPEG, PNG, or WebP image.");
+      setError(t("profile.edit.error.fileType"));
       return;
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      setError("Image must be smaller than 5 MB.");
+      setError(t("profile.edit.error.fileSize"));
       return;
     }
 
@@ -182,30 +179,28 @@ export const useEditProfile = (): UseEditProfileReturn => {
       const trimmedPhone = formData.phoneNumber.trim();
 
       if (trimmedName.length < 2 || trimmedName.length > 100) {
-        setError("Name must be between 2 and 100 characters.");
+        setError(t("profile.edit.error.nameLength"));
         return;
       }
 
       if (trimmedPhone && !PHONE_REGEX.test(trimmedPhone)) {
-        setError(
-          "Phone number must include country code (e.g. +20 123 456 7890).",
-        );
+        setError(t("profile.edit.error.phoneFormat"));
         return;
       }
 
       if (!formData.birthDate) {
-        setError("Birth date is required.");
+        setError(t("profile.edit.error.birthDateRequired"));
         return;
       }
 
       const parsedBirthDate = new Date(formData.birthDate);
       if (Number.isNaN(parsedBirthDate.getTime())) {
-        setError("Birth date is invalid.");
+        setError(t("profile.edit.error.birthDateInvalid"));
         return;
       }
 
       if (parsedBirthDate > new Date()) {
-        setError("Birth date cannot be in the future.");
+        setError(t("profile.edit.error.birthDateFuture"));
         return;
       }
 
@@ -220,12 +215,7 @@ export const useEditProfile = (): UseEditProfileReturn => {
       pendingAvatarFile.current = null;
       navigate("/profile");
     } catch (err) {
-      setError(
-        getErrorMessage(
-          err,
-          "We couldn't save your profile changes. Please try again.",
-        ),
-      );
+      setError(getErrorMessage(err, t("profile.edit.error.save")));
     } finally {
       submitInFlightRef.current = false;
       setSaving(false);

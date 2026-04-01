@@ -23,44 +23,39 @@ import { buildDefaultAvatarDataUrl } from "@/features/profile/utils/defaultAvata
 import { BUDGET_OPTIONS as SHARED_BUDGET_OPTIONS } from "@/utils/priceLevels";
 import { ProfilePreferenceOptionButton } from "@/features/profile/components/ProfilePreferenceOptionButton";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { useI18n } from "@/components/i18n";
 
 const BUDGET_OPTIONS: Array<{ value: PriceLevel; label: string }> =
   SHARED_BUDGET_OPTIONS as Array<{ value: PriceLevel; label: string }>;
 
 type AccountItem = {
-  label: string;
-  desc: string;
+  labelKey: string;
+  descriptionKey: string;
   path: string;
 };
 
 const ACCOUNT_ITEMS: AccountItem[] = [
   {
-    label: "Edit Profile",
-    desc: "Name, photo, and bio",
+    labelKey: "profile.account.item.edit.label",
+    descriptionKey: "profile.account.item.edit.description",
     path: "/profile/edit",
   },
   {
-    label: "Notifications",
-    desc: "Push and email preferences",
+    labelKey: "profile.account.item.notifications.label",
+    descriptionKey: "profile.account.item.notifications.description",
     path: "/profile/notifications",
   },
   {
-    label: "Privacy",
-    desc: "Data and visibility settings",
+    labelKey: "profile.account.item.privacy.label",
+    descriptionKey: "profile.account.item.privacy.description",
     path: "/profile/privacy",
   },
   {
-    label: "Help & Support",
-    desc: "FAQs and contact us",
+    labelKey: "profile.account.item.help.label",
+    descriptionKey: "profile.account.item.help.description",
     path: "/profile/help",
   },
 ];
-
-const roleLabel = (role: number | undefined): string => {
-  if (role === 2) return "Admin";
-  if (role === 1) return "Moderator";
-  return "User";
-};
 
 type ProfileStatCardProps = {
   icon: LucideIcon;
@@ -98,6 +93,7 @@ const ProfileStatCard = ({
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const { t, formatNumber, direction } = useI18n();
   const [activeTab, setActiveTab] = useState("preferences");
   const {
     profile,
@@ -117,12 +113,51 @@ const ProfilePage = () => {
     refreshProfile,
   } = useProfile();
   const isPreferencesTabActive = activeTab === "preferences";
+  const fallbackUserName = t("profile.userFallback");
+
+  const getInterestLabel = (interestId: string, fallback: string): string =>
+    t(`onboarding.interest.${interestId}`, undefined, fallback);
+
+  const getDistrictLabel = (district: string): string =>
+    t(
+      `onboarding.district.${district.toLowerCase().replace(/\s+/g, "-")}`,
+      undefined,
+      district,
+    );
+
+  const getRoleLabel = (role: number | undefined): string => {
+    if (role === 2) return t("profile.role.admin");
+    if (role === 1) return t("profile.role.moderator");
+    return t("profile.role.user");
+  };
+
+  const accountItems = useMemo(
+    () =>
+      ACCOUNT_ITEMS.map((item) => ({
+        ...item,
+        label: t(item.labelKey),
+        description: t(item.descriptionKey),
+      })),
+    [t],
+  );
+
+  const accountChevronClassName =
+    direction === "rtl"
+      ? "h-4 w-4 shrink-0 text-muted-foreground rotate-180"
+      : "h-4 w-4 shrink-0 text-muted-foreground";
 
   const avatarSrc = useMemo(
     () =>
-      profile?.avatarUrl || buildDefaultAvatarDataUrl(profile?.name || "User"),
-    [profile?.avatarUrl, profile?.name],
+      profile?.avatarUrl ||
+      buildDefaultAvatarDataUrl(profile?.name || fallbackUserName),
+    [fallbackUserName, profile?.avatarUrl, profile?.name],
   );
+
+  const profileName = profile?.name || fallbackUserName;
+  const profileEmail = profile?.email || "user@couting.app";
+  const profilePhone = profile?.phoneNumber || t("profile.stat.phoneMissing");
+  const profileAge = profile?.age != null ? formatNumber(profile.age) : "-";
+  const profileInteractions = formatNumber(profile?.totalInteractions ?? 0);
 
   const handleSave = async () => {
     try {
@@ -143,11 +178,7 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <LoadingSpinner
-        size="md"
-        text="Loading your profile..."
-        fullScreen={true}
-      />
+      <LoadingSpinner size="md" text={t("profile.loading")} fullScreen={true} />
     );
   }
 
@@ -159,14 +190,16 @@ const ProfilePage = () => {
           role="alert"
           aria-live="assertive"
         >
-          <p className="text-destructive mb-2">We couldn't load your profile</p>
+          <p className="text-destructive mb-2">
+            {t("profile.error.loadTitle")}
+          </p>
           <p className="text-sm text-muted-foreground break-words">{error}</p>
           <Button
             type="button"
             variant="outline"
             onClick={() => void refreshProfile()}
           >
-            Try again
+            {t("common.retry")}
           </Button>
         </div>
       </div>
@@ -192,7 +225,7 @@ const ProfilePage = () => {
         <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
           <img
             src={avatarSrc}
-            alt={`${profile?.name || "User"} profile avatar`}
+            alt={t("profile.header.avatarAlt", { name: profileName })}
             className="h-full w-full object-cover"
           />
         </div>
@@ -201,21 +234,21 @@ const ProfilePage = () => {
             className="text-role-subheading text-black dark:text-foreground break-words"
             dir="auto"
           >
-            {profile?.name || "User"}
+            {profileName}
           </h1>
           <p
             className="text-role-secondary text-black/75 dark:text-muted-foreground break-all"
             dir="auto"
           >
-            {profile?.email || "user@couting.app"}
+            {profileEmail}
           </p>
           <div className="flex flex-wrap gap-2 mt-2">
             <span className="text-role-caption px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-              {roleLabel(profile?.role)}
+              {getRoleLabel(profile?.role)}
             </span>
             {profile?.isBanned ? (
               <span className="text-role-caption px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
-                Banned
+                {t("profile.status.banned")}
               </span>
             ) : null}
           </div>
@@ -224,7 +257,7 @@ const ProfilePage = () => {
           variant="ghost"
           size="icon"
           onClick={() => setActiveTab("account")}
-          aria-label="Go to account settings"
+          aria-label={t("profile.action.openAccountSettings")}
           className="h-11 w-11 rounded-full"
         >
           <Settings className="h-5 w-5" />
@@ -234,19 +267,19 @@ const ProfilePage = () => {
       <div className="grid gap-3 sm:grid-cols-3 lg:gap-4">
         <ProfileStatCard
           icon={Phone}
-          label="Phone"
-          value={profile?.phoneNumber || "Add a phone number"}
+          label={t("profile.stat.phone")}
+          value={profilePhone}
         />
         <ProfileStatCard
           icon={Cake}
-          label="Age"
-          value={profile?.age ?? "-"}
+          label={t("profile.stat.age")}
+          value={profileAge}
           numeric
         />
         <ProfileStatCard
           icon={Activity}
-          label="App Activity"
-          value={profile?.totalInteractions ?? 0}
+          label={t("profile.stat.activity")}
+          value={profileInteractions}
           numeric
         />
       </div>
@@ -262,13 +295,13 @@ const ProfilePage = () => {
               value="preferences"
               className="w-full sm:min-w-36 text-black dark:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-primary/15 data-[state=inactive]:hover:text-primary"
             >
-              Preferences
+              {t("profile.tab.preferences")}
             </TabsTrigger>
             <TabsTrigger
               value="account"
               className="w-full sm:min-w-36 text-black dark:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-primary/15 data-[state=inactive]:hover:text-primary"
             >
-              Account
+              {t("profile.tab.account")}
             </TabsTrigger>
           </TabsList>
 
@@ -279,7 +312,7 @@ const ProfilePage = () => {
             {/* Interests */}
             <div className="space-y-2.5">
               <h3 className="text-role-caption text-black dark:text-foreground uppercase tracking-wider">
-                Interests
+                {t("profile.preferences.interests")}
               </h3>
               <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
                 {INTERESTS.map((item) => {
@@ -294,7 +327,7 @@ const ProfilePage = () => {
                       icon={<InterestIcon className="h-4 w-4" />}
                       className="justify-start px-3.5 py-2 sm:justify-center"
                     >
-                      {item.label}
+                      {getInterestLabel(item.id, item.label)}
                     </ProfilePreferenceOptionButton>
                   );
                 })}
@@ -304,19 +337,21 @@ const ProfilePage = () => {
             {/* Vibe */}
             <div className="space-y-2.5">
               <h3 className="text-role-caption text-black dark:text-foreground uppercase tracking-wider">
-                Vibe Level
+                {t("profile.preferences.vibe")}
               </h3>
               <div className="space-y-2 rounded-xl border border-border/70 bg-card/50 px-3 py-3 sm:px-4">
                 <div className="flex justify-between gap-3 text-xs text-black/75 dark:text-muted-foreground">
-                  <span>Quiet and calm</span>
-                  <span className="text-right">Energetic and social</span>
+                  <span>{t("profile.preferences.vibe.low")}</span>
+                  <span className="text-right">
+                    {t("profile.preferences.vibe.high")}
+                  </span>
                 </div>
                 <Slider
                   value={vibe}
                   onValueChange={setVibe}
                   max={100}
                   step={1}
-                  aria-label="Vibe preference"
+                  aria-label={t("profile.preferences.vibeAria")}
                 />
               </div>
             </div>
@@ -324,7 +359,7 @@ const ProfilePage = () => {
             {/* Districts */}
             <div className="space-y-2.5">
               <h3 className="text-role-caption text-black dark:text-foreground uppercase tracking-wider">
-                Areas
+                {t("profile.preferences.areas")}
               </h3>
               <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
                 {DISTRICTS.map((district) => (
@@ -334,7 +369,7 @@ const ProfilePage = () => {
                     onClick={() => toggleDistrict(district)}
                     className="justify-start px-3.5 py-2 sm:justify-center"
                   >
-                    {district}
+                    {getDistrictLabel(district)}
                   </ProfilePreferenceOptionButton>
                 ))}
               </div>
@@ -343,7 +378,7 @@ const ProfilePage = () => {
             {/* Budget */}
             <div className="space-y-2.5">
               <h3 className="text-role-caption text-black dark:text-foreground uppercase tracking-wider">
-                Budget
+                {t("profile.preferences.budget")}
               </h3>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {BUDGET_OPTIONS.map((option) => (
@@ -353,7 +388,7 @@ const ProfilePage = () => {
                     onClick={() => setSelectedBudget(option.value)}
                     className="justify-center px-3.5 py-2"
                   >
-                    {option.label}
+                    {t(`budget.${option.value}`, undefined, option.label)}
                   </ProfilePreferenceOptionButton>
                 ))}
               </div>
@@ -364,7 +399,9 @@ const ProfilePage = () => {
               disabled={saving}
               className="hidden w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold sm:inline-flex"
             >
-              {saving ? "Saving changes..." : "Save preference changes"}
+              {saving
+                ? t("profile.preferences.saving")
+                : t("profile.preferences.save")}
             </Button>
           </TabsContent>
 
@@ -372,18 +409,18 @@ const ProfilePage = () => {
             <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
               <div className="mb-3 space-y-1">
                 <h3 className="text-role-secondary font-semibold text-black dark:text-foreground">
-                  Appearance
+                  {t("profile.account.appearanceTitle")}
                 </h3>
                 <p className="text-role-caption text-black/75 dark:text-muted-foreground">
-                  Choose your default app theme.
+                  {t("profile.account.appearanceDescription")}
                 </p>
               </div>
               <ThemeToggle mode="segmented" className="w-full justify-center" />
             </section>
 
-            {ACCOUNT_ITEMS.map((item) => (
+            {accountItems.map((item) => (
               <button
-                key={item.label}
+                key={item.path}
                 type="button"
                 onClick={() => navigate(item.path)}
                 className="w-full flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 text-left transition-colors duration-200 ease-out hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
@@ -393,10 +430,10 @@ const ProfilePage = () => {
                     {item.label}
                   </p>
                   <p className="text-role-caption text-black/75 dark:text-muted-foreground break-words">
-                    {item.desc}
+                    {item.description}
                   </p>
                 </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <ChevronRight className={accountChevronClassName} />
               </button>
             ))}
 
@@ -405,19 +442,19 @@ const ProfilePage = () => {
               className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2 mt-4"
               onClick={handleLogout}
             >
-              <LogOut className="h-4 w-4" /> Sign Out
+              <LogOut className="h-4 w-4" /> {t("profile.account.signOut")}
             </Button>
           </TabsContent>
         </Tabs>
 
         <aside className="hidden lg:block lg:sticky lg:top-20 lg:self-start space-y-3 rounded-2xl border border-border/70 bg-card/60 p-4">
           <h3 className="text-role-caption text-black dark:text-foreground uppercase tracking-wide">
-            Quick Actions
+            {t("profile.quickActions.title")}
           </h3>
 
-          {ACCOUNT_ITEMS.map((item) => (
+          {accountItems.map((item) => (
             <button
-              key={`sidebar-${item.label}`}
+              key={`sidebar-${item.path}`}
               type="button"
               onClick={() => navigate(item.path)}
               className="w-full flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/70 px-3 py-3 text-left transition-colors duration-200 ease-out hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
@@ -425,13 +462,12 @@ const ProfilePage = () => {
               <span className="min-w-0 text-role-secondary text-black dark:text-foreground break-words">
                 {item.label}
               </span>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <ChevronRight className={accountChevronClassName} />
             </button>
           ))}
 
           <p className="pt-2 text-role-caption text-black/75 dark:text-muted-foreground">
-            You can switch tabs to manage profile preferences and account
-            settings.
+            {t("profile.quickActions.hint")}
           </p>
 
           <Button
@@ -439,7 +475,7 @@ const ProfilePage = () => {
             className="mt-1 w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={handleLogout}
           >
-            <LogOut className="h-4 w-4" /> Sign Out
+            <LogOut className="h-4 w-4" /> {t("profile.account.signOut")}
           </Button>
         </aside>
       </div>
@@ -452,7 +488,9 @@ const ProfilePage = () => {
               disabled={saving}
               className="w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
             >
-              {saving ? "Saving changes..." : "Save preference changes"}
+              {saving
+                ? t("profile.preferences.saving")
+                : t("profile.preferences.save")}
             </Button>
           </div>
         </div>

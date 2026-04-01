@@ -20,6 +20,7 @@ import {
   Wifi,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Input } from "@/components/ui/input";
 import PlaceCard from "@/features/home/components/PlaceCard";
@@ -51,6 +52,7 @@ const HorizontalScroller = ({
   ariaLabel,
   className,
 }: HorizontalScrollerProps) => {
+  const { t } = useI18n();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const shouldReduceMotion = useReducedMotion();
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -106,7 +108,7 @@ const HorizontalScroller = ({
       <button
         type="button"
         onClick={() => scrollByDirection("left")}
-        aria-label={`Scroll ${ariaLabel} left`}
+        aria-label={t("home.scroller.scrollLeft", { label: ariaLabel })}
         disabled={!canScrollLeft}
         className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-card/95 text-foreground shadow-sm transition-opacity hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
       >
@@ -127,7 +129,7 @@ const HorizontalScroller = ({
       <button
         type="button"
         onClick={() => scrollByDirection("right")}
-        aria-label={`Scroll ${ariaLabel} right`}
+        aria-label={t("home.scroller.scrollRight", { label: ariaLabel })}
         disabled={!canScrollRight}
         className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-card/95 text-foreground shadow-sm transition-opacity hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
       >
@@ -138,6 +140,7 @@ const HorizontalScroller = ({
 };
 
 const HomePage = () => {
+  const { t, formatNumber, locale } = useI18n();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -195,14 +198,54 @@ const HomePage = () => {
   } = useHome();
 
   const compactNumberFormatter = useMemo(
-    () => new Intl.NumberFormat(undefined, { notation: "compact" }),
-    [],
+    () => new Intl.NumberFormat(locale, { notation: "compact" }),
+    [locale],
   );
 
-  const typeDiscoveryOptions = categories.map((category) => ({
-    id: category.id,
-    label: category.label,
-  }));
+  const localizedFilters = useMemo(
+    () =>
+      FILTER_OPTIONS.map((filter) => ({
+        ...filter,
+        label: t(`home.filter.${filter.id}`, undefined, filter.label),
+      })),
+    [t],
+  );
+
+  const localizedDiscoverySources = useMemo(
+    () =>
+      DISCOVERY_SOURCE_OPTIONS.map((source) => ({
+        ...source,
+        label: t(`home.discovery.source.${source.id}`, undefined, source.label),
+      })),
+    [t],
+  );
+
+  const localizedPriceRangeOptions = useMemo(
+    () =>
+      VENUE_PRICE_RANGE_OPTIONS.map((option) => ({
+        ...option,
+        label: t(`budget.${option.id}`, undefined, option.label),
+        caption: t(
+          `home.price.caption.${option.id}`,
+          undefined,
+          option.caption,
+        ),
+      })),
+    [t],
+  );
+
+  const typeDiscoveryOptions = useMemo(
+    () =>
+      categories.map((category) => ({
+        id: category.id,
+        label: t(
+          `home.discovery.type.${category.id}`,
+          undefined,
+          category.label,
+        ),
+      })),
+    [categories, t],
+  );
 
   const showDiscoverySkeleton =
     isDiscoveryLoading ||
@@ -219,6 +262,11 @@ const HomePage = () => {
   const selectedSimilarSeedPlace =
     similarSeedOptions.find((place) => place.id === selectedSimilarSeedId) ??
     null;
+
+  const selectedMoodOption = useMemo(
+    () => moodOptions.find((mood) => mood.id === selectedMood) ?? null,
+    [moodOptions, selectedMood],
+  );
 
   const similarSearchResults = useMemo(() => {
     const query = similarSearchInput.trim().toLowerCase();
@@ -238,6 +286,18 @@ const HomePage = () => {
       })
       .slice(0, 8);
   }, [similarSearchInput, similarSeedOptions]);
+
+  const getMoodLabel = useCallback(
+    (moodId: string, fallback: string) =>
+      t(`home.mood.${moodId}.label`, undefined, fallback),
+    [t],
+  );
+
+  const getMoodDescription = useCallback(
+    (moodId: string, fallback: string) =>
+      t(`home.mood.${moodId}.description`, undefined, fallback),
+    [t],
+  );
 
   const showSimilarSuggestions =
     isSimilarInputFocused ||
@@ -343,18 +403,18 @@ const HomePage = () => {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 18) return "Good Afternoon";
-    return "Good Evening";
+    if (hour < 12) return t("home.greeting.morning");
+    if (hour < 18) return t("home.greeting.afternoon");
+    return t("home.greeting.evening");
   };
 
-  const userName = user?.name?.split(" ")[0] || "Explorer";
+  const userName = user?.name?.split(" ")[0] || t("home.user.explorer");
 
   if (isLoading) {
     return (
       <PageLoading
-        text="Discovering Cairo"
-        subText="Finding the best places for you..."
+        text={t("app.loading.discovering")}
+        subText={t("app.loading.finding")}
       />
     );
   }
@@ -373,18 +433,17 @@ const HomePage = () => {
           >
             <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_0.75fr]">
               <div className="space-y-6 p-6 sm:p-8 lg:p-10">
-                <div className="inline-flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary">
+                <div className="inline-flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary dark:border-primary/40 dark:bg-primary/18 dark:text-primary">
                   <ShieldAlert className="h-3.5 w-3.5" />
-                  Something went wrong
+                  {t("home.error.badge")}
                 </div>
 
                 <div className="space-y-2">
                   <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                    We could not load your home feed right now
+                    {t("home.error.title")}
                   </h1>
                   <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                    No worries, your account and preferences are safe. Please
-                    try again in a moment.
+                    {t("home.error.description")}
                   </p>
                 </div>
 
@@ -396,7 +455,7 @@ const HomePage = () => {
                     className="h-10 rounded-full px-5 text-sm font-semibold text-primary shadow-sm"
                   >
                     <RotateCcw className="h-4 w-4" />
-                    Try again
+                    {t("common.retry")}
                   </Button>
 
                   <Button
@@ -405,24 +464,24 @@ const HomePage = () => {
                     variant="outline"
                     className="h-10 rounded-full border-border/70 bg-background/60 px-5 text-sm font-semibold text-foreground hover:bg-background"
                   >
-                    Refresh page
+                    {t("home.error.refreshPage")}
                   </Button>
                 </div>
               </div>
 
               <aside className="border-t border-border/70 bg-background/45 p-6 sm:p-8 lg:border-l lg:border-t-0">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Quick check
+                  {t("home.error.quickCheck")}
                 </h2>
 
                 <ul className="mt-4 space-y-3">
                   <li className="rounded-2xl border border-border/70 bg-card/70 p-3 text-sm text-foreground">
                     <span className="flex items-center gap-2 font-semibold text-foreground">
-                      <Wifi className="h-4 w-4 text-secondary" />
-                      Network connection
+                      <Wifi className="h-4 w-4 text-secondary dark:text-primary" />
+                      {t("home.error.networkTitle")}
                     </span>
                     <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      Confirm your internet is active, then retry.
+                      {t("home.error.networkDescription")}
                     </p>
                   </li>
                 </ul>
@@ -470,11 +529,10 @@ const HomePage = () => {
               {getGreeting()}, {userName} ✦
             </p>
             <h1 className="text-3xl font-semibold leading-tight sm:text-5xl lg:text-[3.4rem]">
-              <span className="text-cream">Discover Cairo</span>
+              <span className="text-cream">{t("home.hero.title")}</span>
             </h1>
             <p className="max-w-md text-sm text-white/85 sm:text-base">
-              AI-powered spots curated for your vibe. Where are we heading
-              today?
+              {t("home.hero.subtitle")}
             </p>
           </motion.div>
 
@@ -483,12 +541,12 @@ const HomePage = () => {
             className="relative w-full max-w-2xl"
             variants={heroItemVariants}
           >
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/85" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/85 dark:text-primary" />
             <Input
-              placeholder="Search places, districts, or tags..."
+              placeholder={t("home.hero.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search Cairo venues"
+              aria-label={t("home.hero.searchAria")}
               className="h-12 rounded-2xl border border-white/20 bg-black/25 pl-12 pr-14 text-base text-white shadow-lg transition-colors placeholder:text-white/65 focus:border-secondary/70 focus:bg-black/30 focus:ring-secondary/20 backdrop-blur-md sm:h-14"
             />
           </motion.div>
@@ -496,10 +554,10 @@ const HomePage = () => {
           {/* Filter Pills */}
           <motion.div
             className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide"
-            aria-label="Filter venues"
+            aria-label={t("home.hero.filterAria")}
             variants={heroItemVariants}
           >
-            {FILTER_OPTIONS.map((filter, index) => {
+            {localizedFilters.map((filter, index) => {
               const Icon = filter.icon;
               const isActive =
                 filter.id === "all"
@@ -585,7 +643,7 @@ const HomePage = () => {
                   onClick={clearSaveError}
                   className="h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
                 >
-                  Dismiss
+                  {t("common.dismiss")}
                 </Button>
               </div>
             </div>
@@ -603,10 +661,10 @@ const HomePage = () => {
               <div className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="text-base font-semibold text-foreground">
-                    Mood selector
+                    {t("home.mobile.moodSelectorTitle")}
                   </h2>
                   <span className="text-xs font-medium text-muted-foreground">
-                    Tap to personalize suggestions
+                    {t("home.mobile.moodSelectorHint")}
                   </span>
                 </div>
 
@@ -627,9 +685,9 @@ const HomePage = () => {
                             : "border-border/60 bg-background hover:border-primary/55 hover:bg-primary/12"
                         }`}
                       >
-                        <MoodIcon className="h-4 w-4 shrink-0 text-secondary/90" />
+                        <MoodIcon className="h-4 w-4 shrink-0 text-secondary/90 dark:text-primary" />
                         <span className="min-w-0 truncate text-xs font-medium text-foreground">
-                          {mood.label}
+                          {getMoodLabel(mood.id, mood.label)}
                         </span>
                       </button>
                     );
@@ -639,7 +697,7 @@ const HomePage = () => {
 
               <div className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
                 <h2 className="text-base font-semibold text-foreground">
-                  Trending tags
+                  {t("home.mobile.trendingTags")}
                 </h2>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {trendingTags.map((tag) => (
@@ -671,34 +729,36 @@ const HomePage = () => {
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
                     <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/12 text-secondary">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/12 text-secondary dark:bg-primary/18 dark:text-primary">
                         <Compass className="h-4 w-4" />
                       </span>
-                      Venue Discovery Studio
+                      {t("home.discovery.title")}
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Explore live venue slices by district, type, budget, and
-                      rating intelligence.
+                      {t("home.discovery.subtitle")}
                     </p>
                   </div>
                   <div className="flex w-full flex-wrap items-center gap-2 text-xs sm:w-auto sm:justify-end">
                     <span className="max-w-[180px] truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1.5 font-medium text-foreground">
-                      Top Rated:{" "}
-                      {compactNumberFormatter.format(
-                        globalTopRatedVenues.length,
-                      )}
+                      {t("home.discovery.topRatedCount", {
+                        count: compactNumberFormatter.format(
+                          globalTopRatedVenues.length,
+                        ),
+                      })}
                     </span>
                     <span className="max-w-[180px] truncate rounded-full border border-border/70 bg-background px-3 py-1.5 font-medium text-foreground">
-                      {selectedArea}:{" "}
-                      {compactNumberFormatter.format(
-                        topRatedInAreaVenues.length,
-                      )}
+                      {t("home.discovery.areaCount", {
+                        area: selectedArea,
+                        count: compactNumberFormatter.format(
+                          topRatedInAreaVenues.length,
+                        ),
+                      })}
                     </span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                  {DISCOVERY_SOURCE_OPTIONS.map((source) => {
+                  {localizedDiscoverySources.map((source) => {
                     const Icon = source.icon;
                     const isActive = activeDiscoverySource === source.id;
                     return (
@@ -717,7 +777,7 @@ const HomePage = () => {
                             className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${
                               isActive
                                 ? "bg-primary-foreground/18 text-primary-foreground"
-                                : "bg-muted/80 text-muted-foreground group-hover:text-primary dark:group-hover:text-cream"
+                                : "bg-muted/80 text-muted-foreground group-hover:text-primary dark:bg-primary/15 dark:text-primary/85 dark:group-hover:bg-primary/24 dark:group-hover:text-primary"
                             }`}
                           >
                             <Icon className="h-4 w-4" />
@@ -791,7 +851,7 @@ const HomePage = () => {
 
                 {activeDiscoverySource === "price-range" && (
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                    {VENUE_PRICE_RANGE_OPTIONS.map((option) => {
+                    {localizedPriceRangeOptions.map((option) => {
                       const isActive = selectedPriceRange === option.id;
                       return (
                         <button
@@ -831,7 +891,7 @@ const HomePage = () => {
                 {activeDiscoverySource === "top-rated-area" && (
                   <div className="space-y-2">
                     <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                      Select Area
+                      {t("home.discovery.selectArea")}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {popularDistricts.map((district) => {
@@ -861,12 +921,18 @@ const HomePage = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-foreground">
-                      {new Intl.NumberFormat().format(discoveryResultCount)}{" "}
-                      venue
-                      {discoveryResultCount === 1 ? "" : "s"} found
+                      {t("home.discovery.results", {
+                        count: formatNumber(discoveryResultCount),
+                      })}
                     </p>
                     <p className="text-xs text-muted-foreground truncate max-w-[170px] text-right">
-                      Source: {activeDiscoverySource.replace("-", " ")}
+                      {t("home.discovery.sourceLabel", {
+                        source: t(
+                          `home.discovery.source.${activeDiscoverySource}`,
+                          undefined,
+                          activeDiscoverySource.replace("-", " "),
+                        ),
+                      })}
                     </p>
                   </div>
 
@@ -880,7 +946,7 @@ const HomePage = () => {
                         transition={stateTransition}
                       >
                         <HorizontalScroller
-                          ariaLabel="discovery venues"
+                          ariaLabel={t("home.scroller.label.discovery")}
                           className="-mx-2 px-2"
                         >
                           {Array.from({ length: 3 }).map((_, i) => (
@@ -901,7 +967,7 @@ const HomePage = () => {
                         className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
                       >
                         <p className="text-sm font-semibold text-destructive">
-                          Could not load discovery venues
+                          {t("home.discovery.errorTitle")}
                         </p>
                         <p className="text-xs text-destructive/80 mt-1">
                           {discoveryError}
@@ -914,7 +980,7 @@ const HomePage = () => {
                           className="mt-3 h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
-                          Retry discovery
+                          {t("home.discovery.retry")}
                         </Button>
                       </motion.div>
                     ) : discoveryPlaces.length === 0 ? (
@@ -927,10 +993,10 @@ const HomePage = () => {
                         className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
                       >
                         <p className="font-semibold text-foreground">
-                          No venues for this filter yet
+                          {t("home.discovery.emptyTitle")}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Try another district, type, or budget range.
+                          {t("home.discovery.emptyDescription")}
                         </p>
                       </motion.div>
                     ) : (
@@ -942,7 +1008,7 @@ const HomePage = () => {
                         transition={stateTransition}
                       >
                         <HorizontalScroller
-                          ariaLabel="discovery venues"
+                          ariaLabel={t("home.scroller.label.discovery")}
                           className="-mx-2 px-2"
                         >
                           {discoveryPlaces.map((place, index) => (
@@ -995,25 +1061,31 @@ const HomePage = () => {
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-                        <div className="rounded-lg bg-secondary/12 p-1.5">
+                        <div className="rounded-lg bg-secondary/12 p-1.5 dark:bg-primary/18">
                           {(() => {
-                            const mood = moodOptions.find(
-                              (m) => m.id === selectedMood,
-                            );
-                            const MoodIcon = mood
-                              ? (MOOD_ICON_MAP[mood.icon] ?? Sparkles)
+                            const MoodIcon = selectedMoodOption
+                              ? (MOOD_ICON_MAP[selectedMoodOption.icon] ??
+                                Sparkles)
                               : Sparkles;
                             return (
-                              <MoodIcon className="h-5 w-5 text-secondary" />
+                              <MoodIcon className="h-5 w-5 text-secondary dark:text-primary" />
                             );
                           })()}
                         </div>
-                        {moodOptions.find((m) => m.id === selectedMood)
-                          ?.label ?? "Mood Picks"}
+                        {selectedMoodOption?.label
+                          ? getMoodLabel(
+                              selectedMoodOption.id,
+                              selectedMoodOption.label,
+                            )
+                          : t("home.mood.defaultTitle")}
                       </h2>
                       <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
-                        {moodOptions.find((m) => m.id === selectedMood)
-                          ?.description ?? "Places that match your vibe"}
+                        {selectedMoodOption?.description
+                          ? getMoodDescription(
+                              selectedMoodOption.id,
+                              selectedMoodOption.description,
+                            )
+                          : t("home.mood.defaultDescription")}
                       </p>
                     </div>
                     <Button
@@ -1022,12 +1094,14 @@ const HomePage = () => {
                       size="sm"
                       className="h-11 px-3 text-xs text-muted-foreground sm:h-8 sm:px-2"
                     >
-                      Clear mood
+                      {t("home.mood.clear")}
                     </Button>
                   </div>
 
                   {isMoodLoading ? (
-                    <HorizontalScroller ariaLabel="mood venues">
+                    <HorizontalScroller
+                      ariaLabel={t("home.scroller.label.mood")}
+                    >
                       {Array.from({ length: 3 }).map((_, i) => (
                         <div
                           key={i}
@@ -1038,7 +1112,7 @@ const HomePage = () => {
                   ) : moodError ? (
                     <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
                       <p className="text-sm font-semibold text-destructive">
-                        Could not load mood picks
+                        {t("home.mood.errorTitle")}
                       </p>
                       <p className="text-xs text-destructive/80 mt-1">
                         {moodError}
@@ -1051,21 +1125,23 @@ const HomePage = () => {
                         className="mt-3 h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
-                        Retry mood picks
+                        {t("home.mood.retry")}
                       </Button>
                     </div>
                   ) : moodPlaces.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-border/60 bg-muted/30">
                       <span className="text-3xl mb-3">🔍</span>
                       <p className="font-semibold text-foreground">
-                        No spots found for this mood
+                        {t("home.mood.emptyTitle")}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Try a different vibe!
+                        {t("home.mood.emptyDescription")}
                       </p>
                     </div>
                   ) : (
-                    <HorizontalScroller ariaLabel="mood venues">
+                    <HorizontalScroller
+                      ariaLabel={t("home.scroller.label.mood")}
+                    >
                       {moodPlaces.map((place) => (
                         <div key={place.id} className="snap-start">
                           <PlaceCard
@@ -1089,13 +1165,13 @@ const HomePage = () => {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-                    <div className="p-1.5 rounded-lg bg-secondary/15">
-                      <Sparkles className="h-5 w-5 text-secondary" />
+                    <div className="p-1.5 rounded-lg bg-secondary/15 dark:bg-primary/20">
+                      <Sparkles className="h-5 w-5 text-secondary dark:text-primary" />
                     </div>
-                    Curated for You
+                    {t("home.curated.title")}
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
-                    AI-powered picks based on your preferences
+                    {t("home.curated.subtitle")}
                   </p>
                 </div>
                 <Button
@@ -1104,10 +1180,11 @@ const HomePage = () => {
                   size="sm"
                   className="h-11 px-3 text-xs text-muted-foreground hover:text-foreground sm:h-8 sm:px-2"
                 >
-                  See all <ChevronRight className="h-3.5 w-3.5" />
+                  {t("home.seeAll")}
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <HorizontalScroller ariaLabel="curated venues">
+              <HorizontalScroller ariaLabel={t("home.scroller.label.curated")}>
                 {curatedPlaces.map((place) => (
                   <div key={place.id} className="snap-start">
                     <PlaceCard
@@ -1129,13 +1206,13 @@ const HomePage = () => {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-                      <div className="p-1.5 rounded-lg bg-secondary/15">
-                        <Flame className="h-5 w-5 text-secondary" />
+                      <div className="p-1.5 rounded-lg bg-secondary/15 dark:bg-primary/20">
+                        <Flame className="h-5 w-5 text-secondary dark:text-primary" />
                       </div>
-                      Trending Now
+                      {t("home.trending.title")}
                     </h2>
                     <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
-                      Most popular this week in Cairo
+                      {t("home.trending.subtitle")}
                     </p>
                   </div>
                   <Button
@@ -1144,10 +1221,13 @@ const HomePage = () => {
                     size="sm"
                     className="h-11 px-3 text-xs text-muted-foreground hover:text-foreground sm:h-8 sm:px-2"
                   >
-                    See all <ChevronRight className="h-3.5 w-3.5" />
+                    {t("home.seeAll")}
+                    <ChevronRight className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-                <HorizontalScroller ariaLabel="trending venues">
+                <HorizontalScroller
+                  ariaLabel={t("home.scroller.label.trending")}
+                >
                   {trendingPlaces.map((place) => (
                     <div key={place.id} className="snap-start">
                       <PlaceCard
@@ -1170,14 +1250,13 @@ const HomePage = () => {
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
                     <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/12 text-secondary">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/12 text-secondary dark:bg-primary/18 dark:text-primary">
                         <WandSparkles className="h-4 w-4" />
                       </span>
-                      Because You Like This Place
+                      {t("home.similar.title")}
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Pick one venue and we will get similar recommendations
-                      instantly for you.
+                      {t("home.similar.subtitle")}
                     </p>
                   </div>
                   {selectedSimilarSeedPlace && (
@@ -1185,7 +1264,9 @@ const HomePage = () => {
                       className="max-w-full truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1 text-xs font-medium text-foreground"
                       title={selectedSimilarSeedPlace.name}
                     >
-                      Selected: {selectedSimilarSeedPlace.name}
+                      {t("home.similar.selected", {
+                        name: selectedSimilarSeedPlace.name,
+                      })}
                     </span>
                   )}
                 </div>
@@ -1199,7 +1280,7 @@ const HomePage = () => {
                       onBlur={() => {
                         setTimeout(() => setIsSimilarInputFocused(false), 120);
                       }}
-                      placeholder="Type a place you like (name, area, or tag)..."
+                      placeholder={t("home.similar.searchPlaceholder")}
                       className="h-12 rounded-2xl border-border/70 bg-card/90 focus-visible:ring-secondary/30"
                     />
 
@@ -1260,7 +1341,7 @@ const HomePage = () => {
                             })
                           ) : (
                             <p className="px-3 py-2 text-xs text-muted-foreground">
-                              No matches found. Try another keyword.
+                              {t("home.similar.noMatches")}
                             </p>
                           )}
                         </motion.div>
@@ -1302,7 +1383,7 @@ const HomePage = () => {
                       transition={stateTransition}
                     >
                       <HorizontalScroller
-                        ariaLabel="similar venues"
+                        ariaLabel={t("home.scroller.label.similar")}
                         className="-mx-2 px-2"
                       >
                         {Array.from({ length: 4 }).map((_, i) => (
@@ -1323,7 +1404,7 @@ const HomePage = () => {
                       className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
                     >
                       <p className="text-sm font-semibold text-destructive">
-                        Could not load similar places
+                        {t("home.similar.errorTitle")}
                       </p>
                       <p className="text-xs text-destructive/80 mt-1">
                         {similarError}
@@ -1336,7 +1417,7 @@ const HomePage = () => {
                         className="mt-3 h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
-                        Retry similar picks
+                        {t("home.similar.retry")}
                       </Button>
                     </motion.div>
                   ) : similarPlaces.length === 0 ? (
@@ -1349,10 +1430,10 @@ const HomePage = () => {
                       className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
                     >
                       <p className="font-semibold text-foreground">
-                        Choose a place to get similar recommendations
+                        {t("home.similar.emptyTitle")}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        We will recommend venues with a matching vibe and style.
+                        {t("home.similar.emptyDescription")}
                       </p>
                     </motion.div>
                   ) : (
@@ -1364,7 +1445,7 @@ const HomePage = () => {
                       transition={stateTransition}
                     >
                       <HorizontalScroller
-                        ariaLabel="similar venues"
+                        ariaLabel={t("home.scroller.label.similar")}
                         className="-mx-2 px-2"
                       >
                         {similarPlaces.map((place, index) => (
@@ -1407,7 +1488,7 @@ const HomePage = () => {
             <div className="bg-card rounded-3xl border border-border/50 shadow-sm p-5 space-y-4">
               <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
                 <span className="text-xl">✨</span>
-                What's your mood?
+                {t("home.sidebar.moodTitle")}
               </h2>
               <div className="grid grid-cols-2 gap-2">
                 {moodOptions.map((mood) => {
@@ -1429,7 +1510,7 @@ const HomePage = () => {
                           "h-5 w-5",
                           isActive
                             ? "text-primary-foreground dark:text-cream"
-                            : "text-secondary",
+                            : "text-secondary dark:text-primary",
                         )}
                       />
                       <span
@@ -1440,7 +1521,7 @@ const HomePage = () => {
                             : "text-foreground",
                         )}
                       >
-                        {mood.label}
+                        {getMoodLabel(mood.id, mood.label)}
                       </span>
                       <span
                         className={cn(
@@ -1450,7 +1531,7 @@ const HomePage = () => {
                             : "text-muted-foreground",
                         )}
                       >
-                        {mood.description}
+                        {getMoodDescription(mood.id, mood.description)}
                       </span>
                     </button>
                   );
@@ -1461,8 +1542,8 @@ const HomePage = () => {
             {/* Trending Tags Card */}
             <div className="bg-card rounded-3xl border border-border/50 shadow-sm p-5 space-y-4">
               <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                <Flame className="h-4 w-4 text-secondary" />
-                Trending in Cairo
+                <Flame className="h-4 w-4 text-secondary dark:text-primary" />
+                {t("home.sidebar.trendingTitle")}
               </h2>
               <div className="flex gap-2 flex-wrap">
                 {trendingTags.map((tag) => (

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { AdminStats, RecentActivity } from "@/features/admin/types";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseAdminDashboardReturn {
   stats: AdminStats | null;
@@ -17,6 +18,7 @@ interface UseAdminDashboardReturn {
 }
 
 export const useAdminDashboard = (): UseAdminDashboardReturn => {
+  const { t } = useI18n();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [activity, setActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,13 +41,13 @@ export const useAdminDashboard = (): UseAdminDashboardReturn => {
       setActivity(a);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, "Failed to load dashboard data"));
+      setError(getErrorMessage(err, t("admin.error.loadDashboardData")));
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     mountedRef.current = true;

@@ -65,6 +65,7 @@ import {
   formatLongDate,
   formatRelativeTime,
 } from "@/features/moderator/utils/formatters";
+import { useI18n } from "@/components/i18n";
 
 const typeIcon: Record<ReportedContent["type"], typeof MessageSquareWarning> = {
   review: MessageSquareWarning,
@@ -79,6 +80,7 @@ const MODERATOR_REPORT_ROW_STYLE: CSSProperties = {
 };
 
 const ReportedContentPage = () => {
+  const { t, locale } = useI18n();
   const {
     reports,
     loading,
@@ -102,6 +104,30 @@ const ReportedContentPage = () => {
     handleBanUser,
   } = useReportedContent();
 
+  const statusFilterOptions = useMemo(
+    () =>
+      MODERATOR_REPORT_STATUS_FILTER_OPTIONS.map((option) => ({
+        ...option,
+        label:
+          option.value === "all"
+            ? t("admin.filter.all")
+            : t(`moderator.report.status.${option.value}`),
+      })),
+    [t],
+  );
+
+  const typeFilterOptions = useMemo(
+    () =>
+      MODERATOR_REPORT_TYPE_FILTER_OPTIONS.map((option) => ({
+        ...option,
+        label:
+          option.value === "all"
+            ? t("moderator.report.type.all")
+            : t(`moderator.report.type.${option.value}`),
+      })),
+    [t],
+  );
+
   const reportSummary = useMemo(
     () =>
       reports.reduce(
@@ -120,7 +146,13 @@ const ReportedContentPage = () => {
   );
 
   if (loading) {
-    return <LoadingSpinner size="md" text="Loading reports..." fullScreen />;
+    return (
+      <LoadingSpinner
+        size="md"
+        text={t("moderator.reports.loading")}
+        fullScreen
+      />
+    );
   }
 
   return (
@@ -153,13 +185,16 @@ const ReportedContentPage = () => {
       </div>
 
       <ModeratorPageHeader
-        title="Reported Content"
-        description={`${formatCount(reportSummary.open)} open · ${formatCount(reportSummary.investigating)} investigating`}
+        title={t("moderator.reports.header.title")}
+        description={t("moderator.reports.header.description", {
+          open: formatCount(reportSummary.open, locale),
+          investigating: formatCount(reportSummary.investigating, locale),
+        })}
         icon={ShieldAlert}
       />
 
       <ModeratorErrorBanner
-        title="Couldn't load reported content"
+        title={t("moderator.reports.error.loadTitle")}
         message={error}
         onRetry={() => {
           void retry();
@@ -168,14 +203,14 @@ const ReportedContentPage = () => {
 
       <ModeratorSection
         tone="muted"
-        title="Moderation Filters"
-        description="Adjust report status and content type across mobile and desktop contexts."
+        title={t("moderator.reports.filters.title")}
+        description={t("moderator.reports.filters.description")}
       >
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search reports, reporters, or reasons..."
+              placeholder={t("moderator.reports.filters.searchPlaceholder")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="pl-10"
@@ -183,8 +218,8 @@ const ReportedContentPage = () => {
           </div>
           <div className="lg:min-w-[16rem]">
             <ModeratorFilterChips
-              label="Status"
-              options={MODERATOR_REPORT_STATUS_FILTER_OPTIONS}
+              label={t("admin.filter.status")}
+              options={statusFilterOptions}
               value={statusFilter}
               onChange={setStatusFilter}
             />
@@ -193,8 +228,8 @@ const ReportedContentPage = () => {
 
         <div className="lg:max-w-[18rem]">
           <ModeratorFilterChips
-            label="Type"
-            options={MODERATOR_REPORT_TYPE_FILTER_OPTIONS}
+            label={t("moderator.reports.filters.typeLabel")}
+            options={typeFilterOptions}
             value={typeFilter}
             onChange={setTypeFilter}
           />
@@ -202,18 +237,20 @@ const ReportedContentPage = () => {
       </ModeratorSection>
 
       <ModeratorSection
-        title="Reports Queue"
-        description={`${formatCount(filtered.length)} reports in current view`}
+        title={t("moderator.reports.queue.title")}
+        description={t("moderator.reports.queue.description", {
+          count: formatCount(filtered.length, locale),
+        })}
         contentClassName="gap-4"
       >
         {filtered.length === 0 ? (
           <ModeratorEmptyState
             icon={ShieldAlert}
-            title="Queue is clear"
+            title={t("moderator.reports.empty.title")}
             description={
               search.trim().length > 0
-                ? "No reports match your current search and filter chips."
-                : "No reports match the current moderation segment."
+                ? t("moderator.reports.empty.withSearch")
+                : t("moderator.reports.empty.default")
             }
           />
         ) : (
@@ -261,7 +298,7 @@ const ReportedContentPage = () => {
                         )}
                       >
                         <StatusIcon className="h-2.5 w-2.5 mr-0.5" />{" "}
-                        {config.label}
+                        {t(`moderator.report.status.${report.status}`)}
                       </Badge>
                       <Badge
                         className={cn(
@@ -269,16 +306,18 @@ const ReportedContentPage = () => {
                           priority.class,
                         )}
                       >
-                        {priority.label}
+                        {t(`moderator.priority.${report.priority}`)}
                       </Badge>
                     </div>
                     <p className="text-role-caption text-muted-foreground break-words">
-                      Reported by{" "}
+                      {t("moderator.reports.meta.reportedBy")}{" "}
                       <span className="font-medium">{report.reporterName}</span>{" "}
-                      · {formatRelativeTime(report.createdAt)}
+                      · {formatRelativeTime(report.createdAt, locale)}
                     </p>
                     <p className="text-role-caption text-muted-foreground break-words">
-                      <span className="font-medium">Reason:</span>{" "}
+                      <span className="font-medium">
+                        {t("moderator.reports.meta.reason")}:
+                      </span>{" "}
                       {report.reason}
                     </p>
                   </div>
@@ -296,7 +335,9 @@ const ReportedContentPage = () => {
                       className="text-role-secondary gap-1 min-h-11 sm:h-8"
                     >
                       <Eye className="h-3.5 w-3.5" />
-                      {isExpanded ? "Less" : "Details"}
+                      {isExpanded
+                        ? t("moderator.reports.actions.less")
+                        : t("moderator.reports.actions.details")}
                       <ChevronDown
                         className={cn(
                           "h-3 w-3 transition-transform",
@@ -318,21 +359,26 @@ const ReportedContentPage = () => {
                         <div className="p-3 rounded-lg bg-muted/30 space-y-1.5 min-w-0">
                           <div className="flex items-center gap-1.5 text-role-caption font-semibold text-foreground">
                             <MessageSquare className="h-3.5 w-3.5 text-secondary" />
-                            Original Review
+                            {t("moderator.reports.details.originalReview")}
                             {report.reviewAuthorName ? (
                               <span className="text-muted-foreground font-normal break-words">
-                                - by {report.reviewAuthorName}
+                                {" "}
+                                - {t("moderator.reports.details.by")}{" "}
+                                {report.reviewAuthorName}
                               </span>
                             ) : null}
                           </div>
                           <p className="text-role-secondary text-foreground leading-relaxed italic break-words">
-                            "{report.reviewContent ?? "Content unavailable"}"
+                            "
+                            {report.reviewContent ??
+                              t("moderator.reports.details.contentUnavailable")}
+                            "
                           </p>
                         </div>
                         <div className="p-3 rounded-lg bg-destructive/5 border border-destructive/10 space-y-1.5 min-w-0">
                           <div className="flex items-center gap-1.5 text-role-caption font-semibold text-destructive">
                             <FileText className="h-3.5 w-3.5" />
-                            Reporter's Description
+                            {t("moderator.reports.details.reporterDescription")}
                           </div>
                           <p className="text-role-secondary text-foreground leading-relaxed break-words">
                             {report.description}
@@ -352,7 +398,9 @@ const ReportedContentPage = () => {
 
                     {report.resolvedAt ? (
                       <p className="text-role-caption text-muted-foreground">
-                        Resolved on {formatLongDate(report.resolvedAt)}
+                        {t("moderator.reports.details.resolvedOn", {
+                          date: formatLongDate(report.resolvedAt, locale),
+                        })}
                       </p>
                     ) : null}
 
@@ -375,7 +423,7 @@ const ReportedContentPage = () => {
                               ) : (
                                 <Clock className="h-3.5 w-3.5" />
                               )}
-                              Investigate
+                              {t("moderator.reports.actions.investigate")}
                             </Button>
                           ) : null}
                           <Button
@@ -392,7 +440,7 @@ const ReportedContentPage = () => {
                             ) : (
                               <XCircle className="h-3.5 w-3.5" />
                             )}
-                            Dismiss
+                            {t("moderator.reports.actions.dismiss")}
                           </Button>
                           <Button
                             variant="outline"
@@ -408,14 +456,14 @@ const ReportedContentPage = () => {
                             ) : (
                               <ArrowUpRight className="h-3.5 w-3.5" />
                             )}
-                            Mark Resolved
+                            {t("moderator.reports.actions.markResolved")}
                           </Button>
                         </div>
 
                         {report.type === "review" ? (
                           <div className="p-3 rounded-lg bg-card border border-border space-y-2">
                             <p className="text-role-caption font-semibold text-foreground uppercase tracking-wide">
-                              Resolution Actions
+                              {t("moderator.reports.actions.resolutionTitle")}
                             </p>
                             <div className="flex gap-2 flex-wrap">
                               <AlertDialog>
@@ -431,22 +479,27 @@ const ReportedContentPage = () => {
                                     ) : (
                                       <Trash2 className="h-3.5 w-3.5" />
                                     )}
-                                    Delete Review
+                                    {t(
+                                      "moderator.reports.actions.deleteReview",
+                                    )}
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>
-                                      Delete review
+                                      {t(
+                                        "moderator.reports.dialog.delete.title",
+                                      )}
                                     </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Permanently delete this review? This
-                                      action cannot be undone.
+                                      {t(
+                                        "moderator.reports.dialog.delete.description",
+                                      )}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>
-                                      Cancel
+                                      {t("common.cancel", undefined, "Cancel")}
                                     </AlertDialogCancel>
                                     <AlertDialogAction
                                       onClick={() =>
@@ -454,7 +507,7 @@ const ReportedContentPage = () => {
                                       }
                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     >
-                                      Delete
+                                      {t("moderator.reports.actions.delete")}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -473,26 +526,32 @@ const ReportedContentPage = () => {
                                     ) : (
                                       <Bell className="h-3.5 w-3.5" />
                                     )}
-                                    Warn User
+                                    {t("moderator.reports.actions.warnUser")}
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>
-                                      Send warning
+                                      {t("moderator.reports.dialog.warn.title")}
                                     </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Send a policy-violation warning to{" "}
+                                      {t(
+                                        "moderator.reports.dialog.warn.descriptionPrefix",
+                                      )}{" "}
                                       <span className="font-semibold">
                                         {report.reviewAuthorName ??
-                                          "the review author"}
-                                      </span>
-                                      ?
+                                          t(
+                                            "moderator.reports.dialog.warn.authorFallback",
+                                          )}
+                                      </span>{" "}
+                                      {t(
+                                        "moderator.reports.dialog.warn.descriptionSuffix",
+                                      )}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>
-                                      Cancel
+                                      {t("common.cancel", undefined, "Cancel")}
                                     </AlertDialogCancel>
                                     <AlertDialogAction
                                       onClick={() =>
@@ -503,7 +562,9 @@ const ReportedContentPage = () => {
                                       }
                                       className="bg-secondary text-secondary-foreground hover:bg-secondary/85"
                                     >
-                                      Send Warning
+                                      {t(
+                                        "moderator.reports.dialog.warn.confirm",
+                                      )}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -522,26 +583,32 @@ const ReportedContentPage = () => {
                                     ) : (
                                       <Ban className="h-3.5 w-3.5" />
                                     )}
-                                    Escalate &amp; Ban
+                                    {t("moderator.reports.actions.escalateBan")}
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>
-                                      Escalate for ban
+                                      {t("moderator.reports.dialog.ban.title")}
                                     </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Flag{" "}
+                                      {t(
+                                        "moderator.reports.dialog.ban.descriptionPrefix",
+                                      )}{" "}
                                       <span className="font-semibold">
-                                        {report.reviewAuthorName ?? "this user"}
+                                        {report.reviewAuthorName ??
+                                          t(
+                                            "moderator.reports.dialog.ban.authorFallback",
+                                          )}
                                       </span>{" "}
-                                      for admin ban review? Their account will
-                                      be queued for suspension.
+                                      {t(
+                                        "moderator.reports.dialog.ban.descriptionSuffix",
+                                      )}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>
-                                      Cancel
+                                      {t("common.cancel", undefined, "Cancel")}
                                     </AlertDialogCancel>
                                     <AlertDialogAction
                                       onClick={() =>
@@ -552,7 +619,9 @@ const ReportedContentPage = () => {
                                       }
                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     >
-                                      Escalate to Admin
+                                      {t(
+                                        "moderator.reports.dialog.ban.confirm",
+                                      )}
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
