@@ -39,8 +39,12 @@ export const LogoutProgressOverlay = ({
             <div className="flex items-center gap-2.5">
               <InlineLoading size="sm" className="h-4 w-4" />
               <div>
-                <p className="text-sm font-medium text-foreground">Signing out</p>
-                <p className="text-xs text-muted-foreground">Please wait a moment...</p>
+                <p className="text-sm font-medium text-foreground">
+                  Signing out
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Please wait a moment...
+                </p>
               </div>
             </div>
           </motion.div>
