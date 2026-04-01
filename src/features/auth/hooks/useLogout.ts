@@ -28,6 +28,14 @@ export const useLogout = (): UseLogoutReturn => {
   const [error, setError] = useState<string | null>(null);
   const inFlightRef = useRef(false);
 
+  const preloadLoginPage = async (): Promise<void> => {
+    try {
+      await import("@/features/auth/pages/LoginPage");
+    } catch {
+      // Navigation should continue even if preloading fails.
+    }
+  };
+
   const logoutUser = async (): Promise<void> => {
     if (inFlightRef.current) return;
 
@@ -36,6 +44,7 @@ export const useLogout = (): UseLogoutReturn => {
     setError(null);
 
     try {
+      await preloadLoginPage();
       await logout();
       navigate("/login", { replace: true });
     } catch (err) {

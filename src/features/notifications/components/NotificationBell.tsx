@@ -17,6 +17,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
   const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const hasLoadedOnceRef = useRef(false);
   const dialogId = mobile
     ? "notifications-panel-mobile"
@@ -81,6 +82,27 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
   }, [open, setOpenForCurrentPath]);
 
   useEffect(() => {
+    if (!open || !mobile) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobile, open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    panelRef.current?.focus();
+  }, [open]);
+
+  useEffect(() => {
     if (!open) return;
 
     const shouldShowLoader = !hasLoadedOnceRef.current;
@@ -127,7 +149,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
         className={cn(
           "relative transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           mobile
-            ? "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-1.5 min-w-[64px] text-muted-foreground hover:text-foreground"
+            ? "flex h-full min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1.5 py-1.5 text-muted-foreground hover:text-foreground"
             : "flex min-h-10 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
       >
@@ -139,7 +161,9 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
         />
         <span
           className={cn(
-            mobile ? "text-[10px] font-medium" : "hidden lg:inline",
+            mobile
+              ? "max-w-full truncate text-xs font-medium leading-tight"
+              : "hidden lg:inline",
           )}
         >
           Notifications
@@ -148,8 +172,8 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
         {unreadCount > 0 && (
           <span
             className={cn(
-              "absolute h-4 min-w-4 px-1 rounded-full bg-secondary text-primary text-[10px] font-bold flex items-center justify-center leading-none shadow-sm",
-              mobile ? "top-0 right-2" : "-top-1 -right-1",
+              "absolute h-4 min-w-4 px-1 rounded-full bg-secondary text-primary text-[11px] font-bold flex items-center justify-center leading-none shadow-sm",
+              mobile ? "right-1.5 top-0" : "-top-1 -right-1",
             )}
           >
             {unreadCount > 99 ? "99+" : unreadCount}
@@ -165,17 +189,19 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/40 z-50 md:hidden"
+                className="fixed inset-0 z-50 bg-background/72 md:hidden"
                 onClick={() => setOpenForCurrentPath(false)}
               />
             )}
 
             <motion.div
+              ref={panelRef}
               id={dialogId}
               role="dialog"
               aria-modal={mobile || undefined}
               aria-busy={loading}
               aria-label="Notifications panel"
+              tabIndex={-1}
               initial={
                 mobile ? { y: "100%", opacity: 0.6 } : { y: -8, opacity: 0 }
               }
@@ -187,7 +213,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
               className={cn(
                 "border border-border bg-card z-[60] overflow-hidden",
                 mobile
-                  ? "fixed inset-x-0 bottom-0 rounded-t-2xl max-h-[82vh] pb-[max(env(safe-area-inset-bottom),0.75rem)] md:hidden"
+                  ? "fixed inset-x-0 bottom-0 rounded-t-2xl max-h-[min(84svh,36rem)] pb-[max(env(safe-area-inset-bottom),0.75rem)] md:hidden"
                   : "absolute right-0 top-[calc(100%+10px)] w-[min(92vw,22.5rem)] lg:w-[24rem] rounded-2xl shadow-2xl",
               )}
             >
@@ -211,7 +237,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                       size="sm"
                       onClick={markAllRead}
                       disabled={markAllPending || loading}
-                      className="min-h-11 items-center gap-1.5 rounded-md px-2 text-xs font-semibold text-secondary hover:bg-secondary/10 hover:text-secondary/80"
+                      className="min-h-11 items-center gap-1.5 rounded-md px-2 text-xs font-semibold text-secondary dark:text-accent hover:bg-secondary/10 dark:hover:bg-accent/10 hover:text-secondary/80 dark:hover:text-accent/80"
                     >
                       {markAllPending ? (
                         <RefreshCw
@@ -265,7 +291,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
               <div
                 className={cn(
                   "overflow-y-auto",
-                  mobile ? "max-h-[58vh]" : "max-h-[420px]",
+                  mobile ? "max-h-[min(60svh,24rem)]" : "max-h-[420px]",
                 )}
               >
                 {loading && (

@@ -77,7 +77,7 @@ const LoginForm = () => {
         {/* Divider */}
         <div className="flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
-          <span className="px-1 text-[11px] tracking-[0.12em] text-muted-foreground/90 sm:text-xs">
+          <span className="px-1 text-xs tracking-[0.1em] text-muted-foreground sm:text-sm">
             or continue with email
           </span>
           <div className="h-px flex-1 bg-border" />
@@ -115,7 +115,7 @@ const LoginForm = () => {
                 type="button"
                 disabled={isLoading}
                 onClick={() => navigate("/forgot-password")}
-                className="-mx-2 inline-flex min-h-11 items-center px-2 text-xs font-medium text-foreground/70 transition-colors hover:text-foreground/90"
+                className="-mx-2 inline-flex min-h-11 items-center px-2 text-sm font-medium text-foreground/75 transition-colors hover:text-foreground/95"
               >
                 Forgot password?
               </button>
@@ -160,7 +160,7 @@ const LoginForm = () => {
       </AuthSurface>
 
       {/* Footer */}
-      <p className="mt-4 pb-2 text-center text-xs text-cream/60 sm:mt-6 sm:pb-0">
+      <p className="mt-4 pb-2 text-center text-sm text-cream/75 sm:mt-6 sm:pb-0">
         © 2026 C-Outing. Explore Cairo like never before.
       </p>
     </AuthShell>

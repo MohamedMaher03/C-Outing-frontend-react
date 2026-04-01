@@ -9,6 +9,7 @@ import {
   Moon,
   Compass,
   Sparkles,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -154,7 +155,7 @@ const OnboardingPage = () => {
                     <li key={label} className="flex items-center gap-2">
                       <span
                         className={cn(
-                          "inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold",
+                          "inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold",
                           isCompleted
                             ? "bg-primary/15 text-primary"
                             : isActive
@@ -362,40 +363,106 @@ const OnboardingPage = () => {
                       <div className="grid grid-cols-3 gap-2">
                         <div
                           className={cn(
-                            "rounded-lg border px-2 py-2 text-center transition-colors",
+                            "relative rounded-lg border px-2 py-2 text-center transition-colors",
                             vibeBand === "calm"
-                              ? "border-primary/25 bg-primary/5"
+                              ? "border-primary bg-primary text-primary-foreground"
                               : "border-border/50 bg-background/60",
                           )}
                         >
-                          <Moon className="mx-auto h-4 w-4 text-primary/80" />
-                          <p className="mt-1 text-role-caption text-foreground/80">
+                          {vibeBand === "calm" ? (
+                            <span
+                              aria-hidden="true"
+                              className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-primary-foreground/40 bg-primary-foreground/15 text-primary-foreground"
+                            >
+                              <Check className="h-2.5 w-2.5" />
+                            </span>
+                          ) : null}
+                          <Moon
+                            className={cn(
+                              "mx-auto h-4 w-4",
+                              vibeBand === "calm"
+                                ? "text-primary-foreground"
+                                : "text-primary/80",
+                            )}
+                          />
+                          <p
+                            className={cn(
+                              "mt-1 text-role-caption",
+                              vibeBand === "calm"
+                                ? "text-primary-foreground"
+                                : "text-foreground/80",
+                            )}
+                          >
                             Calm
                           </p>
                         </div>
                         <div
                           className={cn(
-                            "rounded-lg border px-2 py-2 text-center transition-colors",
+                            "relative rounded-lg border px-2 py-2 text-center transition-colors",
                             vibeBand === "balanced"
-                              ? "border-primary/25 bg-primary/5"
+                              ? "border-primary bg-primary text-primary-foreground"
                               : "border-border/50 bg-background/60",
                           )}
                         >
-                          <Compass className="mx-auto h-4 w-4 text-primary/80" />
-                          <p className="mt-1 text-role-caption text-foreground/80">
+                          {vibeBand === "balanced" ? (
+                            <span
+                              aria-hidden="true"
+                              className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-primary-foreground/40 bg-primary-foreground/15 text-primary-foreground"
+                            >
+                              <Check className="h-2.5 w-2.5" />
+                            </span>
+                          ) : null}
+                          <Compass
+                            className={cn(
+                              "mx-auto h-4 w-4",
+                              vibeBand === "balanced"
+                                ? "text-primary-foreground"
+                                : "text-primary/80",
+                            )}
+                          />
+                          <p
+                            className={cn(
+                              "mt-1 text-role-caption",
+                              vibeBand === "balanced"
+                                ? "text-primary-foreground"
+                                : "text-foreground/80",
+                            )}
+                          >
                             Balanced
                           </p>
                         </div>
                         <div
                           className={cn(
-                            "rounded-lg border px-2 py-2 text-center transition-colors",
+                            "relative rounded-lg border px-2 py-2 text-center transition-colors",
                             vibeBand === "energetic"
-                              ? "border-primary/25 bg-primary/5"
+                              ? "border-primary bg-primary text-primary-foreground"
                               : "border-border/50 bg-background/60",
                           )}
                         >
-                          <Sparkles className="mx-auto h-4 w-4 text-primary/80" />
-                          <p className="mt-1 text-role-caption text-foreground/80">
+                          {vibeBand === "energetic" ? (
+                            <span
+                              aria-hidden="true"
+                              className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-primary-foreground/40 bg-primary-foreground/15 text-primary-foreground"
+                            >
+                              <Check className="h-2.5 w-2.5" />
+                            </span>
+                          ) : null}
+                          <Sparkles
+                            className={cn(
+                              "mx-auto h-4 w-4",
+                              vibeBand === "energetic"
+                                ? "text-primary-foreground"
+                                : "text-primary/80",
+                            )}
+                          />
+                          <p
+                            className={cn(
+                              "mt-1 text-role-caption",
+                              vibeBand === "energetic"
+                                ? "text-primary-foreground"
+                                : "text-foreground/80",
+                            )}
+                          >
                             Energetic
                           </p>
                         </div>

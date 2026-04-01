@@ -143,7 +143,7 @@ const SignUpForm = () => {
         {/* Divider */}
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-border" />
-          <span className="px-1 text-[11px] tracking-[0.12em] text-muted-foreground/90 sm:text-xs">
+          <span className="px-1 text-xs tracking-[0.1em] text-muted-foreground sm:text-sm">
             or continue with email
           </span>
           <div className="flex-1 h-px bg-border" />
@@ -222,7 +222,7 @@ const SignUpForm = () => {
                   : "h-11 text-base sm:text-sm"
               }
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-role-micro text-muted-foreground">
               If you skip this, we will upload a default avatar for your
               account.
             </p>
@@ -303,7 +303,7 @@ const SignUpForm = () => {
       </AuthSurface>
 
       {/* Footer */}
-      <p className="mt-4 pb-2 text-center text-xs text-cream/60 sm:mt-6 sm:pb-0">
+      <p className="mt-4 pb-2 text-center text-sm text-cream/75 sm:mt-6 sm:pb-0">
         © 2026 C-Outing. Explore Cairo like never before.
       </p>
     </AuthShell>

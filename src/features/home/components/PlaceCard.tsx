@@ -64,7 +64,7 @@ const PlaceCard = ({
     : null;
 
   const distanceClassName = cn(
-    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold",
     distanceState.kind === "distance" &&
       "border-emerald-200 bg-emerald-50 text-emerald-700",
     distanceState.kind === "locating" &&
@@ -101,20 +101,20 @@ const PlaceCard = ({
         }
       }}
       className={cn(
-        "group relative bg-card rounded-2xl border border-border/60 overflow-hidden cursor-pointer",
+        "group/place relative bg-card rounded-2xl border border-border/60 overflow-hidden cursor-pointer",
         "transition-all duration-250 ease-out",
         "md:hover:shadow-lg md:hover:shadow-primary/5 md:hover:border-secondary/20",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2",
         "shadow-sm",
         isHorizontal
-          ? "w-[min(85vw,320px)] sm:w-[280px] flex-shrink-0"
+          ? "w-[clamp(15.5rem,78vw,20rem)] sm:w-[18.25rem] flex-shrink-0"
           : "w-full",
       )}
     >
       {/* Top Rated Badge */}
       {isTopRated && !hideTopRatedBadge && (
         <div
-          className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-cream/35 bg-primary/95 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-cream shadow-lg shadow-black/35 backdrop-blur-sm"
+          className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-cream/35 bg-primary/95 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.08em] text-cream shadow-lg shadow-black/35 backdrop-blur-sm"
           title={`Top Rated appears when rating is ${TOP_RATED_MIN_RATING.toFixed(1)} or higher.`}
         >
           <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-secondary/20">
@@ -134,13 +134,13 @@ const PlaceCard = ({
         <img
           src={isImageBroken ? "" : place.image}
           alt={safeName}
-          className="h-full w-full object-cover transition-transform duration-500 ease-out md:group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-500 ease-out md:group-hover/place:scale-105"
           loading="lazy"
           onError={() => setIsImageBroken(true)}
         />
         {isImageBroken && (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/70 px-4 text-center">
-            <span className="text-xs font-semibold text-muted-foreground break-words">
+            <span className="text-sm font-semibold text-muted-foreground break-words">
               Image unavailable
             </span>
           </div>
@@ -202,7 +202,7 @@ const PlaceCard = ({
                   "h-4 w-4 transition-all",
                   place.isSaved
                     ? "fill-destructive-foreground text-destructive-foreground"
-                    : "text-foreground group-hover:text-destructive/80",
+                    : "text-foreground group-hover/place:text-destructive/80",
                 )}
               />
             </motion.span>
@@ -229,7 +229,7 @@ const PlaceCard = ({
       {/* Content */}
       <div className="space-y-2 p-4 sm:p-5">
         <h3
-          className="text-sm font-semibold leading-tight text-foreground transition-colors group-hover:text-secondary/90 line-clamp-2 break-words"
+          className="text-sm font-semibold leading-tight text-foreground transition-colors line-clamp-2 break-words"
           title={safeName}
         >
           {safeName}
@@ -237,7 +237,7 @@ const PlaceCard = ({
 
         {/* Address row */}
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-muted-foreground text-xs min-w-0">
+          <div className="flex items-center gap-1.5 text-role-micro text-muted-foreground min-w-0">
             <MapPin className="h-3 w-3 flex-shrink-0" />
             <span className="truncate" title={safeAddress}>
               {safeAddress}
@@ -246,7 +246,7 @@ const PlaceCard = ({
           {place.isOpen !== undefined && (
             <div
               className={cn(
-                "ml-1 flex flex-shrink-0 items-center gap-1 text-[10px] font-semibold",
+                "ml-1 flex flex-shrink-0 items-center gap-1 text-xs font-semibold",
                 place.isOpen ? "text-emerald-600" : "text-muted-foreground",
               )}
             >
@@ -267,7 +267,7 @@ const PlaceCard = ({
             {safeTagList.map((tag) => (
               <span
                 key={tag}
-                className="text-[10px] px-2.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground font-medium border border-border/40 flex-shrink-0 max-w-[110px] truncate"
+                className="rounded-full border border-border/40 bg-muted/70 px-2.5 py-1 text-xs font-medium text-muted-foreground flex-shrink-0 max-w-[126px] truncate"
                 title={tag}
               >
                 {tag}
@@ -277,12 +277,12 @@ const PlaceCard = ({
           {/* Price Level */}
           {priceMeta && (
             <span
-              className="ml-auto inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-secondary/20 bg-secondary/10 px-2.5 py-0.5 text-[10px] font-medium text-foreground"
+              className="ml-auto inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-secondary/20 bg-secondary/10 px-2.5 py-1 text-[11px] font-medium text-foreground"
               aria-label={`Budget level: ${priceMeta.label}`}
               title={`Budget level: ${priceMeta.label}`}
             >
               <span>{priceMeta.label}</span>
-              <span className="text-[9px] font-semibold text-secondary/80">
+              <span className="text-[11px] font-semibold text-secondary/80">
                 {priceMeta.symbol}
               </span>
             </span>

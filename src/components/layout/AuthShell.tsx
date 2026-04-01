@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import logo from "@/assets/images/logo6.png";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 type AuthShellProps = {
   children: ReactNode;
@@ -29,7 +30,16 @@ export const AuthShell = ({
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${cairoBg})` }}
       />
-      <div className="absolute inset-0 bg-primary/58" />
+      <div className="absolute inset-0 bg-[rgba(17,39,73,0.58)] dark:bg-[rgba(6,14,27,0.72)]" />
+
+      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+        <ThemeToggle
+          mode="compact"
+          showCompactLabel
+          compactIconClassName="text-white"
+          className="border-white/30 bg-black/35 text-white backdrop-blur-sm hover:bg-black/50"
+        />
+      </div>
 
       <div
         className={cn(
@@ -46,7 +56,7 @@ export const AuthShell = ({
             decoding="async"
             className="h-11 w-auto rounded-lg"
           />
-          <h1 className="text-[clamp(1.5rem,2.6vw,1.875rem)] font-semibold tracking-tight text-cream/90">
+          <h1 className="text-[clamp(1.5rem,2.6vw,1.875rem)] font-semibold tracking-tight text-white">
             C-OUTING
           </h1>
         </div>
@@ -66,7 +76,7 @@ export const AuthSurface = ({ children, className }: AuthSurfaceProps) => {
   return (
     <div
       className={cn(
-        "glass space-y-6 rounded-xl border-white/45 bg-white/85 p-5 shadow-xl backdrop-blur-lg sm:p-8",
+        "glass space-y-6 rounded-xl border-border/65 bg-card/90 p-5 shadow-xl backdrop-blur-lg sm:p-8",
         className,
       )}
     >

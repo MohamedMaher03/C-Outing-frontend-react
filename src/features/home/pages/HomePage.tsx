@@ -102,7 +102,7 @@ const HorizontalScroller = ({
   };
 
   return (
-    <div className="group relative">
+    <div className="relative">
       <button
         type="button"
         onClick={() => scrollByDirection("left")}
@@ -367,22 +367,22 @@ const HomePage = () => {
 
         <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center px-4 py-10 sm:px-6 lg:px-8">
           <section
-            className="w-full overflow-hidden rounded-3xl border border-white/15 bg-white/10 shadow-xl backdrop-blur-lg"
+            className="w-full overflow-hidden rounded-3xl border border-border/60 bg-card/90 shadow-xl backdrop-blur-md"
             role="alert"
             aria-live="assertive"
           >
             <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_0.75fr]">
               <div className="space-y-6 p-6 sm:p-8 lg:p-10">
-                <div className="inline-flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-secondary">
+                <div className="inline-flex items-center gap-2 rounded-full border border-secondary/40 bg-secondary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary">
                   <ShieldAlert className="h-3.5 w-3.5" />
                   Something went wrong
                 </div>
 
                 <div className="space-y-2">
-                  <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                     We could not load your home feed right now
                   </h1>
-                  <p className="max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
+                  <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
                     No worries, your account and preferences are safe. Please
                     try again in a moment.
                   </p>
@@ -403,25 +403,25 @@ const HomePage = () => {
                     type="button"
                     onClick={() => window.location.reload()}
                     variant="outline"
-                    className="h-10 rounded-full border-white/25 bg-white/10 px-5 text-sm font-semibold text-white hover:bg-white/15 hover:text-white"
+                    className="h-10 rounded-full border-border/70 bg-background/60 px-5 text-sm font-semibold text-foreground hover:bg-background"
                   >
                     Refresh page
                   </Button>
                 </div>
               </div>
 
-              <aside className="border-t border-white/10 bg-black/15 p-6 sm:p-8 lg:border-l lg:border-t-0">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-white/70">
+              <aside className="border-t border-border/70 bg-background/45 p-6 sm:p-8 lg:border-l lg:border-t-0">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   Quick check
                 </h2>
 
                 <ul className="mt-4 space-y-3">
-                  <li className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/85">
-                    <span className="flex items-center gap-2 font-semibold text-white">
+                  <li className="rounded-2xl border border-border/70 bg-card/70 p-3 text-sm text-foreground">
+                    <span className="flex items-center gap-2 font-semibold text-foreground">
                       <Wifi className="h-4 w-4 text-secondary" />
                       Network connection
                     </span>
-                    <p className="mt-1 text-xs leading-relaxed text-white/70">
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                       Confirm your internet is active, then retry.
                     </p>
                   </li>
@@ -456,8 +456,8 @@ const HomePage = () => {
             ease: EASE_OUT_EXPO,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/62 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/32 via-transparent to-secondary/6" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--navy)/0.86)] via-[hsl(var(--navy)/0.56)] to-transparent dark:from-black/72 dark:via-black/46" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy)/0.26)] via-transparent to-black/10 dark:from-black/24 dark:to-black/18" />
 
         <motion.div
           className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-5 pt-8 sm:pb-6 sm:pt-10"
@@ -489,7 +489,7 @@ const HomePage = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search Cairo venues"
-              className="h-12 rounded-2xl border border-white/15 bg-white/10 pl-12 pr-14 text-base text-white shadow-lg transition-colors placeholder:text-white/55 focus:border-secondary/70 focus:bg-white/15 focus:ring-secondary/20 backdrop-blur-md sm:h-14"
+              className="h-12 rounded-2xl border border-white/20 bg-black/25 pl-12 pr-14 text-base text-white shadow-lg transition-colors placeholder:text-white/65 focus:border-secondary/70 focus:bg-black/30 focus:ring-secondary/20 backdrop-blur-md sm:h-14"
             />
           </motion.div>
 
@@ -528,10 +528,10 @@ const HomePage = () => {
                     ease: EASE_OUT_QUART,
                     delay: cardDelay(index, 0.18),
                   }}
-                  className={`inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 sm:px-5 ${
+                  className={`inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-5 ${
                     isActive
-                      ? "border-secondary/35 bg-secondary/85 text-primary shadow-sm"
-                      : "border-white/15 bg-white/10 text-white/85 backdrop-blur-md hover:border-secondary/25 hover:bg-white/15"
+                      ? "border-accent/90 bg-accent text-accent-foreground shadow-sm"
+                      : "border-white/20 bg-black/20 text-white/90 backdrop-blur-md hover:border-primary/65 hover:bg-primary/28 hover:text-primary-foreground dark:hover:bg-primary/35 dark:hover:text-cream"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -621,10 +621,10 @@ const HomePage = () => {
                         onClick={() =>
                           handleMoodOptionSelect(mood.id, isActive)
                         }
-                        className={`flex min-h-11 items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                        className={`flex min-h-11 items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
-                            ? "border-secondary/35 bg-secondary/10"
-                            : "border-border/60 bg-background hover:border-secondary/40"
+                            ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                            : "border-border/60 bg-background hover:border-primary/55 hover:bg-primary/12"
                         }`}
                       >
                         <MoodIcon className="h-4 w-4 shrink-0 text-secondary/90" />
@@ -647,7 +647,7 @@ const HomePage = () => {
                       type="button"
                       key={`mobile-tag-${tag.id}`}
                       onClick={() => setSearch(tag.label)}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-full border border-border/60 bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors duration-200 hover:border-secondary/30 hover:bg-secondary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-full border border-border/60 bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors duration-200 hover:border-primary/55 hover:bg-primary/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                     >
                       <span className="text-muted-foreground">#</span>
                       <span
@@ -656,7 +656,7 @@ const HomePage = () => {
                       >
                         {tag.label}
                       </span>
-                      <span className="text-[10px] text-muted-foreground tabular-nums">
+                      <span className="text-[11px] text-muted-foreground tabular-nums">
                         {compactNumberFormatter.format(tag.searchCount)}
                       </span>
                     </button>
@@ -706,23 +706,29 @@ const HomePage = () => {
                         type="button"
                         key={source.id}
                         onClick={() => setActiveDiscoverySource(source.id)}
-                        className={`group min-h-11 rounded-2xl border px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                        className={`group min-h-11 rounded-2xl border px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
-                            ? "border-secondary/35 bg-secondary/10"
-                            : "border-border/60 bg-card/90 hover:border-secondary/25"
+                            ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                            : "border-border/60 bg-card/90 hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <span
                             className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${
                               isActive
-                                ? "bg-secondary/15 text-secondary"
-                                : "bg-muted/80 text-muted-foreground"
+                                ? "bg-primary-foreground/18 text-primary-foreground"
+                                : "bg-muted/80 text-muted-foreground group-hover:text-primary dark:group-hover:text-cream"
                             }`}
                           >
                             <Icon className="h-4 w-4" />
                           </span>
-                          <span className="text-xs font-medium leading-tight text-foreground">
+                          <span
+                            className={`text-xs font-medium leading-tight ${
+                              isActive
+                                ? "text-primary-foreground"
+                                : "text-foreground"
+                            }`}
+                          >
                             {source.label}
                           </span>
                         </div>
@@ -745,10 +751,10 @@ const HomePage = () => {
                             );
                             setActiveDiscoverySource("district");
                           }}
-                          className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                          className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             isActive
-                              ? "border-foreground/20 bg-foreground/90 text-background"
-                              : "border-border/70 bg-card text-foreground hover:border-foreground/25"
+                              ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                              : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                           }`}
                         >
                           {district.name}
@@ -770,10 +776,10 @@ const HomePage = () => {
                             setSelectedVenueType(isActive ? null : option.id);
                             setActiveDiscoverySource("type");
                           }}
-                          className={`rounded-xl border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                          className={`rounded-xl border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             isActive
-                              ? "border-secondary/35 bg-secondary/10 text-foreground"
-                              : "border-border/70 bg-card text-foreground hover:border-secondary/30"
+                              ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                              : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                           }`}
                         >
                           {option.label}
@@ -792,16 +798,28 @@ const HomePage = () => {
                           type="button"
                           key={option.id}
                           onClick={() => handlePriceRangeSelect(option.id)}
-                          className={`rounded-2xl border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                          className={`rounded-2xl border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             isActive
-                              ? "border-secondary/35 bg-secondary/10"
-                              : "border-border/60 bg-card hover:border-secondary/25"
+                              ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                              : "border-border/60 bg-card hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
                           }`}
                         >
-                          <p className="text-sm font-semibold tracking-tight text-foreground">
+                          <p
+                            className={`text-sm font-semibold tracking-tight ${
+                              isActive
+                                ? "text-primary-foreground"
+                                : "text-foreground"
+                            }`}
+                          >
                             {option.label}
                           </p>
-                          <p className="text-[11px] font-medium text-muted-foreground">
+                          <p
+                            className={`text-[11px] font-medium ${
+                              isActive
+                                ? "text-primary-foreground/85"
+                                : "text-muted-foreground"
+                            }`}
+                          >
                             {option.caption}
                           </p>
                         </button>
@@ -826,10 +844,10 @@ const HomePage = () => {
                               setSelectedArea(district.name);
                               setActiveDiscoverySource("top-rated-area");
                             }}
-                            className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                            className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                               isActive
-                                ? "border-secondary/35 bg-secondary/10 text-foreground"
-                                : "border-border/70 bg-card text-foreground hover:border-secondary/30"
+                                ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                                : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                             }`}
                           >
                             {district.name}
@@ -1213,16 +1231,28 @@ const HomePage = () => {
                                     setSimilarSearchInput(place.name);
                                     selectPlaceForSimilar(place.id);
                                   }}
-                                  className={`w-full rounded-xl px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                                  className={`w-full rounded-xl px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                                     isActive
-                                      ? "bg-secondary/10 text-foreground"
-                                      : "hover:bg-muted"
+                                      ? "bg-primary text-primary-foreground dark:text-cream"
+                                      : "hover:bg-primary/12 hover:text-primary dark:hover:bg-primary/24 dark:hover:text-cream"
                                   }`}
                                 >
-                                  <p className="text-sm font-semibold text-foreground">
+                                  <p
+                                    className={`text-sm font-semibold ${
+                                      isActive
+                                        ? "text-primary-foreground dark:text-cream"
+                                        : "text-foreground"
+                                    }`}
+                                  >
                                     {place.name}
                                   </p>
-                                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                                  <p
+                                    className={`mt-0.5 truncate text-xs ${
+                                      isActive
+                                        ? "text-primary-foreground/90 dark:text-cream/90"
+                                        : "text-muted-foreground"
+                                    }`}
+                                  >
                                     {place.address}
                                   </p>
                                 </button>
@@ -1249,10 +1279,10 @@ const HomePage = () => {
                             setSimilarSearchInput(place.name);
                             selectPlaceForSimilar(place.id);
                           }}
-                          className={`rounded-full border px-4 py-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                          className={`rounded-full border px-4 py-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             isActive
-                              ? "border-secondary/35 bg-secondary/10 text-foreground"
-                              : "border-border/70 bg-card text-foreground hover:border-secondary/30 hover:bg-secondary/5"
+                              ? "border-primary/85 bg-primary text-primary-foreground shadow-sm dark:text-cream"
+                              : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                           }`}
                         >
                           {place.name}
@@ -1388,17 +1418,38 @@ const HomePage = () => {
                       type="button"
                       key={mood.id}
                       onClick={() => handleMoodOptionSelect(mood.id, isActive)}
-                      className={`flex min-h-11 flex-col items-center gap-1 rounded-2xl border px-3 py-3 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                      className={`flex min-h-11 flex-col items-center gap-1 rounded-2xl border px-3 py-3 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                         isActive
-                          ? "border-secondary/35 bg-secondary/10"
-                          : "bg-background border-border/50 hover:border-secondary/30"
+                          ? "border-primary/85 bg-primary text-primary-foreground shadow-sm dark:text-cream"
+                          : "bg-background border-border/50 hover:border-primary/55 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                       }`}
                     >
-                      <MoodIcon className="h-5 w-5 text-secondary" />
-                      <span className="text-[11px] font-medium text-foreground leading-tight">
+                      <MoodIcon
+                        className={cn(
+                          "h-5 w-5",
+                          isActive
+                            ? "text-primary-foreground dark:text-cream"
+                            : "text-secondary",
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "text-[11px] font-medium leading-tight",
+                          isActive
+                            ? "text-primary-foreground dark:text-cream"
+                            : "text-foreground",
+                        )}
+                      >
                         {mood.label}
                       </span>
-                      <span className="text-[10px] text-muted-foreground leading-tight">
+                      <span
+                        className={cn(
+                          "text-[11px] leading-tight",
+                          isActive
+                            ? "text-primary-foreground/90 dark:text-cream/90"
+                            : "text-muted-foreground",
+                        )}
+                      >
                         {mood.description}
                       </span>
                     </button>
@@ -1419,13 +1470,13 @@ const HomePage = () => {
                     type="button"
                     key={tag.id}
                     onClick={() => setSearch(tag.label)}
-                    className="inline-flex min-h-11 items-center gap-1 rounded-full border border-border/50 bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors duration-200 hover:border-secondary/30 hover:bg-secondary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+                    className="inline-flex min-h-11 items-center gap-1 rounded-full border border-border/50 bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors duration-200 hover:border-primary/55 hover:bg-primary/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     <span className="text-muted-foreground">#</span>
                     <span className="max-w-[110px] truncate" title={tag.label}>
                       {tag.label}
                     </span>
-                    <span className="text-[10px] text-muted-foreground tabular-nums">
+                    <span className="text-[11px] text-muted-foreground tabular-nums">
                       {compactNumberFormatter.format(tag.searchCount)}
                     </span>
                   </button>

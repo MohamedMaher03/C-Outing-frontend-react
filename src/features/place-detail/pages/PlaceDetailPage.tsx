@@ -189,7 +189,7 @@ const PlaceDetailPage = () => {
         : "border-secondary/30 bg-secondary text-secondary-foreground";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cream/30 via-background to-background pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:pb-10">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:pb-10">
       {notification.show && (
         <div
           className="fixed top-6 left-1/2 z-50 -translate-x-1/2 px-4"
@@ -243,7 +243,7 @@ const PlaceDetailPage = () => {
                 );
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/20 to-black/10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/35 to-black/10" />
 
             <Button
               type="button"
@@ -251,7 +251,7 @@ const PlaceDetailPage = () => {
               size="icon"
               aria-label="Go back"
               onClick={goBack}
-              className="absolute left-4 top-4 h-11 w-11 rounded-full border-white/30 bg-white/85 backdrop-blur-sm"
+              className="absolute left-4 top-4 h-11 w-11 rounded-full border-border/60 bg-card/90 text-foreground backdrop-blur-sm"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -265,7 +265,7 @@ const PlaceDetailPage = () => {
                 disabled={savingLike}
                 aria-label={isLiked ? "Unlike this place" : "Like this place"}
                 aria-pressed={isLiked}
-                className="h-11 w-11 rounded-full border-white/30 bg-white/85 backdrop-blur-sm"
+                className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
                 title="Like this place"
               >
                 <ThumbsUp
@@ -285,7 +285,7 @@ const PlaceDetailPage = () => {
                   isFavorite ? "Remove from favorites" : "Add to favorites"
                 }
                 aria-pressed={isFavorite}
-                className="h-11 w-11 rounded-full border-white/30 bg-white/85 backdrop-blur-sm"
+                className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
                 title="Add to favorites"
               >
                 <Heart

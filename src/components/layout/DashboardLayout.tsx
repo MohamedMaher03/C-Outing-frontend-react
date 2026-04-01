@@ -13,13 +13,12 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, Menu, X, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLogout } from "@/features/auth/hooks/useLogout";
-import { useState, type ReactNode } from "react";
-import { InlineLoading } from "@/components/ui/LoadingSpinner";
+import { useEffect, useState, type ReactNode } from "react";
 import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
-import { LogoutProgressOverlay } from "@/features/auth/components/ui/LogoutProgressOverlay";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import logo from "@/assets/images/logo3.png";
 
 export interface DashboardNavItem {
@@ -45,12 +44,35 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
     clearError: clearLogoutError,
   } = useLogout();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   const handleLogout = async () => {
     await logoutUser();
   };
 
   const isActive = (path: string) => location.pathname === path;
+
+  useEffect(() => {
+    if (!sidebarOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSidebarOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [sidebarOpen]);
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
@@ -61,26 +83,37 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
           <span className="text-lg font-bold text-foreground tracking-tight block">
             C-OUTING
           </span>
-          <span className="text-[10px] font-semibold text-secondary uppercase tracking-wider">
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider dark:text-slate-400">
             {title}
           </span>
         </div>
       </div>
 
+      <div className="px-5 py-3 border-b border-border">
+        <ThemeToggle alwaysShowLabels className="w-full" />
+      </div>
+
       {/* User Info */}
       <div className="px-5 py-4 border-b border-border">
-        <p className="text-sm font-semibold text-foreground truncate">
+        <p
+          className="text-sm font-semibold text-foreground break-words"
+          title={user?.name || "User"}
+        >
           {user?.name || "User"}
         </p>
-        <p className="text-xs text-muted-foreground truncate">
+        <p
+          className="text-xs text-muted-foreground break-words"
+          title={user?.email || ""}
+          dir="auto"
+        >
           {user?.email || ""}
         </p>
         <span
           className={cn(
-            "inline-block mt-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+            "inline-block mt-1.5 rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider",
             user?.role === "admin"
-              ? "bg-red-100 text-red-700"
-              : "bg-blue-100 text-blue-700",
+              ? "border-destructive/25 bg-destructive/12 text-destructive"
+              : "border-primary/25 bg-primary/12 text-primary",
           )}
         >
           {user?.role}
@@ -93,13 +126,15 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
           const active = isActive(item.path);
           return (
             <button
+              type="button"
               key={item.path}
               onClick={() => {
                 navigate(item.path);
                 setSidebarOpen(false);
               }}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                "w-full min-h-11 flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 active
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -111,7 +146,7 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
                   active && "text-primary-foreground",
                 )}
               />
-              {item.label}
+              <span className="truncate">{item.label}</span>
             </button>
           );
         })}
@@ -120,16 +155,14 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
       {/* Logout */}
       <div className="px-3 py-4 border-t border-border">
         <button
+          type="button"
           onClick={handleLogout}
           disabled={isLoggingOut}
           aria-busy={isLoggingOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors disabled:cursor-wait disabled:opacity-75"
+          className="w-full flex items-center gap-3 rounded-xl border border-red-300/80 bg-red-50/70 px-3 py-2.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 disabled:cursor-wait disabled:opacity-75 dark:border-red-500/45 dark:bg-red-900/35 dark:text-red-100 dark:hover:bg-red-900/55"
         >
           {isLoggingOut ? (
-            <>
-              <InlineLoading size="sm" className="h-4.5 w-4.5" />
-              Logging out...
-            </>
+            <>Logging out...</>
           ) : (
             <>
               <LogOut className="h-4.5 w-4.5" />
@@ -144,14 +177,14 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
   return (
     <div className="min-h-screen bg-background flex">
       {logoutError && (
-        <div className="fixed left-1/2 top-3 z-[90] w-[min(92vw,30rem)] -translate-x-1/2">
+        <div className="fixed left-1/2 top-[4.5rem] z-[90] w-[min(92vw,30rem)] -translate-x-1/2 md:left-auto md:right-4 md:top-4 md:w-[min(28rem,calc(100vw-2rem))] md:translate-x-0">
           <AuthStatusBanner
             message={logoutError}
             onDismiss={clearLogoutError}
+            className="shadow-lg"
           />
         </div>
       )}
-      <LogoutProgressOverlay isVisible={isLoggingOut} />
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-64 flex-col bg-card border-r border-border fixed inset-y-0 left-0 z-40">
@@ -166,15 +199,21 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40 md:hidden"
+              className="fixed inset-0 bg-foreground/45 z-40 md:hidden"
               onClick={() => setSidebarOpen(false)}
             />
             <motion.aside
-              initial={{ x: -280 }}
+              id="dashboard-mobile-sidebar"
+              initial={shouldReduceMotion ? { opacity: 0 } : { x: -280 }}
               animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { x: -280 }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
+              }
               className="fixed inset-y-0 left-0 w-64 bg-card border-r border-border z-50 md:hidden"
+              aria-label={`${title} navigation`}
             >
               {sidebarContent}
             </motion.aside>
@@ -187,8 +226,14 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
         {/* Top Bar (mobile) */}
         <header className="md:hidden flex items-center justify-between px-4 py-3 bg-card border-b border-border sticky top-0 z-30">
           <button
+            type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-muted rounded-lg transition-colors"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+            aria-label={
+              sidebarOpen ? "Close navigation menu" : "Open navigation menu"
+            }
+            aria-expanded={sidebarOpen}
+            aria-controls="dashboard-mobile-sidebar"
           >
             {sidebarOpen ? (
               <X className="h-5 w-5" />
@@ -198,9 +243,14 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
           </button>
           <div className="flex items-center gap-2">
             <img src={logo} alt="C-Outing" className="h-7 w-auto rounded-lg" />
-            <span className="text-sm font-bold text-foreground">{title}</span>
+            <span
+              className="max-w-[11rem] truncate text-sm font-bold text-foreground"
+              title={title}
+            >
+              {title}
+            </span>
           </div>
-          <div className="w-9" /> {/* Spacer for centering */}
+          <ThemeToggle mode="compact" />
         </header>
 
         {/* Page Content */}
@@ -208,10 +258,16 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 12 }}
+              initial={
+                shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }
+              }
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
+              exit={
+                shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -12 }
+              }
+              transition={
+                shouldReduceMotion ? { duration: 0 } : { duration: 0.2 }
+              }
             >
               <Outlet />
             </motion.div>

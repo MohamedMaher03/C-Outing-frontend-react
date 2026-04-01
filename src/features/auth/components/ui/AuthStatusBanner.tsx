@@ -23,7 +23,7 @@ export const AuthStatusBanner = ({
       className={cn(
         "flex min-w-0 items-start gap-3 rounded-md border px-4 py-3 text-sm",
         isError
-          ? "border-destructive/30 bg-destructive/10 text-destructive/90"
+          ? "border-red-300/80 bg-red-50/95 text-red-800 dark:border-red-500/50 dark:bg-red-900/45 dark:text-red-100"
           : "border-green-600/30 bg-green-600/10 text-green-700 dark:text-green-300",
         className,
       )}
@@ -53,7 +53,7 @@ export const AuthStatusBanner = ({
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss message"
-          className="shrink-0 opacity-50 transition-opacity hover:opacity-80"
+          className="shrink-0 opacity-70 transition-opacity hover:opacity-100"
         >
           <X className="h-4 w-4" />
         </button>

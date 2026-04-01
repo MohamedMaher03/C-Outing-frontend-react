@@ -5,7 +5,7 @@
  * Follows the project's card-based design with secondary accent.
  */
 
-import { useEffect, useMemo, type CSSProperties } from "react";
+import { useEffect, useMemo } from "react";
 
 import {
   Search,
@@ -40,12 +40,6 @@ const monthYearFormatter = new Intl.DateTimeFormat(undefined, {
   month: "short",
   year: "numeric",
 });
-
-const ADMIN_LIST_ROW_STYLE: CSSProperties = {
-  contentVisibility: "auto",
-  containIntrinsicSize: "110px",
-  contain: "layout paint style",
-};
 
 const ManageUsersPage = () => {
   const {
@@ -164,8 +158,7 @@ const ManageUsersPage = () => {
             return (
               <div
                 key={user.userId}
-                className="flex min-w-0 flex-col gap-4 rounded-xl border border-border bg-card p-4 transition-all motion-reduce:transition-none hover:border-secondary/35 hover:shadow-sm sm:flex-row sm:items-center"
-                style={ADMIN_LIST_ROW_STYLE}
+                className="relative flex min-w-0 flex-col gap-4 rounded-xl border border-border bg-card p-4 transition-all motion-reduce:transition-none hover:border-secondary/35 hover:shadow-sm sm:flex-row sm:items-center"
               >
                 {/* Avatar */}
                 <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary/10">
@@ -253,7 +246,7 @@ const ManageUsersPage = () => {
                     <div
                       id={`user-actions-menu-${user.userId}`}
                       role="menu"
-                      className="absolute left-0 right-0 top-full z-20 mt-1 w-full rounded-xl border border-border bg-card py-2 shadow-lg sm:left-auto sm:right-0 sm:w-48"
+                      className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-border bg-card py-2 shadow-lg"
                     >
                       <p className="px-3 py-1 text-role-caption uppercase text-muted-foreground">
                         Status

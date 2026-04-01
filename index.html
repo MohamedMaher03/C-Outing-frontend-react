@@ -5,6 +5,40 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>couting</title>
+    <script>
+      (function () {
+        var storageKey = "c-outing-theme";
+        var root = document.documentElement;
+        var validPreferences = { light: true, dark: true, system: true };
+
+        try {
+          var stored = window.localStorage.getItem(storageKey);
+          var preference = validPreferences[stored] ? stored : "system";
+          var prefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          var resolved =
+            preference === "system"
+              ? prefersDark
+                ? "dark"
+                : "light"
+              : preference;
+
+          root.classList.toggle("dark", resolved === "dark");
+          root.style.colorScheme = resolved;
+          root.dataset.themePreference = preference;
+          root.dataset.theme = resolved;
+        } catch {
+          var fallbackDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          root.classList.toggle("dark", fallbackDark);
+          root.style.colorScheme = fallbackDark ? "dark" : "light";
+          root.dataset.themePreference = "system";
+          root.dataset.theme = fallbackDark ? "dark" : "light";
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { InlineLoading } from "@/components/ui/LoadingSpinner";
 
 interface LogoutProgressOverlayProps {
   isVisible: boolean;
@@ -34,13 +34,15 @@ export const LogoutProgressOverlay = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 4 }}
             transition={{ duration: 0.2 }}
-            className="rounded-2xl border border-border/80 bg-card/95 px-6 py-5 shadow-xl"
+            className="rounded-xl border border-border/80 bg-card/95 px-4 py-3 shadow-lg"
           >
-            <LoadingSpinner
-              size="sm"
-              text="Logging you out..."
-              subText="Securing your session"
-            />
+            <div className="flex items-center gap-2.5">
+              <InlineLoading size="sm" className="h-4 w-4" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Signing out</p>
+                <p className="text-xs text-muted-foreground">Please wait a moment...</p>
+              </div>
+            </div>
           </motion.div>
         </motion.div>
       )}
