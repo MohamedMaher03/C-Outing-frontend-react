@@ -60,6 +60,8 @@ interface AdminVenueDto {
   atmosphereTags: string[];
   hasWifi: boolean;
   isSaved: boolean;
+  status?: string | null;
+  createdAt?: string | null;
 }
 
 interface AdminStatsDto {
@@ -77,6 +79,58 @@ interface SystemHealthDto {
   Status: string;
   Timestamp: string;
 }
+
+interface ReportedVenueDto {
+  id: string;
+}
+
+interface AdminCategoryDto {
+  id?: string;
+  label?: string;
+  icon?: string | null;
+  count?: number;
+  color?: string | null;
+  status?: string | null;
+}
+
+interface AdminReviewDto {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string | null;
+  placeId: string;
+  placeName: string;
+  rating: number;
+  comment: string;
+  status: string;
+  reportCount: number;
+  createdAt: string;
+}
+
+interface AdminCreatedVenueDto {
+  id: string;
+  name: string;
+  category: string;
+  district: string;
+  rating?: number;
+  averageRating?: number;
+  reviewCount?: number;
+  status?: string | null;
+  createdAt?: string | null;
+  image?: string | null;
+  displayImageUrl?: string | null;
+  thumbnailUrl?: string | null;
+  tags?: string[] | null;
+  atmosphereTags?: string[] | null;
+  description?: string | null;
+  location?: string | null;
+  priceLevel?: string | null;
+  priceRange?: number | null;
+  phone?: string | null;
+  website?: string | null;
+}
+
+type AdminReviewsPayload = PaginatedDto<AdminReviewDto> | AdminReviewDto[];
 
 const asDate = (value: string | null | undefined): Date => {
   if (!value) {
@@ -109,6 +163,70 @@ const mapPriceRange = (priceRange: number): AdminPlace["priceLevel"] => {
   if (priceRange === 3) return "mid_range";
   if (priceRange === 4) return "expensive";
   return "luxury";
+};
+
+const toFiniteNumber = (value: unknown, fallback = 0): number => {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter(
+    (item): item is string =>
+      typeof item === "string" && item.trim().length > 0,
+  );
+};
+
+const mapPriceLevelValue = (
+  value: unknown,
+): AdminPlace["priceLevel"] | undefined => {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (
+    normalized === "price_cheapest" ||
+    normalized === "cheap" ||
+    normalized === "mid_range" ||
+    normalized === "expensive" ||
+    normalized === "luxury"
+  ) {
+    return normalized;
+  }
+
+  return undefined;
+};
+
+const mapAdminPlaceStatus = (value: unknown): AdminPlace["status"] => {
+  if (
+    value === "active" ||
+    value === "pending" ||
+    value === "flagged" ||
+    value === "removed"
+  ) {
+    return value;
+  }
+
+  return "active";
+};
+
+const mapAdminReviewStatus = (value: unknown): AdminReview["status"] => {
+  if (
+    value === "published" ||
+    value === "pending" ||
+    value === "flagged" ||
+    value === "removed"
+  ) {
+    return value;
+  }
+
+  return "pending";
 };
 
 export const unwrapEnvelope = <T>(payload: ApiEnvelope<T> | T): T => {
@@ -153,8 +271,10 @@ export const mapAdminPlace = (
   district: dto.district,
   rating: dto.averageRating,
   reviewCount: dto.reviewCount,
-  status: reportedVenueIds.has(dto.id) ? "flagged" : "active",
-  createdAt: new Date(),
+  status: reportedVenueIds.has(dto.id)
+    ? "flagged"
+    : mapAdminPlaceStatus(dto.status),
+  createdAt: asDate(dto.createdAt),
   image: dto.thumbnailUrl ?? dto.displayImageUrl ?? "",
   tags: dto.atmosphereTags,
   description: dto.location,
@@ -172,10 +292,98 @@ export const mapAdminVenuesPage = (
 };
 
 export const mapReportedVenueIds = (
-  payload: ApiEnvelope<AdminVenueDto[]> | AdminVenueDto[],
+  payload: ApiEnvelope<ReportedVenueDto[]> | ReportedVenueDto[],
 ): Set<string> => {
   const venues = unwrapEnvelope(payload);
   return new Set(venues.map((venue) => venue.id));
+};
+
+export const mapCreatedAdminPlace = (
+  payload: ApiEnvelope<AdminCreatedVenueDto> | AdminCreatedVenueDto,
+): AdminPlace => {
+  const place = unwrapEnvelope(payload);
+  const explicitPriceLevel = mapPriceLevelValue(place.priceLevel);
+
+  return {
+    id: place.id,
+    name: place.name,
+    category: place.category,
+    district: place.district,
+    rating: toFiniteNumber(place.rating ?? place.averageRating, 0),
+    reviewCount: Math.max(0, Math.trunc(toFiniteNumber(place.reviewCount, 0))),
+    status: mapAdminPlaceStatus(place.status ?? "pending"),
+    createdAt: asDate(place.createdAt),
+    image: place.image ?? place.thumbnailUrl ?? place.displayImageUrl ?? "",
+    tags:
+      toStringArray(place.tags).length > 0
+        ? toStringArray(place.tags)
+        : toStringArray(place.atmosphereTags),
+    description:
+      (typeof place.description === "string" && place.description) ||
+      (typeof place.location === "string" ? place.location : ""),
+    priceLevel:
+      explicitPriceLevel ??
+      (typeof place.priceRange === "number"
+        ? mapPriceRange(place.priceRange)
+        : undefined),
+    phone: place.phone ?? undefined,
+    website: place.website ?? undefined,
+  };
+};
+
+const mapAdminReview = (dto: AdminReviewDto): AdminReview => ({
+  id: dto.id,
+  userId: dto.userId,
+  userName: dto.userName,
+  userAvatar: dto.userAvatar ?? undefined,
+  placeId: dto.placeId,
+  placeName: dto.placeName,
+  rating: Math.max(0, Math.min(5, Math.round(toFiniteNumber(dto.rating, 0)))),
+  comment: dto.comment,
+  status: mapAdminReviewStatus(dto.status),
+  reportCount: Math.max(0, Math.trunc(toFiniteNumber(dto.reportCount, 0))),
+  createdAt: asDate(dto.createdAt),
+});
+
+export const mapAdminReviews = (
+  payload: ApiEnvelope<AdminReviewsPayload> | AdminReviewsPayload,
+): AdminReview[] => {
+  const unwrapped = unwrapEnvelope(payload);
+  const items = Array.isArray(unwrapped) ? unwrapped : unwrapped.items;
+  return items.map(mapAdminReview);
+};
+
+export const mapAdminCategories = (
+  payload: ApiEnvelope<AdminCategoryDto[]> | AdminCategoryDto[],
+): AdminCategory[] => {
+  const categories = unwrapEnvelope(payload);
+
+  return categories.map((category, index) => {
+    const label =
+      typeof category.label === "string" && category.label.trim().length > 0
+        ? category.label
+        : `Category ${index + 1}`;
+
+    const id =
+      typeof category.id === "string" && category.id.trim().length > 0
+        ? category.id
+        : label.toLowerCase().replace(/\s+/g, "-");
+
+    return {
+      id,
+      label,
+      icon:
+        typeof category.icon === "string" && category.icon.trim().length > 0
+          ? category.icon
+          : "MapPin",
+      count: Math.max(0, Math.trunc(toFiniteNumber(category.count, 0))),
+      color:
+        typeof category.color === "string" && category.color.trim().length > 0
+          ? category.color
+          : "bg-slate-100",
+      status: category.status === "inactive" ? "inactive" : "active",
+    };
+  });
 };
 
 export const mapStats = (
@@ -268,5 +476,3 @@ export const toDerivedCategories = (places: AdminPlace[]): AdminCategory[] => {
     status: "active",
   }));
 };
-
-export const emptyReviews: AdminReview[] = [];

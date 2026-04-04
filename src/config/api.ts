@@ -138,22 +138,30 @@ export const API_ENDPOINTS = {
     banUser: (userId: string) => `/api/v1/Admin/users/${userId}/ban`,
     unbanUser: (userId: string) => `/api/v1/Admin/users/${userId}/unban`,
     getVenues: "/api/v1/Admin/venues",
+    createVenue: "/api/v1/Admin/venues",
     deleteVenue: (venueId: string) => `/api/v1/Admin/venues/${venueId}`,
+    updateVenueStatus: (venueId: string) =>
+      `/api/v1/Admin/venues/${venueId}/status`,
     getReportedVenues: "/api/v1/Admin/venues/reported",
+    getCategories: "/api/v1/Admin/categories",
+    getReviews: "/api/v1/Admin/reviews",
+    updateReviewStatus: (reviewId: string) =>
+      `/api/v1/Admin/reviews/${reviewId}/status`,
     deleteReview: (reviewId: string) => `/api/v1/Admin/reviews/${reviewId}`,
     getSystemHealth: "/api/v1/Admin/system/health",
   },
 
   // ── Moderator ────────────────────────────────────────────────
   moderator: {
-    getStats: "/moderator/stats",
-    getReportedContent: "/moderator/reports",
+    getStats: "/api/v1/Moderator/stats",
+    getReportedContent: "/api/v1/Moderator/reports",
     updateReportStatus: (reportId: string) =>
-      `/moderator/reports/${reportId}/status`,
-    getRecentActions: "/moderator/actions",
+      `/api/v1/Moderator/reports/${reportId}/status`,
+    getRecentActions: "/api/v1/Moderator/actions",
     deleteReview: (reportId: string) =>
-      `/moderator/reports/${reportId}/delete-review`,
-    warnUser: (reportId: string) => `/moderator/reports/${reportId}/warn`,
-    banUser: (reportId: string) => `/moderator/reports/${reportId}/ban`,
+      `/api/v1/Moderator/reports/${reportId}/delete-review`,
+    warnUser: (reportId: string) =>
+      `/api/v1/Moderator/reports/${reportId}/warn`,
+    banUser: (reportId: string) => `/api/v1/Moderator/reports/${reportId}/ban`,
   },
 };

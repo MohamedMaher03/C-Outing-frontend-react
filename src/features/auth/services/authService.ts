@@ -184,7 +184,8 @@ export const authService = {
     } catch (error) {
       if (error instanceof AuthError) {
         const shouldRecover =
-          error.code === "EMAIL_ALREADY_EXISTS" || isRegisterTimeoutError(error);
+          error.code === "EMAIL_ALREADY_EXISTS" ||
+          isRegisterTimeoutError(error);
 
         if (shouldRecover) {
           try {
