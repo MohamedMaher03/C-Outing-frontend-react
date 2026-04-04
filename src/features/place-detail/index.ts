@@ -14,8 +14,8 @@ export {
   normalizePlaceDetail,
   normalizeReview,
   normalizeSocialReview,
-  normalizeReviewSummary,
   normalizePaginatedReviews,
+  normalizePaginatedSocialReviews,
   normalizeAverageRating,
   normalizeLikeState,
   sanitizeReportPayload,
@@ -28,7 +28,6 @@ export {
   toggleLike,
   getPlaceReviews,
   getSocialMediaReviews,
-  getReviewSummary,
   recordInteraction,
   submitReview,
   updateReview,
@@ -45,18 +44,19 @@ export { favoriteAdapter } from "./services/favoriteAdapter";
 export type {
   PlaceDetail,
   PlaceBase,
+  MetroStation,
   PriceLevel,
   InteractionActionType,
   Review,
   ReviewListParams,
   ReviewListResponse,
+  SocialReviewListResponse,
   ReportReviewRequest,
   ReportPayload,
   ReportReason,
   UpdateReviewPayload,
   VenueAverageRating,
   SocialMediaReview,
-  ReviewSummary,
   RecordInteractionRequest,
 } from "./types";
 export { REPORT_REASONS } from "./types";
@@ -64,7 +64,7 @@ export { REPORT_REASONS } from "./types";
 // Components
 export { ReviewCard } from "./components/ReviewCard";
 export { SocialReviewCard } from "./components/SocialReviewCard";
-export { ReviewSummarySection } from "./components/ReviewSummarySection";
+export { MenuImageGallery } from "./components/MenuImageGallery";
 export { AddReviewForm } from "./components/AddReviewForm";
 export { ReviewSkeleton } from "./components/ReviewSkeleton";
 

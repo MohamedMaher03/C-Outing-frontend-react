@@ -159,8 +159,8 @@ export function ReportReviewDialog({
 
         {submitted ? (
           <div className="py-6 text-center space-y-2">
-            <CheckCircle2 className="h-10 w-10 text-secondary mx-auto" />
-            <p className="pd-type-label font-semibold text-secondary">
+            <CheckCircle2 className="h-10 w-10 text-accent mx-auto" />
+            <p className="pd-type-label font-semibold text-accent">
               {t("placeDetail.report.submittedTitle")}
             </p>
             <p className="pd-type-micro text-muted-foreground">
@@ -190,8 +190,8 @@ export function ReportReviewDialog({
                     className={cn(
                       "min-h-11 px-3 py-2 rounded-lg pd-type-micro text-left border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       reason === r
-                        ? "bg-secondary/10 border-secondary/40 text-secondary font-semibold"
-                        : "bg-muted/40 border-border text-muted-foreground hover:border-secondary/30 hover:bg-secondary/5",
+                        ? "bg-accent/10 border-accent/40 text-accent font-semibold"
+                        : "bg-muted/40 border-border text-muted-foreground hover:border-accent/35 hover:bg-accent/5",
                     )}
                   >
                     <span className="break-words">{reasonLabelMap[r]}</span>

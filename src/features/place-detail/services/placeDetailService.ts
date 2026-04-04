@@ -19,11 +19,10 @@ import type {
   Review,
   ReviewListParams,
   ReviewListResponse,
+  SocialReviewListResponse,
   ReportReviewRequest,
   UpdateReviewPayload,
   VenueAverageRating,
-  SocialMediaReview,
-  ReviewSummary,
   RecordInteractionRequest,
 } from "@/features/place-detail/types";
 
@@ -33,11 +32,10 @@ export type {
   Review,
   ReviewListParams,
   ReviewListResponse,
+  SocialReviewListResponse,
   ReportReviewRequest,
   UpdateReviewPayload,
   VenueAverageRating,
-  SocialMediaReview,
-  ReviewSummary,
   RecordInteractionRequest,
 } from "@/features/place-detail/types";
 
@@ -103,15 +101,11 @@ export const placeDetailService = {
   /**
    * Fetch social media reviews (from scraping) for a place.
    */
-  async getSocialMediaReviews(placeId: string): Promise<SocialMediaReview[]> {
-    return placeDetailDataSource.getSocialMediaReviews(placeId);
-  },
-
-  /**
-   * Fetch NLP-generated review summary for a place.
-   */
-  async getReviewSummary(placeId: string): Promise<ReviewSummary> {
-    return placeDetailDataSource.getReviewSummary(placeId);
+  async getSocialMediaReviews(
+    placeId: string,
+    params?: ReviewListParams,
+  ): Promise<SocialReviewListResponse> {
+    return placeDetailDataSource.getSocialMediaReviews(placeId, params);
   },
 
   /**
@@ -194,7 +188,6 @@ export const getPlaceById = placeDetailService.getPlaceById;
 export const toggleLike = placeDetailService.toggleLike;
 export const getPlaceReviews = placeDetailService.getPlaceReviews;
 export const getSocialMediaReviews = placeDetailService.getSocialMediaReviews;
-export const getReviewSummary = placeDetailService.getReviewSummary;
 export const submitReview = placeDetailService.submitReview;
 export const updateReview = placeDetailService.updateReview;
 export const deleteReview = placeDetailService.deleteReview;

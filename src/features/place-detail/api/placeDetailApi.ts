@@ -23,20 +23,42 @@ import type {
   ReportReviewRequest,
   UpdateReviewPayload,
   VenueAverageRating,
-  SocialMediaReview,
-  ReviewSummary,
+  SocialReviewListResponse,
   RecordInteractionRequest,
 } from "../types";
 import {
   normalizeAverageRating,
   normalizeLikeState,
   normalizePaginatedReviews,
+  normalizePaginatedSocialReviews,
   normalizePlaceDetail,
   normalizeReview,
-  normalizeReviewSummary,
-  normalizeSocialReview,
   sanitizeReportPayload,
 } from "../mappers/placeDetailMapper";
+
+const resolvePageIndex = (params?: ReviewListParams): number => {
+  if (
+    typeof params?.pageIndex === "number" &&
+    Number.isFinite(params.pageIndex)
+  ) {
+    return Math.max(0, Math.floor(params.pageIndex));
+  }
+
+  if (typeof params?.page === "number" && Number.isFinite(params.page)) {
+    return Math.max(0, Math.floor(params.page) - 1);
+  }
+
+  return 0;
+};
+
+const buildPaginationParams = (params?: ReviewListParams) => {
+  const pageIndex = resolvePageIndex(params);
+  return {
+    pageIndex,
+    page: pageIndex + 1,
+    pageSize: params?.pageSize ?? 10,
+  };
+};
 
 export const placeDetailApi = {
   /**
@@ -69,10 +91,7 @@ export const placeDetailApi = {
     const { data } = await axiosInstance.get<PaginatedResponse<unknown>>(
       API_ENDPOINTS.places.getReviews(venueId),
       {
-        params: {
-          page: params?.page ?? 1,
-          pageSize: params?.pageSize ?? 10,
-        },
+        params: buildPaginationParams(params),
       },
     );
     return normalizePaginatedReviews(data);
@@ -82,22 +101,17 @@ export const placeDetailApi = {
    * GET /places/:placeId/social-reviews
    * Fetches scraped social-media reviews for a place.
    */
-  async getSocialMediaReviews(venueId: string): Promise<SocialMediaReview[]> {
-    const { data } = await axiosInstance.get<unknown[]>(
+  async getSocialMediaReviews(
+    venueId: string,
+    params?: ReviewListParams,
+  ): Promise<SocialReviewListResponse> {
+    const { data } = await axiosInstance.get<PaginatedResponse<unknown>>(
       API_ENDPOINTS.places.getSocialReviews(venueId),
+      {
+        params: buildPaginationParams(params),
+      },
     );
-    return Array.isArray(data) ? data.map(normalizeSocialReview) : [];
-  },
-
-  /**
-   * GET /places/:placeId/review-summary
-   * Fetches the NLP-generated review summary for a place.
-   */
-  async getReviewSummary(venueId: string): Promise<ReviewSummary> {
-    const { data } = await axiosInstance.get<unknown>(
-      API_ENDPOINTS.places.getReviewSummary(venueId),
-    );
-    return normalizeReviewSummary(data);
+    return normalizePaginatedSocialReviews(data);
   },
 
   /**
@@ -149,10 +163,7 @@ export const placeDetailApi = {
     const { data } = await axiosInstance.get<PaginatedResponse<unknown>>(
       API_ENDPOINTS.places.getUserReviews(userId),
       {
-        params: {
-          page: params?.page ?? 1,
-          pageSize: params?.pageSize ?? 10,
-        },
+        params: buildPaginationParams(params),
       },
     );
     return normalizePaginatedReviews(data);
@@ -185,17 +196,6 @@ export const placeDetailApi = {
       description: normalizedPayload.description,
     });
   },
-
-  /**
-   * GET /places/:placeId/similar
-   * Fetches places similar to the given one.
-   */
-  // async getSimilarPlaces(placeId: string): Promise<Place[]> {
-  //   const { data } = await axiosInstance.get<Place[]>(
-  //     API_ENDPOINTS.places.getSimilar(placeId),
-  //   );
-  //   return data;
-  // },
 
   /**
    * POST /interactions

@@ -6,8 +6,7 @@ import type {
   ReportReviewRequest,
   UpdateReviewPayload,
   VenueAverageRating,
-  SocialMediaReview,
-  ReviewSummary,
+  SocialReviewListResponse,
   RecordInteractionRequest,
 } from "./index";
 
@@ -18,8 +17,10 @@ export interface PlaceDetailDataSource {
     venueId: string,
     params?: ReviewListParams,
   ) => Promise<ReviewListResponse>;
-  getSocialMediaReviews: (venueId: string) => Promise<SocialMediaReview[]>;
-  getReviewSummary: (venueId: string) => Promise<ReviewSummary>;
+  getSocialMediaReviews: (
+    venueId: string,
+    params?: ReviewListParams,
+  ) => Promise<SocialReviewListResponse>;
   submitReview: (
     venueId: string,
     rating: number,

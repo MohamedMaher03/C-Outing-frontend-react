@@ -11,11 +11,11 @@ import type {
   Review,
   ReviewListParams,
   ReviewListResponse,
+  SocialReviewListResponse,
   ReportReviewRequest,
   UpdateReviewPayload,
   VenueAverageRating,
   SocialMediaReview,
-  ReviewSummary,
   RecordInteractionRequest,
 } from "../types";
 import type { PlaceDetailDataSource } from "../types/dataSource";
@@ -23,10 +23,8 @@ import { sanitizeReportPayload } from "../mappers/placeDetailMapper";
 import {
   MOCK_REVIEWS,
   MOCK_SOCIAL_REVIEWS,
-  MOCK_REVIEW_SUMMARIES,
   DEFAULT_REVIEWS,
   DEFAULT_SOCIAL_REVIEWS,
-  DEFAULT_REVIEW_SUMMARY,
 } from "./index";
 
 const delay = (ms: number): Promise<void> =>
@@ -36,18 +34,11 @@ const cloneReview = (review: Review): Review => ({ ...review });
 
 const clonePlace = (place: PlaceDetail): PlaceDetail => ({
   ...place,
-  reviews: place.reviews?.map(cloneReview),
   atmosphereTags: place.atmosphereTags ? [...place.atmosphereTags] : undefined,
   socialBadges: place.socialBadges ? [...place.socialBadges] : undefined,
   seatingType: place.seatingType ? [...place.seatingType] : undefined,
   imageUrls: place.imageUrls ? [...place.imageUrls] : undefined,
   menuImagesUrls: place.menuImagesUrls ? [...place.menuImagesUrls] : undefined,
-});
-
-const cloneSummary = (summary: ReviewSummary): ReviewSummary => ({
-  ...summary,
-  highlights: [...summary.highlights],
-  commonTopics: summary.commonTopics.map((topic) => ({ ...topic })),
 });
 
 const sanitizePositiveInt = (value: unknown, fallback: number): number => {
@@ -59,7 +50,10 @@ const paginateReviews = (
   items: Review[],
   params?: ReviewListParams,
 ): ReviewListResponse => {
-  const pageIndex = sanitizePositiveInt(params?.page, 1);
+  const pageIndex =
+    typeof params?.pageIndex === "number"
+      ? Math.max(0, Math.floor(params.pageIndex))
+      : Math.max(0, sanitizePositiveInt(params?.page, 1) - 1);
   const pageSize = sanitizePositiveInt(params?.pageSize, 10);
   const sorted = [...items].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -67,8 +61,9 @@ const paginateReviews = (
 
   const totalCount = sorted.length;
   const totalPages = totalCount === 0 ? 0 : Math.ceil(totalCount / pageSize);
-  const safePageIndex = totalPages === 0 ? 1 : Math.min(pageIndex, totalPages);
-  const start = (safePageIndex - 1) * pageSize;
+  const safePageIndex =
+    totalPages === 0 ? 0 : Math.min(pageIndex, totalPages - 1);
+  const start = safePageIndex * pageSize;
   const end = start + pageSize;
 
   return {
@@ -77,8 +72,39 @@ const paginateReviews = (
     pageSize,
     totalCount,
     totalPages,
-    hasPreviousPage: safePageIndex > 1,
-    hasNextPage: safePageIndex < totalPages,
+    hasPreviousPage: safePageIndex > 0,
+    hasNextPage: totalPages > 0 ? safePageIndex + 1 < totalPages : false,
+  };
+};
+
+const paginateSocialReviews = (
+  items: SocialMediaReview[],
+  params?: ReviewListParams,
+): SocialReviewListResponse => {
+  const pageIndex =
+    typeof params?.pageIndex === "number"
+      ? Math.max(0, Math.floor(params.pageIndex))
+      : Math.max(0, sanitizePositiveInt(params?.page, 1) - 1);
+  const pageSize = sanitizePositiveInt(params?.pageSize, 10);
+
+  const sorted = [...items].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+  const totalCount = sorted.length;
+  const totalPages = totalCount === 0 ? 0 : Math.ceil(totalCount / pageSize);
+  const safePageIndex =
+    totalPages === 0 ? 0 : Math.min(pageIndex, totalPages - 1);
+  const start = safePageIndex * pageSize;
+  const end = start + pageSize;
+
+  return {
+    items: sorted.slice(start, end).map((item) => ({ ...item })),
+    pageIndex: safePageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage: safePageIndex > 0,
+    hasNextPage: totalPages > 0 ? safePageIndex + 1 < totalPages : false,
   };
 };
 
@@ -109,7 +135,6 @@ const placesStore: Record<string, PlaceDetail> = Object.fromEntries(
       isFavorited: place.isSaved ?? false,
       isLiked: false,
       likeCount: 0,
-      totalReviews: place.totalReviews ?? place.reviewCount,
     },
   ]),
 );
@@ -118,17 +143,12 @@ const reviewsStore: Record<string, Review[]> = { ...MOCK_REVIEWS };
 const socialReviewsStore: Record<string, SocialMediaReview[]> = {
   ...MOCK_SOCIAL_REVIEWS,
 };
-const summaryStore: Record<string, ReviewSummary> = {
-  ...MOCK_REVIEW_SUMMARIES,
-};
 
 const findReviewById = (
   reviewId: string,
 ): { venueId: string; review: Review; index: number } | null => {
   for (const [venueId, reviews] of Object.entries(reviewsStore)) {
-    const index = reviews.findIndex(
-      (review) => review.reviewId === reviewId || review.id === reviewId,
-    );
+    const index = reviews.findIndex((review) => review.id === reviewId);
     if (index >= 0) {
       return { venueId, review: reviews[index], index };
     }
@@ -149,10 +169,8 @@ const updateVenueRatingMetadata = (venueId: string): void => {
   const totalCount = venueReviews.length;
   if (totalCount === 0) {
     venue.reviewCount = 0;
-    venue.totalReviews = 0;
     venue.rating = 0;
     venue.averageRating = 0;
-    venue.reviews = [];
     return;
   }
 
@@ -160,16 +178,8 @@ const updateVenueRatingMetadata = (venueId: string): void => {
     venueReviews.reduce((sum, review) => sum + review.rating, 0) / totalCount;
 
   venue.reviewCount = totalCount;
-  venue.totalReviews = totalCount;
   venue.rating = Number(averageRating.toFixed(1));
   venue.averageRating = venue.rating;
-  venue.reviews = [...venueReviews]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
-    .slice(0, 5)
-    .map(cloneReview);
 };
 
 for (const venueId of Object.keys(reviewsStore)) {
@@ -216,15 +226,13 @@ export const placeDetailMock: PlaceDetailDataSource = {
     return paginateReviews(fallback, params);
   },
 
-  async getSocialMediaReviews(venueId: string): Promise<SocialMediaReview[]> {
+  async getSocialMediaReviews(
+    venueId: string,
+    params?: ReviewListParams,
+  ): Promise<SocialReviewListResponse> {
     await delay(260);
     const items = socialReviewsStore[venueId] ?? DEFAULT_SOCIAL_REVIEWS;
-    return items.map((item) => ({ ...item }));
-  },
-
-  async getReviewSummary(venueId: string): Promise<ReviewSummary> {
-    await delay(300);
-    return cloneSummary(summaryStore[venueId] ?? DEFAULT_REVIEW_SUMMARY);
+    return paginateSocialReviews(items, params);
   },
 
   async submitReview(
@@ -236,9 +244,9 @@ export const placeDetailMock: PlaceDetailDataSource = {
 
     const authUser = parseAuthUser();
     const createdAt = new Date().toISOString();
+    const reviewId = `mock_review_${Date.now()}`;
     const newReview: Review = {
-      reviewId: `mock_review_${Date.now()}`,
-      id: `mock_review_${Date.now()}`,
+      id: reviewId,
       venueId,
       venueName: placesStore[venueId]?.name ?? "Mock Venue",
       userId: authUser.userId,

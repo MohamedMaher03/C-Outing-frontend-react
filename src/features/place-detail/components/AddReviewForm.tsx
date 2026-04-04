@@ -91,7 +91,7 @@ export const AddReviewForm = ({
   return (
     <Card className="rounded-2xl border-border/70 bg-card/95 p-5 space-y-4 shadow-sm">
       <h3 className="text-role-subheading text-foreground flex items-center gap-2">
-        <MessageSquare className="h-4 w-4 text-secondary" />
+        <MessageSquare className="h-4 w-4 text-accent" />
         {mode === "edit"
           ? t("placeDetail.reviewForm.editTitle")
           : t("placeDetail.reviewForm.createTitle")}
@@ -101,7 +101,7 @@ export const AddReviewForm = ({
         <Alert
           role="status"
           aria-live="polite"
-          className="border-secondary/30 bg-secondary/10 text-secondary"
+          className="border-accent/35 bg-accent/10 text-accent"
         >
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription className="pd-type-label break-words">

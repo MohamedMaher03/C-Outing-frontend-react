@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -20,6 +20,10 @@ import {
   Users,
   Accessibility,
   Images,
+  TrainFront,
+  Route,
+  Timer,
+  Mail,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -30,11 +34,11 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { usePlaceDetail } from "@/features/place-detail/hooks/usePlaceDetail";
-import { getReviewIdentity } from "@/features/place-detail/utils/reviewIdentity";
 import { PRICE_LEVEL_META } from "@/features/place-detail/utils/priceLevel";
 import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defaultImages";
 import { formatCountLabel } from "@/features/place-detail/utils/formatters";
 import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleton";
+import { MenuImageGallery } from "@/features/place-detail/components/MenuImageGallery";
 import "@/features/place-detail/placeDetailTypography.css";
 
 const ReviewCardLazy = lazy(() =>
@@ -47,14 +51,6 @@ const SocialReviewCardLazy = lazy(() =>
   import("@/features/place-detail/components/SocialReviewCard").then(
     (module) => ({
       default: module.SocialReviewCard,
-    }),
-  ),
-);
-
-const ReviewSummarySectionLazy = lazy(() =>
-  import("@/features/place-detail/components/ReviewSummarySection").then(
-    (module) => ({
-      default: module.ReviewSummarySection,
     }),
   ),
 );
@@ -84,16 +80,15 @@ const PlaceDetailPage = () => {
     reviewsPagination,
     loadingMoreReviews,
     socialReviews,
-    reviewSummary,
+    socialReviewsPagination,
+    loadingMoreSocialReviews,
     myReview,
     myReviewLoading,
     reviewsLoading,
     socialReviewsLoading,
     socialReviewsLoaded,
-    summaryLoading,
     reviewsError,
     socialReviewsError,
-    summaryError,
     submittingReview,
     deletingReview,
     reportingReview,
@@ -108,10 +103,11 @@ const PlaceDetailPage = () => {
     handleDeleteMyReview,
     handleReportReview,
     loadMoreReviews,
+    loadMoreSocialReviews,
+    trackInteraction,
     refreshPlaceData,
     retryReviewsLoad,
     retrySocialReviewsLoad,
-    retrySummaryLoad,
     ensureSocialReviewsLoaded,
   } = usePlaceDetail(id);
 
@@ -136,14 +132,29 @@ const PlaceDetailPage = () => {
     };
   }, [ensureSocialReviewsLoaded, socialReviewsLoaded]);
 
+  const websiteTotalCount = Math.max(
+    reviewsPagination.totalCount,
+    reviews.length,
+  );
+  const socialTotalCount = Math.max(
+    socialReviewsPagination.totalCount,
+    place?.googleMapsRatingCount ?? 0,
+    socialReviews.length,
+  );
   const socialCountCompact = socialReviewsLoaded
-    ? formatNumber(socialReviews.length)
-    : "...";
+    ? formatNumber(socialTotalCount)
+    : place?.googleMapsRatingCount !== undefined
+      ? formatNumber(place.googleMapsRatingCount)
+      : "...";
   const socialCountVerbose = socialReviewsLoaded
     ? t("placeDetail.reviews.countLabel", {
-        count: formatNumber(socialReviews.length),
+        count: formatNumber(socialTotalCount),
       })
-    : t("common.loading");
+    : place?.googleMapsRatingCount !== undefined
+      ? t("placeDetail.reviews.countLabel", {
+          count: formatNumber(place.googleMapsRatingCount),
+        })
+      : t("common.loading");
 
   const onDeleteMyReview = async () => {
     await handleDeleteMyReview();
@@ -151,6 +162,49 @@ const PlaceDetailPage = () => {
 
   const onLikeClick = async () => toggleLike();
   const onFavoriteClick = async () => toggleFavorite();
+
+  const venueCategoryType = `${place?.category ?? ""} ${place?.type ?? ""}`
+    .trim()
+    .toLowerCase();
+  const isFoodOrDrinkVenue =
+    /(restaurant|cafe|coffee|food|drink|bar|bakery|kitchen|grill|bistro|diner|pub|brunch|dessert|juice|tea|lounge|shawarma|pizza)/.test(
+      venueCategoryType,
+    );
+  const menuImagesCount = Math.max(
+    place?.menuImagesCount ?? 0,
+    place?.menuImagesUrls?.length ?? 0,
+  );
+  const menuImages = useMemo(
+    () => Array.from(new Set((place?.menuImagesUrls ?? []).filter(Boolean))),
+    [place?.menuImagesUrls],
+  );
+  const hasMenuData = Boolean(place?.menuUrl) || menuImagesCount > 0;
+  const shouldShowMenuCard = hasMenuData || isFoodOrDrinkVenue;
+  const nearestMetroStations = useMemo(
+    () =>
+      [...(place?.metroStations ?? [])]
+        .sort((a, b) => a.rank - b.rank)
+        .slice(0, 3),
+    [place?.metroStations],
+  );
+  const averageRatingValue = place?.averageRating ?? place?.rating;
+  const safeAverageRating =
+    typeof averageRatingValue === "number" &&
+    Number.isFinite(averageRatingValue)
+      ? averageRatingValue
+      : 0;
+  const formattedAverageRating = safeAverageRating.toFixed(2);
+  const descriptionText = place?.description?.trim() ?? "";
+  const hasDescription = descriptionText.length > 0;
+  const hoursText = place?.hours?.trim() ?? "";
+  const hasHoursData = Boolean(hoursText) || place?.isOpen !== undefined;
+  const priceMeta = place?.priceLevel
+    ? PRICE_LEVEL_META[place.priceLevel]
+    : null;
+
+  const trackExternalClick = () => {
+    void trackInteraction("Click");
+  };
 
   if (loading) {
     return (
@@ -190,7 +244,7 @@ const PlaceDetailPage = () => {
       ? "border-primary/30 bg-primary text-primary-foreground"
       : notification.type === "report"
         ? "border-destructive/30 bg-destructive text-destructive-foreground"
-        : "border-secondary/30 bg-secondary text-secondary-foreground";
+        : "border-accent/35 bg-accent text-accent-foreground";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:pb-10">
@@ -283,7 +337,7 @@ const PlaceDetailPage = () => {
                 <ThumbsUp
                   className={cn(
                     "h-5 w-5 transition-colors",
-                    isLiked ? "text-primary fill-primary" : "text-foreground",
+                    isLiked ? "text-accent fill-accent" : "text-foreground",
                   )}
                 />
               </Button>
@@ -309,9 +363,7 @@ const PlaceDetailPage = () => {
                 <Heart
                   className={cn(
                     "h-5 w-5 transition-colors",
-                    isFavorite
-                      ? "text-secondary fill-secondary"
-                      : "text-foreground",
+                    isFavorite ? "text-accent fill-accent" : "text-foreground",
                   )}
                 />
               </Button>
@@ -331,10 +383,10 @@ const PlaceDetailPage = () => {
                 </h1>
                 <Badge
                   variant="outline"
-                  className="gap-1 border-secondary/40 text-secondary shrink-0 pd-type-number"
+                  className="gap-1 border-accent/40 text-accent shrink-0 pd-type-number"
                 >
-                  <Star className="h-3 w-3 fill-secondary text-secondary" />
-                  {place.rating}
+                  <Star className="h-3 w-3 fill-accent text-accent" />
+                  {formattedAverageRating}
                 </Badge>
               </div>
 
@@ -367,42 +419,16 @@ const PlaceDetailPage = () => {
                 </div>
               )}
 
-              <div className="flex items-center gap-3 flex-wrap text-role-secondary text-muted-foreground">
-                {place.priceLevel && (
-                  <span className="inline-flex items-center gap-1 font-semibold text-secondary">
-                    <span>{PRICE_LEVEL_META[place.priceLevel].label}</span>
-                    <span className="pd-type-micro text-secondary/90">
-                      {PRICE_LEVEL_META[place.priceLevel].symbol}
+              {priceMeta && (
+                <div className="flex items-center gap-3 flex-wrap text-role-secondary text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 font-semibold text-accent">
+                    <span>{priceMeta.label}</span>
+                    <span className="pd-type-micro text-accent/90">
+                      {priceMeta.symbol}
                     </span>
-                    {place.priceRange && (
-                      <span className="text-muted-foreground font-normal ml-1">
-                        · {place.priceRange}
-                      </span>
-                    )}
                   </span>
-                )}
-                {place.hours && (
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    {place.hours}
-                  </span>
-                )}
-                {place.isOpen !== undefined && (
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "font-semibold",
-                      place.isOpen
-                        ? "border-secondary/40 bg-secondary/10 text-secondary"
-                        : "border-border text-muted-foreground",
-                    )}
-                  >
-                    {place.isOpen
-                      ? t("placeDetail.status.openNow")
-                      : t("home.place.closed")}
-                  </Badge>
-                )}
-              </div>
+                </div>
+              )}
 
               {(place.atmosphereTags ?? []).length > 0 && (
                 <div className="flex gap-2 flex-wrap">
@@ -425,7 +451,7 @@ const PlaceDetailPage = () => {
                     <Badge
                       key={item}
                       variant="outline"
-                      className="gap-1 border-primary/30 bg-primary/10 text-primary"
+                      className="gap-1 border-accent/35 bg-accent/10 text-accent"
                     >
                       <Users className="h-3 w-3" />
                       {item}
@@ -435,7 +461,7 @@ const PlaceDetailPage = () => {
                     place.accessibilityScore >= 0.7 && (
                       <Badge
                         variant="outline"
-                        className="gap-1 border-secondary/30 bg-secondary/10 text-secondary"
+                        className="gap-1 border-accent/35 bg-accent/10 text-accent"
                       >
                         <Accessibility className="h-3 w-3" />
                         {t("placeDetail.badge.accessible")}
@@ -447,18 +473,62 @@ const PlaceDetailPage = () => {
           </Card>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-2 sm:p-5 lg:col-span-2">
-              <h2 className="pd-type-kicker text-foreground">
-                {t("placeDetail.about")}
-              </h2>
-              <p className="pd-type-body pd-measure text-muted-foreground break-words">
-                {place.description}
-              </p>
-            </Card>
+            {hasDescription && (
+              <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-2 sm:p-5 lg:col-span-2">
+                <h2 className="pd-type-kicker text-foreground">
+                  {t("placeDetail.about")}
+                </h2>
+                <p className="pd-type-body pd-measure text-muted-foreground break-words">
+                  {descriptionText}
+                </p>
+              </Card>
+            )}
+
+            {hasHoursData && (
+              <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5">
+                <h2 className="pd-type-kicker text-foreground inline-flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-accent" />
+                  {t("placeDetail.hours.title")}
+                </h2>
+
+                <div className="rounded-xl border border-border/70 bg-background/40 px-3 py-3 sm:px-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <p className="pd-type-micro text-muted-foreground">
+                        {t("placeDetail.hours.today")}
+                      </p>
+                      <p
+                        className="pd-type-label text-foreground break-words"
+                        dir="auto"
+                      >
+                        {hoursText || t("placeDetail.hours.unavailable")}
+                      </p>
+                    </div>
+
+                    {place.isOpen !== undefined && (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "font-semibold",
+                          place.isOpen
+                            ? "border-accent/40 bg-accent/10 text-accent"
+                            : "border-border text-muted-foreground",
+                        )}
+                      >
+                        {place.isOpen
+                          ? t("placeDetail.status.openNow")
+                          : t("home.place.closed")}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            )}
 
             {(place.phone || place.website || place.bookingUrl) && (
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5">
-                <h2 className="pd-type-kicker text-foreground">
+                <h2 className="pd-type-kicker text-foreground inline-flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-accent" />
                   {t("placeDetail.contact")}
                 </h2>
                 <div className="flex flex-col gap-2.5">
@@ -467,7 +537,7 @@ const PlaceDetailPage = () => {
                       href={`tel:${place.phone}`}
                       className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-muted-foreground hover:text-foreground transition-colors break-all"
                     >
-                      <Phone className="h-4 w-4 text-secondary shrink-0" />
+                      <Phone className="h-4 w-4 text-accent shrink-0" />
                       {place.phone}
                     </a>
                   )}
@@ -476,7 +546,8 @@ const PlaceDetailPage = () => {
                       href={place.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-secondary hover:underline break-all"
+                      onClick={trackExternalClick}
+                      className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-accent hover:underline break-all"
                     >
                       <Globe className="h-4 w-4 shrink-0" />
                       {t("placeDetail.contact.visitWebsite")}
@@ -488,7 +559,8 @@ const PlaceDetailPage = () => {
                       href={place.bookingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-secondary hover:underline"
+                      onClick={trackExternalClick}
+                      className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-accent hover:underline"
                     >
                       <CalendarCheck className="h-4 w-4 shrink-0" />
                       {t("placeDetail.contact.bookTable")}
@@ -499,19 +571,19 @@ const PlaceDetailPage = () => {
               </Card>
             )}
 
-            {(place.menuUrl || (place.menuImagesCount ?? 0) > 0) && (
+            {shouldShowMenuCard && (
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm flex flex-col gap-3 sm:p-5">
                 <div className="flex items-center gap-3 min-w-0">
-                  <UtensilsCrossed className="h-5 w-5 text-secondary shrink-0" />
+                  <UtensilsCrossed className="h-5 w-5 text-accent shrink-0" />
                   <div>
                     <p className="pd-type-label text-foreground">
                       {t("placeDetail.menu")}
                     </p>
-                    {(place.menuImagesCount ?? 0) > 0 && (
+                    {menuImagesCount > 0 && (
                       <p className="pd-type-micro pd-type-number text-muted-foreground inline-flex items-center gap-1 mt-0.5">
                         <Images className="h-3 w-3" />
                         {formatCountLabel(
-                          place.menuImagesCount ?? 0,
+                          menuImagesCount,
                           t("placeDetail.menuPhotoSingular"),
                           t("placeDetail.menuPhotoPlural"),
                         )}{" "}
@@ -520,28 +592,99 @@ const PlaceDetailPage = () => {
                     )}
                   </div>
                 </div>
-                {place.menuUrl && (
-                  <Button
-                    asChild
-                    variant="secondary"
-                    className="min-h-11 w-full sm:w-auto sm:self-start"
-                  >
-                    <a
-                      href={place.menuUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {t("placeDetail.menu.view")}
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  </Button>
+
+                {menuImages.length > 0 && (
+                  <MenuImageGallery
+                    images={menuImages}
+                    placeName={place.name}
+                    onImageOpen={trackExternalClick}
+                  />
                 )}
+
+                {!hasMenuData && (
+                  <p className="pd-type-micro text-muted-foreground">
+                    {t("placeDetail.menu.unavailable")}
+                  </p>
+                )}
+                {place.menuUrl && (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <Button
+                      asChild
+                      variant="secondary"
+                      className="min-h-11 w-full sm:w-auto"
+                    >
+                      <a
+                        href={place.menuUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={trackExternalClick}
+                      >
+                        {t("placeDetail.menu.view")}
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {nearestMetroStations.length > 0 && (
+              <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5 lg:col-span-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <h2 className="pd-type-kicker text-foreground inline-flex items-center gap-2">
+                      <TrainFront className="h-4 w-4 text-accent" />
+                      {t("placeDetail.metro.title")}
+                    </h2>
+                    <p className="pd-type-micro text-muted-foreground">
+                      {t("placeDetail.metro.subtitle")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {nearestMetroStations.map((station) => (
+                    <div
+                      key={`${station.rank}-${station.stationName}`}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/40 px-3 py-2.5"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-accent pd-type-number pd-type-micro">
+                          {station.rank}
+                        </span>
+                        <span
+                          className="pd-type-label text-foreground break-words"
+                          dir="auto"
+                        >
+                          {station.stationName}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-border bg-muted/40 text-muted-foreground pd-type-micro pd-type-number"
+                        >
+                          <Route className="h-3.5 w-3.5" />
+                          {station.distance}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-accent/30 bg-accent/10 text-accent pd-type-micro pd-type-number"
+                        >
+                          <Timer className="h-3.5 w-3.5" />
+                          {station.time}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </Card>
             )}
 
             {(place.hasWifi ||
               place.hasToilet ||
-              place.seatingType ||
+              (place.seatingType?.length ?? 0) > 0 ||
               place.parkingAvailable) && (
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5 lg:col-span-2">
                 <h2 className="pd-type-kicker text-foreground">
@@ -551,7 +694,7 @@ const PlaceDetailPage = () => {
                   {place.hasWifi && (
                     <Badge
                       variant="outline"
-                      className="gap-1.5 border-primary/30 bg-primary/10 text-primary"
+                      className="gap-1.5 border-accent/35 bg-accent/10 text-accent"
                     >
                       <Wifi className="h-3.5 w-3.5" />
                       {t("placeDetail.facilities.wifi")}
@@ -560,7 +703,7 @@ const PlaceDetailPage = () => {
                   {place.hasToilet && (
                     <Badge
                       variant="outline"
-                      className="gap-1.5 border-secondary/30 bg-secondary/10 text-secondary"
+                      className="gap-1.5 border-accent/35 bg-accent/10 text-accent"
                     >
                       <Toilet className="h-3.5 w-3.5" />
                       {t("placeDetail.facilities.restrooms")}
@@ -589,41 +732,9 @@ const PlaceDetailPage = () => {
             )}
           </div>
 
-          {summaryError && !summaryLoading && (
-            <Alert variant="destructive" className="border-destructive/30">
-              <AlertTitle>{t("placeDetail.summary.error")}</AlertTitle>
-              <AlertDescription className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                <span className="break-words">{summaryError}</span>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => void retrySummaryLoad()}
-                >
-                  {t("common.retry")}
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <Suspense
-            fallback={
-              <Card className="rounded-2xl border-border/70 bg-card/95 p-5 space-y-3 animate-pulse">
-                <div className="h-5 bg-muted rounded w-2/3" />
-                <div className="h-4 bg-muted rounded w-full" />
-                <div className="h-4 bg-muted rounded w-5/6" />
-              </Card>
-            }
-          >
-            <ReviewSummarySectionLazy
-              summary={reviewSummary}
-              loading={summaryLoading}
-            />
-          </Suspense>
-
           <Card className="rounded-2xl border-border/70 bg-card/95 p-5 shadow-sm space-y-4">
             <h2 className="pd-type-kicker text-foreground flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-secondary" />
+              <MessageSquare className="h-4 w-4 text-accent" />
               {t("placeDetail.reviews.title")}
             </h2>
 
@@ -642,12 +753,12 @@ const PlaceDetailPage = () => {
                   <Star className="h-3.5 w-3.5" />
                   <span className="sm:hidden whitespace-nowrap pd-type-number">
                     {t("placeDetail.reviews.usersShort", {
-                      count: formatNumber(reviews.length),
+                      count: formatNumber(websiteTotalCount),
                     })}
                   </span>
                   <span className="hidden sm:inline whitespace-nowrap pd-type-number">
                     {t("placeDetail.reviews.usersLong", {
-                      count: formatNumber(reviews.length),
+                      count: formatNumber(websiteTotalCount),
                     })}
                   </span>
                 </TabsTrigger>
@@ -675,7 +786,7 @@ const PlaceDetailPage = () => {
                     {t("placeDetail.reviews.loadingYourReview")}
                   </p>
                 ) : myReview ? (
-                  <Alert className="border-secondary/30 bg-secondary/10 text-secondary">
+                  <Alert className="border-accent/35 bg-accent/10 text-accent">
                     <AlertDescription className="pd-type-label">
                       {t("placeDetail.reviews.alreadyReviewed")}
                     </AlertDescription>
@@ -692,7 +803,7 @@ const PlaceDetailPage = () => {
                   }
                 >
                   <AddReviewFormLazy
-                    key={`${myReview?.reviewId ?? "create"}-${myReview?.createdAt ?? "none"}-${myReview ? "edit" : "create"}`}
+                    key={`${myReview?.id ?? "create"}-${myReview?.createdAt ?? "none"}-${myReview ? "edit" : "create"}`}
                     onSubmit={handleSubmitReview}
                     submitting={submittingReview}
                     submitted={reviewSubmitted}
@@ -742,11 +853,9 @@ const PlaceDetailPage = () => {
                     <Suspense fallback={<ReviewSkeleton />}>
                       {reviews.map((review) => (
                         <ReviewCardLazy
-                          key={getReviewIdentity(review)}
+                          key={review.id}
                           review={review}
-                          alreadyReported={isReviewReported(
-                            review.reviewId ?? getReviewIdentity(review),
-                          )}
+                          alreadyReported={isReviewReported(review.id)}
                           onReport={
                             currentUserId && review.userId === currentUserId
                               ? undefined
@@ -822,6 +931,22 @@ const PlaceDetailPage = () => {
                         <SocialReviewCardLazy key={review.id} review={review} />
                       ))}
                     </Suspense>
+
+                    {socialReviewsPagination.hasNextPage && (
+                      <Button
+                        variant="outline"
+                        onClick={loadMoreSocialReviews}
+                        disabled={loadingMoreSocialReviews}
+                        className="w-full min-h-11"
+                      >
+                        {loadingMoreSocialReviews
+                          ? t("placeDetail.reviews.loadingMore")
+                          : t("placeDetail.reviews.socialLoadMore", {
+                              shown: formatNumber(socialReviews.length),
+                              total: formatNumber(socialTotalCount),
+                            })}
+                      </Button>
+                    )}
                   </div>
                 )}
               </TabsContent>

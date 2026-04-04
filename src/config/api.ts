@@ -93,7 +93,6 @@ export const API_ENDPOINTS = {
     updatePreferences: (userId: string) => `/users/${userId}/preferences`,
   },
 
-  //Now i am working here on place detail api endpoints
   // ── Places / Detail ──────────────────────────────────────────
   places: {
     getById: (id: string) => `/api/v1/Venue/${id}`,
@@ -102,8 +101,6 @@ export const API_ENDPOINTS = {
     submitReview: "/api/v1/Review",
     getSocialReviews: (venueId: string) =>
       `/api/v1/Review/social/venue/${venueId}`,
-    getReviewSummary: (venueId: string) =>
-      `/api/v1/review-summary/venue/${venueId}`,
     getReviewById: (reviewId: string) => `/api/v1/Review/${reviewId}`,
     editReview: (reviewId: string) => `/api/v1/Review/${reviewId}`,
     deleteReview: (reviewId: string) => `/api/v1/Review/${reviewId}`,

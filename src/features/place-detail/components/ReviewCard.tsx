@@ -28,7 +28,7 @@ const ReviewCardComponent = ({
         <div className="flex items-center gap-3 min-w-0">
           <Link
             to={`/users/${review.userId}`}
-            className="h-9 w-9 rounded-full overflow-hidden bg-secondary/15 flex items-center justify-center text-sm font-semibold text-secondary hover:bg-secondary/20 transition-colors flex-shrink-0 pd-focus-ring"
+            className="h-9 w-9 rounded-full overflow-hidden bg-accent/15 flex items-center justify-center text-sm font-semibold text-accent hover:bg-accent/20 transition-colors flex-shrink-0 pd-focus-ring"
             onClick={(e) => e.stopPropagation()}
           >
             <img
@@ -47,7 +47,7 @@ const ReviewCardComponent = ({
           <div className="min-w-0">
             <Link
               to={`/users/${review.userId}`}
-              className="pd-type-label pd-focus-ring text-foreground hover:text-secondary transition-colors break-words line-clamp-1"
+              className="pd-type-label pd-focus-ring text-foreground hover:text-accent transition-colors break-words line-clamp-1"
               onClick={(e) => e.stopPropagation()}
               dir="auto"
             >
@@ -67,7 +67,7 @@ const ReviewCardComponent = ({
                 key={i}
                 className={`h-3.5 w-3.5 ${
                   i < review.rating
-                    ? "text-secondary fill-secondary"
+                    ? "text-accent fill-accent"
                     : "text-muted-foreground/20"
                 }`}
               />
@@ -75,9 +75,9 @@ const ReviewCardComponent = ({
           </div>
 
           {/* Report button — only rendered when handler is provided */}
-          {onReport && review.reviewId && (
+          {onReport && review.id && (
             <ReportReviewDialog
-              reviewId={review.reviewId}
+              reviewId={review.id}
               reviewAuthor={review.userName}
               alreadyReported={alreadyReported}
               onReport={onReport}

@@ -76,7 +76,7 @@ export const StarRatingInput = ({
           <Star
             className={`h-7 w-7 transition-colors ${
               star <= (hovered || rating)
-                ? "text-secondary fill-secondary"
+                ? "text-accent fill-accent"
                 : "text-muted-foreground/30"
             }`}
           />
