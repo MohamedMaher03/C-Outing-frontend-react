@@ -11,12 +11,13 @@
  * │  AuthContext  →  authService  →  authApi  →  axios       │
  * └──────────────────────────────────────────────────────────┘
  *
- * 🔧 To use mocks during development, swap the import:
- *   import { authMock as authApi } from "../mocks/authMock";
+ * Mock control:
+ *   VITE_AUTH_USE_MOCKS=true|false
+ * Falls back to VITE_USE_MOCKS when VITE_AUTH_USE_MOCKS is not set.
  */
 
 import { authApi } from "../api/authApi";
-//import { authMock as authApi } from "../mocks/authMock";
+import { authMock } from "../mocks/authMock";
 import { AUTH_STORAGE_KEYS } from "../constants";
 import type {
   LoginRequest,
@@ -30,6 +31,25 @@ import type {
 } from "../types";
 import type { User } from "@/types";
 import { buildUserFromAuthToken } from "./jwtClaims";
+
+const parseBooleanEnv = (value: unknown): boolean => {
+  if (typeof value !== "string") return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "yes";
+};
+
+const resolveFeatureMockFlag = (featureValue: unknown): boolean => {
+  if (typeof featureValue === "string") {
+    return parseBooleanEnv(featureValue);
+  }
+
+  return parseBooleanEnv(import.meta.env.VITE_USE_MOCKS);
+};
+
+const shouldUseAuthMocks = resolveFeatureMockFlag(
+  import.meta.env.VITE_AUTH_USE_MOCKS,
+);
+const authDataSource = shouldUseAuthMocks ? authMock : authApi;
 
 // ── Session helpers (private) ────────────────────────────────
 
@@ -137,7 +157,7 @@ export const authService = {
    * persists the session, and returns the internal AuthApiResponse.
    */
   async login(payload: LoginRequest): Promise<AuthApiResponse> {
-    const raw = await authApi.login(payload);
+    const raw = await authDataSource.login(payload);
     const user: User = buildUserFromAuthToken(raw);
     persistSession(raw.token, user);
     clearPendingVerificationEmailStorage();
@@ -149,7 +169,7 @@ export const authService = {
    * Does NOT persist a session; the user must verify email first.
    */
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
-    const response = await authApi.register(payload);
+    const response = await authDataSource.register(payload);
     persistPendingVerificationEmail(payload.email);
     return response;
   },
@@ -161,7 +181,7 @@ export const authService = {
    * The user is now logged in and should be directed to onboarding.
    */
   async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
-    const raw = await authApi.verifyEmail(payload);
+    const raw = await authDataSource.verifyEmail(payload);
     const user: User = buildUserFromAuthToken(raw);
     persistSession(raw.token, user);
     clearPendingVerificationEmailStorage();
@@ -172,7 +192,7 @@ export const authService = {
    * Resend OTP — requests a new verification code for the given email.
    */
   async resendOtp(payload: ResendOtpRequest): Promise<void> {
-    await authApi.resendOtp(payload);
+    await authDataSource.resendOtp(payload);
   },
 
   /**
@@ -181,7 +201,7 @@ export const authService = {
    */
   async logout(): Promise<void> {
     try {
-      await authApi.logout();
+      await authDataSource.logout();
     } finally {
       clearSession();
       clearPendingVerificationEmailStorage();
@@ -238,13 +258,13 @@ export const authService = {
    * Forgot password — sends an OTP to the given email for password reset.
    */
   async forgotPassword(payload: ForgotPasswordRequest): Promise<void> {
-    await authApi.forgotPassword(payload);
+    await authDataSource.forgotPassword(payload);
   },
 
   /**
    * Reset password — validates the OTP and updates the password.
    */
   async resetPassword(payload: ResetPasswordRequest): Promise<void> {
-    await authApi.resetPassword(payload);
+    await authDataSource.resetPassword(payload);
   },
 };

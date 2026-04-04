@@ -11,11 +11,12 @@
  * │  useHome  →  homeService  →  homeApi  →  axios            │
  * └────────────────────────────────────────────────────────────┘
  *
- * 🔧 To use mocks during development, swap the import:
- *   import { homeMock as homeApi } from "../mocks/homeMock";
+ * Mock control:
+ *   VITE_HOME_USE_MOCKS=true|false
+ * Falls back to VITE_USE_MOCKS when VITE_HOME_USE_MOCKS is not set.
  */
-//import { homeApi } from "../api/homeApi";
-import { homeMock as homeApi } from "../mocks/homeMock";
+import { homeApi } from "../api/homeApi";
+import { homeMock } from "../mocks/homeMock";
 import type {
   HomePageData,
   HomePlace,
@@ -26,6 +27,25 @@ import type {
   VenueByTypeParams,
   VenueTopRatedInAreaParams,
 } from "@/features/home/types";
+
+const parseBooleanEnv = (value: unknown): boolean => {
+  if (typeof value !== "string") return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "yes";
+};
+
+const resolveFeatureMockFlag = (featureValue: unknown): boolean => {
+  if (typeof featureValue === "string") {
+    return parseBooleanEnv(featureValue);
+  }
+
+  return parseBooleanEnv(import.meta.env.VITE_USE_MOCKS);
+};
+
+const shouldUseHomeMocks = resolveFeatureMockFlag(
+  import.meta.env.VITE_HOME_USE_MOCKS,
+);
+const homeDataSource = shouldUseHomeMocks ? homeMock : homeApi;
 
 // ── Home Service ─────────────────────────────────────────────
 
@@ -42,7 +62,7 @@ export const homeService = {
     params?: HomeRecommendationsQuery,
   ): Promise<HomePageData> {
     try {
-      return await homeApi.fetchHomePageData(params);
+      return await homeDataSource.fetchHomePageData(params);
     } catch {
       throw new Error("Failed to fetch home page data");
     }
@@ -52,7 +72,7 @@ export const homeService = {
     params?: HomeRecommendationsQuery,
   ): Promise<HomePlace[]> {
     try {
-      return await homeApi.fetchPersonalizedRecommendations(params);
+      return await homeDataSource.fetchPersonalizedRecommendations(params);
     } catch {
       throw new Error("Failed to fetch personalized recommendations");
     }
@@ -62,7 +82,7 @@ export const homeService = {
     params?: HomeRecommendationsQuery,
   ): Promise<HomePlace[]> {
     try {
-      return await homeApi.fetchTrendingRecommendations(params);
+      return await homeDataSource.fetchTrendingRecommendations(params);
     } catch {
       throw new Error("Failed to fetch trending recommendations");
     }
@@ -72,7 +92,7 @@ export const homeService = {
     params: SimilarRecommendationsParams,
   ): Promise<HomePlace[]> {
     try {
-      return await homeApi.fetchSimilarRecommendations(params);
+      return await homeDataSource.fetchSimilarRecommendations(params);
     } catch {
       throw new Error("Failed to fetch similar recommendations");
     }
@@ -83,7 +103,7 @@ export const homeService = {
    */
   async togglePlaceSave(placeId: string, isSaved: boolean): Promise<void> {
     try {
-      await homeApi.togglePlaceSave(placeId, isSaved);
+      await homeDataSource.togglePlaceSave(placeId, isSaved);
     } catch {
       throw new Error("Failed to toggle place save");
     }
@@ -96,7 +116,7 @@ export const homeService = {
    */
   async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
     try {
-      return await homeApi.fetchPlacesByMood(moodId);
+      return await homeDataSource.fetchPlacesByMood(moodId);
     } catch {
       throw new Error("Failed to fetch mood-based places");
     }
@@ -106,7 +126,7 @@ export const homeService = {
     params: VenueByDistrictParams,
   ): Promise<HomePlace[]> {
     try {
-      return await homeApi.fetchVenuesByDistrict(params);
+      return await homeDataSource.fetchVenuesByDistrict(params);
     } catch {
       throw new Error("Failed to fetch venues by district");
     }
@@ -114,7 +134,7 @@ export const homeService = {
 
   async fetchVenuesByType(params: VenueByTypeParams): Promise<HomePlace[]> {
     try {
-      return await homeApi.fetchVenuesByType(params);
+      return await homeDataSource.fetchVenuesByType(params);
     } catch {
       throw new Error("Failed to fetch venues by type");
     }
@@ -124,7 +144,7 @@ export const homeService = {
     params: VenueByPriceRangeParams,
   ): Promise<HomePlace[]> {
     try {
-      return await homeApi.fetchVenuesByPriceRange(params);
+      return await homeDataSource.fetchVenuesByPriceRange(params);
     } catch {
       throw new Error("Failed to fetch venues by price range");
     }
@@ -132,7 +152,7 @@ export const homeService = {
 
   async fetchVenueTopRated(): Promise<HomePlace[]> {
     try {
-      return await homeApi.fetchVenueTopRated();
+      return await homeDataSource.fetchVenueTopRated();
     } catch {
       throw new Error("Failed to fetch top-rated venues");
     }
@@ -142,7 +162,7 @@ export const homeService = {
     params: VenueTopRatedInAreaParams,
   ): Promise<HomePlace[]> {
     try {
-      return await homeApi.fetchVenueTopRatedInArea(params);
+      return await homeDataSource.fetchVenueTopRatedInArea(params);
     } catch {
       throw new Error("Failed to fetch top-rated venues in area");
     }
