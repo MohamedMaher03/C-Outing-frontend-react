@@ -21,7 +21,7 @@
 
 import { AuthError } from "./AuthError";
 import { isApiError, getFirstValidationErrorMessage } from "@/utils/apiError";
-import type { AuthErrorCode } from "../constants";
+import { AUTH_ERROR_MESSAGES, type AuthErrorCode } from "../constants";
 
 const HTTP_STATUS_TO_AUTH_CODE: Partial<Record<number, AuthErrorCode>> = {
   400: "INVALID_CREDENTIALS",
@@ -33,6 +33,69 @@ const HTTP_STATUS_TO_AUTH_CODE: Partial<Record<number, AuthErrorCode>> = {
   422: "INVALID_CREDENTIALS",
 };
 
+const AUTH_CODE_ALIASES: Record<string, AuthErrorCode> = {
+  EMAIL_UNVERIFIED: "EMAIL_NOT_VERIFIED",
+  UNVERIFIED_EMAIL: "EMAIL_NOT_VERIFIED",
+  EMAIL_NOT_CONFIRMED: "EMAIL_NOT_VERIFIED",
+  ACCOUNT_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
+};
+
+const EMAIL_NOT_VERIFIED_MESSAGE_PATTERN =
+  /(email.*not\s*verif|verify\s*your\s*email|unverified\s*email|confirm\s*your\s*email|account\s*not\s*verified)/i;
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const normalizeCodeToken = (value: string): string =>
+  value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+const toAuthErrorCode = (value?: string): AuthErrorCode | undefined => {
+  if (!value) return undefined;
+
+  const normalized = normalizeCodeToken(value);
+  if (!normalized) return undefined;
+
+  if (normalized in AUTH_ERROR_MESSAGES) {
+    return normalized as AuthErrorCode;
+  }
+
+  return AUTH_CODE_ALIASES[normalized];
+};
+
+const extractBackendErrorCode = (details: unknown): string | undefined => {
+  if (!isObjectRecord(details)) return undefined;
+
+  const code = details.code;
+  if (typeof code === "string" && code.trim().length > 0) return code;
+
+  const errorCode = details.errorCode;
+  if (typeof errorCode === "string" && errorCode.trim().length > 0) {
+    return errorCode;
+  }
+
+  const nestedError = details.error;
+  if (isObjectRecord(nestedError)) {
+    const nestedCode = nestedError.code;
+    if (typeof nestedCode === "string" && nestedCode.trim().length > 0) {
+      return nestedCode;
+    }
+
+    const nestedErrorCode = nestedError.errorCode;
+    if (
+      typeof nestedErrorCode === "string" &&
+      nestedErrorCode.trim().length > 0
+    ) {
+      return nestedErrorCode;
+    }
+  }
+
+  return undefined;
+};
+
 const isTransportStatusMessage = (message?: string): boolean =>
   typeof message === "string" &&
   /^Request failed with status code \d+$/i.test(message);
@@ -42,6 +105,10 @@ const isLikelyNetworkFailure = (message?: string): boolean =>
   /(network|timeout|timed out|failed to fetch|load failed|abort)/i.test(
     message,
   );
+
+const isLikelyEmailNotVerified = (message?: string): boolean =>
+  typeof message === "string" &&
+  EMAIL_NOT_VERIFIED_MESSAGE_PATTERN.test(message);
 
 export function normalizeAuthError(error: unknown): AuthError {
   // 1. Already an AuthError — pass through.
@@ -71,6 +138,25 @@ export function normalizeAuthError(error: unknown): AuthError {
     const normalizedMessage = isTransportStatusMessage(message)
       ? undefined
       : message;
+
+    const backendCode = toAuthErrorCode(extractBackendErrorCode(error.details));
+    if (backendCode) {
+      return new AuthError(
+        backendCode,
+        normalizedMessage,
+        statusCode,
+        validationErrors,
+      );
+    }
+
+    if (isLikelyEmailNotVerified(normalizedMessage ?? message)) {
+      return new AuthError(
+        "EMAIL_NOT_VERIFIED",
+        normalizedMessage,
+        statusCode,
+        validationErrors,
+      );
+    }
 
     return new AuthError(code, normalizedMessage, statusCode, validationErrors);
   }

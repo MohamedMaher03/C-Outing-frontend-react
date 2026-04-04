@@ -67,6 +67,30 @@ const removeStorageItem = (key: string): void => {
   }
 };
 
+const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+const readPendingVerificationEmail = (): string | null => {
+  const raw = getStorageItem(AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL);
+  if (!raw) return null;
+
+  const email = normalizeEmail(raw);
+  return email.length > 0 ? email : null;
+};
+
+const persistPendingVerificationEmail = (email: string): void => {
+  const normalized = normalizeEmail(email);
+  if (normalized.length === 0) {
+    clearPendingVerificationEmailStorage();
+    return;
+  }
+
+  setStorageItem(AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL, normalized);
+};
+
+const clearPendingVerificationEmailStorage = (): void => {
+  removeStorageItem(AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL);
+};
+
 const isUserRole = (value: unknown): value is User["role"] =>
   value === "user" || value === "moderator" || value === "admin";
 
@@ -116,6 +140,7 @@ export const authService = {
     const raw = await authApi.login(payload);
     const user: User = buildUserFromAuthToken(raw);
     persistSession(raw.token, user);
+    clearPendingVerificationEmailStorage();
     return { token: raw.token, user };
   },
 
@@ -124,7 +149,9 @@ export const authService = {
    * Does NOT persist a session; the user must verify email first.
    */
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
-    return await authApi.register(payload);
+    const response = await authApi.register(payload);
+    persistPendingVerificationEmail(payload.email);
+    return response;
   },
 
   /**
@@ -137,6 +164,7 @@ export const authService = {
     const raw = await authApi.verifyEmail(payload);
     const user: User = buildUserFromAuthToken(raw);
     persistSession(raw.token, user);
+    clearPendingVerificationEmailStorage();
     return { token: raw.token, user };
   },
 
@@ -156,7 +184,20 @@ export const authService = {
       await authApi.logout();
     } finally {
       clearSession();
+      clearPendingVerificationEmailStorage();
     }
+  },
+
+  setPendingVerificationEmail(email: string): void {
+    persistPendingVerificationEmail(email);
+  },
+
+  getPendingVerificationEmail(): string | null {
+    return readPendingVerificationEmail();
+  },
+
+  clearPendingVerificationEmail(): void {
+    clearPendingVerificationEmailStorage();
   },
 
   /**

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -20,19 +21,53 @@ import { useI18n } from "@/components/i18n";
 const LoginForm = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const { loginUser, isLoading, error, clearError } = useLogin();
+  const {
+    loginUser,
+    resendVerificationEmail,
+    isLoading,
+    isResendingVerification,
+    pendingVerificationEmail,
+    error,
+    clearError,
+  } = useLogin();
+  const [verificationHint, setVerificationHint] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
+  const typedEmail = watch("email") ?? "";
+  const recoveryEmail =
+    pendingVerificationEmail ?? typedEmail.trim().toLowerCase();
+  const hasRecoveryEmail = recoveryEmail.length > 0;
+
   const onSubmit = async (data: LoginFormData) => {
+    setVerificationHint(null);
     await loginUser(data);
     // Navigation is handled by PublicRoute based on user.hasCompletedOnboarding
+  };
+
+  const handleOpenVerification = () => {
+    if (!hasRecoveryEmail) return;
+
+    navigate(`/verify-email?email=${encodeURIComponent(recoveryEmail)}`, {
+      state: { email: recoveryEmail },
+    });
+  };
+
+  const handleResendVerification = async () => {
+    if (!hasRecoveryEmail) return;
+
+    clearError();
+    const success = await resendVerificationEmail(recoveryEmail);
+    if (success) {
+      setVerificationHint(t("auth.login.verifyGuide.resendSuccess"));
+    }
   };
 
   return (
@@ -87,6 +122,63 @@ const LoginForm = () => {
 
         {/* API Error Banner */}
         {error && <AuthStatusBanner message={error} onDismiss={clearError} />}
+
+        {pendingVerificationEmail && (
+          <div className="space-y-3 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm">
+            <p className="font-medium text-foreground">
+              {t("auth.login.verifyGuide.title")}
+            </p>
+            <p className="text-muted-foreground">
+              {t("auth.login.verifyGuide.subtitle", {
+                email: recoveryEmail,
+              })}
+            </p>
+
+            <ol className="space-y-1 text-muted-foreground">
+              <li>{t("auth.login.verifyGuide.step1")}</li>
+              <li>{t("auth.login.verifyGuide.step2")}</li>
+              <li>{t("auth.login.verifyGuide.step3")}</li>
+            </ol>
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Button
+                type="button"
+                size="sm"
+                className="h-10"
+                disabled={!hasRecoveryEmail || isLoading}
+                onClick={handleOpenVerification}
+              >
+                {t("auth.login.verifyGuide.continueAction")}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10"
+                disabled={
+                  !hasRecoveryEmail || isLoading || isResendingVerification
+                }
+                onClick={handleResendVerification}
+              >
+                {isResendingVerification ? (
+                  <span className="inline-flex items-center gap-2">
+                    <InlineLoading />
+                    {t("auth.login.verifyGuide.sending")}
+                  </span>
+                ) : (
+                  t("auth.login.verifyGuide.resendAction")
+                )}
+              </Button>
+            </div>
+
+            {verificationHint && (
+              <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                {verificationHint}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Form */}
         <form

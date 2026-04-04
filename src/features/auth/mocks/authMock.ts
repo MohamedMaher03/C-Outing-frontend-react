@@ -108,6 +108,13 @@ export const authMock = {
       throw new AuthError("INVALID_CREDENTIALS");
     }
 
+    if (pendingVerifications.has(payload.email)) {
+      throw new AuthError(
+        "EMAIL_NOT_VERIFIED",
+        "Your email is not verified yet. Verify your account to continue.",
+      );
+    }
+
     // Pick the right mock user based on email
     let mockUser: User;
     if (payload.email === "admin@example.com") {

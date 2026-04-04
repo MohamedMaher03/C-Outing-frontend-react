@@ -95,6 +95,20 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.forgotPassword": "Forgot password?",
     "auth.signIn": "Sign in",
     "auth.signingIn": "Signing in...",
+    "auth.login.verifyGuide.title": "Finish verifying your account",
+    "auth.login.verifyGuide.subtitle":
+      "Your account for {email} is not verified yet. Complete email verification to continue.",
+    "auth.login.verifyGuide.step1":
+      "1. Open the verification screen for this email.",
+    "auth.login.verifyGuide.step2":
+      "2. Check your inbox, spam, and promotions folders for the latest code.",
+    "auth.login.verifyGuide.step3":
+      "3. Enter the newest 6-digit code to activate your account.",
+    "auth.login.verifyGuide.continueAction": "Continue verification",
+    "auth.login.verifyGuide.resendAction": "Resend verification code",
+    "auth.login.verifyGuide.sending": "Sending...",
+    "auth.login.verifyGuide.resendSuccess":
+      "A fresh verification code was sent. Use the latest code from your inbox.",
     "auth.noAccount": "Don't have an account?",
     "auth.createOne": "Create one",
     "auth.footer": "© 2026 C-Outing. Explore Cairo like never before.",
@@ -151,6 +165,21 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.verify.sending": "Sending...",
     "auth.verify.resendIn": "Resend in {seconds}s",
     "auth.verify.newCodeSent": "A new code has been sent to your email.",
+    "auth.verify.recovery.title": "Resume email verification",
+    "auth.verify.recovery.subtitle":
+      "Enter your account email and we'll send a fresh verification code so you can finish sign-in.",
+    "auth.verify.recovery.emailLabel": "Account email",
+    "auth.verify.recovery.sendCode": "Send verification code",
+    "auth.verify.recovery.sending": "Sending code...",
+    "auth.verify.recovery.codeSent":
+      "Verification code sent. Check your inbox and enter the newest code.",
+    "auth.verify.help.title": "Quick checklist",
+    "auth.verify.help.step1":
+      "Check Spam/Junk and Promotions tabs if the code is missing.",
+    "auth.verify.help.step2":
+      "Make sure you are verifying the same email used during registration.",
+    "auth.verify.help.step3":
+      "If a code expires, request a new one and use only the latest email.",
     "auth.otpDigit": "Digit {current} of {total}",
 
     "auth.showPassword": "Show password",
@@ -1332,6 +1361,19 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.forgotPassword": "نسيت كلمة المرور؟",
     "auth.signIn": "تسجيل الدخول",
     "auth.signingIn": "جارٍ تسجيل الدخول...",
+    "auth.login.verifyGuide.title": "أكمل تأكيد حسابك",
+    "auth.login.verifyGuide.subtitle":
+      "حساب {email} لم يتم تأكيده بعد. أكمل تأكيد البريد الإلكتروني للمتابعة.",
+    "auth.login.verifyGuide.step1": "1. افتح شاشة تأكيد البريد لهذا الحساب.",
+    "auth.login.verifyGuide.step2":
+      "2. افحص البريد الوارد والرسائل غير المرغوبة و تبويب العروض بحثًا عن أحدث رمز.",
+    "auth.login.verifyGuide.step3":
+      "3. أدخل أحدث رمز مكون من 6 أرقام لتفعيل الحساب.",
+    "auth.login.verifyGuide.continueAction": "متابعة التأكيد",
+    "auth.login.verifyGuide.resendAction": "إعادة إرسال رمز التأكيد",
+    "auth.login.verifyGuide.sending": "جارٍ الإرسال...",
+    "auth.login.verifyGuide.resendSuccess":
+      "تم إرسال رمز تأكيد جديد. استخدم أحدث رمز من بريدك.",
     "auth.noAccount": "ليس لديك حساب؟",
     "auth.createOne": "أنشئ حسابًا",
     "auth.footer": "© 2026 سي-أوتنج. اكتشف القاهرة بطريقة مختلفة.",
@@ -1388,6 +1430,20 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.verify.sending": "جارٍ الإرسال...",
     "auth.verify.resendIn": "إعادة الإرسال خلال {seconds}ث",
     "auth.verify.newCodeSent": "تم إرسال رمز جديد إلى بريدك الإلكتروني.",
+    "auth.verify.recovery.title": "استكمال تأكيد البريد الإلكتروني",
+    "auth.verify.recovery.subtitle":
+      "أدخل بريد حسابك وسنرسل رمز تأكيد جديدًا لتتمكن من إكمال تسجيل الدخول.",
+    "auth.verify.recovery.emailLabel": "بريد الحساب",
+    "auth.verify.recovery.sendCode": "إرسال رمز التأكيد",
+    "auth.verify.recovery.sending": "جارٍ إرسال الرمز...",
+    "auth.verify.recovery.codeSent":
+      "تم إرسال رمز التأكيد. افحص بريدك وأدخل أحدث رمز.",
+    "auth.verify.help.title": "خطوات سريعة",
+    "auth.verify.help.step1": "افحص البريد العشوائي والعروض إذا لم تجد الرمز.",
+    "auth.verify.help.step2":
+      "تأكد أنك تؤكد نفس البريد المستخدم أثناء التسجيل.",
+    "auth.verify.help.step3":
+      "إذا انتهت صلاحية الرمز، اطلب رمزًا جديدًا واستخدم أحدث رسالة فقط.",
     "auth.otpDigit": "الرقم {current} من {total}",
 
     "auth.showPassword": "إظهار كلمة المرور",

@@ -23,16 +23,21 @@ export function AuthProvider({
 }: AuthProviderProps): React.ReactElement {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [pendingVerificationEmail, setPendingVerificationEmailState] = useState<
+    string | null
+  >(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // On mount: restore stored session (token + user from localStorage).
   useEffect(() => {
     const init = async () => {
       const session = authService.restoreSession();
+      const pendingEmail = authService.getPendingVerificationEmail();
       if (session) {
         setToken(session.token);
         setUser(session.user);
       }
+      setPendingVerificationEmailState(pendingEmail);
       setIsLoading(false);
     };
 
@@ -48,6 +53,7 @@ export function AuthProvider({
       const response = await authService.login({ email, password });
       setToken(response.token);
       setUser(response.user);
+      setPendingVerificationEmailState(null);
     },
     [],
   );
@@ -58,6 +64,7 @@ export function AuthProvider({
    */
   const register = useCallback(async (data: RegisterRequest): Promise<void> => {
     await authService.register(data);
+    setPendingVerificationEmailState(data.email.trim().toLowerCase());
   }, []);
 
   /**
@@ -70,6 +77,7 @@ export function AuthProvider({
       const response = await authService.verifyEmail({ email, otp });
       setToken(response.token);
       setUser(response.user);
+      setPendingVerificationEmailState(null);
     },
     [],
   );
@@ -79,6 +87,18 @@ export function AuthProvider({
    */
   const resendOtp = useCallback(async (email: string): Promise<void> => {
     await authService.resendOtp({ email });
+    setPendingVerificationEmailState(email.trim().toLowerCase());
+  }, []);
+
+  const setPendingVerificationEmail = useCallback((email: string): void => {
+    const normalizedEmail = email.trim().toLowerCase();
+    authService.setPendingVerificationEmail(normalizedEmail);
+    setPendingVerificationEmailState(normalizedEmail || null);
+  }, []);
+
+  const clearPendingVerificationEmail = useCallback((): void => {
+    authService.clearPendingVerificationEmail();
+    setPendingVerificationEmailState(null);
   }, []);
 
   /**
@@ -89,6 +109,7 @@ export function AuthProvider({
     await authService.logout();
     setUser(null);
     setToken(null);
+    setPendingVerificationEmailState(null);
   }, []);
 
   /**
@@ -103,12 +124,15 @@ export function AuthProvider({
   const value: AuthContextType = {
     user,
     token,
+    pendingVerificationEmail,
     isLoading,
     isAuthenticated: !!user && !!token,
     login,
     register,
     verifyEmail,
     resendOtp,
+    setPendingVerificationEmail,
+    clearPendingVerificationEmail,
     logout,
     updateUser,
   };

@@ -6,6 +6,7 @@
 export const AUTH_STORAGE_KEYS = {
   TOKEN: "authToken",
   USER: "authUser",
+  PENDING_VERIFICATION_EMAIL: "authPendingVerificationEmail",
 } as const;
 
 /** Shared auth input constraints used across validation schemas and pages. */
@@ -28,6 +29,8 @@ export const AUTH_OTP_LENGTH = 6;
 /** Human-readable error messages surfaced to the UI. */
 export const AUTH_ERROR_MESSAGES = {
   INVALID_CREDENTIALS: "Invalid email or password. Please try again.",
+  EMAIL_NOT_VERIFIED:
+    "Your email is not verified yet. Verify your account to continue.",
   EMAIL_ALREADY_EXISTS: "An account with this email already exists.",
   PHONE_ALREADY_EXISTS: "An account with this phone number already exists.",
   ACCESS_DENIED: "You do not have permission to perform this action.",
