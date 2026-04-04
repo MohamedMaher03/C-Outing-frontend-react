@@ -1,3 +1,5 @@
+import { isApiError } from "@/utils/apiError";
+
 export const withModeratorServiceError = async <T>(
   operation: () => Promise<T>,
   fallbackMessage: string,
@@ -5,6 +7,10 @@ export const withModeratorServiceError = async <T>(
   try {
     return await operation();
   } catch (error) {
+    if (isApiError(error)) {
+      throw error;
+    }
+
     const details = error instanceof Error ? error.message.trim() : "";
 
     if (!details) {

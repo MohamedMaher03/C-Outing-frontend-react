@@ -965,10 +965,18 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "moderator.places.loading": "Loading place queue...",
     "moderator.places.error.updateTitle":
       "Couldn't load place moderation queue",
+    "moderator.places.error.forbiddenTitle": "Access denied",
+    "moderator.places.error.forbiddenMessage":
+      "Access denied. You don't have the required Admin or Moderator permissions to view this queue. Please contact the system administrator if this is an error.",
+    "moderator.places.error.loadFailureTitle":
+      "We couldn't reach the moderation server",
+    "moderator.places.error.loadFailureMessage":
+      "We're having trouble reaching the server. Please check your connection or try refreshing the page.",
     "moderator.places.header.title": "Place Moderation",
     "moderator.places.header.description":
       "{pending} pending · {flagged} flagged",
     "moderator.places.form.title": "Submit New Place",
+    "moderator.places.actions.goBack": "Go Back",
     "moderator.places.actions.submitting": "Submitting...",
     "moderator.places.actions.submit": "Submit Place",
     "moderator.places.actions.flag": "Flag",
@@ -2229,10 +2237,17 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "moderator.places.loading": "جارٍ تحميل طابور الأماكن...",
     "moderator.places.error.updateTitle": "تعذر تحميل طابور إشراف الأماكن",
+    "moderator.places.error.forbiddenTitle": "تم رفض الوصول",
+    "moderator.places.error.forbiddenMessage":
+      "لا تملك صلاحيات المدير أو المشرف المطلوبة لعرض هذا الطابور. إذا كنت تعتقد أن هذا خطأ، يرجى التواصل مع مسؤول النظام.",
+    "moderator.places.error.loadFailureTitle": "تعذّر الوصول إلى خادم الإشراف",
+    "moderator.places.error.loadFailureMessage":
+      "نواجه مشكلة في الاتصال بالخادم الآن. تحقق من اتصالك بالإنترنت أو أعد تحديث الصفحة.",
     "moderator.places.header.title": "إشراف الأماكن",
     "moderator.places.header.description":
       "{pending} قيد المراجعة · {flagged} معلّمة",
     "moderator.places.form.title": "إرسال مكان جديد",
+    "moderator.places.actions.goBack": "الرجوع",
     "moderator.places.actions.submitting": "جارٍ الإرسال...",
     "moderator.places.actions.submit": "إرسال المكان",
     "moderator.places.actions.flag": "وضع علامة",

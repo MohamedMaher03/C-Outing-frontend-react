@@ -28,6 +28,8 @@ import {
   ApiError,
   extractBackendErrorMessage,
   extractBackendStatusCode,
+  getStatusFallbackMessage,
+  isTransportStatusMessage,
   extractValidationErrors,
 } from "@/utils/apiError";
 import type { ApiResponse } from "@/types";
@@ -128,12 +130,20 @@ axiosInstance.interceptors.response.use(
 
     const body = error.response?.data;
     const validationErrors = extractValidationErrors(body);
-    const message =
-      extractBackendErrorMessage(body) ??
-      error.message ??
-      "An unexpected error occurred.";
     // Prefer the status code embedded in the backend body.
     const statusCode = extractBackendStatusCode(body) ?? httpStatus;
+
+    const backendMessage = extractBackendErrorMessage(body);
+    const transportMessage =
+      typeof error.message === "string" ? error.message.trim() : "";
+    const statusFallbackMessage = getStatusFallbackMessage(statusCode);
+
+    const message =
+      backendMessage ??
+      (transportMessage.length > 0 &&
+      !isTransportStatusMessage(transportMessage)
+        ? transportMessage
+        : (statusFallbackMessage ?? "An unexpected error occurred."));
 
     return Promise.reject(
       new ApiError(message, statusCode, {

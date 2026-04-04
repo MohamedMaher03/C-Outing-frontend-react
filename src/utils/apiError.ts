@@ -72,6 +72,25 @@ export class ApiError extends Error {
 
 export type ValidationErrors = Record<string, string[]>;
 
+export type ApiUiErrorKind = "forbidden" | "load-failure" | "generic";
+
+export interface ApiUiErrorMessages {
+  forbiddenMessage: string;
+  loadFailureMessage: string;
+  genericMessage: string;
+}
+
+export interface ApiUiErrorState {
+  kind: ApiUiErrorKind;
+  message: string;
+  statusCode?: number;
+}
+
+const TRANSPORT_STATUS_MESSAGE_PATTERN =
+  /^Request failed with status code \d+$/i;
+const LOAD_FAILURE_MESSAGE_PATTERN =
+  /(network|timeout|timed out|failed to fetch|load failed|abort|network error|err_network|econnaborted)/i;
+
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
@@ -163,6 +182,89 @@ export function extractBackendStatusCode(payload: unknown): number | undefined {
   return undefined;
 }
 
+export const isTransportStatusMessage = (message?: string): boolean =>
+  typeof message === "string" &&
+  TRANSPORT_STATUS_MESSAGE_PATTERN.test(message.trim());
+
+export const getStatusFallbackMessage = (
+  statusCode?: number,
+): string | undefined => {
+  if (statusCode === undefined) return undefined;
+
+  if (statusCode === 401) {
+    return "Your session expired. Please sign in again.";
+  }
+  if (statusCode === 403) {
+    return "Access denied. You do not have permission to perform this action.";
+  }
+  if (statusCode === 404) {
+    return "We couldn't find what you were looking for.";
+  }
+  if (statusCode === 429) {
+    return "Too many requests right now. Please try again shortly.";
+  }
+  if (statusCode >= 500) {
+    return "We're having trouble reaching the server. Please check your connection or try refreshing the page.";
+  }
+
+  return undefined;
+};
+
+export const isLoadFailureError = (error: unknown): boolean => {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return true;
+  }
+
+  if (isApiError(error)) {
+    if (error.statusCode === 408 || error.statusCode === 504) {
+      return true;
+    }
+
+    if (typeof error.statusCode === "number" && error.statusCode >= 500) {
+      return true;
+    }
+
+    return LOAD_FAILURE_MESSAGE_PATTERN.test(error.message.trim());
+  }
+
+  if (error instanceof Error) {
+    return LOAD_FAILURE_MESSAGE_PATTERN.test(error.message.trim());
+  }
+
+  if (typeof error === "string") {
+    return LOAD_FAILURE_MESSAGE_PATTERN.test(error.trim());
+  }
+
+  return false;
+};
+
+export const resolveApiUiErrorState = (
+  error: unknown,
+  messages: ApiUiErrorMessages,
+): ApiUiErrorState => {
+  if (isApiError(error) && error.statusCode === 403) {
+    return {
+      kind: "forbidden",
+      message: messages.forbiddenMessage,
+      statusCode: 403,
+    };
+  }
+
+  if (isLoadFailureError(error)) {
+    return {
+      kind: "load-failure",
+      message: messages.loadFailureMessage,
+      statusCode: isApiError(error) ? error.statusCode : undefined,
+    };
+  }
+
+  return {
+    kind: "generic",
+    message: getErrorMessage(error, messages.genericMessage),
+    statusCode: isApiError(error) ? error.statusCode : undefined,
+  };
+};
+
 // ── Type Guards & Helpers ─────────────────────────────────────────────────
 
 /**
@@ -194,8 +296,25 @@ export function getErrorMessage(
   error: unknown,
   fallback = "An unexpected error occurred.",
 ): string {
-  if (isApiError(error)) return error.message;
-  if (error instanceof Error) return error.message;
+  if (isApiError(error)) {
+    const message = error.message.trim();
+    if (message.length > 0 && !isTransportStatusMessage(message)) {
+      return message;
+    }
+
+    const statusFallback = getStatusFallbackMessage(error.statusCode);
+    if (statusFallback) {
+      return statusFallback;
+    }
+  }
+
+  if (error instanceof Error) {
+    const message = error.message.trim();
+    if (message.length > 0 && !isTransportStatusMessage(message)) {
+      return message;
+    }
+  }
+
   if (typeof error === "string" && error.length > 0) return error;
   return fallback;
 }

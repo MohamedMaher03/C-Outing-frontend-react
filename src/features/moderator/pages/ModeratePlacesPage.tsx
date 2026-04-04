@@ -95,6 +95,7 @@ const ModeratePlacesPage = () => {
     categories,
     loading,
     error,
+    queueErrorState,
     pendingPlaceIdSet,
     search,
     statusFilter,
@@ -203,6 +204,48 @@ const ModeratePlacesPage = () => {
     );
   }
 
+  if (queueErrorState?.kind === "forbidden") {
+    return (
+      <ModeratorPageLayout>
+        <ModeratorPageHeader
+          title={t("moderator.places.header.title")}
+          description={t("moderator.places.header.description", {
+            pending: formatCount(placeSummary.pending, locale),
+            flagged: formatCount(placeSummary.flagged, locale),
+          })}
+          icon={MapPin}
+        />
+
+        <ModeratorSection contentClassName="gap-0">
+          <ModeratorEmptyState
+            icon={Flag}
+            title={t("moderator.places.error.forbiddenTitle")}
+            description={t("moderator.places.error.forbiddenMessage")}
+            action={
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button variant="outline" onClick={() => navigate(-1)}>
+                  {t("moderator.places.actions.goBack")}
+                </Button>
+                <Button
+                  onClick={() => {
+                    void retry();
+                  }}
+                >
+                  {t("common.retry")}
+                </Button>
+              </div>
+            }
+          />
+        </ModeratorSection>
+      </ModeratorPageLayout>
+    );
+  }
+
+  const queueErrorTitle =
+    queueErrorState?.kind === "load-failure"
+      ? t("moderator.places.error.loadFailureTitle")
+      : t("moderator.places.error.updateTitle");
+
   return (
     <ModeratorPageLayout>
       <div
@@ -224,7 +267,7 @@ const ModeratePlacesPage = () => {
       </div>
 
       <ModeratorErrorBanner
-        title={t("moderator.places.error.updateTitle")}
+        title={queueErrorTitle}
         message={error}
         onRetry={() => {
           void retry();

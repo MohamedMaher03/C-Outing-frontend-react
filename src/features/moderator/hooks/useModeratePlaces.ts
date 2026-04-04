@@ -26,7 +26,11 @@ import type {
   ModeratePlaceToast,
 } from "@/features/moderator/types";
 import { filterModerationPlaces } from "@/features/moderator/utils/moderatorFilters";
-import { getErrorMessage } from "@/utils/apiError";
+import {
+  getErrorMessage,
+  resolveApiUiErrorState,
+  type ApiUiErrorState,
+} from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
 const EMPTY_FORM: ModeratePlaceFormData = {
@@ -47,6 +51,7 @@ interface UseModeratePlacesReturn {
   categories: AdminCategory[];
   loading: boolean;
   error: string | null;
+  queueErrorState: ApiUiErrorState | null;
   pendingPlaceIds: string[];
   pendingPlaceIdSet: ReadonlySet<string>;
 
@@ -91,6 +96,8 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [queueErrorState, setQueueErrorState] =
+    useState<ApiUiErrorState | null>(null);
   const [pendingPlaceIds, setPendingPlaceIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
@@ -113,6 +120,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
   const loadPlaces = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setQueueErrorState(null);
 
     try {
       const [placesData, categoriesData] = await Promise.all([
@@ -124,9 +132,18 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
 
       setPlaces(placesData);
       setCategories(categoriesData);
+      setQueueErrorState(null);
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(getErrorMessage(err, t("moderator.error.loadPlaces")));
+
+      const resolvedError = resolveApiUiErrorState(err, {
+        forbiddenMessage: t("moderator.places.error.forbiddenMessage"),
+        loadFailureMessage: t("moderator.places.error.loadFailureMessage"),
+        genericMessage: t("moderator.error.loadPlaces"),
+      });
+
+      setQueueErrorState(resolvedError);
+      setError(resolvedError.message);
       setPlaces([]);
       setCategories([]);
     } finally {
@@ -201,6 +218,16 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
         showToast(successMessage, status === "flagged" ? "warning" : "success");
       } catch (err) {
         if (!mountedRef.current) return;
+
+        const resolvedError = resolveApiUiErrorState(err, {
+          forbiddenMessage: t("moderator.places.error.forbiddenMessage"),
+          loadFailureMessage: t("moderator.places.error.loadFailureMessage"),
+          genericMessage: t("moderator.error.updatePlaceStatus"),
+        });
+
+        if (resolvedError.kind === "forbidden") {
+          setQueueErrorState(resolvedError);
+        }
 
         const message = getErrorMessage(
           err,
@@ -308,6 +335,16 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
       } catch (err) {
         if (!mountedRef.current) return;
 
+        const resolvedError = resolveApiUiErrorState(err, {
+          forbiddenMessage: t("moderator.places.error.forbiddenMessage"),
+          loadFailureMessage: t("moderator.places.error.loadFailureMessage"),
+          genericMessage: t("moderator.error.deletePlace"),
+        });
+
+        if (resolvedError.kind === "forbidden") {
+          setQueueErrorState(resolvedError);
+        }
+
         const message = getErrorMessage(err, t("moderator.error.deletePlace"));
         setError(message);
         showToast(message, "error");
@@ -358,6 +395,16 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     } catch (err) {
       if (!mountedRef.current) return;
 
+      const resolvedError = resolveApiUiErrorState(err, {
+        forbiddenMessage: t("moderator.places.error.forbiddenMessage"),
+        loadFailureMessage: t("moderator.places.error.loadFailureMessage"),
+        genericMessage: t("moderator.error.addPlace"),
+      });
+
+      if (resolvedError.kind === "forbidden") {
+        setQueueErrorState(resolvedError);
+      }
+
       const message = getErrorMessage(err, t("moderator.error.addPlace"));
       setError(message);
       showToast(message, "error");
@@ -388,6 +435,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     categories,
     loading,
     error,
+    queueErrorState,
     pendingPlaceIds,
     pendingPlaceIdSet,
     search,
