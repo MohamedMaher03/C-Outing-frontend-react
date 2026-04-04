@@ -3,6 +3,7 @@ import { AuthError } from "./AuthError";
 
 const EMAIL_NOT_VERIFIED_MESSAGE_PATTERN =
   /(email.*not\s*verif|verify\s*your\s*email|unverified\s*email|confirm\s*your\s*email|account\s*not\s*verified)/i;
+const TIMEOUT_MESSAGE_PATTERN = /(timeout|timed\s*out|exceeded)/i;
 
 /**
  * Converts any auth-domain error into a user-facing string.
@@ -10,6 +11,13 @@ const EMAIL_NOT_VERIFIED_MESSAGE_PATTERN =
  */
 export function getAuthErrorMessage(error: unknown): string {
   if (error instanceof AuthError) {
+    if (
+      error.code === "NETWORK_ERROR" &&
+      TIMEOUT_MESSAGE_PATTERN.test(error.message)
+    ) {
+      return "This request is taking longer than expected. If your account was created, continue with email verification.";
+    }
+
     const explicitMessage = error.message?.trim();
     if (explicitMessage && explicitMessage !== error.code) {
       return explicitMessage;

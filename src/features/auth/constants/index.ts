@@ -24,6 +24,10 @@ export const AUTH_AVATAR_RULES = {
   MIME_PREFIX: "image/",
 } as const;
 
+export const AUTH_TIMEOUTS = {
+  REGISTER_REQUEST_MS: 120_000,
+} as const;
+
 export const AUTH_OTP_LENGTH = 6;
 
 /** Human-readable error messages surfaced to the UI. */

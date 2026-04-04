@@ -118,7 +118,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.confirmPassword": "Confirm Password",
     "auth.avatarOptional": "Avatar (Optional)",
     "auth.defaultAvatarHint":
-      "If you skip this, we will upload a default avatar for your account.",
+      "If you skip this, we will upload a default avatar.(maximum allowed 5MB).",
     "auth.acceptTermsPrefix": "I accept the",
     "auth.terms": "Terms and Conditions",
     "auth.and": "and",
@@ -1402,7 +1402,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.confirmPassword": "تأكيد كلمة المرور",
     "auth.avatarOptional": "الصورة الشخصية (اختياري)",
     "auth.defaultAvatarHint":
-      "إذا تخطيت هذه الخطوة، سنرفع صورة افتراضية لحسابك.",
+      "إذا تخطيت هذه الخطوة، سنرفع صورة افتراضية. لتسجيل أسرع، استخدم صورة أقل من 2MB (الحد الأقصى 5MB).",
     "auth.acceptTermsPrefix": "أوافق على",
     "auth.terms": "الشروط والأحكام",
     "auth.and": "و",

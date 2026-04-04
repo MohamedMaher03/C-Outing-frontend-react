@@ -31,6 +31,7 @@ import type {
 } from "../types";
 import type { User } from "@/types";
 import { buildUserFromAuthToken } from "./jwtClaims";
+import { AuthError } from "../errors";
 
 const parseBooleanEnv = (value: unknown): boolean => {
   if (typeof value !== "string") return false;
@@ -88,6 +89,13 @@ const removeStorageItem = (key: string): void => {
 };
 
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+const REGISTER_TIMEOUT_MESSAGE_PATTERN =
+  /(timeout|timed\s*out|exceeded|abort)/i;
+
+const isRegisterTimeoutError = (error: AuthError): boolean =>
+  error.code === "NETWORK_ERROR" &&
+  REGISTER_TIMEOUT_MESSAGE_PATTERN.test(error.message);
 
 const readPendingVerificationEmail = (): string | null => {
   const raw = getStorageItem(AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL);
@@ -169,9 +177,30 @@ export const authService = {
    * Does NOT persist a session; the user must verify email first.
    */
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
-    const response = await authDataSource.register(payload);
-    persistPendingVerificationEmail(payload.email);
-    return response;
+    try {
+      const response = await authDataSource.register(payload);
+      persistPendingVerificationEmail(payload.email);
+      return response;
+    } catch (error) {
+      if (error instanceof AuthError) {
+        const shouldRecover =
+          error.code === "EMAIL_ALREADY_EXISTS" || isRegisterTimeoutError(error);
+
+        if (shouldRecover) {
+          try {
+            // If account creation already completed on the server, this call
+            // restores a smooth path to verification instead of forcing re-signup.
+            await authDataSource.resendOtp({ email: payload.email });
+            persistPendingVerificationEmail(payload.email);
+            return "Verification code sent to your email";
+          } catch {
+            // Keep original register error when recovery is not possible.
+          }
+        }
+      }
+
+      throw error;
+    }
   },
 
   /**

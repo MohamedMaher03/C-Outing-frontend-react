@@ -33,6 +33,7 @@ import type {
 } from "../types";
 import { normalizeAuthError } from "../errors";
 import { buildRegisterPayload } from "../utils/registerPayload";
+import { AUTH_TIMEOUTS } from "../constants";
 
 export const authApi = {
   /**
@@ -66,6 +67,7 @@ export const authApi = {
         API_ENDPOINTS.auth.register,
         registerPayload.formData,
         {
+          timeout: AUTH_TIMEOUTS.REGISTER_REQUEST_MS,
           params: registerPayload.params,
           headers: {
             "Content-Type": "multipart/form-data",
