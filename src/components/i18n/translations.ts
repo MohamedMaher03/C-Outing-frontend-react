@@ -91,7 +91,6 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "auth.welcomeBack": "Welcome back",
     "auth.discoverCairo": "Discover the best places Cairo has to offer",
-    "auth.orContinueWithEmail": "or continue with email",
     "auth.forgotPassword": "Forgot password?",
     "auth.signIn": "Sign in",
     "auth.signingIn": "Signing in...",
@@ -115,7 +114,6 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "auth.createAccount": "Create Account",
     "auth.joinUs": "Join us and discover the best places Cairo has to offer",
-    "auth.continueWithGoogle": "Continue with Google",
     "auth.password": "Password",
     "auth.confirmPassword": "Confirm Password",
     "auth.avatarOptional": "Avatar (Optional)",
@@ -322,9 +320,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "onboarding.district.new-cairo": "New Cairo",
     "onboarding.district.sheikh-zayed": "Sheikh Zayed",
 
-    "budget.price_cheapest": "Very Budget ($)",
-    "budget.cheap": "Budget ($$)",
-    "budget.mid_range": "Mid-range ($$$)",
+    "budget.price_cheapest": "Economy ($)",
+    "budget.cheap": "Value ($$)",
+    "budget.mid_range": "Standard ($$$)",
     "budget.expensive": "Premium ($$$$)",
     "budget.luxury": "Luxury ($$$$$)",
 
@@ -386,8 +384,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.discovery.source.price-range": "Price Range",
     "home.discovery.source.top-rated": "Top Rated",
     "home.discovery.source.top-rated-area": "Top Rated In Area",
-    "home.price.caption.price_cheapest": "Very low budget",
-    "home.price.caption.cheap": "Budget-friendly",
+    "home.price.caption.price_cheapest": "Most affordable",
+    "home.price.caption.cheap": "Great value",
     "home.price.caption.mid_range": "Balanced spend",
     "home.price.caption.expensive": "Premium picks",
     "home.price.caption.luxury": "Luxury outing",
@@ -990,8 +988,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "moderator.places.note.label": "Note:",
     "moderator.places.note.body":
       "Approving a place activates it immediately, while flagging sends it to the admin review queue.",
-    "moderator.places.priceCaption.price_cheapest": "Very low budget",
-    "moderator.places.priceCaption.cheap": "Budget-friendly",
+    "moderator.places.priceCaption.price_cheapest": "Most affordable",
+    "moderator.places.priceCaption.cheap": "Great value",
     "moderator.places.priceCaption.mid_range": "Balanced spend",
     "moderator.places.priceCaption.expensive": "Premium picks",
     "moderator.places.priceCaption.luxury": "Luxury outing",
@@ -1074,6 +1072,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.stat.phoneMissing": "Add a phone number",
     "profile.stat.age": "Age",
     "profile.stat.activity": "App Activity",
+    "profile.recommendationHint":
+      "The more places you save, review, and explore, the sharper your recommendations become.",
     "profile.tab.preferences": "Preferences",
     "profile.tab.account": "Account",
     "profile.preferences.interests": "Interests",
@@ -1376,7 +1376,6 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "auth.welcomeBack": "أهلًا بعودتك",
     "auth.discoverCairo": "اكتشف أفضل الأماكن التي تقدمها القاهرة",
-    "auth.orContinueWithEmail": "أو المتابعة عبر البريد الإلكتروني",
     "auth.forgotPassword": "نسيت كلمة المرور؟",
     "auth.signIn": "تسجيل الدخول",
     "auth.signingIn": "جارٍ تسجيل الدخول...",
@@ -1399,7 +1398,6 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "auth.createAccount": "إنشاء حساب",
     "auth.joinUs": "انضم إلينا واكتشف أفضل الأماكن في القاهرة",
-    "auth.continueWithGoogle": "المتابعة باستخدام جوجل",
     "auth.password": "كلمة المرور",
     "auth.confirmPassword": "تأكيد كلمة المرور",
     "auth.avatarOptional": "الصورة الشخصية (اختياري)",
@@ -1603,10 +1601,10 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "onboarding.district.new-cairo": "القاهرة الجديدة",
     "onboarding.district.sheikh-zayed": "الشيخ زايد",
 
-    "budget.price_cheapest": "اقتصادي جدًا ($)",
-    "budget.cheap": "اقتصادي ($$)",
+    "budget.price_cheapest": "اقتصادي ($)",
+    "budget.cheap": "موفّر ($$)",
     "budget.mid_range": "متوسط ($$$)",
-    "budget.expensive": "مميز ($$$$)",
+    "budget.expensive": "ممتاز ($$$$)",
     "budget.luxury": "فاخر ($$$$$)",
 
     "home.scroller.scrollLeft": "تمرير {label} لليسار",
@@ -1665,8 +1663,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.discovery.source.price-range": "نطاق السعر",
     "home.discovery.source.top-rated": "الأعلى تقييمًا",
     "home.discovery.source.top-rated-area": "الأعلى تقييمًا في المنطقة",
-    "home.price.caption.price_cheapest": "ميزانية منخفضة جدًا",
-    "home.price.caption.cheap": "مناسب للميزانية",
+    "home.price.caption.price_cheapest": "الأوفر سعرًا",
+    "home.price.caption.cheap": "قيمة ممتازة",
     "home.price.caption.mid_range": "إنفاق متوسط",
     "home.price.caption.expensive": "خيارات مميزة",
     "home.price.caption.luxury": "خروجة فاخرة",
@@ -2253,8 +2251,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "moderator.places.note.label": "ملاحظة:",
     "moderator.places.note.body":
       "اعتماد المكان يفعّله مباشرة، بينما وضع علامة عليه يرسله إلى طابور مراجعة المدير.",
-    "moderator.places.priceCaption.price_cheapest": "ميزانية منخفضة جدًا",
-    "moderator.places.priceCaption.cheap": "مناسب للميزانية",
+    "moderator.places.priceCaption.price_cheapest": "الأوفر سعرًا",
+    "moderator.places.priceCaption.cheap": "قيمة ممتازة",
     "moderator.places.priceCaption.mid_range": "إنفاق متوازن",
     "moderator.places.priceCaption.expensive": "خيارات مميزة",
     "moderator.places.priceCaption.luxury": "خروجة فاخرة",
@@ -2337,6 +2335,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.stat.phoneMissing": "أضف رقم هاتف",
     "profile.stat.age": "العمر",
     "profile.stat.activity": "نشاط التطبيق",
+    "profile.recommendationHint":
+      "كل ما تفاعلت أكثر بالحفظ والمراجعات والاكتشاف، كانت ترشيحاتنا أدق وأكثر مناسبة لك.",
     "profile.tab.preferences": "التفضيلات",
     "profile.tab.account": "الحساب",
     "profile.preferences.interests": "الاهتمامات",

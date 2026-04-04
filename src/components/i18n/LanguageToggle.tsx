@@ -82,7 +82,7 @@ export function LanguageToggle({
               "group relative inline-flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1 rounded-lg border px-2.5 py-2 text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               isActive
                 ? "border-slate-400 bg-background text-foreground shadow-sm ring-1 ring-slate-300 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600"
-                : "border-transparent text-slate-600 hover:border-slate-300 hover:bg-background/70 hover:text-slate-900 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800/60 dark:hover:text-white",
+                : "border-transparent text-slate-600 hover:border-slate-300 hover:bg-background/70 hover:text-slate-900 dark:text-cream/90 dark:hover:border-secondary/45 dark:hover:bg-secondary/18 dark:hover:text-cream",
             )}
             aria-label={LANGUAGE_LABEL[option]}
             title={LANGUAGE_LABEL[option]}

@@ -99,10 +99,7 @@ export interface LoginField {
 
 /** Sign-up form field configuration (icon stored as component reference) */
 export interface SignUpFieldConfig {
-  id: keyof Omit<
-    SignUpFormData,
-    "password" | "confirmPassword" | "acceptTerms" | "avatar"
-  >;
+  id: keyof Omit<SignUpFormData, "password" | "confirmPassword" | "avatar">;
   label: string;
   placeholder: string;
   type?: string;

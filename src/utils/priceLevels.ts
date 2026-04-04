@@ -16,17 +16,17 @@ export interface PriceLevelMeta {
 
 export const PRICE_LEVEL_META: Record<CanonicalPriceLevel, PriceLevelMeta> = {
   price_cheapest: {
-    label: "Very Budget",
-    caption: "Lowest spend",
+    label: "Economy",
+    caption: "Most affordable",
     symbol: "$",
   },
   cheap: {
-    label: "Budget",
-    caption: "Wallet-friendly",
+    label: "Value",
+    caption: "Great value",
     symbol: "$$",
   },
   mid_range: {
-    label: "Mid-range",
+    label: "Standard",
     caption: "Balanced spend",
     symbol: "$$$",
   },

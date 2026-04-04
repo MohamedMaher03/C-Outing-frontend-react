@@ -80,8 +80,8 @@ const ProfileStatCard = ({
         <p
           className={
             numeric
-              ? "mt-2 text-role-subheading text-numeric-tabular text-black dark:text-foreground"
-              : "mt-2 text-role-secondary font-semibold text-black dark:text-foreground break-words"
+              ? "mt-2 text-role-subheading text-numeric-tabular text-foreground"
+              : "mt-2 text-role-secondary font-semibold text-foreground break-words"
           }
         >
           {value}
@@ -207,7 +207,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 pb-24 pt-[clamp(1rem,2vw,1.5rem)] sm:pb-6 sm:pt-[clamp(1.25rem,2.5vw,2rem)] space-y-[clamp(1rem,2.4vw,2rem)] text-black dark:text-foreground">
+    <div className="max-w-5xl mx-auto px-4 pb-24 pt-[clamp(1rem,2vw,1.5rem)] sm:pb-6 sm:pt-[clamp(1.25rem,2.5vw,2rem)] space-y-[clamp(1rem,2.4vw,2rem)] text-foreground">
       {error ? (
         <div
           className="rounded-md border border-destructive/30 bg-destructive/5 p-3"
@@ -231,13 +231,13 @@ const ProfilePage = () => {
         </div>
         <div className="flex-1 min-w-0">
           <h1
-            className="text-role-subheading text-black dark:text-foreground break-words"
+            className="text-role-subheading text-foreground break-words"
             dir="auto"
           >
             {profileName}
           </h1>
           <p
-            className="text-role-secondary text-black/75 dark:text-muted-foreground break-all"
+            className="text-role-secondary text-muted-foreground break-all"
             dir="auto"
           >
             {profileEmail}
@@ -284,6 +284,12 @@ const ProfilePage = () => {
         />
       </div>
 
+      <div className="rounded-xl border border-secondary/35 bg-secondary/10 px-3 py-2.5">
+        <p className="text-role-micro text-foreground/78 dark:text-foreground/82">
+          {t("profile.recommendationHint")}
+        </p>
+      </div>
+
       <div className="grid gap-[clamp(1rem,2.2vw,1.9rem)] lg:grid-cols-[minmax(0,1fr)_18rem]">
         <Tabs
           value={activeTab}
@@ -293,13 +299,13 @@ const ProfilePage = () => {
           <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:inline-flex">
             <TabsTrigger
               value="preferences"
-              className="w-full sm:min-w-36 text-black dark:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-primary/15 data-[state=inactive]:hover:text-primary"
+              className="w-full sm:min-w-36 text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-primary/15 data-[state=inactive]:hover:text-primary"
             >
               {t("profile.tab.preferences")}
             </TabsTrigger>
             <TabsTrigger
               value="account"
-              className="w-full sm:min-w-36 text-black dark:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-primary/15 data-[state=inactive]:hover:text-primary"
+              className="w-full sm:min-w-36 text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-primary/15 data-[state=inactive]:hover:text-primary"
             >
               {t("profile.tab.account")}
             </TabsTrigger>
@@ -311,7 +317,7 @@ const ProfilePage = () => {
           >
             {/* Interests */}
             <div className="space-y-2.5">
-              <h3 className="text-role-caption text-black dark:text-foreground uppercase tracking-wider">
+              <h3 className="text-role-caption text-foreground uppercase tracking-wider">
                 {t("profile.preferences.interests")}
               </h3>
               <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
@@ -336,11 +342,11 @@ const ProfilePage = () => {
 
             {/* Vibe */}
             <div className="space-y-2.5">
-              <h3 className="text-role-caption text-black dark:text-foreground uppercase tracking-wider">
+              <h3 className="text-role-caption text-foreground uppercase tracking-wider">
                 {t("profile.preferences.vibe")}
               </h3>
               <div className="space-y-2 rounded-xl border border-border/70 bg-card/50 px-3 py-3 sm:px-4">
-                <div className="flex justify-between gap-3 text-xs text-black/75 dark:text-muted-foreground">
+                <div className="flex justify-between gap-3 text-xs text-muted-foreground">
                   <span>{t("profile.preferences.vibe.low")}</span>
                   <span className="text-right">
                     {t("profile.preferences.vibe.high")}
@@ -358,7 +364,7 @@ const ProfilePage = () => {
 
             {/* Districts */}
             <div className="space-y-2.5">
-              <h3 className="text-role-caption text-black dark:text-foreground uppercase tracking-wider">
+              <h3 className="text-role-caption text-foreground uppercase tracking-wider">
                 {t("profile.preferences.areas")}
               </h3>
               <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
@@ -377,7 +383,7 @@ const ProfilePage = () => {
 
             {/* Budget */}
             <div className="space-y-2.5">
-              <h3 className="text-role-caption text-black dark:text-foreground uppercase tracking-wider">
+              <h3 className="text-role-caption text-foreground uppercase tracking-wider">
                 {t("profile.preferences.budget")}
               </h3>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -408,10 +414,10 @@ const ProfilePage = () => {
           <TabsContent value="account" className="space-y-2.5 pt-4">
             <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
               <div className="mb-3 space-y-1">
-                <h3 className="text-role-secondary font-semibold text-black dark:text-foreground">
+                <h3 className="text-role-secondary font-semibold text-foreground">
                   {t("profile.account.appearanceTitle")}
                 </h3>
-                <p className="text-role-caption text-black/75 dark:text-muted-foreground">
+                <p className="text-role-caption text-muted-foreground">
                   {t("profile.account.appearanceDescription")}
                 </p>
               </div>
@@ -426,10 +432,10 @@ const ProfilePage = () => {
                 className="w-full flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 text-left transition-colors duration-200 ease-out hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
               >
                 <div className="text-left min-w-0">
-                  <p className="text-role-secondary font-semibold text-black dark:text-foreground break-words">
+                  <p className="text-role-secondary font-semibold text-foreground break-words">
                     {item.label}
                   </p>
-                  <p className="text-role-caption text-black/75 dark:text-muted-foreground break-words">
+                  <p className="text-role-caption text-muted-foreground break-words">
                     {item.description}
                   </p>
                 </div>
@@ -448,7 +454,7 @@ const ProfilePage = () => {
         </Tabs>
 
         <aside className="hidden lg:block lg:sticky lg:top-20 lg:self-start space-y-3 rounded-2xl border border-border/70 bg-card/60 p-4">
-          <h3 className="text-role-caption text-black dark:text-foreground uppercase tracking-wide">
+          <h3 className="text-role-caption text-foreground uppercase tracking-wide">
             {t("profile.quickActions.title")}
           </h3>
 
@@ -459,14 +465,14 @@ const ProfilePage = () => {
               onClick={() => navigate(item.path)}
               className="w-full flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/70 px-3 py-3 text-left transition-colors duration-200 ease-out hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
             >
-              <span className="min-w-0 text-role-secondary text-black dark:text-foreground break-words">
+              <span className="min-w-0 text-role-secondary text-foreground break-words">
                 {item.label}
               </span>
               <ChevronRight className={accountChevronClassName} />
             </button>
           ))}
 
-          <p className="pt-2 text-role-caption text-black/75 dark:text-muted-foreground">
+          <p className="pt-2 text-role-caption text-muted-foreground">
             {t("profile.quickActions.hint")}
           </p>
 

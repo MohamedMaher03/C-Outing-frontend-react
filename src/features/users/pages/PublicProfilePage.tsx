@@ -56,8 +56,8 @@ function StarRow({ rating }: { rating: number }) {
           aria-hidden="true"
           className={`h-3.5 w-3.5 ${
             index < safeRating
-              ? "text-secondary fill-secondary"
-              : "text-muted-foreground/25"
+              ? "text-secondary fill-secondary dark:text-primary dark:fill-primary"
+              : "text-muted-foreground/25 dark:text-primary/28"
           }`}
         />
       ))}
@@ -79,10 +79,10 @@ function StatPill({
     <div
       className={cn("flex min-w-0 flex-col items-center gap-0.5", className)}
     >
-      <span className="text-base font-semibold text-primary-foreground text-numeric-tabular sm:text-lg">
+      <span className="text-base font-semibold text-white text-numeric-tabular dark:text-primary-foreground sm:text-lg">
         {value}
       </span>
-      <span className="text-role-caption text-primary-foreground/68">
+      <span className="text-role-caption text-cream/80 dark:text-primary-foreground/78">
         {label}
       </span>
     </div>
@@ -134,7 +134,7 @@ const PublicProfilePage = () => {
       <div className="mx-auto flex min-h-[70vh] w-full max-w-lg items-center px-4">
         <div className="w-full space-y-4">
           <Alert variant="destructive" className="border-destructive/40">
-            <AlertCircle className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4 text-secondary dark:text-primary" />
             <AlertTitle>{t("users.publicProfile.errorTitle")}</AlertTitle>
             <AlertDescription className="break-words">
               {error ?? t("users.publicProfile.errorDescription")}
@@ -199,18 +199,21 @@ const PublicProfilePage = () => {
           onClick={() => navigate(-1)}
           className="min-h-11 touch-manipulation gap-2 px-3 text-sm text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground motion-reduce:transition-none"
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          <ArrowLeft
+            className="h-4 w-4 text-secondary dark:text-primary"
+            aria-hidden="true"
+          />
           {t("auth.back")}
         </Button>
       </div>
 
       <div className="mt-3 grid gap-7 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:px-4">
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-          <section className="relative mx-4 overflow-hidden rounded-xl border border-primary/15 bg-gradient-to-br from-[hsl(var(--primary)/0.94)] to-[hsl(var(--navy-light)/0.9)] p-4 text-primary-foreground shadow-sm sm:p-6 lg:mx-0">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_hsl(var(--secondary)/0.12),_transparent_62%)]" />
+          <section className="relative mx-4 overflow-hidden rounded-xl border border-secondary/35 bg-gradient-to-br from-[hsl(var(--primary)/0.95)] via-[hsl(var(--navy-light)/0.92)] to-[hsl(var(--navy)/0.96)] p-4 text-cream shadow-sm dark:border-primary/55 dark:from-[hsl(var(--primary)/0.96)] dark:via-[hsl(var(--gold-light)/0.86)] dark:to-[hsl(var(--gold)/0.74)] dark:text-primary-foreground sm:p-6 lg:mx-0">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_hsl(var(--secondary)/0.24),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_right,_hsl(var(--navy)/0.22),_transparent_62%)]" />
 
             <div className="relative flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
-              <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-full border border-primary-foreground/18 bg-primary-foreground/8">
+              <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-full border border-secondary/55 bg-secondary/14 dark:border-primary/55 dark:bg-primary-foreground/10">
                 {profile.avatar ? (
                   <img
                     src={profile.avatar}
@@ -218,21 +221,21 @@ const PublicProfilePage = () => {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-primary-foreground">
+                  <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-white dark:text-primary-foreground">
                     {profile.name.charAt(0)}
                   </div>
                 )}
               </div>
 
               <div className="min-w-0 flex-1 space-y-2">
-                <h1 className="text-role-subheading break-words text-primary-foreground">
+                <h1 className="text-role-subheading break-words text-white dark:text-primary-foreground">
                   {profile.name}
                 </h1>
 
                 {showMetaBadges && (
                   <div className="flex flex-wrap items-center justify-center gap-1.5 text-role-caption sm:justify-start">
                     {hasAgeBadge && (
-                      <span className="inline-flex items-center rounded-full bg-primary-foreground/12 px-2.5 py-1 font-medium">
+                      <span className="inline-flex items-center rounded-full border border-secondary/55 bg-secondary/20 px-2.5 py-1 font-medium text-white dark:border-primary-foreground/30 dark:bg-primary-foreground/10 dark:text-primary-foreground">
                         {t("users.publicProfile.ageBadge", {
                           age: profile.age ?? 0,
                         })}
@@ -240,8 +243,11 @@ const PublicProfilePage = () => {
                     )}
 
                     {isBanned && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/18 px-2.5 py-1 font-medium text-primary-foreground/92">
-                        <ShieldAlert className="h-3 w-3" aria-hidden="true" />
+                      <span className="inline-flex items-center gap-1 rounded-full border border-secondary/50 bg-secondary/22 px-2.5 py-1 font-medium text-white dark:border-primary-foreground/32 dark:bg-primary-foreground/12 dark:text-primary-foreground">
+                        <ShieldAlert
+                          className="h-3 w-3 text-secondary dark:text-primary"
+                          aria-hidden="true"
+                        />
                         {t("users.publicProfile.restricted")}
                       </span>
                     )}
@@ -249,8 +255,11 @@ const PublicProfilePage = () => {
                 )}
 
                 {joinedYear && (
-                  <div className="flex items-center justify-center gap-1 text-role-caption text-primary-foreground/74 sm:justify-start">
-                    <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                  <div className="flex items-center justify-center gap-1 text-role-caption text-white/88 sm:justify-start dark:text-primary-foreground/88">
+                    <CalendarDays
+                      className="h-3.5 w-3.5 text-secondary dark:text-primary"
+                      aria-hidden="true"
+                    />
                     <span>
                       {t("users.publicProfile.memberSince", {
                         year: joinedYear,
@@ -260,9 +269,9 @@ const PublicProfilePage = () => {
                 )}
 
                 {profile.email && (
-                  <div className="flex items-center justify-center gap-1 text-role-caption text-primary-foreground/74 sm:justify-start">
+                  <div className="flex items-center justify-center gap-1 text-role-caption text-white/88 sm:justify-start dark:text-primary-foreground/88">
                     <Mail
-                      className="h-3.5 w-3.5 flex-shrink-0"
+                      className="h-3.5 w-3.5 flex-shrink-0 text-secondary dark:text-primary"
                       aria-hidden="true"
                     />
                     <span className="break-all">{profile.email}</span>
@@ -270,14 +279,14 @@ const PublicProfilePage = () => {
                 )}
 
                 {profile.bio && (
-                  <p className="text-role-secondary max-w-prose break-words text-primary-foreground/78">
+                  <p className="text-role-secondary max-w-prose break-words text-white/92 dark:text-primary-foreground/92">
                     {profile.bio}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="relative mt-5 grid grid-cols-2 gap-3 border-t border-primary-foreground/18 pt-4 sm:grid-cols-3">
+            <div className="relative mt-5 grid grid-cols-2 gap-3 border-t border-secondary/45 pt-4 dark:border-primary-foreground/22 sm:grid-cols-3">
               <StatPill
                 value={reviewCount}
                 label={t("users.publicProfile.stats.reviews")}
@@ -302,7 +311,10 @@ const PublicProfilePage = () => {
                 className="min-h-11 w-full touch-manipulation gap-2 border-secondary/45 text-foreground transition-colors duration-200 ease-out hover:bg-secondary/12 motion-reduce:transition-none"
               >
                 <Link to="/profile">
-                  <User className="h-4 w-4" aria-hidden="true" />
+                  <User
+                    className="h-4 w-4 text-secondary dark:text-primary"
+                    aria-hidden="true"
+                  />
                   {t("users.publicProfile.viewOwnProfile")}
                 </Link>
               </Button>
@@ -324,7 +336,10 @@ const PublicProfilePage = () => {
                     disabled={isReloading}
                     className="min-h-11 w-full touch-manipulation gap-1.5 transition-colors duration-200 ease-out motion-reduce:transition-none sm:w-auto"
                   >
-                    <Activity className="h-3.5 w-3.5" aria-hidden="true" />
+                    <Activity
+                      className="h-3.5 w-3.5 text-secondary dark:text-primary"
+                      aria-hidden="true"
+                    />
                     {isReloading
                       ? t("users.publicProfile.refreshing")
                       : t("users.publicProfile.refresh")}
@@ -335,7 +350,7 @@ const PublicProfilePage = () => {
 
             {reviewsWarning && (
               <Alert className="border-border/80">
-                <AlertCircle className="h-4 w-4" />
+                <AlertCircle className="h-4 w-4 text-secondary dark:text-primary" />
                 <AlertTitle>{t("users.publicProfile.partialData")}</AlertTitle>
                 <AlertDescription className="space-y-2 text-role-secondary">
                   <p className="break-words">{reviewsWarning}</p>
@@ -380,7 +395,7 @@ const PublicProfilePage = () => {
 
           {reviews.length === 0 ? (
             <div className="rounded-xl border border-border bg-card p-6 text-center sm:p-8">
-              <MapPin className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
+              <MapPin className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50 dark:text-primary/70" />
               <p className="text-role-secondary text-muted-foreground">
                 {t("users.publicProfile.emptyReviews")}
               </p>
@@ -398,7 +413,7 @@ const PublicProfilePage = () => {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
-                      <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-secondary/80" />
+                      <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-secondary/80 dark:text-primary" />
                       <span className="truncate text-role-secondary font-semibold text-foreground">
                         {review.placeName}
                       </span>

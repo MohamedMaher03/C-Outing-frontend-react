@@ -541,7 +541,7 @@ const HomePage = () => {
             className="relative w-full max-w-2xl"
             variants={heroItemVariants}
           >
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/85 dark:text-primary" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-white/95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
             <Input
               placeholder={t("home.hero.searchPlaceholder")}
               value={search}
@@ -1273,6 +1273,7 @@ const HomePage = () => {
 
                 <div className="space-y-3">
                   <div className="relative">
+                    <Search className="pointer-events-none absolute top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground/75 [inset-inline-start:1rem]" />
                     <Input
                       value={similarSearchInput}
                       onChange={(e) => setSimilarSearchInput(e.target.value)}
@@ -1281,7 +1282,7 @@ const HomePage = () => {
                         setTimeout(() => setIsSimilarInputFocused(false), 120);
                       }}
                       placeholder={t("home.similar.searchPlaceholder")}
-                      className="h-12 rounded-2xl border-border/70 bg-card/90 focus-visible:ring-secondary/30"
+                      className="h-12 rounded-2xl border-border/70 bg-card/90 [padding-inline-start:2.75rem] focus-visible:ring-secondary/30"
                     />
 
                     <AnimatePresence>
