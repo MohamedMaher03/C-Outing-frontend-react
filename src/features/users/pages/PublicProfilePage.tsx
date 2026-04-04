@@ -234,14 +234,6 @@ const PublicProfilePage = () => {
 
                 {showMetaBadges && (
                   <div className="flex flex-wrap items-center justify-center gap-1.5 text-role-caption sm:justify-start">
-                    {hasAgeBadge && (
-                      <span className="inline-flex items-center rounded-full border border-secondary/55 bg-secondary/20 px-2.5 py-1 font-medium text-white dark:border-primary-foreground/30 dark:bg-primary-foreground/10 dark:text-primary-foreground">
-                        {t("users.publicProfile.ageBadge", {
-                          age: profile.age ?? 0,
-                        })}
-                      </span>
-                    )}
-
                     {isBanned && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-secondary/50 bg-secondary/22 px-2.5 py-1 font-medium text-white dark:border-primary-foreground/32 dark:bg-primary-foreground/12 dark:text-primary-foreground">
                         <ShieldAlert
@@ -257,7 +249,7 @@ const PublicProfilePage = () => {
                 {joinedYear && (
                   <div className="flex items-center justify-center gap-1 text-role-caption text-white/88 sm:justify-start dark:text-primary-foreground/88">
                     <CalendarDays
-                      className="h-3.5 w-3.5 text-secondary dark:text-primary"
+                      className="h-3.5 w-3.5 text-secondary dark:text-secondary"
                       aria-hidden="true"
                     />
                     <span>
@@ -271,7 +263,7 @@ const PublicProfilePage = () => {
                 {profile.email && (
                   <div className="flex items-center justify-center gap-1 text-role-caption text-white/88 sm:justify-start dark:text-primary-foreground/88">
                     <Mail
-                      className="h-3.5 w-3.5 flex-shrink-0 text-secondary dark:text-primary"
+                      className="h-3.5 w-3.5 flex-shrink-0 text-secondary dark:text-secondary"
                       aria-hidden="true"
                     />
                     <span className="break-all">{profile.email}</span>
@@ -429,7 +421,7 @@ const PublicProfilePage = () => {
                   </p>
 
                   {typeof review.sentimentScore === "number" && (
-                    <div className="text-role-caption mt-2 inline-flex rounded-full bg-secondary/12 px-2.5 py-1 text-secondary/85">
+                    <div className="text-role-caption mt-2 inline-flex rounded-full bg-secondary/12 px-2.5 py-1 text-primary/85">
                       {t("users.publicProfile.sentimentScore", {
                         score: formatNumber(
                           Number(review.sentimentScore.toFixed(1)),

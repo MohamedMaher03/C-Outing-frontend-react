@@ -24,7 +24,7 @@ export interface RegisterRequest {
   phoneNumber: string;
   /** RFC3339 date-time string sent as DateOfBirth query parameter. */
   dateOfBirth: string;
-  /** Optional user-selected avatar image; fallback is generated if missing. */
+  /** Optional user-selected avatar image. */
   avatar?: File;
 }
 
