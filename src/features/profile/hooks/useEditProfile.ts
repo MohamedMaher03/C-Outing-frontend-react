@@ -18,6 +18,7 @@ import { useI18n } from "@/components/i18n";
 
 /** Max file size: 5 MB */
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_BIO_LENGTH = 500;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const PHONE_REGEX = /^\+[0-9]{1,3}[0-9\s\-()]{8,}$/;
 
@@ -55,6 +56,7 @@ export const useEditProfile = (): UseEditProfileReturn => {
   const [formData, setFormData] = useState<EditProfileData>({
     name: "",
     email: "",
+    bio: "",
     phoneNumber: "",
     birthDate: "",
     avatarUrl: undefined,
@@ -176,6 +178,7 @@ export const useEditProfile = (): UseEditProfileReturn => {
       setError(null);
 
       const trimmedName = formData.name.trim();
+      const trimmedBio = formData.bio.trim();
       const trimmedPhone = formData.phoneNumber.trim();
 
       if (trimmedName.length < 2 || trimmedName.length > 100) {
@@ -185,6 +188,13 @@ export const useEditProfile = (): UseEditProfileReturn => {
 
       if (trimmedPhone && !PHONE_REGEX.test(trimmedPhone)) {
         setError(t("profile.edit.error.phoneFormat"));
+        return;
+      }
+
+      if (trimmedBio.length > MAX_BIO_LENGTH) {
+        setError(
+          t("profile.edit.error.bioMaxLength", { max: MAX_BIO_LENGTH }),
+        );
         return;
       }
 
@@ -208,6 +218,7 @@ export const useEditProfile = (): UseEditProfileReturn => {
         {
           ...formData,
           name: trimmedName,
+          bio: trimmedBio,
           phoneNumber: trimmedPhone,
         },
         pendingAvatarFile.current ?? undefined,

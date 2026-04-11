@@ -11,6 +11,7 @@ import {
   Activity,
   AlertCircle,
   ArrowLeft,
+  BookUser,
   CalendarDays,
   Mail,
   MapPin,
@@ -178,6 +179,7 @@ const PublicProfilePage = () => {
   const interactionCount = numberFormatter.format(
     Math.max(0, profile.totalInteractions ?? 0),
   );
+  const profileBio = profile.bio?.trim() ?? "";
 
   return (
     <main
@@ -270,11 +272,18 @@ const PublicProfilePage = () => {
                   </div>
                 )}
 
-                {profile.bio && (
-                  <p className="text-role-secondary max-w-prose break-words text-white/92 dark:text-primary-foreground/92">
-                    {profile.bio}
+                <div className="rounded-lg border border-secondary/45 bg-secondary/16 px-3 py-2.5 dark:border-primary-foreground/32 dark:bg-primary-foreground/12">
+                  <p className="inline-flex items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-white/88 dark:text-primary-foreground/86">
+                    <BookUser className="h-3.5 w-3.5" aria-hidden="true" />
+                    {t("users.publicProfile.bioLabel")}
                   </p>
-                )}
+                  <p
+                    className="mt-1.5 text-role-secondary max-w-prose break-words leading-relaxed text-white/95 dark:text-primary-foreground/94"
+                    dir="auto"
+                  >
+                    {profileBio || t("users.publicProfile.bioUnavailable")}
+                  </p>
+                </div>
               </div>
             </div>
 

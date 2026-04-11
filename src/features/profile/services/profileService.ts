@@ -8,6 +8,7 @@
  */
 
 import { profileDataSource } from "./profileDataSource";
+import { isApiError } from "@/utils/apiError";
 import {
   mapEditProfileToUpdatePayload,
   mapPreferenceUpdatePayload,
@@ -77,6 +78,9 @@ const getFallbackName = (): string => {
     : "Guest User";
 };
 
+const isMissingPreferencesEndpointError = (error: unknown): boolean =>
+  isApiError(error) && error.statusCode === 404;
+
 // ── Profile ─────────────────────────────────────────────────────────────────
 
 export const getUserProfile = async (): Promise<UserProfile> => {
@@ -96,6 +100,7 @@ export const updateUserProfile = async (
 
   const payload: UpdateUserProfileRequest = {
     name: normalizedPayload.name ?? current.name,
+    bio: normalizedPayload.bio ?? current.bio,
     phoneNumber: normalizedPayload.phoneNumber ?? current.phoneNumber,
     birthDate:
       normalizedPayload.birthDate ??
@@ -147,8 +152,18 @@ export const updateEditProfile = async (
  */
 export const getUserPreferences = async (): Promise<UserPreferences> => {
   const userId = resolveCurrentUserId();
-  const preferences = await profileDataSource.getPreferences(userId);
-  return normalizePreferences(preferences);
+  try {
+    const preferences = await profileDataSource.getPreferences(userId);
+    return normalizePreferences(preferences);
+  } catch (error) {
+    // Some environments do not expose preferences endpoints yet.
+    // Keep profile page usable with safe defaults instead of hard-failing.
+    if (isMissingPreferencesEndpointError(error)) {
+      return normalizePreferences(undefined);
+    }
+
+    throw error;
+  }
 };
 
 /**

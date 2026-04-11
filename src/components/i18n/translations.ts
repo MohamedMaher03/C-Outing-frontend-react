@@ -1108,6 +1108,10 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.quickActions.title": "Quick Actions",
     "profile.quickActions.hint":
       "You can switch tabs to manage profile preferences and account settings.",
+    "profile.bio.label": "About",
+    "profile.bio.empty":
+      "Add a short bio so people can understand your outing vibe.",
+    "profile.bio.addCta": "Add bio",
 
     "profile.edit.backToProfileAria": "Back to profile",
     "profile.edit.title": "Edit profile",
@@ -1126,6 +1130,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.edit.email": "Email",
     "profile.edit.emailHint":
       "You can view your email here, but changes are managed in account settings.",
+    "profile.edit.bio": "Bio",
+    "profile.edit.bioPlaceholder":
+      "Tell people a little about yourself and what outings you enjoy.",
+    "profile.edit.bioHint": "Keep it short and clear. Max {max} characters.",
+    "profile.edit.bioCounter": "{count}/{max}",
     "profile.edit.birthDate": "Date of birth",
     "profile.edit.birthDatePlaceholder": "Select your birth date",
     "profile.edit.cancel": "Cancel",
@@ -1139,6 +1148,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "Name must be between 2 and 100 characters.",
     "profile.edit.error.phoneFormat":
       "Phone number must include country code (e.g. +20 123 456 7890).",
+    "profile.edit.error.bioMaxLength":
+      "Bio must be {max} characters or less.",
     "profile.edit.error.birthDateRequired": "Birth date is required.",
     "profile.edit.error.birthDateInvalid": "Birth date is invalid.",
     "profile.edit.error.birthDateFuture": "Birth date cannot be in the future.",
@@ -1289,6 +1300,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "users.publicProfile.ageBadge": "Age {age}",
     "users.publicProfile.restricted": "Restricted",
     "users.publicProfile.memberSince": "Member since {year}",
+    "users.publicProfile.bioLabel": "About",
+    "users.publicProfile.bioUnavailable": "No bio added yet.",
     "users.publicProfile.stats.reviews": "Reviews",
     "users.publicProfile.stats.recent": "Recent",
     "users.publicProfile.stats.interactions": "Interactions",
@@ -2378,6 +2391,10 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.quickActions.title": "إجراءات سريعة",
     "profile.quickActions.hint":
       "يمكنك التبديل بين التبويبات لإدارة تفضيلات الملف الشخصي وإعدادات الحساب.",
+    "profile.bio.label": "نبذة",
+    "profile.bio.empty":
+      "أضف نبذة قصيرة ليعرف الآخرون أسلوب خروجاتك.",
+    "profile.bio.addCta": "إضافة نبذة",
 
     "profile.edit.backToProfileAria": "العودة إلى الملف الشخصي",
     "profile.edit.title": "تعديل الملف الشخصي",
@@ -2395,6 +2412,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.edit.email": "البريد الإلكتروني",
     "profile.edit.emailHint":
       "يمكنك عرض بريدك هنا، لكن التغييرات تتم من إعدادات الحساب.",
+    "profile.edit.bio": "النبذة",
+    "profile.edit.bioPlaceholder":
+      "اكتب نبذة قصيرة عن نفسك ونوع الخروجات التي تفضلها.",
+    "profile.edit.bioHint": "اجعلها مختصرة وواضحة. الحد الأقصى {max} حرفًا.",
+    "profile.edit.bioCounter": "{count}/{max}",
     "profile.edit.birthDate": "تاريخ الميلاد",
     "profile.edit.birthDatePlaceholder": "اختر تاريخ ميلادك",
     "profile.edit.cancel": "إلغاء",
@@ -2408,6 +2430,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.edit.error.nameLength": "يجب أن يكون الاسم بين حرفين و100 حرف.",
     "profile.edit.error.phoneFormat":
       "يجب أن يتضمن رقم الهاتف رمز الدولة (مثل +20 123 456 7890).",
+    "profile.edit.error.bioMaxLength":
+      "يجب ألا تتجاوز النبذة {max} حرفًا.",
     "profile.edit.error.birthDateRequired": "تاريخ الميلاد مطلوب.",
     "profile.edit.error.birthDateInvalid": "تاريخ الميلاد غير صالح.",
     "profile.edit.error.birthDateFuture":
@@ -2554,6 +2578,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "users.publicProfile.ageBadge": "العمر {age}",
     "users.publicProfile.restricted": "مقيّد",
     "users.publicProfile.memberSince": "عضو منذ {year}",
+    "users.publicProfile.bioLabel": "نبذة",
+    "users.publicProfile.bioUnavailable": "لا توجد نبذة مضافة بعد.",
     "users.publicProfile.stats.reviews": "المراجعات",
     "users.publicProfile.stats.recent": "الأحدث",
     "users.publicProfile.stats.interactions": "التفاعلات",

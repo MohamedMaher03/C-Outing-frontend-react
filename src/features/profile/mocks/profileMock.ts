@@ -38,6 +38,7 @@ export const profileMock: ProfileDataSource = {
       ...mockProfile,
       ...payload,
       name: payload.name ?? mockProfile.name,
+      bio: payload.bio ?? mockProfile.bio,
       phoneNumber: payload.phoneNumber ?? mockProfile.phoneNumber,
       birthDate: payload.birthDate ?? mockProfile.birthDate,
       updatedAt: new Date().toISOString(),
@@ -114,6 +115,7 @@ export const profileMock: ProfileDataSource = {
       id: "",
       name: "Guest User",
       email: "",
+      bio: "",
       phoneNumber: "",
     });
     mockPreferences = clone(MOCK_PREFERENCES);

@@ -62,6 +62,8 @@ type ProfileStatCardProps = {
   label: string;
   value: string | number;
   numeric?: boolean;
+  hint?: string;
+  stretch?: boolean;
 };
 
 const ProfileStatCard = ({
@@ -69,9 +71,13 @@ const ProfileStatCard = ({
   label,
   value,
   numeric = false,
+  hint,
+  stretch = false,
 }: ProfileStatCardProps) => {
   return (
-    <Card className="rounded-2xl border-border/70 bg-gradient-to-br from-card to-muted/30 shadow-sm">
+    <Card
+      className={`${stretch ? "h-full " : ""}rounded-2xl border-border/70 bg-gradient-to-br from-card to-muted/30 shadow-sm`}
+    >
       <CardContent className="p-4">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Icon className="h-4 w-4" />
@@ -86,6 +92,11 @@ const ProfileStatCard = ({
         >
           {value}
         </p>
+        {hint ? (
+          <p className="text-role-micro text-foreground/78 dark:text-foreground/82 mt-3">
+            {hint}
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -125,12 +136,6 @@ const ProfilePage = () => {
       district,
     );
 
-  const getRoleLabel = (role: number | undefined): string => {
-    if (role === 2) return t("profile.role.admin");
-    if (role === 1) return t("profile.role.moderator");
-    return t("profile.role.user");
-  };
-
   const accountItems = useMemo(
     () =>
       ACCOUNT_ITEMS.map((item) => ({
@@ -155,6 +160,8 @@ const ProfilePage = () => {
 
   const profileName = profile?.name || fallbackUserName;
   const profileEmail = profile?.email || "user@couting.app";
+  const profileBio = profile?.bio?.trim() ?? "";
+  const hasProfileBio = profileBio.length > 0;
   const profilePhone = profile?.phoneNumber || t("profile.stat.phoneMissing");
   const profileAge = profile?.age != null ? formatNumber(profile.age) : "-";
   const profileInteractions = formatNumber(profile?.totalInteractions ?? 0);
@@ -242,10 +249,35 @@ const ProfilePage = () => {
           >
             {profileEmail}
           </p>
+          <div className="mt-3 rounded-xl border border-secondary/25 bg-secondary/10 px-3.5 py-3 dark:border-primary/30 dark:bg-primary/10">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-primary/85 dark:text-primary-foreground/88">
+              {t("profile.bio.label")}
+            </p>
+            {hasProfileBio ? (
+              <p
+                className="mt-1.5 text-role-secondary leading-relaxed text-foreground/88 dark:text-foreground/90 break-words"
+                dir="auto"
+              >
+                {profileBio}
+              </p>
+            ) : (
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <p className="text-role-caption text-muted-foreground">
+                  {t("profile.bio.empty")}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/profile/edit")}
+                  className="min-h-11 px-3 sm:min-h-9"
+                >
+                  {t("profile.bio.addCta")}
+                </Button>
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2 mt-2">
-            <span className="text-role-caption px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-              {getRoleLabel(profile?.role)}
-            </span>
             {profile?.isBanned ? (
               <span className="text-role-caption px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
                 {t("profile.status.banned")}
@@ -264,30 +296,28 @@ const ProfilePage = () => {
         </Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3 lg:gap-4">
-        <ProfileStatCard
-          icon={Phone}
-          label={t("profile.stat.phone")}
-          value={profilePhone}
-        />
-        <ProfileStatCard
-          icon={Cake}
-          label={t("profile.stat.age")}
-          value={profileAge}
-          numeric
-        />
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-4">
+        <div className="grid gap-3 lg:gap-4">
+          <ProfileStatCard
+            icon={Phone}
+            label={t("profile.stat.phone")}
+            value={profilePhone}
+          />
+          <ProfileStatCard
+            icon={Cake}
+            label={t("profile.stat.age")}
+            value={profileAge}
+            numeric
+          />
+        </div>
         <ProfileStatCard
           icon={Activity}
           label={t("profile.stat.activity")}
           value={profileInteractions}
           numeric
+          hint={t("profile.recommendationHint")}
+          stretch
         />
-      </div>
-
-      <div className="rounded-xl border border-secondary/35 bg-secondary/10 px-3 py-2.5">
-        <p className="text-role-micro text-foreground/78 dark:text-foreground/82">
-          {t("profile.recommendationHint")}
-        </p>
       </div>
 
       <div className="grid gap-[clamp(1rem,2.2vw,1.9rem)] lg:grid-cols-[minmax(0,1fr)_18rem]">

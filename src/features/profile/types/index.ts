@@ -8,6 +8,7 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  bio: string;
   phoneNumber: string;
   birthDate: string;
   age: number;
@@ -22,6 +23,7 @@ export interface UserProfile {
 
 export interface UpdateUserProfileRequest {
   name?: string;
+  bio?: string;
   phoneNumber?: string;
   birthDate?: string;
 }
@@ -44,6 +46,7 @@ export interface UpdatePreferencesRequest {
 export interface EditProfileData {
   name: string;
   email: string;
+  bio: string;
   phoneNumber: string;
   birthDate: string;
   avatarUrl?: string;

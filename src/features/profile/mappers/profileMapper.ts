@@ -11,6 +11,7 @@ import type {
 
 const DEFAULT_NAME = "Guest User";
 const MAX_NAME_LENGTH = 100;
+const MAX_BIO_LENGTH = 500;
 const MAX_PHONE_LENGTH = 30;
 const MAX_LIST_ITEM_LENGTH = 80;
 const MAX_INTERESTS = 20;
@@ -47,6 +48,11 @@ const isNonEmptyString = (value: unknown): value is string =>
 const sanitizeName = (value: unknown): string => {
   if (!isNonEmptyString(value)) return DEFAULT_NAME;
   return value.trim().slice(0, MAX_NAME_LENGTH);
+};
+
+const sanitizeBio = (value: unknown): string => {
+  if (typeof value !== "string") return "";
+  return value.trim().slice(0, MAX_BIO_LENGTH);
 };
 
 const sanitizePhone = (value: unknown): string => {
@@ -109,6 +115,7 @@ export const normalizeProfile = (
     id: typeof profile?.id === "string" ? profile.id : "",
     name: sanitizeName(profile?.name ?? fallback),
     email: typeof profile?.email === "string" ? profile.email.trim() : "",
+    bio: sanitizeBio(profile?.bio),
     phoneNumber: sanitizePhone(profile?.phoneNumber),
     birthDate: normalizeBirthDateForInput(profile?.birthDate),
     age:
@@ -140,6 +147,7 @@ export const mapProfileToEditProfile = (
 ): EditProfileData => ({
   name: sanitizeName(profile.name),
   email: profile.email,
+  bio: sanitizeBio(profile.bio),
   phoneNumber: sanitizePhone(profile.phoneNumber),
   birthDate: normalizeBirthDateForInput(profile.birthDate),
   avatarUrl: profile.avatarUrl,
@@ -152,6 +160,10 @@ export const mapEditProfileToUpdatePayload = (
 
   if (input.name !== undefined) {
     payload.name = sanitizeName(input.name);
+  }
+
+  if (input.bio !== undefined) {
+    payload.bio = sanitizeBio(input.bio);
   }
 
   if (input.phoneNumber !== undefined) {
@@ -172,6 +184,10 @@ export const mapUpdateProfilePayload = (
 
   if (input.name !== undefined) {
     payload.name = sanitizeName(input.name);
+  }
+
+  if (input.bio !== undefined) {
+    payload.bio = sanitizeBio(input.bio);
   }
 
   if (input.phoneNumber !== undefined) {

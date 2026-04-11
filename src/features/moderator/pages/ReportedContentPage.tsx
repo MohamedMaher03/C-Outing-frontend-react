@@ -416,7 +416,7 @@ const ReportedContentPage = () => {
                                 handleStatusChange(report.id, "investigating")
                               }
                               disabled={Boolean(isStatusPending)}
-                              className="text-role-secondary gap-1 min-h-11 sm:h-8 text-foreground border-secondary/40 hover:bg-secondary/20"
+                              className="text-role-secondary gap-1 min-h-11 sm:h-8 text-foreground border-secondary/40 hover:bg-secondary/20 dark:hover:bg-primary"
                             >
                               {isStatusPending ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -449,7 +449,7 @@ const ReportedContentPage = () => {
                               handleStatusChange(report.id, "resolved")
                             }
                             disabled={Boolean(isStatusPending)}
-                            className="text-role-secondary gap-1 min-h-11 sm:h-8 ml-0 sm:ml-auto text-primary border-primary/30 hover:bg-primary/10"
+                            className="text-role-secondary gap-1 min-h-11 sm:h-8 ml-0 sm:ml-auto text-primary border-primary/30 hover:bg-primary/10 dark:hover:bg-primary"
                           >
                             {isStatusPending ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -471,7 +471,7 @@ const ReportedContentPage = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="text-role-secondary gap-1.5 min-h-11 sm:h-8 text-destructive border-destructive/30 hover:bg-destructive/5"
+                                    className="text-role-secondary gap-1.5 min-h-11 sm:h-8 text-destructive border-destructive/30 hover:bg-destructive/5 dark:hover:bg-destructive"
                                     disabled={isDeletePending}
                                   >
                                     {isDeletePending ? (
@@ -518,7 +518,7 @@ const ReportedContentPage = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="text-role-secondary gap-1.5 min-h-11 sm:h-8 border-secondary/40 hover:bg-secondary/20"
+                                    className="text-role-secondary gap-1.5 min-h-11 sm:h-8 border-secondary/40 hover:bg-secondary/20 dark:hover:bg-primary"
                                     disabled={isWarnPending}
                                   >
                                     {isWarnPending ? (
@@ -575,7 +575,7 @@ const ReportedContentPage = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="text-role-secondary gap-1.5 min-h-11 sm:h-8 text-destructive border-destructive/30 hover:bg-destructive/5"
+                                    className="text-role-secondary gap-1.5 min-h-11 sm:h-8 text-destructive border-destructive/30 hover:bg-destructive/5 dark:hover:bg-destructive"
                                     disabled={isBanPending}
                                   >
                                     {isBanPending ? (

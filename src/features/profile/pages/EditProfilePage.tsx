@@ -213,6 +213,37 @@ const EditProfilePage = () => {
               </p>
             </div>
 
+            <div className="space-y-2 sm:col-span-2">
+              <Label
+                htmlFor="bio"
+                className="text-role-secondary font-semibold text-foreground"
+              >
+                {t("profile.edit.bio")}
+              </Label>
+              <textarea
+                id="bio"
+                name="bio"
+                value={formData.bio}
+                onChange={handleChange}
+                maxLength={500}
+                rows={4}
+                dir="auto"
+                className="flex min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder={t("profile.edit.bioPlaceholder")}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-role-caption text-muted-foreground">
+                  {t("profile.edit.bioHint", { max: 500 })}
+                </p>
+                <p className="text-role-caption text-muted-foreground text-numeric-tabular">
+                  {t("profile.edit.bioCounter", {
+                    count: formData.bio.length,
+                    max: 500,
+                  })}
+                </p>
+              </div>
+            </div>
+
             <div className="space-y-2 sm:col-span-1">
               <Label
                 htmlFor="birthDate"

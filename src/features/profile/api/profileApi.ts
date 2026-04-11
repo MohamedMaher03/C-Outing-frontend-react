@@ -55,6 +55,9 @@ export const profileApi = {
       if (payload.name !== undefined) {
         formData.append("Name", payload.name);
       }
+      if (payload.bio !== undefined) {
+        formData.append("Bio", payload.bio);
+      }
       if (payload.birthDate !== undefined) {
         formData.append("BirthDate", toDateOnly(payload.birthDate));
       }
@@ -73,6 +76,9 @@ export const profileApi = {
     const formBody = new URLSearchParams();
     if (payload.name !== undefined) {
       formBody.append("Name", payload.name);
+    }
+    if (payload.bio !== undefined) {
+      formBody.append("Bio", payload.bio);
     }
     if (payload.birthDate !== undefined) {
       formBody.append("BirthDate", toDateOnly(payload.birthDate));

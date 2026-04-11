@@ -29,6 +29,7 @@ export const MOCK_PROFILE: UserProfile = {
   id: "123e4567-e89b-12d3-a456-426614174000",
   name: "Ahmed Khalil",
   email: "ahmed@couting.app",
+  bio: "Cairo explorer sharing favorite hangouts and hidden gems.",
   phoneNumber: "+20 123 456 7890",
   birthDate: "1998-07-12T00:00:00.000Z",
   age: 27,
@@ -51,6 +52,7 @@ export const MOCK_PREFERENCES: UserPreferences = {
 export const MOCK_EDIT_PROFILE: EditProfileData = {
   name: "Ahmed Khalil",
   email: "ahmed@couting.app",
+  bio: "Cairo explorer sharing favorite hangouts and hidden gems.",
   phoneNumber: "+20 123 456 7890",
   birthDate: "1998-07-12",
   avatarUrl: undefined,
