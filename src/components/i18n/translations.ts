@@ -1148,8 +1148,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "Name must be between 2 and 100 characters.",
     "profile.edit.error.phoneFormat":
       "Phone number must include country code (e.g. +20 123 456 7890).",
-    "profile.edit.error.bioMaxLength":
-      "Bio must be {max} characters or less.",
+    "profile.edit.error.bioMaxLength": "Bio must be {max} characters or less.",
     "profile.edit.error.birthDateRequired": "Birth date is required.",
     "profile.edit.error.birthDateInvalid": "Birth date is invalid.",
     "profile.edit.error.birthDateFuture": "Birth date cannot be in the future.",
@@ -2392,8 +2391,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.quickActions.hint":
       "يمكنك التبديل بين التبويبات لإدارة تفضيلات الملف الشخصي وإعدادات الحساب.",
     "profile.bio.label": "نبذة",
-    "profile.bio.empty":
-      "أضف نبذة قصيرة ليعرف الآخرون أسلوب خروجاتك.",
+    "profile.bio.empty": "أضف نبذة قصيرة ليعرف الآخرون أسلوب خروجاتك.",
     "profile.bio.addCta": "إضافة نبذة",
 
     "profile.edit.backToProfileAria": "العودة إلى الملف الشخصي",
@@ -2430,8 +2428,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.edit.error.nameLength": "يجب أن يكون الاسم بين حرفين و100 حرف.",
     "profile.edit.error.phoneFormat":
       "يجب أن يتضمن رقم الهاتف رمز الدولة (مثل +20 123 456 7890).",
-    "profile.edit.error.bioMaxLength":
-      "يجب ألا تتجاوز النبذة {max} حرفًا.",
+    "profile.edit.error.bioMaxLength": "يجب ألا تتجاوز النبذة {max} حرفًا.",
     "profile.edit.error.birthDateRequired": "تاريخ الميلاد مطلوب.",
     "profile.edit.error.birthDateInvalid": "تاريخ الميلاد غير صالح.",
     "profile.edit.error.birthDateFuture":

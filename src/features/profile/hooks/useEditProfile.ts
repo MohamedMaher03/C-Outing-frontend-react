@@ -192,9 +192,7 @@ export const useEditProfile = (): UseEditProfileReturn => {
       }
 
       if (trimmedBio.length > MAX_BIO_LENGTH) {
-        setError(
-          t("profile.edit.error.bioMaxLength", { max: MAX_BIO_LENGTH }),
-        );
+        setError(t("profile.edit.error.bioMaxLength", { max: MAX_BIO_LENGTH }));
         return;
       }
 
