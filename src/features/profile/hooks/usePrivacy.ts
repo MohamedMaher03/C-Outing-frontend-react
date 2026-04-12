@@ -6,7 +6,7 @@
  * which path is active in the service layer.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getPrivacySettings,
@@ -15,6 +15,7 @@ import {
 } from "@/features/profile/services/profileService";
 import type { PrivacySettings } from "@/features/profile/types";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UsePrivacyReturn {
   /** Current privacy toggle values */
@@ -33,9 +34,12 @@ interface UsePrivacyReturn {
   handleSave: () => Promise<void>;
   /** Permanently delete the account */
   handleDeleteAccount: () => Promise<void>;
+  /** Re-fetch privacy settings after an error */
+  reloadSettings: () => Promise<void>;
 }
 
 export const usePrivacy = (): UsePrivacyReturn => {
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
@@ -48,42 +52,73 @@ export const usePrivacy = (): UsePrivacyReturn => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const saveInFlightRef = useRef(false);
+  const deleteInFlightRef = useRef(false);
+  const latestLoadRunRef = useRef(0);
+
+  const reloadSettings = useCallback(async () => {
+    const runId = ++latestLoadRunRef.current;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getPrivacySettings();
+
+      if (runId !== latestLoadRunRef.current) {
+        return;
+      }
+
+      setPrivacySettings(data);
+    } catch (err) {
+      if (runId !== latestLoadRunRef.current) {
+        return;
+      }
+
+      setError(getErrorMessage(err, t("profile.privacy.error.load")));
+    } finally {
+      if (runId === latestLoadRunRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [t]);
 
   // Load current settings on mount
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getPrivacySettings();
-        setPrivacySettings(data);
-      } catch (err) {
-        setError(getErrorMessage(err, "Failed to load privacy settings"));
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+    void reloadSettings();
+  }, [reloadSettings]);
 
   const toggleSetting = (key: keyof PrivacySettings) => {
+    setError((prev) => (prev ? null : prev));
     setPrivacySettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleSave = async () => {
+    if (saveInFlightRef.current || deleting || saving) {
+      return;
+    }
+
+    saveInFlightRef.current = true;
+
     try {
       setSaving(true);
       setError(null);
       await updatePrivacySettings(privacySettings);
       navigate("/profile");
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to save privacy settings"));
+      setError(getErrorMessage(err, t("profile.privacy.error.save")));
     } finally {
+      saveInFlightRef.current = false;
       setSaving(false);
     }
   };
 
   const handleDeleteAccount = async () => {
+    if (deleteInFlightRef.current || saving || deleting) {
+      return;
+    }
+
+    deleteInFlightRef.current = true;
+
     try {
       setDeleting(true);
       setError(null);
@@ -93,8 +128,9 @@ export const usePrivacy = (): UsePrivacyReturn => {
       localStorage.removeItem("authUser");
       navigate("/login");
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to delete account"));
+      setError(getErrorMessage(err, t("profile.privacy.error.delete")));
     } finally {
+      deleteInFlightRef.current = false;
       setDeleting(false);
     }
   };
@@ -108,5 +144,6 @@ export const usePrivacy = (): UsePrivacyReturn => {
     toggleSetting,
     handleSave,
     handleDeleteAccount,
+    reloadSettings,
   };
 };

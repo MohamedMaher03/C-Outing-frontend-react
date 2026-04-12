@@ -24,7 +24,7 @@ export interface RegisterRequest {
   phoneNumber: string;
   /** RFC3339 date-time string sent as DateOfBirth query parameter. */
   dateOfBirth: string;
-  /** Optional user-selected avatar image; fallback is generated if missing. */
+  /** Optional user-selected avatar image. */
   avatar?: File;
 }
 
@@ -99,10 +99,7 @@ export interface LoginField {
 
 /** Sign-up form field configuration (icon stored as component reference) */
 export interface SignUpFieldConfig {
-  id: keyof Omit<
-    SignUpFormData,
-    "password" | "confirmPassword" | "acceptTerms" | "avatar"
-  >;
+  id: keyof Omit<SignUpFormData, "password" | "confirmPassword" | "avatar">;
   label: string;
   placeholder: string;
   type?: string;
@@ -117,6 +114,7 @@ export interface FormFieldProps {
   type?: string;
   icon?: React.ReactNode;
   error?: string;
+  disabled?: boolean;
   register: UseFormRegisterReturn;
 }
 
@@ -125,5 +123,6 @@ export interface PasswordInputProps {
   id: string;
   placeholder?: string;
   error?: boolean;
+  disabled?: boolean;
   register: UseFormRegisterReturn;
 }

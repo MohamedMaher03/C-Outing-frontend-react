@@ -7,6 +7,7 @@ export { useFavorites } from "./hooks/useFavorites";
 
 // API layer (exposed for advanced usage / testing)
 export { favoritesApi } from "./api/favoritesApi";
+export type { FavoritesDataSource } from "./types/dataSource";
 
 // Services
 export {

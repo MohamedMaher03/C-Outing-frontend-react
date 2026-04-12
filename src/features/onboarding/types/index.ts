@@ -11,3 +11,5 @@ export interface OnboardingPreferences {
   districts: string[];
   budget: PriceLevel | null;
 }
+
+export type { OnboardingDataSource } from "./dataSource";

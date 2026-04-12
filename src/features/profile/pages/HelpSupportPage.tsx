@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -6,204 +6,327 @@ import {
   Mail,
   ChevronRight,
   Search,
+  type LucideIcon,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/i18n";
+
+const SUPPORT_EMAIL = "farouqdiaaeldin@gmail.com";
+const SUPPORT_EMAIL_HREF = `mailto:${SUPPORT_EMAIL}`;
+
+type ContactOption = {
+  icon: LucideIcon;
+  labelKey: string;
+  action: () => void;
+  available: boolean;
+};
+
+const openSupportEmail = () => {
+  window.location.href = SUPPORT_EMAIL_HREF;
+};
+
+const CONTACT_OPTIONS: ContactOption[] = [
+  {
+    icon: Mail,
+    labelKey: "profile.help.contact.emailLabel",
+    action: openSupportEmail,
+    available: true,
+  },
+];
+
+type FaqItem = {
+  id: string;
+  questionKey: string;
+  answerKey: string;
+};
+
+const FAQS: FaqItem[] = [
+  {
+    id: "recommendations",
+    questionKey: "profile.help.faq.recommendations.question",
+    answerKey: "profile.help.faq.recommendations.answer",
+  },
+  {
+    id: "update-preferences",
+    questionKey: "profile.help.faq.updatePreferences.question",
+    answerKey: "profile.help.faq.updatePreferences.answer",
+  },
+  {
+    id: "manage-favorites",
+    questionKey: "profile.help.faq.manageFavorites.question",
+    answerKey: "profile.help.faq.manageFavorites.answer",
+  },
+  {
+    id: "write-review",
+    questionKey: "profile.help.faq.writeReview.question",
+    answerKey: "profile.help.faq.writeReview.answer",
+  },
+  {
+    id: "notifications",
+    questionKey: "profile.help.faq.notifications.question",
+    answerKey: "profile.help.faq.notifications.answer",
+  },
+  {
+    id: "privacy-settings",
+    questionKey: "profile.help.faq.privacySettings.question",
+    answerKey: "profile.help.faq.privacySettings.answer",
+  },
+  {
+    id: "delete-account",
+    questionKey: "profile.help.faq.deleteAccount.question",
+    answerKey: "profile.help.faq.deleteAccount.answer",
+  },
+];
+
+const QUICK_TOPICS = [
+  {
+    id: "recommendations",
+    labelKey: "profile.help.topic.recommendations.label",
+    queryKey: "profile.help.topic.recommendations.query",
+  },
+  {
+    id: "reviews",
+    labelKey: "profile.help.topic.reviews.label",
+    queryKey: "profile.help.topic.reviews.query",
+  },
+  {
+    id: "privacy",
+    labelKey: "profile.help.topic.privacy.label",
+    queryKey: "profile.help.topic.privacy.query",
+  },
+  {
+    id: "account",
+    labelKey: "profile.help.topic.account.label",
+    queryKey: "profile.help.topic.account.query",
+  },
+];
 
 const HelpSupportPage = () => {
   const navigate = useNavigate();
+  const { t, direction } = useI18n();
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
-  const contactOptions = [
-    {
-      icon: Mail,
-      label: "Email Support",
-      description: "farouqdiaaeldin@gmail.com",
-      action: () => (window.location.href = "mailto:farouqdiaaeldin@gmail.com"),
-      available: true,
-    },
-  ];
+  const quickTopics = useMemo(
+    () =>
+      QUICK_TOPICS.map((topic) => ({
+        ...topic,
+        label: t(topic.labelKey),
+        query: t(topic.queryKey),
+      })),
+    [t],
+  );
 
-  const faqs = [
-    {
-      question: "How do personalized recommendations work?",
-      answer:
-        "Recommendations are generated from your onboarding preferences, selected vibe, districts, and your activity such as saved places and reviews.",
-    },
-    {
-      question: "How can I change my interests, vibe, budget, or districts?",
-      answer:
-        "Open Profile and go to Preferences, then update your interests, vibe slider, budget level, and preferred districts. Your future recommendations update based on these changes.",
-    },
-    {
-      question: "How do I save and manage favorite places?",
-      answer:
-        "Tap the save or heart action on a place to add it to Favorites. You can remove it any time from the Favorites screen or directly from the place card.",
-    },
-    {
-      question: "How do I write or edit my review for a place?",
-      answer:
-        "Open the place details page and submit a review with your rating and comment. If you already reviewed that place, use the edit option on your review.",
-    },
-    {
-      question: "How can I control my notifications?",
-      answer:
-        "Go to Profile > Notifications to enable or disable push and email updates such as recommendation alerts, favorite updates, review responses, and monthly digest emails.",
-    },
-    {
-      question: "What privacy settings can I change?",
-      answer:
-        "In Profile > Privacy & Data, you can choose whether your favorites and activity are visible, and whether data collection and personalization are enabled.",
-    },
-    {
-      question: "How do I delete my account?",
-      answer:
-        "Go to Profile > Privacy & Data and choose Delete Account. This action is permanent and removes your profile data, favorites, and preferences.",
-    },
-  ];
+  const localizedFaqs = useMemo(
+    () =>
+      FAQS.map((faq) => ({
+        id: faq.id,
+        question: t(faq.questionKey),
+        answer: t(faq.answerKey),
+      })),
+    [t],
+  );
 
-  const filteredFaqs = searchQuery
-    ? faqs.filter(
-        (faq) =>
-          faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          faq.answer.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : faqs;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
 
-  const toggleFaq = (index: number) => {
-    setExpandedFaq(expandedFaq === index ? null : index);
-  };
+  const filteredFaqs = useMemo(() => {
+    if (!normalizedQuery) {
+      return localizedFaqs;
+    }
+
+    return localizedFaqs.filter(
+      (faq) =>
+        faq.question.toLowerCase().includes(normalizedQuery) ||
+        faq.answer.toLowerCase().includes(normalizedQuery),
+    );
+  }, [localizedFaqs, normalizedQuery]);
+
+  const toggleFaq = useCallback((faqId: string) => {
+    setExpandedFaq((previous) => (previous === faqId ? null : faqId));
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-4">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => navigate("/profile")}
-            className="p-2 hover:bg-muted rounded-full transition-colors"
+            aria-label={t("profile.help.backToProfileAria")}
+            className="h-11 w-11 rounded-full"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
+          </Button>
           <div className="flex items-center gap-3">
             <HelpCircle className="h-5 w-5 text-secondary" />
-            <h1 className="text-xl font-bold text-foreground">
-              Help & Support
+            <h1 className="text-role-subheading text-foreground">
+              {t("profile.help.title")}
             </h1>
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 pb-8 pt-[clamp(1rem,2vw,1.5rem)] grid gap-[clamp(1rem,2.2vw,1.9rem)] lg:grid-cols-[17rem_minmax(0,1fr)]">
         {/* Contact Support */}
-        <div className="space-y-4">
-          <h2 className="text-base font-semibold text-foreground">
-            Contact Support
+        <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+          <h2 className="text-role-body font-semibold text-foreground">
+            {t("profile.help.contactTitle")}
           </h2>
           <div className="grid gap-3">
-            {contactOptions.map((option) => (
-              <button
-                key={option.label}
-                onClick={option.action}
-                disabled={!option.available}
+            {CONTACT_OPTIONS.map((option) => (
+              <Card
+                key={option.labelKey}
                 className={cn(
-                  "flex items-center justify-between p-4 rounded-xl bg-card border border-border transition-colors",
+                  "rounded-xl border-border transition-colors",
                   option.available
                     ? "hover:bg-muted/50"
                     : "opacity-50 cursor-not-allowed",
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                    <option.icon className="h-5 w-5 text-secondary" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-foreground">
-                      {option.label}
-                      {!option.available && (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          (Coming Soon)
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {option.description}
-                    </p>
-                  </div>
-                </div>
-                {option.available && (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                )}
-              </button>
+                <CardContent className="p-0">
+                  <button
+                    type="button"
+                    onClick={option.action}
+                    disabled={!option.available}
+                    className="flex w-full items-center justify-between p-4 text-left transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                        <option.icon className="h-5 w-5 text-secondary" />
+                      </div>
+                      <div className="text-left min-w-0">
+                        <p className="text-role-secondary font-semibold text-foreground break-words">
+                          {t(option.labelKey)}
+                          {!option.available && (
+                            <span className="ml-2 text-role-caption text-muted-foreground">
+                              ({t("profile.help.contact.comingSoon")})
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-role-caption text-muted-foreground break-all">
+                          {SUPPORT_EMAIL}
+                        </p>
+                      </div>
+                    </div>
+                    {option.available && (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+                </CardContent>
+              </Card>
             ))}
           </div>
-        </div>
+
+          <Card className="rounded-xl border-border/70 bg-card/60">
+            <CardContent className="space-y-2 p-3 text-center lg:text-left">
+              <p className="text-role-caption text-muted-foreground">
+                {t("profile.help.version", { version: "1.0.0" })}
+              </p>
+              <p className="text-role-caption text-muted-foreground/80">
+                {t("profile.help.replyTime")}
+              </p>
+            </CardContent>
+          </Card>
+        </aside>
 
         {/* FAQ Section */}
-        <div className="space-y-4">
+        <section className="space-y-[clamp(0.75rem,1.8vw,1.25rem)]">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-foreground">
-              Frequently Asked Questions
+            <h2 className="text-role-body font-semibold text-foreground">
+              {t("profile.help.faqTitle")}
             </h2>
           </div>
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search
+              className={cn(
+                "absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground",
+                direction === "rtl" ? "right-3" : "left-3",
+              )}
+            />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search FAQs..."
-              className="pl-10"
+              placeholder={t("profile.help.searchPlaceholder")}
+              maxLength={120}
+              className={cn(direction === "rtl" ? "pr-10" : "pl-10")}
             />
           </div>
 
+          <div className="flex flex-wrap gap-2">
+            {quickTopics.map((topic) => (
+              <Button
+                key={topic.id}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setSearchQuery(topic.query)}
+                className="rounded-full border-border/80 bg-card/60 px-3"
+              >
+                {topic.label}
+              </Button>
+            ))}
+          </div>
+
           {/* FAQ Items */}
-          <div className="space-y-2">
+          <div className="overflow-hidden rounded-2xl border border-border/80 bg-card/50">
             {filteredFaqs.length > 0 ? (
-              filteredFaqs.map((faq, index) => (
-                <div
-                  key={index}
-                  className="rounded-xl bg-card border border-border overflow-hidden"
-                >
-                  <button
-                    onClick={() => toggleFaq(index)}
-                    className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
+              filteredFaqs.map((faq) => {
+                const panelId = `faq-panel-${faq.id}`;
+                const isExpanded = expandedFaq === faq.id;
+
+                return (
+                  <div
+                    key={faq.id}
+                    className="border-b border-border/70 last:border-b-0"
                   >
-                    <p className="text-sm font-medium text-foreground text-left">
-                      {faq.question}
-                    </p>
-                    <ChevronRight
-                      className={cn(
-                        "h-4 w-4 text-muted-foreground transition-transform",
-                        expandedFaq === index && "rotate-90",
-                      )}
-                    />
-                  </button>
-                  {expandedFaq === index && (
-                    <div className="px-4 pb-4 pt-0">
-                      <p className="text-sm text-muted-foreground">
-                        {faq.answer}
+                    <button
+                      type="button"
+                      onClick={() => toggleFaq(faq.id)}
+                      aria-expanded={isExpanded}
+                      aria-controls={panelId}
+                      className="w-full flex items-center justify-between px-4 py-4 hover:bg-muted/25 transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+                    >
+                      <p className="text-role-secondary font-semibold text-foreground text-left break-words pr-3">
+                        {faq.question}
                       </p>
-                    </div>
-                  )}
-                </div>
-              ))
+                      <ChevronRight
+                        className={cn(
+                          "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out motion-reduce:transition-none",
+                          isExpanded && "rotate-90",
+                        )}
+                      />
+                    </button>
+                    {isExpanded && (
+                      <div id={panelId} className="px-4 pb-4 pt-0">
+                        <p className="text-role-secondary text-muted-foreground break-words">
+                          {faq.answer}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
             ) : (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">
-                  No FAQs found matching "{searchQuery}"
+              <div className="text-center py-10">
+                <p className="text-role-secondary text-muted-foreground">
+                  {t("profile.help.noResults", {
+                    query: searchQuery,
+                    first: t("profile.help.topic.reviews.query"),
+                    second: t("profile.help.topic.privacy.query"),
+                  })}
                 </p>
               </div>
             )}
           </div>
-        </div>
-
-        {/* App Version */}
-        <div className="text-center pt-4">
-          <p className="text-xs text-muted-foreground">C-Outing App v1.0.0</p>
-        </div>
+        </section>
       </div>
     </div>
   );

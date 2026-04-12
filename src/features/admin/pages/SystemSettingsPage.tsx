@@ -12,70 +12,115 @@ import {
   MessageSquare,
   AlertTriangle,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import {
+  AdminErrorBanner,
+  AdminPageHeader,
+  AdminPageLayout,
+  AdminSection,
+} from "@/features/admin/components";
 import { useSystemSettings } from "@/features/admin/hooks/useSystemSettings";
+import { useI18n } from "@/components/i18n";
 
 const SystemSettingsPage = () => {
-  const { settings, loading, saving, saved, error, update, handleSave } =
-    useSystemSettings();
+  const navigate = useNavigate();
+  const { t } = useI18n();
+  const {
+    settings,
+    loading,
+    saving,
+    saved,
+    error,
+    hasUnsavedChanges,
+    retry,
+    update,
+    handleSave,
+  } = useSystemSettings();
 
-  if (loading || !settings) {
-    return <LoadingSpinner size="md" text="Loading settings..." fullScreen />;
+  const settingItems = [
+    {
+      key: "enableNotifications" as const,
+      labelKey: "admin.settings.toggle.notifications.label",
+      descriptionKey: "admin.settings.toggle.notifications.description",
+      icon: Bell,
+    },
+    {
+      key: "enableReviews" as const,
+      labelKey: "admin.settings.toggle.reviews.label",
+      descriptionKey: "admin.settings.toggle.reviews.description",
+      icon: MessageSquare,
+    },
+    {
+      key: "moderationRequired" as const,
+      labelKey: "admin.settings.toggle.moderation.label",
+      descriptionKey: "admin.settings.toggle.moderation.description",
+      icon: Shield,
+    },
+  ];
+
+  if (loading) {
+    return (
+      <LoadingSpinner size="md" text={t("admin.settings.loading")} fullScreen />
+    );
+  }
+
+  if (!settings) {
+    return (
+      <AdminPageLayout maxWidth="3xl" className="py-8">
+        <AdminPageHeader
+          title={t("admin.settings.header.title")}
+          description={t("admin.settings.header.description")}
+          icon={Settings}
+        />
+        <AdminErrorBanner
+          title={t("admin.settings.error.loadTitle")}
+          message={error ?? t("admin.settings.error.loadMessage")}
+          onRetry={() => {
+            void retry();
+          }}
+        />
+      </AdminPageLayout>
+    );
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-8">
+    <AdminPageLayout maxWidth="3xl">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <Settings className="h-6 w-6 text-secondary" />
-          System Settings
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Configure application-wide settings
-        </p>
-        {error && (
-          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            {error}
-          </p>
-        )}
-      </div>
+      <AdminPageHeader
+        title={t("admin.settings.header.title")}
+        description={t("admin.settings.header.description")}
+        icon={Settings}
+      />
 
-      {/* Feature Toggles */}
-      <div className="bg-card border border-border rounded-xl p-5 space-y-5">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
+      <AdminErrorBanner
+        title={t("admin.settings.error.syncTitle")}
+        message={error}
+        onRetry={() => {
+          void retry();
+        }}
+      />
+
+      <AdminSection
+        title={t("admin.settings.section.toggles.title")}
+        description={t("admin.settings.section.toggles.description")}
+        tone="surface"
+        contentClassName="gap-4"
+      >
+        <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/25 px-3 py-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/10">
             <Shield className="h-5 w-5 text-secondary" />
           </div>
-          <h2 className="text-base font-semibold text-foreground">
-            Feature Toggles
-          </h2>
+          <p className="text-role-secondary text-muted-foreground">
+            {t("admin.settings.section.toggles.notice")}
+          </p>
         </div>
 
-        <div className="space-y-4">
-          {[
-            {
-              key: "enableNotifications" as const,
-              label: "Enable Notifications",
-              desc: "Allow push and email notifications to users",
-              icon: Bell,
-            },
-            {
-              key: "enableReviews" as const,
-              label: "Enable Reviews",
-              desc: "Allow users to post reviews on places",
-              icon: MessageSquare,
-            },
-            {
-              key: "moderationRequired" as const,
-              label: "Require Moderation",
-              desc: "New reviews must be approved before publishing",
-              icon: Shield,
-            },
-          ].map((item) => (
+        <div className="space-y-2">
+          {settingItems.map((item) => (
             <div
               key={item.key}
               className="flex items-start gap-4 p-3 rounded-xl hover:bg-muted/30 transition-colors"
@@ -86,37 +131,47 @@ const SystemSettingsPage = () => {
                 onCheckedChange={(checked) => update(item.key, !!checked)}
                 className="mt-0.5"
               />
+              <item.icon
+                className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground"
+                aria-hidden="true"
+              />
               <div className="space-y-1">
                 <Label
                   htmlFor={item.key}
-                  className="text-sm font-medium text-foreground cursor-pointer"
+                  className="cursor-pointer text-role-secondary font-medium text-foreground"
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Label>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
+                <p className="text-role-caption text-muted-foreground">
+                  {t(item.descriptionKey)}
+                </p>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </AdminSection>
 
       {/* Maintenance Mode */}
-      <div className="bg-card border border-red-200 rounded-xl p-5 space-y-4">
+      <AdminSection
+        tone="surface"
+        className="border-destructive/30"
+        contentClassName="gap-4"
+      >
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-foreground">
-              Maintenance Mode
+            <h2 className="text-role-body font-semibold text-foreground">
+              {t("admin.settings.maintenance.title")}
             </h2>
-            <p className="text-xs text-muted-foreground">
-              When enabled, only admins can access the app
+            <p className="text-role-caption text-muted-foreground">
+              {t("admin.settings.maintenance.description")}
             </p>
           </div>
         </div>
 
-        <div className="flex items-start gap-4 p-3 rounded-xl border border-red-100 bg-red-50/30">
+        <div className="flex items-start gap-4 p-3 rounded-xl border border-destructive/20 bg-destructive/5">
           <Checkbox
             id="maintenanceMode"
             checked={settings.maintenanceMode}
@@ -125,32 +180,36 @@ const SystemSettingsPage = () => {
           />
           <Label
             htmlFor="maintenanceMode"
-            className="text-sm font-medium text-red-700 cursor-pointer"
+            className="cursor-pointer text-role-secondary font-medium text-destructive"
           >
-            Enable Maintenance Mode
+            {t("admin.settings.maintenance.toggle")}
           </Label>
         </div>
-      </div>
+      </AdminSection>
 
       {/* Save Button */}
-      <div className="flex gap-3 pt-2">
+      <div className="sticky bottom-0 flex flex-col-reverse gap-3 border-t border-border/60 bg-background/95 pt-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:flex-row">
         <Button
           variant="ghost"
-          onClick={() => window.history.back()}
-          className="flex-1"
+          onClick={() => navigate(-1)}
+          className="flex-1 w-full"
         >
-          Cancel
+          {t("admin.settings.actions.cancel")}
         </Button>
         <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
+          onClick={() => void handleSave()}
+          disabled={saving || !hasUnsavedChanges}
+          className="w-full flex-1 gap-2 font-semibold"
         >
           <Save className="h-4 w-4" />
-          {saved ? "Saved ✓" : saving ? "Saving..." : "Save Settings"}
+          {saved
+            ? t("admin.settings.actions.saved")
+            : saving
+              ? t("admin.settings.actions.saving")
+              : t("admin.settings.actions.save")}
         </Button>
       </div>
-    </div>
+    </AdminPageLayout>
   );
 };
 

@@ -2,6 +2,9 @@
  * Admin Feature — Type Definitions
  */
 
+import type { PaginatedResponse } from "@/types";
+import type { CanonicalPriceLevel } from "@/utils/priceLevels";
+
 export interface AdminStats {
   totalUsers: number;
   totalPlaces: number;
@@ -16,16 +19,13 @@ export interface AdminStats {
   healthTimestamp?: string;
 }
 
-export type PriceLevel =
-  | "price_cheapest"
-  | "cheap"
-  | "mid_range"
-  | "expensive"
-  | "luxury";
+export type PriceLevel = CanonicalPriceLevel;
+export type AdminFilterValue<T extends string> = "all" | T;
 
 export type AdminUserId = string;
 export type AdminUserRole = "user" | "moderator" | "admin";
 export type AdminUserStatus = "active" | "banned" | "suspended";
+export type AdminUserRoleFilter = AdminFilterValue<AdminUserRole>;
 
 export interface AdminUser {
   userId: AdminUserId;
@@ -39,6 +39,15 @@ export interface AdminUser {
   avatar?: string;
 }
 
+export interface AdminUsersQuery {
+  page?: number;
+  count?: number;
+  searchTerm?: string;
+  role?: AdminUserRoleFilter;
+}
+
+export type AdminUsersPage = PaginatedResponse<AdminUser>;
+
 export interface AdminPlace {
   id: string;
   name: string;
@@ -46,7 +55,7 @@ export interface AdminPlace {
   district: string;
   rating: number;
   reviewCount: number;
-  status: "active" | "pending" | "flagged" | "removed";
+  status: AdminPlaceStatus;
   createdAt: Date;
   image: string;
   // Extended fields for the Add/Edit form
@@ -58,6 +67,9 @@ export interface AdminPlace {
   website?: string;
 }
 
+export type AdminPlaceStatus = "active" | "pending" | "flagged" | "removed";
+export type AdminPlaceStatusFilter = AdminFilterValue<AdminPlaceStatus>;
+
 export interface AdminReview {
   id: string;
   userId: AdminUserId;
@@ -67,10 +79,13 @@ export interface AdminReview {
   placeName: string;
   rating: number;
   comment: string;
-  status: "published" | "pending" | "flagged" | "removed";
+  status: AdminReviewStatus;
   reportCount: number;
   createdAt: Date;
 }
+
+export type AdminReviewStatus = "published" | "pending" | "flagged" | "removed";
+export type AdminReviewStatusFilter = AdminFilterValue<AdminReviewStatus>;
 
 export interface AdminCategory {
   id: string;
@@ -78,8 +93,10 @@ export interface AdminCategory {
   icon: string;
   count: number;
   color: string;
-  status: "active" | "inactive";
+  status: AdminCategoryStatus;
 }
+
+export type AdminCategoryStatus = "active" | "inactive";
 
 export interface SystemSettings {
   siteName: string;
@@ -94,17 +111,22 @@ export interface SystemSettings {
 
 export interface RecentActivity {
   id: string;
-  type: "user_joined" | "review_posted" | "place_added" | "report_filed";
+  type: AdminActivityType;
   description: string;
   timestamp: Date;
   userId?: AdminUserId;
   userName?: string;
 }
 
-export type CreateAdminPlaceInput = Omit<
-  AdminPlace,
-  "id" | "rating" | "reviewCount" | "createdAt" | "status"
->;
+export type AdminActivityType =
+  | "user_joined"
+  | "review_posted"
+  | "place_added"
+  | "report_filed";
+
+export interface CreateAdminPlaceInput {
+  venueUrl: string;
+}
 
 // ── Shared UI Types ───────────────────────────────────────────
 
@@ -115,22 +137,9 @@ export interface AdminToast {
 }
 
 export interface PlaceFormData {
-  name: string;
-  category: string;
-  district: string;
-  description: string;
-  whyRecommend: string;
-  priceLevel: PriceLevel;
-  tags: string[];
-  image: string;
-  phone: string;
-  website: string;
+  venueUrl: string;
 }
 
 export interface PlaceFormErrors {
-  name?: string;
-  category?: string;
-  district?: string;
-  description?: string;
-  image?: string;
+  venueUrl?: string;
 }

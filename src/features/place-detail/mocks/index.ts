@@ -12,7 +12,7 @@ import type { Review, SocialMediaReview, ReviewSummary } from "../types";
 export const MOCK_REVIEWS: Record<string, Review[]> = {
   "1": [
     {
-      reviewId: "r1",
+      id: "r1",
       venueId: "1",
       venueName: "Nile Felucca Experience",
       userId: "u1",
@@ -24,7 +24,7 @@ export const MOCK_REVIEWS: Record<string, Review[]> = {
       updatedAt: new Date("2026-01-15").toISOString(),
     },
     {
-      reviewId: "r2",
+      id: "r2",
       venueId: "1",
       venueName: "Nile Felucca Experience",
       userId: "u2",
@@ -36,7 +36,7 @@ export const MOCK_REVIEWS: Record<string, Review[]> = {
       updatedAt: new Date("2026-01-10").toISOString(),
     },
     {
-      reviewId: "r3",
+      id: "r3",
       venueId: "1",
       venueName: "Nile Felucca Experience",
       userId: "u3",
@@ -48,7 +48,7 @@ export const MOCK_REVIEWS: Record<string, Review[]> = {
       updatedAt: new Date("2025-12-28").toISOString(),
     },
     {
-      reviewId: "r4",
+      id: "r4",
       venueId: "1",
       venueName: "Nile Felucca Experience",
       userId: "u4",
@@ -61,7 +61,7 @@ export const MOCK_REVIEWS: Record<string, Review[]> = {
   ],
   "2": [
     {
-      reviewId: "r5",
+      id: "r5",
       venueId: "2",
       venueName: "Zooba — Egyptian Street Food",
       userId: "u1",
@@ -73,7 +73,7 @@ export const MOCK_REVIEWS: Record<string, Review[]> = {
       updatedAt: new Date("2026-02-01").toISOString(),
     },
     {
-      reviewId: "r6",
+      id: "r6",
       venueId: "2",
       venueName: "Zooba — Egyptian Street Food",
       userId: "u5",
@@ -85,7 +85,7 @@ export const MOCK_REVIEWS: Record<string, Review[]> = {
       updatedAt: new Date("2026-01-25").toISOString(),
     },
     {
-      reviewId: "r7",
+      id: "r7",
       venueId: "2",
       venueName: "Zooba — Egyptian Street Food",
       userId: "u6",
@@ -237,7 +237,7 @@ export const MOCK_REVIEW_SUMMARIES: Record<string, ReviewSummary> = {
 
 export const DEFAULT_REVIEWS: Review[] = [
   {
-    reviewId: "dr1",
+    id: "dr1",
     venueId: "default",
     venueName: "Default Venue",
     userId: "u10",
@@ -248,7 +248,7 @@ export const DEFAULT_REVIEWS: Review[] = [
     updatedAt: new Date("2026-01-05").toISOString(),
   },
   {
-    reviewId: "dr2",
+    id: "dr2",
     venueId: "default",
     venueName: "Default Venue",
     userId: "u11",

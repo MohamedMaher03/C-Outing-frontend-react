@@ -16,23 +16,43 @@ export { adminApi } from "./api/adminApi";
 // Services
 export { adminService } from "./services/adminService";
 
+// Shared admin UI components
+export {
+  AdminPageHeader,
+  AdminErrorBanner,
+  AdminFilterChips,
+  AdminEmptyState,
+  AdminPageLayout,
+  AdminSection,
+} from "./components";
+
 // Types
 export type {
   AdminStats,
   AdminUser,
   AdminUserId,
+  AdminUsersPage,
+  AdminUsersQuery,
   AdminUserRole,
+  AdminUserRoleFilter,
   AdminUserStatus,
   AdminPlace,
+  AdminPlaceStatus,
+  AdminPlaceStatusFilter,
   AdminReview,
+  AdminReviewStatus,
+  AdminReviewStatusFilter,
   AdminCategory,
+  AdminCategoryStatus,
   SystemSettings,
   RecentActivity,
+  AdminActivityType,
   CreateAdminPlaceInput,
   AdminToast,
   PlaceFormData,
   PlaceFormErrors,
 } from "./types";
+export type { AdminDataSource } from "./types/dataSource";
 
 // Mocks (development use)
 export { adminMock } from "./mocks/adminMock";

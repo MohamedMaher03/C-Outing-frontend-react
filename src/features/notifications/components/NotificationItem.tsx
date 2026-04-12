@@ -7,6 +7,7 @@
  */
 
 import { useNavigate } from "react-router-dom";
+import { memo, useCallback } from "react";
 import {
   Star,
   Heart,
@@ -19,48 +20,27 @@ import {
 import { cn } from "@/lib/utils";
 import { formatRelativeNotificationTime } from "../utils/notificationPresentation";
 import type { Notification, NotificationType } from "../types";
+import { useI18n } from "@/components/i18n";
 
 // ── Type → visual config ─────────────────────────────────────
 
-const TYPE_CONFIG: Record<
-  NotificationType,
-  { icon: React.ElementType; iconClass: string; bgClass: string }
-> = {
-  recommendation: {
-    icon: Star,
-    iconClass: "text-secondary",
-    bgClass: "bg-secondary/10",
-  },
-  favorite_update: {
-    icon: Heart,
-    iconClass: "text-rose-500",
-    bgClass: "bg-rose-100 dark:bg-rose-500/10",
-  },
-  review_response: {
-    icon: MessageSquare,
-    iconClass: "text-blue-500",
-    bgClass: "bg-blue-100 dark:bg-blue-500/10",
-  },
-  like: {
-    icon: ThumbsUp,
-    iconClass: "text-violet-500",
-    bgClass: "bg-violet-100 dark:bg-violet-500/10",
-  },
-  new_place: {
-    icon: MapPin,
-    iconClass: "text-emerald-500",
-    bgClass: "bg-emerald-100 dark:bg-emerald-500/10",
-  },
-  system: {
-    icon: Bell,
-    iconClass: "text-muted-foreground",
-    bgClass: "bg-muted",
-  },
+const renderNotificationTypeIcon = (type: string, className: string) => {
+  switch (type as NotificationType) {
+    case "recommendation":
+      return <Star className={className} />;
+    case "favorite_update":
+      return <Heart className={className} />;
+    case "review_response":
+      return <MessageSquare className={className} />;
+    case "like":
+      return <ThumbsUp className={className} />;
+    case "new_place":
+      return <MapPin className={className} />;
+    case "system":
+    default:
+      return <Bell className={className} />;
+  }
 };
-
-function getTypeConfig(type: string) {
-  return TYPE_CONFIG[type as NotificationType] ?? TYPE_CONFIG.system;
-}
 
 // ── Component ────────────────────────────────────────────────
 
@@ -68,63 +48,94 @@ interface NotificationItemProps {
   notification: Notification;
   onMarkRead: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  pending?: boolean;
 }
 
 const NotificationItem = ({
   notification,
   onMarkRead,
   onDelete,
+  pending = false,
 }: NotificationItemProps) => {
+  const { t } = useI18n();
   const navigate = useNavigate();
-  const { icon: Icon, iconClass, bgClass } = getTypeConfig(notification.type);
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
+    if (pending) return;
+
     if (!notification.isRead) {
       void onMarkRead(notification.id);
     }
-    if (notification.actionUrl) {
+
+    if (notification.actionUrl?.startsWith("/")) {
       navigate(notification.actionUrl);
     }
-  };
+  }, [
+    navigate,
+    notification.actionUrl,
+    notification.id,
+    notification.isRead,
+    onMarkRead,
+    pending,
+  ]);
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    void onDelete(notification.id);
-  };
+  const handleDelete = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (pending) return;
+      void onDelete(notification.id);
+    },
+    [notification.id, onDelete, pending],
+  );
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handleClick();
+      }
+    },
+    [handleClick],
+  );
 
   return (
     <div
       role="button"
       tabIndex={0}
+      aria-busy={pending}
+      aria-label={notification.title || t("notifications.item")}
       onClick={handleClick}
-      onKeyDown={(e) => e.key === "Enter" && handleClick()}
+      onKeyDown={handleKeyDown}
       className={cn(
-        "group relative flex items-start gap-4 p-4 rounded-xl border transition-all duration-200 cursor-pointer select-none",
+        "group relative flex min-h-24 touch-manipulation items-start gap-3 rounded-xl border p-3 transition-all duration-200 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:gap-4 sm:p-4",
         notification.isRead
           ? "bg-card border-border hover:bg-muted/30"
           : "bg-secondary/5 border-secondary/25 hover:bg-secondary/10",
+        pending && "opacity-80 cursor-wait",
       )}
     >
       {/* Unread indicator dot */}
       {!notification.isRead && (
-        <span className="absolute top-4 right-12 h-2 w-2 rounded-full bg-secondary shrink-0" />
+        <span className="absolute top-4 h-2 w-2 shrink-0 rounded-full bg-secondary [inset-inline-end:3.5rem] sm:[inset-inline-end:3rem]" />
       )}
 
       {/* Type icon */}
       <div
         className={cn(
-          "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
-          bgClass,
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10",
+          notification.isRead
+            ? "bg-muted text-muted-foreground"
+            : "bg-secondary/15 text-secondary-foreground",
         )}
       >
-        <Icon className={cn("h-5 w-5", iconClass)} />
+        {renderNotificationTypeIcon(notification.type, "h-4 w-4 sm:h-5 sm:w-5")}
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0 space-y-0.5 pr-6">
+      <div dir="auto" className="flex-1 min-w-0 space-y-0.5 pr-6">
         <p
           className={cn(
-            "text-sm leading-snug",
+            "line-clamp-2 break-words text-role-secondary leading-snug",
             notification.isRead
               ? "font-medium text-foreground"
               : "font-semibold text-foreground",
@@ -132,24 +143,32 @@ const NotificationItem = ({
         >
           {notification.title}
         </p>
-        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+        <p className="line-clamp-2 break-words text-role-secondary text-muted-foreground">
           {notification.message}
         </p>
-        <p className="text-[11px] text-muted-foreground/70 pt-1">
-          {formatRelativeNotificationTime(new Date(notification.createdAt))}
+        <p className="pt-1 text-role-caption text-muted-foreground/80">
+          {formatRelativeNotificationTime(notification.createdAt)}
         </p>
       </div>
 
       {/* Delete button */}
       <button
-        aria-label="Delete notification"
+        aria-label={t("notifications.delete")}
+        type="button"
+        disabled={pending}
         onClick={handleDelete}
-        className="absolute top-3 right-3 h-6 w-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-muted hover:bg-destructive/10 hover:text-destructive"
+        className="absolute top-1 inline-flex h-11 w-11 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition-opacity hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed sm:top-2 md:opacity-0 md:group-hover:opacity-100 group-focus-within:opacity-100 [inset-inline-end:0.25rem] sm:[inset-inline-end:0.5rem]"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-4 w-4" />
       </button>
     </div>
   );
 };
 
-export default NotificationItem;
+const areEqual = (
+  prev: Readonly<NotificationItemProps>,
+  next: Readonly<NotificationItemProps>,
+): boolean =>
+  prev.pending === next.pending && prev.notification === next.notification;
+
+export default memo(NotificationItem, areEqual);

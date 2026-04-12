@@ -11,12 +11,13 @@
  * │  AuthContext  →  authService  →  authApi  →  axios       │
  * └──────────────────────────────────────────────────────────┘
  *
- * 🔧 To use mocks during development, swap the import:
- *   import { authMock as authApi } from "../mocks/authMock";
+ * Mock control:
+ *   VITE_AUTH_USE_MOCKS=true|false
+ * Falls back to VITE_USE_MOCKS when VITE_AUTH_USE_MOCKS is not set.
  */
 
 import { authApi } from "../api/authApi";
-//import { authMock as authApi } from "../mocks/authMock";
+import { authMock } from "../mocks/authMock";
 import { AUTH_STORAGE_KEYS } from "../constants";
 import type {
   LoginRequest,
@@ -30,17 +31,130 @@ import type {
 } from "../types";
 import type { User } from "@/types";
 import { buildUserFromAuthToken } from "./jwtClaims";
+import { AuthError } from "../errors";
+
+const parseBooleanEnv = (value: unknown): boolean => {
+  if (typeof value !== "string") return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized === "true" || normalized === "1" || normalized === "yes";
+};
+
+const resolveFeatureMockFlag = (featureValue: unknown): boolean => {
+  if (typeof featureValue === "string") {
+    return parseBooleanEnv(featureValue);
+  }
+
+  return parseBooleanEnv(import.meta.env.VITE_USE_MOCKS);
+};
+
+const shouldUseAuthMocks = resolveFeatureMockFlag(
+  import.meta.env.VITE_AUTH_USE_MOCKS,
+);
+const authDataSource = shouldUseAuthMocks ? authMock : authApi;
 
 // ── Session helpers (private) ────────────────────────────────
 
+const canUseStorage = (): boolean =>
+  typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+
+const getStorageItem = (key: string): string | null => {
+  if (!canUseStorage()) return null;
+
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const setStorageItem = (key: string, value: string): boolean => {
+  if (!canUseStorage()) return false;
+
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const removeStorageItem = (key: string): void => {
+  if (!canUseStorage()) return;
+
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // no-op: storage can be disabled in strict browser modes
+  }
+};
+
+const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+const REGISTER_TIMEOUT_MESSAGE_PATTERN =
+  /(timeout|timed\s*out|exceeded|abort)/i;
+
+const isRegisterTimeoutError = (error: AuthError): boolean =>
+  error.code === "NETWORK_ERROR" &&
+  REGISTER_TIMEOUT_MESSAGE_PATTERN.test(error.message);
+
+const readPendingVerificationEmail = (): string | null => {
+  const raw = getStorageItem(AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL);
+  if (!raw) return null;
+
+  const email = normalizeEmail(raw);
+  return email.length > 0 ? email : null;
+};
+
+const persistPendingVerificationEmail = (email: string): void => {
+  const normalized = normalizeEmail(email);
+  if (normalized.length === 0) {
+    clearPendingVerificationEmailStorage();
+    return;
+  }
+
+  setStorageItem(AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL, normalized);
+};
+
+const clearPendingVerificationEmailStorage = (): void => {
+  removeStorageItem(AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL);
+};
+
+const isUserRole = (value: unknown): value is User["role"] =>
+  value === "user" || value === "moderator" || value === "admin";
+
+const isStoredUser = (value: unknown): value is User => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const candidate = value as Partial<User>;
+
+  return (
+    typeof candidate.userId === "string" &&
+    typeof candidate.name === "string" &&
+    typeof candidate.email === "string" &&
+    typeof candidate.hasCompletedOnboarding === "boolean" &&
+    isUserRole(candidate.role)
+  );
+};
+
 const persistSession = (token: string, user: User): void => {
-  localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, token);
-  localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+  const tokenStored = setStorageItem(AUTH_STORAGE_KEYS.TOKEN, token);
+  const userStored = setStorageItem(
+    AUTH_STORAGE_KEYS.USER,
+    JSON.stringify(user),
+  );
+
+  // Keep storage consistent if one write fails.
+  if (!tokenStored || !userStored) {
+    removeStorageItem(AUTH_STORAGE_KEYS.TOKEN);
+    removeStorageItem(AUTH_STORAGE_KEYS.USER);
+  }
 };
 
 const clearSession = (): void => {
-  localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
-  localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
+  removeStorageItem(AUTH_STORAGE_KEYS.TOKEN);
+  removeStorageItem(AUTH_STORAGE_KEYS.USER);
 };
 
 // ── Auth Service ─────────────────────────────────────────────
@@ -51,9 +165,10 @@ export const authService = {
    * persists the session, and returns the internal AuthApiResponse.
    */
   async login(payload: LoginRequest): Promise<AuthApiResponse> {
-    const raw = await authApi.login(payload);
+    const raw = await authDataSource.login(payload);
     const user: User = buildUserFromAuthToken(raw);
     persistSession(raw.token, user);
+    clearPendingVerificationEmailStorage();
     return { token: raw.token, user };
   },
 
@@ -62,7 +177,31 @@ export const authService = {
    * Does NOT persist a session; the user must verify email first.
    */
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
-    return await authApi.register(payload);
+    try {
+      const response = await authDataSource.register(payload);
+      persistPendingVerificationEmail(payload.email);
+      return response;
+    } catch (error) {
+      if (error instanceof AuthError) {
+        const shouldRecover =
+          error.code === "EMAIL_ALREADY_EXISTS" ||
+          isRegisterTimeoutError(error);
+
+        if (shouldRecover) {
+          try {
+            // If account creation already completed on the server, this call
+            // restores a smooth path to verification instead of forcing re-signup.
+            await authDataSource.resendOtp({ email: payload.email });
+            persistPendingVerificationEmail(payload.email);
+            return "Verification code sent to your email";
+          } catch {
+            // Keep original register error when recovery is not possible.
+          }
+        }
+      }
+
+      throw error;
+    }
   },
 
   /**
@@ -72,9 +211,10 @@ export const authService = {
    * The user is now logged in and should be directed to onboarding.
    */
   async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
-    const raw = await authApi.verifyEmail(payload);
+    const raw = await authDataSource.verifyEmail(payload);
     const user: User = buildUserFromAuthToken(raw);
     persistSession(raw.token, user);
+    clearPendingVerificationEmailStorage();
     return { token: raw.token, user };
   },
 
@@ -82,7 +222,7 @@ export const authService = {
    * Resend OTP — requests a new verification code for the given email.
    */
   async resendOtp(payload: ResendOtpRequest): Promise<void> {
-    await authApi.resendOtp(payload);
+    await authDataSource.resendOtp(payload);
   },
 
   /**
@@ -91,10 +231,23 @@ export const authService = {
    */
   async logout(): Promise<void> {
     try {
-      await authApi.logout();
+      await authDataSource.logout();
     } finally {
       clearSession();
+      clearPendingVerificationEmailStorage();
     }
+  },
+
+  setPendingVerificationEmail(email: string): void {
+    persistPendingVerificationEmail(email);
+  },
+
+  getPendingVerificationEmail(): string | null {
+    return readPendingVerificationEmail();
+  },
+
+  clearPendingVerificationEmail(): void {
+    clearPendingVerificationEmailStorage();
   },
 
   /**
@@ -103,14 +256,19 @@ export const authService = {
    * Returns null if no valid session is stored.
    */
   restoreSession(): { token: string; user: User } | null {
-    const token = localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN);
-    const raw = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+    const token = getStorageItem(AUTH_STORAGE_KEYS.TOKEN);
+    const raw = getStorageItem(AUTH_STORAGE_KEYS.USER);
 
     if (!token || !raw) return null;
 
     try {
-      const user = JSON.parse(raw) as User;
-      return { token, user };
+      const parsed = JSON.parse(raw) as unknown;
+      if (!isStoredUser(parsed)) {
+        clearSession();
+        return null;
+      }
+
+      return { token, user: parsed };
     } catch {
       // Corrupted storage — clear it
       clearSession();
@@ -123,20 +281,20 @@ export const authService = {
    *                       user stays in sync with the latest data.
    */
   updateStoredUser(user: User): void {
-    localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+    setStorageItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
   },
 
   /**
    * Forgot password — sends an OTP to the given email for password reset.
    */
   async forgotPassword(payload: ForgotPasswordRequest): Promise<void> {
-    await authApi.forgotPassword(payload);
+    await authDataSource.forgotPassword(payload);
   },
 
   /**
    * Reset password — validates the OTP and updates the password.
    */
   async resetPassword(payload: ResetPasswordRequest): Promise<void> {
-    await authApi.resetPassword(payload);
+    await authDataSource.resetPassword(payload);
   },
 };

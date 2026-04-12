@@ -1,4 +1,5 @@
 import type { PriceLevel } from "../types";
+import { PRICE_LEVEL_OPTIONS as SHARED_PRICE_LEVEL_OPTIONS } from "@/utils/priceLevels";
 
 export const COMMON_PLACE_TAGS = [
   "Outdoor",
@@ -29,11 +30,14 @@ export const COMMON_PLACE_TAGS = [
   "Instagrammable",
 ] as const;
 
-export const PRICE_LEVEL_OPTIONS: Array<{ value: PriceLevel; signs: number }> =
-  [
-    { value: "price_cheapest", signs: 1 },
-    { value: "cheap", signs: 2 },
-    { value: "mid_range", signs: 3 },
-    { value: "expensive", signs: 4 },
-    { value: "luxury", signs: 5 },
-  ];
+export const PRICE_LEVEL_OPTIONS: Array<{
+  value: PriceLevel;
+  label: string;
+  caption: string;
+  symbol: string;
+}> = SHARED_PRICE_LEVEL_OPTIONS.map((option) => ({
+  value: option.value as PriceLevel,
+  label: option.label,
+  caption: option.caption,
+  symbol: option.symbol,
+}));

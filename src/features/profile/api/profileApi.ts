@@ -1,27 +1,22 @@
 /**
  * Profile API Layer
  *
- * Pure HTTP functions — no business logic, no side effects.
- * Each function maps 1-to-1 with a backend endpoint using the shared
- * axiosInstance (src/config/axios.config.ts) which automatically:
- *   • Attaches the Authorization header on every request
- *   • Handles 401 responses globally
- *
- * ⚠️  CURRENTLY UNUSED — profileService.ts uses mock data.
- *     When the backend is ready, import and call these functions
- *     from profileService.ts instead of the mock helpers.
+ * Pure HTTP functions with no business-side effects.
+ * The service layer owns validation/normalization and can swap this API
+ * source with mocks via `profileDataSource`.
  */
 
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type {
+  NotificationSettings,
+  PrivacySettings,
+  UpdatePreferencesRequest,
   UserProfile,
   UpdateUserProfileRequest,
   UserPreferences,
-  UpdatePreferencesRequest,
-  NotificationSettings,
-  PrivacySettings,
 } from "../types";
+import type { ProfileDataSource } from "../types/dataSource";
 
 const toDateOnly = (value: string): string => {
   const trimmed = value.trim();
@@ -60,6 +55,9 @@ export const profileApi = {
       if (payload.name !== undefined) {
         formData.append("Name", payload.name);
       }
+      if (payload.bio !== undefined) {
+        formData.append("Bio", payload.bio);
+      }
       if (payload.birthDate !== undefined) {
         formData.append("BirthDate", toDateOnly(payload.birthDate));
       }
@@ -78,6 +76,9 @@ export const profileApi = {
     const formBody = new URLSearchParams();
     if (payload.name !== undefined) {
       formBody.append("Name", payload.name);
+    }
+    if (payload.bio !== undefined) {
+      formBody.append("Bio", payload.bio);
     }
     if (payload.birthDate !== undefined) {
       formBody.append("BirthDate", toDateOnly(payload.birthDate));
@@ -120,19 +121,18 @@ export const profileApi = {
 
   // ── Notifications ──────────────────────────────────────────
 
-  async getNotifications(userId: string): Promise<NotificationSettings> {
+  async getNotifications(): Promise<NotificationSettings> {
     const { data } = await axiosInstance.get<NotificationSettings>(
-      API_ENDPOINTS.profile.getNotifications(userId),
+      API_ENDPOINTS.profile.getCurrentNotifications,
     );
     return data;
   },
 
   async updateNotifications(
-    userId: string,
     payload: NotificationSettings,
   ): Promise<NotificationSettings> {
     const { data } = await axiosInstance.put<NotificationSettings>(
-      API_ENDPOINTS.profile.updateNotifications(userId),
+      API_ENDPOINTS.profile.updateCurrentNotifications,
       payload,
     );
     return data;
@@ -140,19 +140,16 @@ export const profileApi = {
 
   // ── Privacy ────────────────────────────────────────────────
 
-  async getPrivacy(userId: string): Promise<PrivacySettings> {
+  async getPrivacy(): Promise<PrivacySettings> {
     const { data } = await axiosInstance.get<PrivacySettings>(
-      API_ENDPOINTS.profile.getPrivacy(userId),
+      API_ENDPOINTS.profile.getCurrentPrivacy,
     );
     return data;
   },
 
-  async updatePrivacy(
-    userId: string,
-    payload: PrivacySettings,
-  ): Promise<PrivacySettings> {
+  async updatePrivacy(payload: PrivacySettings): Promise<PrivacySettings> {
     const { data } = await axiosInstance.put<PrivacySettings>(
-      API_ENDPOINTS.profile.updatePrivacy(userId),
+      API_ENDPOINTS.profile.updateCurrentPrivacy,
       payload,
     );
     return data;
@@ -160,15 +157,19 @@ export const profileApi = {
 
   // ── Account Management ─────────────────────────────────────
 
-  async downloadData(userId: string): Promise<Blob> {
+  async downloadData(): Promise<Blob> {
     const { data } = await axiosInstance.get<Blob>(
-      API_ENDPOINTS.profile.downloadData(userId),
+      API_ENDPOINTS.profile.downloadData("me"),
       { responseType: "blob" },
     );
     return data;
   },
 
-  async deleteAccount(userId: string): Promise<void> {
-    await axiosInstance.delete(API_ENDPOINTS.profile.deleteAccount(userId));
+  async deleteAccount(): Promise<void> {
+    await axiosInstance.delete(API_ENDPOINTS.profile.deleteCurrentAccount);
   },
-};
+
+  async signOut(): Promise<void> {
+    await axiosInstance.post(API_ENDPOINTS.auth.logout);
+  },
+} satisfies ProfileDataSource;

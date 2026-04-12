@@ -9,6 +9,8 @@ import type {
   AdminStats,
   AdminUser,
   AdminUserId,
+  AdminUsersPage,
+  AdminUsersQuery,
   AdminUserRole,
   AdminUserStatus,
   AdminPlace,
@@ -413,9 +415,42 @@ export const adminMock = {
     return { ...MOCK_ADMIN_STATS };
   },
 
-  async getUsers(): Promise<AdminUser[]> {
+  async getUsers(params: AdminUsersQuery = {}): Promise<AdminUsersPage> {
     await delay(700);
-    return [...MOCK_ADMIN_USERS];
+
+    const normalizedSearch = (params.searchTerm ?? "").trim().toLowerCase();
+
+    const roleFilteredUsers =
+      params.role && params.role !== "all"
+        ? MOCK_ADMIN_USERS.filter((user) => user.role === params.role)
+        : MOCK_ADMIN_USERS;
+
+    const matchedUsers =
+      normalizedSearch.length > 0
+        ? roleFilteredUsers.filter(
+            (user) =>
+              user.name.toLowerCase().includes(normalizedSearch) ||
+              user.email.toLowerCase().includes(normalizedSearch),
+          )
+        : roleFilteredUsers;
+
+    const pageSize = Math.max(1, Math.trunc(params.count ?? 10));
+    const totalCount = matchedUsers.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const requestedPage = Math.max(1, Math.trunc(params.page ?? 1));
+    const pageIndex = Math.min(requestedPage, totalPages);
+    const start = (pageIndex - 1) * pageSize;
+    const end = start + pageSize;
+
+    return {
+      items: matchedUsers.slice(start, end),
+      pageIndex,
+      pageSize,
+      totalCount,
+      totalPages,
+      hasPreviousPage: pageIndex > 1,
+      hasNextPage: pageIndex < totalPages,
+    };
   },
 
   async updateUserRole(
@@ -454,21 +489,33 @@ export const adminMock = {
     await delay(400);
     const idx = MOCK_ADMIN_PLACES.findIndex((p) => p.id === placeId);
     if (idx !== -1) MOCK_ADMIN_PLACES.splice(idx, 1);
-    console.log(`[Mock] Deleted place ${placeId}`);
   },
 
-  async addPlace(data: CreateAdminPlaceInput): Promise<AdminPlace> {
+  async addPlace(data: CreateAdminPlaceInput): Promise<void> {
     await delay(600);
+    let derivedName = "Google Maps Submission";
+
+    try {
+      const parsed = new URL(data.venueUrl.trim());
+      derivedName = `Scraped from ${parsed.hostname.replace(/^www\./i, "")}`;
+    } catch {
+      // Ignore invalid parsing in mock mode; frontend validation handles this earlier.
+    }
+
     const newPlace: AdminPlace = {
-      ...data,
       id: `place_${Date.now()}`,
+      name: derivedName,
+      category: "Pending",
+      district: "Unknown",
       rating: 0,
       reviewCount: 0,
       status: "pending",
       createdAt: new Date(),
+      image:
+        "https://images.unsplash.com/photo-1527838832700-5059252407fa?w=100&h=100&fit=crop",
+      description: data.venueUrl,
     };
     MOCK_ADMIN_PLACES.push(newPlace);
-    return newPlace;
   },
 
   async getReviews(): Promise<AdminReview[]> {
@@ -487,7 +534,8 @@ export const adminMock = {
 
   async deleteReview(reviewId: string): Promise<void> {
     await delay(400);
-    console.log(`[Mock] Deleted review ${reviewId}`);
+    const idx = MOCK_ADMIN_REVIEWS.findIndex((r) => r.id === reviewId);
+    if (idx !== -1) MOCK_ADMIN_REVIEWS.splice(idx, 1);
   },
 
   async getCategories(): Promise<AdminCategory[]> {
@@ -500,7 +548,10 @@ export const adminMock = {
     data: Partial<AdminCategory>,
   ): Promise<void> {
     await delay(400);
-    console.log(`[Mock] Updated category ${categoryId}`, data);
+    const category = MOCK_ADMIN_CATEGORIES.find((c) => c.id === categoryId);
+    if (category) {
+      Object.assign(category, data);
+    }
   },
 
   async getSettings(): Promise<SystemSettings> {
@@ -511,7 +562,6 @@ export const adminMock = {
   async updateSettings(settings: Partial<SystemSettings>): Promise<void> {
     await delay(500);
     Object.assign(MOCK_SYSTEM_SETTINGS, settings);
-    console.log("[Mock] Updated system settings", settings);
   },
 
   async getRecentActivity(): Promise<RecentActivity[]> {

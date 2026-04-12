@@ -6,7 +6,7 @@
  * which path is active in the service layer.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getNotificationSettings,
@@ -14,6 +14,7 @@ import {
 } from "@/features/profile/services/profileService";
 import type { NotificationSettings } from "@/features/profile/types";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseNotificationsReturn {
   /** Current push notification toggles */
@@ -32,9 +33,12 @@ interface UseNotificationsReturn {
   toggleEmail: (key: keyof NotificationSettings["email"]) => void;
   /** Persist current settings and navigate back */
   handleSave: () => Promise<void>;
+  /** Re-fetch notification settings after an error */
+  reloadSettings: () => Promise<void>;
 }
 
 export const useNotifications = (): UseNotificationsReturn => {
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const [pushNotifications, setPushNotifications] = useState<
@@ -57,34 +61,58 @@ export const useNotifications = (): UseNotificationsReturn => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const saveInFlightRef = useRef(false);
+  const latestLoadRunRef = useRef(0);
+
+  const reloadSettings = useCallback(async () => {
+    const runId = ++latestLoadRunRef.current;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getNotificationSettings();
+
+      if (runId !== latestLoadRunRef.current) {
+        return;
+      }
+
+      setPushNotifications(data.push);
+      setEmailNotifications(data.email);
+    } catch (err) {
+      if (runId !== latestLoadRunRef.current) {
+        return;
+      }
+
+      setError(getErrorMessage(err, t("profile.notifications.error.load")));
+    } finally {
+      if (runId === latestLoadRunRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [t]);
 
   // Load current settings on mount
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getNotificationSettings();
-        setPushNotifications(data.push);
-        setEmailNotifications(data.email);
-      } catch (err) {
-        setError(getErrorMessage(err, "Failed to load notification settings"));
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+    void reloadSettings();
+  }, [reloadSettings]);
 
   const togglePush = (key: keyof NotificationSettings["push"]) => {
+    setError((prev) => (prev ? null : prev));
     setPushNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const toggleEmail = (key: keyof NotificationSettings["email"]) => {
+    setError((prev) => (prev ? null : prev));
     setEmailNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleSave = async () => {
+    if (saveInFlightRef.current || saving) {
+      return;
+    }
+
+    saveInFlightRef.current = true;
+
     try {
       setSaving(true);
       setError(null);
@@ -94,8 +122,9 @@ export const useNotifications = (): UseNotificationsReturn => {
       });
       navigate("/profile");
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to save notification settings"));
+      setError(getErrorMessage(err, t("profile.notifications.error.save")));
     } finally {
+      saveInFlightRef.current = false;
       setSaving(false);
     }
   };
@@ -109,5 +138,6 @@ export const useNotifications = (): UseNotificationsReturn => {
     togglePush,
     toggleEmail,
     handleSave,
+    reloadSettings,
   };
 };

@@ -1,11 +1,10 @@
 /**
  * Favorites Mock Implementations
  *
- * Drop-in replacement for favoritesApi — mirrors the same interface so it can
- * be swapped in favoritesService.ts without changing any other code:
+ * Drop-in replacement for favoritesApi. It mirrors the same datasource
+ * interface and is selected through favoritesDataSource.
  *
- *   // favoritesService.ts — swap this one line:
- *   import { favoritesMock as favoritesApi } from "../mocks/favoritesMock";
+ * Set VITE_USE_MOCKS=true to activate this datasource.
  *
  * Simulates realistic network latency and in-memory favorites storage.
  */
@@ -13,7 +12,8 @@
 import { PLACES } from "@/mocks/mockData";
 import type { PaginatedResponse } from "@/types";
 import type { FavoriteItem, FavoriteListParams } from "../types";
-import { createInitialFavorites } from "./index";
+import type { FavoritesDataSource } from "../types/dataSource";
+import { createInitialFavorites } from "./createInitialFavorites";
 
 // ── In-memory mock store ─────────────────────────────────────
 
@@ -27,14 +27,14 @@ const delay = (ms: number): Promise<void> =>
 // ── Mock Favorites API ───────────────────────────────────────
 // Interface intentionally mirrors favoritesApi so they are interchangeable.
 
-export const favoritesMock = {
+export const favoritesMock: FavoritesDataSource = {
   /**
    * Mock GET /api/v1/Favorite
    */
   async getFavorites(
     params?: FavoriteListParams,
   ): Promise<PaginatedResponse<FavoriteItem>> {
-    await delay(5000);
+    await delay(500);
 
     const pageIndex = Math.max(
       0,

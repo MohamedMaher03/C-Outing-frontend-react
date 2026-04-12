@@ -3,7 +3,7 @@
  * Manages profile page state and actions
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   getUserProfile,
   getUserPreferences,
@@ -13,6 +13,7 @@ import {
 import type { UserProfile, UserPreferences } from "@/features/profile/types";
 import type { PriceLevel } from "@/features/admin/types";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseProfileReturn {
   // State
@@ -39,11 +40,15 @@ interface UseProfileReturn {
 }
 
 export const useProfile = (): UseProfileReturn => {
+  const { t } = useI18n();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const latestLoadRunRef = useRef(0);
+  const saveInFlightRef = useRef(false);
+  const signOutInFlightRef = useRef(false);
 
   // Local state for preferences
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
@@ -51,45 +56,60 @@ export const useProfile = (): UseProfileReturn => {
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<PriceLevel>("mid_range");
 
-  // Fetch profile and preferences on mount
-  useEffect(() => {
-    fetchProfileData();
-  }, []);
+  const clearError = () => {
+    setError((prev) => (prev ? null : prev));
+  };
 
-  const fetchProfileData = async () => {
+  const fetchProfileData = useCallback(async () => {
+    const runId = ++latestLoadRunRef.current;
+
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch both profile and preferences
       const [profileData, preferencesData] = await Promise.all([
         getUserProfile(),
         getUserPreferences(),
       ]);
 
+      if (runId !== latestLoadRunRef.current) {
+        return;
+      }
+
       setProfile(profileData);
       setPreferences(preferencesData);
 
-      // Set local state from fetched preferences
       setSelectedInterests(preferencesData.interests || []);
       setVibe([preferencesData.vibe || 50]);
       setSelectedDistricts(preferencesData.districts || []);
       setSelectedBudget(preferencesData.budget || "mid_range");
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to load profile"));
-      console.error("Error fetching profile:", err);
+      if (runId !== latestLoadRunRef.current) {
+        return;
+      }
+
+      setError(getErrorMessage(err, t("profile.error.loadFallback")));
     } finally {
-      setLoading(false);
+      if (runId === latestLoadRunRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [t]);
+
+  // Fetch profile and preferences on mount
+  useEffect(() => {
+    void fetchProfileData();
+  }, [fetchProfileData]);
 
   const toggleInterest = (id: string) => {
+    clearError();
     setSelectedInterests((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
   const toggleDistrict = (district: string) => {
+    clearError();
     setSelectedDistricts((prev) =>
       prev.includes(district)
         ? prev.filter((d) => d !== district)
@@ -98,6 +118,12 @@ export const useProfile = (): UseProfileReturn => {
   };
 
   const savePreferences = async () => {
+    if (saveInFlightRef.current || saving) {
+      return;
+    }
+
+    saveInFlightRef.current = true;
+
     try {
       setSaving(true);
       setError(null);
@@ -111,23 +137,30 @@ export const useProfile = (): UseProfileReturn => {
 
       setPreferences(updatedPreferences);
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to save preferences"));
-      console.error("Error saving preferences:", err);
+      setError(
+        getErrorMessage(err, t("profile.error.savePreferencesFallback")),
+      );
       throw err;
     } finally {
+      saveInFlightRef.current = false;
       setSaving(false);
     }
   };
 
   const handleSignOut = async () => {
+    if (signOutInFlightRef.current) {
+      return;
+    }
+
+    signOutInFlightRef.current = true;
+
     try {
       await signOut();
       // Clear local state
       setProfile(null);
       setPreferences(null);
-    } catch (err) {
-      console.error("Error signing out:", err);
-      throw err;
+    } finally {
+      signOutInFlightRef.current = false;
     }
   };
 
@@ -148,7 +181,10 @@ export const useProfile = (): UseProfileReturn => {
     toggleInterest,
     setVibe,
     toggleDistrict,
-    setSelectedBudget,
+    setSelectedBudget: (budget: PriceLevel) => {
+      clearError();
+      setSelectedBudget(budget);
+    },
     savePreferences,
     handleSignOut,
     refreshProfile,

@@ -7,17 +7,15 @@
  * The shared axios instance (src/config/axios.config.ts) handles:
  *   • Attaching the Authorization header on every request
  *   • Handling 401 responses globally
- *
- * To switch to mocks during development, swap the import in favoritesService.ts:
- *   import { favoritesMock as favoritesApi } from "../mocks/favoritesMock";
  */
 
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type { PaginatedResponse } from "@/types";
 import type { FavoriteItem, FavoriteListParams } from "../types";
+import type { FavoritesDataSource } from "../types/dataSource";
 
-export const favoritesApi = {
+export const favoritesApi: FavoritesDataSource = {
   /**
    * GET /api/v1/Favorite?page={page}&pageSize={pageSize}
    * Returns paginated saved venues for the current user.

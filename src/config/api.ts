@@ -35,6 +35,11 @@ export const API_ENDPOINTS = {
   profile: {
     getCurrentProfile: "/api/v1/User/profile",
     updateCurrentProfile: "/api/v1/User/profile",
+    getCurrentNotifications: "/api/v1/User/profile/notifications",
+    updateCurrentNotifications: "/api/v1/User/profile/notifications",
+    getCurrentPrivacy: "/api/v1/User/profile/privacy",
+    updateCurrentPrivacy: "/api/v1/User/profile/privacy",
+    deleteCurrentAccount: "/api/v1/User/profile",
     uploadAvatar: (userId: string) => `/users/${userId}/avatar`,
     getNotifications: (userId: string) => `/users/${userId}/notifications`,
     updateNotifications: (userId: string) => `/users/${userId}/notifications`,
@@ -88,17 +93,15 @@ export const API_ENDPOINTS = {
     updatePreferences: (userId: string) => `/users/${userId}/preferences`,
   },
 
-  //Now i am working here on place detail api endpoints
   // ── Places / Detail ──────────────────────────────────────────
   places: {
     getById: (id: string) => `/api/v1/Venue/${id}`,
+    scrapeInitiate: "/api/v1/Venue/scrape/initiate",
     toggleLike: (id: string) => `/api/v1/Venue/${id}/like`,
     getReviews: (venueId: string) => `/api/v1/Review/venue/${venueId}`,
     submitReview: "/api/v1/Review",
     getSocialReviews: (venueId: string) =>
       `/api/v1/Review/social/venue/${venueId}`,
-    getReviewSummary: (venueId: string) =>
-      `/api/v1/review-summary/venue/${venueId}`,
     getReviewById: (reviewId: string) => `/api/v1/Review/${reviewId}`,
     editReview: (reviewId: string) => `/api/v1/Review/${reviewId}`,
     deleteReview: (reviewId: string) => `/api/v1/Review/${reviewId}`,
@@ -137,21 +140,28 @@ export const API_ENDPOINTS = {
     unbanUser: (userId: string) => `/api/v1/Admin/users/${userId}/unban`,
     getVenues: "/api/v1/Admin/venues",
     deleteVenue: (venueId: string) => `/api/v1/Admin/venues/${venueId}`,
+    updateVenueStatus: (venueId: string) =>
+      `/api/v1/Admin/venues/${venueId}/status`,
     getReportedVenues: "/api/v1/Admin/venues/reported",
+    getCategories: "/api/v1/Admin/categories",
+    getReviews: "/api/v1/Admin/reviews",
+    updateReviewStatus: (reviewId: string) =>
+      `/api/v1/Admin/reviews/${reviewId}/status`,
     deleteReview: (reviewId: string) => `/api/v1/Admin/reviews/${reviewId}`,
     getSystemHealth: "/api/v1/Admin/system/health",
   },
 
   // ── Moderator ────────────────────────────────────────────────
   moderator: {
-    getStats: "/moderator/stats",
-    getReportedContent: "/moderator/reports",
+    getStats: "/api/v1/Moderator/stats",
+    getReportedContent: "/api/v1/Moderator/reports",
     updateReportStatus: (reportId: string) =>
-      `/moderator/reports/${reportId}/status`,
-    getRecentActions: "/moderator/actions",
+      `/api/v1/Moderator/reports/${reportId}/status`,
+    getRecentActions: "/api/v1/Moderator/actions",
     deleteReview: (reportId: string) =>
-      `/moderator/reports/${reportId}/delete-review`,
-    warnUser: (reportId: string) => `/moderator/reports/${reportId}/warn`,
-    banUser: (reportId: string) => `/moderator/reports/${reportId}/ban`,
+      `/api/v1/Moderator/reports/${reportId}/delete-review`,
+    warnUser: (reportId: string) =>
+      `/api/v1/Moderator/reports/${reportId}/warn`,
+    banUser: (reportId: string) => `/api/v1/Moderator/reports/${reportId}/ban`,
   },
 };

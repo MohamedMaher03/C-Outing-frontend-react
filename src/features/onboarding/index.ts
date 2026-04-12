@@ -14,9 +14,10 @@ export {
   submitOnboardingPreferences,
   updateUserPreferences,
 } from "./services/onboardingService";
+export { onboardingDataSource } from "./services/onboardingDataSource";
 
 // Types
-export type { OnboardingPreferences } from "./types";
+export type { OnboardingPreferences, OnboardingDataSource } from "./types";
 
 // Mocks (development use)
 export { onboardingMock } from "./mocks/onboardingMock";

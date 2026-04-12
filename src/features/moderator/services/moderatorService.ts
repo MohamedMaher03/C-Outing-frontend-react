@@ -1,94 +1,141 @@
 /**
  * Moderator Service — Business Logic Layer
  *
- * Sits between hooks and the HTTP layer (moderatorApi).
+ * Sits between hooks and the datasource layer.
  * Responsibilities:
- *   • Call moderatorApi functions
+ *   • Call moderatorDataSource functions
  *   • Transform DTOs to UI models if needed
  *   • Centralise error handling
  *
- * ┌──────────────────────────────────────────────────────────────────────┐
- * │  useModerator*  →  moderatorService  →  moderatorApi  →  axios       │
- * └──────────────────────────────────────────────────────────────────────┘
- *
- * 🔧 To use mocks during development, swap the import:
- *   import { moderatorMock as moderatorApi } from "../mocks/moderatorMock";
+ * ┌───────────────────────────────────────────────────────────────────┐
+ * │ useModerator* → moderatorService → moderatorDataSource → API/mock │
+ * └───────────────────────────────────────────────────────────────────┘
  */
 
-// import { moderatorApi } from "../api/moderatorApi"; // (WHEN INTEGRATE WITH BACKEND USE THIS AND REMOVE ONE DOWN)
-import { moderatorMock as moderatorApi } from "../mocks/moderatorMock";
 import type {
   ModeratorStats,
   ReportedContent,
   ModerationAction,
 } from "../types";
+import type {
+  AdminCategory,
+  AdminPlace,
+  AdminPlaceStatus,
+  AdminReview,
+  AdminReviewStatus,
+  CreateAdminPlaceInput,
+} from "@/features/admin/types";
+import { adminService } from "@/features/admin/services/adminService";
+import { moderatorDataSource } from "./moderatorDataSource";
+import { withModeratorServiceError } from "./moderatorServiceError";
 
 // ── Moderator Service ─────────────────────────────────────────
 
 export const moderatorService = {
+  async getPlaces(): Promise<AdminPlace[]> {
+    return withModeratorServiceError(
+      () => adminService.getPlaces(),
+      "Failed to load places",
+    );
+  },
+
+  async getCategories(): Promise<AdminCategory[]> {
+    return withModeratorServiceError(
+      () => adminService.getCategories(),
+      "Failed to load categories",
+    );
+  },
+
+  async updatePlaceStatus(
+    placeId: string,
+    status: AdminPlaceStatus,
+  ): Promise<void> {
+    return withModeratorServiceError(
+      () => adminService.updatePlaceStatus(placeId, status),
+      "Failed to update place status",
+    );
+  },
+
+  async deletePlace(placeId: string): Promise<void> {
+    return withModeratorServiceError(
+      () => adminService.deletePlace(placeId),
+      "Failed to delete place",
+    );
+  },
+
+  async addPlace(placeData: CreateAdminPlaceInput): Promise<void> {
+    return withModeratorServiceError(
+      () => adminService.addPlace(placeData),
+      "Failed to start venue scraping",
+    );
+  },
+
+  async getReviews(): Promise<AdminReview[]> {
+    return withModeratorServiceError(
+      () => adminService.getReviews(),
+      "Failed to load reviews",
+    );
+  },
+
+  async updateReviewStatus(
+    reviewId: string,
+    status: AdminReviewStatus,
+  ): Promise<void> {
+    return withModeratorServiceError(
+      () => adminService.updateReviewStatus(reviewId, status),
+      "Failed to update review status",
+    );
+  },
+
   async getStats(): Promise<ModeratorStats> {
-    try {
-      return await moderatorApi.getStats();
-    } catch (error) {
-      console.error("Error fetching moderator stats:", error);
-      throw new Error("Failed to load moderator stats");
-    }
+    return withModeratorServiceError(
+      () => moderatorDataSource.getStats(),
+      "Failed to load moderator stats",
+    );
   },
 
   async getReportedContent(): Promise<ReportedContent[]> {
-    try {
-      return await moderatorApi.getReportedContent();
-    } catch (error) {
-      console.error("Error fetching reported content:", error);
-      throw new Error("Failed to load reported content");
-    }
+    return withModeratorServiceError(
+      () => moderatorDataSource.getReportedContent(),
+      "Failed to load reported content",
+    );
   },
 
   async updateReportStatus(
     reportId: string,
     status: ReportedContent["status"],
   ): Promise<void> {
-    try {
-      await moderatorApi.updateReportStatus(reportId, status);
-    } catch (error) {
-      console.error("Error updating report status:", error);
-      throw new Error("Failed to update report status");
-    }
+    return withModeratorServiceError(
+      () => moderatorDataSource.updateReportStatus(reportId, status),
+      "Failed to update report status",
+    );
   },
 
   async getRecentActions(): Promise<ModerationAction[]> {
-    try {
-      return await moderatorApi.getRecentActions();
-    } catch (error) {
-      console.error("Error fetching recent actions:", error);
-      throw new Error("Failed to load recent actions");
-    }
+    return withModeratorServiceError(
+      () => moderatorDataSource.getRecentActions(),
+      "Failed to load recent actions",
+    );
   },
 
   async deleteReview(reportId: string): Promise<void> {
-    try {
-      await moderatorApi.deleteReview(reportId);
-    } catch (error) {
-      console.error("Error deleting review:", error);
-      throw new Error("Failed to delete review");
-    }
+    return withModeratorServiceError(
+      () => moderatorDataSource.deleteReview(reportId),
+      "Failed to delete review",
+    );
   },
 
   async warnUser(reportId: string): Promise<void> {
-    try {
-      await moderatorApi.warnUser(reportId);
-    } catch (error) {
-      console.error("Error warning user:", error);
-      throw new Error("Failed to send warning");
-    }
+    return withModeratorServiceError(
+      () => moderatorDataSource.warnUser(reportId),
+      "Failed to send warning",
+    );
   },
 
   async banUser(reportId: string): Promise<void> {
-    try {
-      await moderatorApi.banUser(reportId);
-    } catch (error) {
-      console.error("Error escalating user ban:", error);
-      throw new Error("Failed to escalate user ban");
-    }
+    return withModeratorServiceError(
+      () => moderatorDataSource.banUser(reportId),
+      "Failed to escalate user ban",
+    );
   },
 };

@@ -11,6 +11,7 @@
  */
 
 import type { OnboardingPreferences } from "../types";
+import type { OnboardingDataSource } from "../types/dataSource";
 
 // ── Helper ───────────────────────────────────────────────────
 
@@ -20,7 +21,7 @@ const delay = (ms: number): Promise<void> =>
 // ── Mock Onboarding API ──────────────────────────────────────
 // Interface intentionally mirrors onboardingApi so they are interchangeable.
 
-export const onboardingMock = {
+export const onboardingMock: OnboardingDataSource = {
   /**
    * Mock POST /users/:userId/preferences
    */
@@ -28,12 +29,9 @@ export const onboardingMock = {
     userId: string,
     preferences: OnboardingPreferences,
   ): Promise<void> {
+    void userId;
+    void preferences;
     await delay(500);
-    console.log(
-      "[Mock] Submitting onboarding preferences for user:",
-      userId,
-      preferences,
-    );
   },
 
   /**
@@ -43,7 +41,8 @@ export const onboardingMock = {
     userId: string,
     preferences: Partial<OnboardingPreferences>,
   ): Promise<void> {
+    void userId;
+    void preferences;
     await delay(400);
-    console.log("[Mock] Updating preferences for user:", userId, preferences);
   },
 };

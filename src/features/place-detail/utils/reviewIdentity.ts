@@ -2,10 +2,10 @@ import type { Review } from "../types";
 
 export type ReviewIdentityInput = Pick<
   Review,
-  "reviewId" | "venueId" | "userId" | "createdAt"
+  "id" | "venueId" | "userId" | "createdAt"
 >;
 
 export const getReviewIdentity = (review: ReviewIdentityInput): string =>
-  review.reviewId?.trim()
-    ? `id:${review.reviewId}`
+  review.id?.trim()
+    ? `id:${review.id}`
     : `k:${review.venueId}:${review.userId}:${review.createdAt}`;

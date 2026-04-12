@@ -6,36 +6,105 @@ import {
   Phone,
   Cake,
   Activity,
+  type LucideIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
 import { INTERESTS, DISTRICTS } from "@/mocks/mockData";
 import { useProfile } from "@/features/profile/hooks/useProfile";
 import { INTEREST_ICON_MAP } from "@/features/profile/mocks";
 import type { PriceLevel } from "@/features/admin/types";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { buildDefaultAvatarDataUrl } from "@/features/profile/utils/defaultAvatar";
+import { BUDGET_OPTIONS as SHARED_BUDGET_OPTIONS } from "@/utils/priceLevels";
+import { ProfilePreferenceOptionButton } from "@/features/profile/components/ProfilePreferenceOptionButton";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { useI18n } from "@/components/i18n";
 
-const BUDGET_OPTIONS: Array<{ value: PriceLevel; label: string }> = [
-  { value: "price_cheapest", label: "Cheapest ($)" },
-  { value: "cheap", label: "Cheap ($$)" },
-  { value: "mid_range", label: "Mid Range ($$$)" },
-  { value: "expensive", label: "Expensive ($$$$)" },
-  { value: "luxury", label: "Luxury ($$$$$)" },
+const BUDGET_OPTIONS: Array<{ value: PriceLevel; label: string }> =
+  SHARED_BUDGET_OPTIONS as Array<{ value: PriceLevel; label: string }>;
+
+type AccountItem = {
+  labelKey: string;
+  descriptionKey: string;
+  path: string;
+};
+
+const ACCOUNT_ITEMS: AccountItem[] = [
+  {
+    labelKey: "profile.account.item.edit.label",
+    descriptionKey: "profile.account.item.edit.description",
+    path: "/profile/edit",
+  },
+  {
+    labelKey: "profile.account.item.notifications.label",
+    descriptionKey: "profile.account.item.notifications.description",
+    path: "/profile/notifications",
+  },
+  {
+    labelKey: "profile.account.item.privacy.label",
+    descriptionKey: "profile.account.item.privacy.description",
+    path: "/profile/privacy",
+  },
+  {
+    labelKey: "profile.account.item.help.label",
+    descriptionKey: "profile.account.item.help.description",
+    path: "/profile/help",
+  },
 ];
 
-const roleLabel = (role: number | undefined): string => {
-  if (role === 2) return "Admin";
-  if (role === 1) return "Moderator";
-  return "User";
+type ProfileStatCardProps = {
+  icon: LucideIcon;
+  label: string;
+  value: string | number;
+  numeric?: boolean;
+  hint?: string;
+  stretch?: boolean;
+};
+
+const ProfileStatCard = ({
+  icon: Icon,
+  label,
+  value,
+  numeric = false,
+  hint,
+  stretch = false,
+}: ProfileStatCardProps) => {
+  return (
+    <Card
+      className={`${stretch ? "h-full " : ""}rounded-2xl border-border/70 bg-gradient-to-br from-card to-muted/30 shadow-sm`}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Icon className="h-4 w-4" />
+          <p className="text-role-caption uppercase tracking-wide">{label}</p>
+        </div>
+        <p
+          className={
+            numeric
+              ? "mt-2 text-role-subheading text-numeric-tabular text-foreground"
+              : "mt-2 text-role-secondary font-semibold text-foreground break-words"
+          }
+        >
+          {value}
+        </p>
+        {hint ? (
+          <p className="text-role-micro text-foreground/78 dark:text-foreground/82 mt-3">
+            {hint}
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
 };
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const { t, formatNumber, direction } = useI18n();
   const [activeTab, setActiveTab] = useState("preferences");
   const {
     profile,
@@ -52,21 +121,56 @@ const ProfilePage = () => {
     setSelectedBudget,
     savePreferences,
     handleSignOut,
+    refreshProfile,
   } = useProfile();
+  const isPreferencesTabActive = activeTab === "preferences";
+  const fallbackUserName = t("profile.userFallback");
+
+  const getInterestLabel = (interestId: string, fallback: string): string =>
+    t(`onboarding.interest.${interestId}`, undefined, fallback);
+
+  const getDistrictLabel = (district: string): string =>
+    t(
+      `onboarding.district.${district.toLowerCase().replace(/\s+/g, "-")}`,
+      undefined,
+      district,
+    );
+
+  const accountItems = useMemo(
+    () =>
+      ACCOUNT_ITEMS.map((item) => ({
+        ...item,
+        label: t(item.labelKey),
+        description: t(item.descriptionKey),
+      })),
+    [t],
+  );
+
+  const accountChevronClassName =
+    direction === "rtl"
+      ? "h-4 w-4 shrink-0 text-muted-foreground rotate-180"
+      : "h-4 w-4 shrink-0 text-muted-foreground";
 
   const avatarSrc = useMemo(
     () =>
-      profile?.avatarUrl || buildDefaultAvatarDataUrl(profile?.name || "User"),
-    [profile?.avatarUrl, profile?.name],
+      profile?.avatarUrl ||
+      buildDefaultAvatarDataUrl(profile?.name || fallbackUserName),
+    [fallbackUserName, profile?.avatarUrl, profile?.name],
   );
+
+  const profileName = profile?.name || fallbackUserName;
+  const profileEmail = profile?.email || "user@couting.app";
+  const profileBio = profile?.bio?.trim() ?? "";
+  const hasProfileBio = profileBio.length > 0;
+  const profilePhone = profile?.phoneNumber || t("profile.stat.phoneMissing");
+  const profileAge = profile?.age != null ? formatNumber(profile.age) : "-";
+  const profileInteractions = formatNumber(profile?.totalInteractions ?? 0);
 
   const handleSave = async () => {
     try {
       await savePreferences();
-      // Optionally show success message
-    } catch (err) {
-      // Error is already logged in hook
-      console.error("Error saving preferences:", err);
+    } catch {
+      // Error state is surfaced by the hook.
     }
   };
 
@@ -74,54 +178,109 @@ const ProfilePage = () => {
     try {
       await handleSignOut();
       navigate("/");
-    } catch (err) {
-      // Error is already logged in hook
-      console.error("Error signing out:", err);
+    } catch {
+      // Error state is surfaced by the hook.
     }
   };
 
   if (loading) {
     return (
-      <LoadingSpinner size="md" text="Loading profile..." fullScreen={true} />
+      <LoadingSpinner size="md" text={t("profile.loading")} fullScreen={true} />
     );
   }
 
   if (error && !profile) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <p className="text-destructive mb-2">Failed to load profile</p>
-          <p className="text-sm text-muted-foreground">{error}</p>
+        <div
+          className="text-center space-y-3"
+          role="alert"
+          aria-live="assertive"
+        >
+          <p className="text-destructive mb-2">
+            {t("profile.error.loadTitle")}
+          </p>
+          <p className="text-sm text-muted-foreground break-words">{error}</p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void refreshProfile()}
+          >
+            {t("common.retry")}
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 pb-24 pt-[clamp(1rem,2vw,1.5rem)] sm:pb-6 sm:pt-[clamp(1.25rem,2.5vw,2rem)] space-y-[clamp(1rem,2.4vw,2rem)] text-foreground">
+      {error ? (
+        <div
+          className="rounded-md border border-destructive/30 bg-destructive/5 p-3"
+          role="alert"
+          aria-live="assertive"
+        >
+          <p className="text-sm text-destructive text-center break-words">
+            {error}
+          </p>
+        </div>
+      ) : null}
+
       {/* Profile Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-card/60 p-4 sm:p-5">
         <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
           <img
             src={avatarSrc}
-            alt="Profile avatar"
+            alt={t("profile.header.avatarAlt", { name: profileName })}
             className="h-full w-full object-cover"
           />
         </div>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold text-foreground">
-            {profile?.name || "User"}
+        <div className="flex-1 min-w-0">
+          <h1
+            className="text-role-subheading text-foreground break-words"
+            dir="auto"
+          >
+            {profileName}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            {profile?.email || "user@couting.app"}
+          <p
+            className="text-role-secondary text-muted-foreground break-all"
+            dir="auto"
+          >
+            {profileEmail}
           </p>
+          <div className="mt-3 rounded-xl border border-secondary/25 bg-secondary/10 px-3.5 py-3 dark:border-primary/30 dark:bg-primary/10">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-primary/85 dark:text-primary-foreground/88">
+              {t("profile.bio.label")}
+            </p>
+            {hasProfileBio ? (
+              <p
+                className="mt-1.5 text-role-secondary leading-relaxed text-foreground/88 dark:text-foreground/90 break-words"
+                dir="auto"
+              >
+                {profileBio}
+              </p>
+            ) : (
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <p className="text-role-caption text-muted-foreground">
+                  {t("profile.bio.empty")}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/profile/edit")}
+                  className="min-h-11 px-3 sm:min-h-9"
+                >
+                  {t("profile.bio.addCta")}
+                </Button>
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2 mt-2">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-              {roleLabel(profile?.role)}
-            </span>
             {profile?.isBanned ? (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
-                Banned
+              <span className="text-role-caption px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
+                {t("profile.status.banned")}
               </span>
             ) : null}
           </div>
@@ -130,201 +289,248 @@ const ProfilePage = () => {
           variant="ghost"
           size="icon"
           onClick={() => setActiveTab("account")}
-          aria-label="Go to account settings"
+          aria-label={t("profile.action.openAccountSettings")}
+          className="h-11 w-11 rounded-full"
         >
           <Settings className="h-5 w-5" />
         </Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/30 p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Phone className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-wide">Phone</p>
-          </div>
-          <p className="text-sm font-semibold text-foreground mt-2 break-words">
-            {profile?.phoneNumber || "Not set"}
-          </p>
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-4">
+        <div className="grid gap-3 lg:gap-4">
+          <ProfileStatCard
+            icon={Phone}
+            label={t("profile.stat.phone")}
+            value={profilePhone}
+          />
+          <ProfileStatCard
+            icon={Cake}
+            label={t("profile.stat.age")}
+            value={profileAge}
+            numeric
+          />
         </div>
-        <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/30 p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Cake className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-wide">Age</p>
-          </div>
-          <p className="text-2xl font-bold text-foreground mt-2 leading-none">
-            {profile?.age ?? "-"}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-card to-muted/30 p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Activity className="h-4 w-4" />
-            <p className="text-xs uppercase tracking-wide">Interactions</p>
-          </div>
-          <p className="text-2xl font-bold text-foreground mt-2 leading-none">
-            {profile?.totalInteractions ?? 0}
-          </p>
-        </div>
+        <ProfileStatCard
+          icon={Activity}
+          label={t("profile.stat.activity")}
+          value={profileInteractions}
+          numeric
+          hint={t("profile.recommendationHint")}
+          stretch
+        />
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full">
-          <TabsTrigger value="preferences" className="flex-1">
-            Preferences
-          </TabsTrigger>
-          <TabsTrigger value="account" className="flex-1">
-            Account
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="preferences" className="space-y-6 pt-4">
-          {/* Interests */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-              Interests
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {INTERESTS.map((item) => {
-                const selected = selectedInterests.includes(item.id);
-                const InterestIcon = INTEREST_ICON_MAP[item.icon] ?? Palette;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => toggleInterest(item.id)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
-                      selected
-                        ? "border-secondary bg-secondary/10 text-foreground"
-                        : "border-border bg-card text-muted-foreground hover:border-secondary/40",
-                    )}
-                  >
-                    <InterestIcon className="h-4 w-4" />
-                    {item.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Vibe */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-              Vibe
-            </h3>
-            <div className="space-y-2 px-2">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>🧘 Quiet</span>
-                <span>🎉 Energetic</span>
-              </div>
-              <Slider value={vibe} onValueChange={setVibe} max={100} step={1} />
-            </div>
-          </div>
-
-          {/* Districts */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-              Areas
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {DISTRICTS.map((d) => {
-                const selected = selectedDistricts.includes(d);
-                return (
-                  <button
-                    key={d}
-                    onClick={() => toggleDistrict(d)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
-                      selected
-                        ? "border-secondary bg-secondary/10 text-foreground"
-                        : "border-border bg-card text-muted-foreground hover:border-secondary/40",
-                    )}
-                  >
-                    {d}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          {/* Budget */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-              Budget
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {BUDGET_OPTIONS.map((d) => {
-                return (
-                  <button
-                    key={d.value}
-                    onClick={() => setSelectedBudget(d.value)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
-                      selectedBudget === d.value
-                        ? "border-secondary bg-secondary/10 text-foreground"
-                        : "border-border bg-card text-muted-foreground hover:border-secondary/40",
-                    )}
-                  >
-                    {d.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
-          >
-            {saving ? "Saving..." : "Save Preferences"}
-          </Button>
-        </TabsContent>
-
-        <TabsContent value="account" className="space-y-3 pt-4">
-          {[
-            {
-              label: "Edit Profile",
-              desc: "Name, photo, and bio",
-              path: "/profile/edit",
-            },
-            {
-              label: "Notifications",
-              desc: "Push and email preferences",
-              path: "/profile/notifications",
-            },
-            {
-              label: "Privacy",
-              desc: "Data and visibility settings",
-              path: "/profile/privacy",
-            },
-            {
-              label: "Help & Support",
-              desc: "FAQs and contact us",
-              path: "/profile/help",
-            },
-          ].map((item) => (
-            <button
-              key={item.label}
-              onClick={() => navigate(item.path)}
-              className="w-full flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:bg-muted/50 transition-colors"
+      <div className="grid gap-[clamp(1rem,2.2vw,1.9rem)] lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full min-w-0"
+        >
+          <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:inline-flex">
+            <TabsTrigger
+              value="preferences"
+              className="w-full sm:min-w-36 text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-primary/15 data-[state=inactive]:hover:text-primary"
             >
-              <div className="text-left">
-                <p className="text-sm font-medium text-foreground">
-                  {item.label}
-                </p>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
+              {t("profile.tab.preferences")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="account"
+              className="w-full sm:min-w-36 text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-primary/15 data-[state=inactive]:hover:text-primary"
+            >
+              {t("profile.tab.account")}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent
+            value="preferences"
+            className="space-y-[clamp(1rem,2.2vw,1.85rem)] pt-4"
+          >
+            {/* Interests */}
+            <div className="space-y-2.5">
+              <h3 className="text-role-caption text-foreground uppercase tracking-wider">
+                {t("profile.preferences.interests")}
+              </h3>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
+                {INTERESTS.map((item) => {
+                  const selected = selectedInterests.includes(item.id);
+                  const InterestIcon = INTEREST_ICON_MAP[item.icon] ?? Palette;
+
+                  return (
+                    <ProfilePreferenceOptionButton
+                      key={item.id}
+                      selected={selected}
+                      onClick={() => toggleInterest(item.id)}
+                      icon={<InterestIcon className="h-4 w-4" />}
+                      className="justify-start px-3.5 py-2 sm:justify-center"
+                    >
+                      {getInterestLabel(item.id, item.label)}
+                    </ProfilePreferenceOptionButton>
+                  );
+                })}
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
+
+            {/* Vibe */}
+            <div className="space-y-2.5">
+              <h3 className="text-role-caption text-foreground uppercase tracking-wider">
+                {t("profile.preferences.vibe")}
+              </h3>
+              <div className="space-y-2 rounded-xl border border-border/70 bg-card/50 px-3 py-3 sm:px-4">
+                <div className="flex justify-between gap-3 text-xs text-muted-foreground">
+                  <span>{t("profile.preferences.vibe.low")}</span>
+                  <span className="text-right">
+                    {t("profile.preferences.vibe.high")}
+                  </span>
+                </div>
+                <Slider
+                  value={vibe}
+                  onValueChange={setVibe}
+                  max={100}
+                  step={1}
+                  aria-label={t("profile.preferences.vibeAria")}
+                />
+              </div>
+            </div>
+
+            {/* Districts */}
+            <div className="space-y-2.5">
+              <h3 className="text-role-caption text-foreground uppercase tracking-wider">
+                {t("profile.preferences.areas")}
+              </h3>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
+                {DISTRICTS.map((district) => (
+                  <ProfilePreferenceOptionButton
+                    key={district}
+                    selected={selectedDistricts.includes(district)}
+                    onClick={() => toggleDistrict(district)}
+                    className="justify-start px-3.5 py-2 sm:justify-center"
+                  >
+                    {getDistrictLabel(district)}
+                  </ProfilePreferenceOptionButton>
+                ))}
+              </div>
+            </div>
+
+            {/* Budget */}
+            <div className="space-y-2.5">
+              <h3 className="text-role-caption text-foreground uppercase tracking-wider">
+                {t("profile.preferences.budget")}
+              </h3>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {BUDGET_OPTIONS.map((option) => (
+                  <ProfilePreferenceOptionButton
+                    key={option.value}
+                    selected={selectedBudget === option.value}
+                    onClick={() => setSelectedBudget(option.value)}
+                    className="justify-center px-3.5 py-2"
+                  >
+                    {t(`budget.${option.value}`, undefined, option.label)}
+                  </ProfilePreferenceOptionButton>
+                ))}
+              </div>
+            </div>
+
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="hidden w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold sm:inline-flex"
+            >
+              {saving
+                ? t("profile.preferences.saving")
+                : t("profile.preferences.save")}
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="account" className="space-y-2.5 pt-4">
+            <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
+              <div className="mb-3 space-y-1">
+                <h3 className="text-role-secondary font-semibold text-foreground">
+                  {t("profile.account.appearanceTitle")}
+                </h3>
+                <p className="text-role-caption text-muted-foreground">
+                  {t("profile.account.appearanceDescription")}
+                </p>
+              </div>
+              <ThemeToggle mode="segmented" className="w-full justify-center" />
+            </section>
+
+            {accountItems.map((item) => (
+              <button
+                key={item.path}
+                type="button"
+                onClick={() => navigate(item.path)}
+                className="w-full flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 text-left transition-colors duration-200 ease-out hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+              >
+                <div className="text-left min-w-0">
+                  <p className="text-role-secondary font-semibold text-foreground break-words">
+                    {item.label}
+                  </p>
+                  <p className="text-role-caption text-muted-foreground break-words">
+                    {item.description}
+                  </p>
+                </div>
+                <ChevronRight className={accountChevronClassName} />
+              </button>
+            ))}
+
+            <Button
+              variant="ghost"
+              className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2 mt-4"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" /> {t("profile.account.signOut")}
+            </Button>
+          </TabsContent>
+        </Tabs>
+
+        <aside className="hidden lg:block lg:sticky lg:top-20 lg:self-start space-y-3 rounded-2xl border border-border/70 bg-card/60 p-4">
+          <h3 className="text-role-caption text-foreground uppercase tracking-wide">
+            {t("profile.quickActions.title")}
+          </h3>
+
+          {accountItems.map((item) => (
+            <button
+              key={`sidebar-${item.path}`}
+              type="button"
+              onClick={() => navigate(item.path)}
+              className="w-full flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/70 px-3 py-3 text-left transition-colors duration-200 ease-out hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
+            >
+              <span className="min-w-0 text-role-secondary text-foreground break-words">
+                {item.label}
+              </span>
+              <ChevronRight className={accountChevronClassName} />
             </button>
           ))}
 
+          <p className="pt-2 text-role-caption text-muted-foreground">
+            {t("profile.quickActions.hint")}
+          </p>
+
           <Button
             variant="ghost"
-            className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2 mt-4"
+            className="mt-1 w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={handleLogout}
           >
-            <LogOut className="h-4 w-4" /> Sign Out
+            <LogOut className="h-4 w-4" /> {t("profile.account.signOut")}
           </Button>
-        </TabsContent>
-      </Tabs>
+        </aside>
+      </div>
+
+      {isPreferencesTabActive ? (
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur-sm sm:hidden">
+          <div className="mx-auto max-w-5xl px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
+            >
+              {saving
+                ? t("profile.preferences.saving")
+                : t("profile.preferences.save")}
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

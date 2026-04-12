@@ -5,6 +5,61 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>couting</title>
+    <script>
+      (function () {
+        var storageKey = "c-outing-theme";
+        var languageStorageKey = "c-outing-language";
+        var root = document.documentElement;
+        var validPreferences = { light: true, dark: true, system: true };
+        var validLanguages = { en: true, ar: true };
+
+        var browserLanguage = (window.navigator.language || "en").toLowerCase();
+        var fallbackLanguage =
+          browserLanguage.indexOf("ar") === 0 ? "ar" : "en";
+
+        try {
+          var storedLanguage = window.localStorage.getItem(languageStorageKey);
+          var language = validLanguages[storedLanguage]
+            ? storedLanguage
+            : fallbackLanguage;
+
+          root.lang = language;
+          root.dir = language === "ar" ? "rtl" : "ltr";
+          root.dataset.language = language;
+          root.dataset.direction = root.dir;
+
+          var stored = window.localStorage.getItem(storageKey);
+          var preference = validPreferences[stored] ? stored : "system";
+          var prefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          var resolved =
+            preference === "system"
+              ? prefersDark
+                ? "dark"
+                : "light"
+              : preference;
+
+          root.classList.toggle("dark", resolved === "dark");
+          root.style.colorScheme = resolved;
+          root.dataset.themePreference = preference;
+          root.dataset.theme = resolved;
+        } catch {
+          root.lang = fallbackLanguage;
+          root.dir = fallbackLanguage === "ar" ? "rtl" : "ltr";
+          root.dataset.language = fallbackLanguage;
+          root.dataset.direction = root.dir;
+
+          var fallbackDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          root.classList.toggle("dark", fallbackDark);
+          root.style.colorScheme = fallbackDark ? "dark" : "light";
+          root.dataset.themePreference = "system";
+          root.dataset.theme = fallbackDark ? "dark" : "light";
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

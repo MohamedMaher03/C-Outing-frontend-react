@@ -16,8 +16,10 @@ import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type {
   AdminStats,
-  AdminUser,
   AdminUserId,
+  AdminUserRoleFilter,
+  AdminUsersPage,
+  AdminUsersQuery,
   AdminUserStatus,
   AdminPlace,
   AdminReview,
@@ -27,27 +29,30 @@ import type {
   CreateAdminPlaceInput,
 } from "../types";
 import {
-  emptyReviews,
+  mapAdminCategories,
+  mapAdminReviews,
   mapAdminUsersPage,
   mapAdminVenuesPage,
   mapReportedVenueIds,
   mapStats,
-  toDerivedCategories,
   toRecentActivity,
   toSystemSettings,
 } from "./adminApi.mapper";
 
-interface UsersParams {
-  searchTerm?: string;
-  role?: number;
+interface UsersParams extends AdminUsersQuery {
   isBanned?: boolean;
-  page?: number;
-  count?: number;
 }
 
 interface VenuesParams {
   page?: number;
   count?: number;
+}
+
+interface ReviewsParams {
+  page?: number;
+  count?: number;
+  status?: AdminReview["status"];
+  searchTerm?: string;
 }
 
 const toQueryParams = (params: Record<string, unknown>): URLSearchParams => {
@@ -64,13 +69,31 @@ const toQueryParams = (params: Record<string, unknown>): URLSearchParams => {
   return query;
 };
 
-const getUsers = async (params: UsersParams = {}): Promise<AdminUser[]> => {
+const mapRoleFilterToApiRole = (
+  roleFilter: AdminUserRoleFilter | undefined,
+): string | undefined => {
+  if (!roleFilter || roleFilter === "all") {
+    return undefined;
+  }
+
+  if (roleFilter === "admin") {
+    return "Admin";
+  }
+
+  if (roleFilter === "moderator") {
+    return "Moderator";
+  }
+
+  return "User";
+};
+
+const getUsers = async (params: UsersParams = {}): Promise<AdminUsersPage> => {
   const query = toQueryParams({
     SearchTerm: params.searchTerm,
-    Role: params.role,
+    Role: mapRoleFilterToApiRole(params.role),
     IsBanned: params.isBanned,
     page: params.page ?? 1,
-    count: params.count ?? 100,
+    count: params.count ?? 10,
   });
 
   const { data } = await axiosInstance.get(
@@ -101,6 +124,23 @@ const getPlaces = async (params: VenuesParams = {}): Promise<AdminPlace[]> => {
   return mapAdminVenuesPage(venuesResponse.data, reportedVenueIds);
 };
 
+const getReviews = async (
+  params: ReviewsParams = {},
+): Promise<AdminReview[]> => {
+  const query = toQueryParams({
+    page: params.page ?? 1,
+    count: params.count ?? 100,
+    status: params.status,
+    searchTerm: params.searchTerm,
+  });
+
+  const { data } = await axiosInstance.get(
+    `${API_ENDPOINTS.admin.getReviews}?${query.toString()}`,
+  );
+
+  return mapAdminReviews(data);
+};
+
 export const adminApi = {
   /**
    * GET /admin/stats
@@ -113,9 +153,7 @@ export const adminApi = {
       axiosInstance.get(API_ENDPOINTS.admin.getReportedVenues),
     ]);
 
-    const reports = Array.isArray(reportsResponse.data?.data)
-      ? reportsResponse.data.data.length
-      : 0;
+    const reports = mapReportedVenueIds(reportsResponse.data).size;
 
     return mapStats(statsResponse.data, healthResponse.data, reports);
   },
@@ -135,10 +173,15 @@ export const adminApi = {
 
   /**
    * GET /admin/users
-   * Returns all registered users.
+   * Returns paginated users.
    */
-  async getUsers(): Promise<AdminUser[]> {
-    return getUsers({ page: 1, count: 100 });
+  async getUsers(params: AdminUsersQuery = {}): Promise<AdminUsersPage> {
+    return getUsers({
+      page: params.page ?? 1,
+      count: params.count ?? 10,
+      role: params.role,
+      searchTerm: params.searchTerm,
+    });
   },
 
   /**
@@ -171,14 +214,13 @@ export const adminApi = {
   },
 
   /**
-   * POST /admin/places
-   * Creates a new place.
+   * POST /api/v1/Venue/scrape/initiate
+   * Initiates venue scraping using a Google Maps URL.
    */
-  async addPlace(placeData: CreateAdminPlaceInput): Promise<AdminPlace> {
-    void placeData;
-    throw new Error(
-      "Create venue endpoint is not available in current backend APIs",
-    );
+  async addPlace(placeData: CreateAdminPlaceInput): Promise<void> {
+    await axiosInstance.post(API_ENDPOINTS.places.scrapeInitiate, {
+      venueUrl: placeData.venueUrl,
+    });
   },
 
   /**
@@ -189,11 +231,9 @@ export const adminApi = {
     placeId: string,
     status: AdminPlace["status"],
   ): Promise<void> {
-    void placeId;
-    void status;
-    throw new Error(
-      "Update venue status endpoint is not available in current backend APIs",
-    );
+    await axiosInstance.patch(API_ENDPOINTS.admin.updateVenueStatus(placeId), {
+      status,
+    });
   },
 
   /**
@@ -209,7 +249,7 @@ export const adminApi = {
    * Returns all reviews.
    */
   async getReviews(): Promise<AdminReview[]> {
-    return emptyReviews;
+    return getReviews({ page: 1, count: 100 });
   },
 
   /**
@@ -220,10 +260,11 @@ export const adminApi = {
     reviewId: string,
     status: AdminReview["status"],
   ): Promise<void> {
-    void reviewId;
-    void status;
-    throw new Error(
-      "Review moderation endpoint is not available in current backend APIs",
+    await axiosInstance.patch(
+      API_ENDPOINTS.admin.updateReviewStatus(reviewId),
+      {
+        status,
+      },
     );
   },
 
@@ -240,8 +281,8 @@ export const adminApi = {
    * Returns all venue categories.
    */
   async getCategories(): Promise<AdminCategory[]> {
-    const places = await getPlaces({ page: 1, count: 200 });
-    return toDerivedCategories(places);
+    const { data } = await axiosInstance.get(API_ENDPOINTS.admin.getCategories);
+    return mapAdminCategories(data);
   },
 
   /**

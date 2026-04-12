@@ -3,22 +3,35 @@
  * Manages state and actions for the Reported Content moderator page.
  */
 
-import { useState, useEffect } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { moderatorService } from "@/features/moderator/services/moderatorService";
 import type {
   ReportedContent,
   ModeratorToast,
+  ReportedContentStatusFilter,
+  ReportedContentTypeFilter,
 } from "@/features/moderator/types";
+import { filterReportedContent } from "@/features/moderator/utils/moderatorFilters";
 import { getErrorMessage } from "@/utils/apiError";
+import { useI18n } from "@/components/i18n";
 
 interface UseReportedContentReturn {
   // State
   reports: ReportedContent[];
   loading: boolean;
   error: string | null;
+  pendingReportIds: string[];
+  pendingReportIdSet: ReadonlySet<string>;
   search: string;
-  statusFilter: string;
-  typeFilter: string;
+  statusFilter: ReportedContentStatusFilter;
+  typeFilter: ReportedContentTypeFilter;
   expandedId: string | null;
   actionLoading: string | null;
   toasts: ModeratorToast[];
@@ -26,11 +39,12 @@ interface UseReportedContentReturn {
 
   // Setters
   setSearch: (value: string) => void;
-  setStatusFilter: (value: string) => void;
-  setTypeFilter: (value: string) => void;
+  setStatusFilter: (value: ReportedContentStatusFilter) => void;
+  setTypeFilter: (value: ReportedContentTypeFilter) => void;
   setExpandedId: (id: string | null) => void;
 
   // Actions
+  retry: () => Promise<void>;
   handleStatusChange: (
     reportId: string,
     status: ReportedContent["status"],
@@ -41,66 +55,158 @@ interface UseReportedContentReturn {
 }
 
 export const useReportedContent = (): UseReportedContentReturn => {
+  const { t } = useI18n();
   const [reports, setReports] = useState<ReportedContent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pendingReportIds, setPendingReportIds] = useState<string[]>([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [typeFilter, setTypeFilter] = useState<string>("review");
+  const [statusFilter, setStatusFilter] =
+    useState<ReportedContentStatusFilter>("all");
+  const [typeFilter, setTypeFilter] =
+    useState<ReportedContentTypeFilter>("all");
+  const deferredSearch = useDeferredValue(search);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ModeratorToast[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+  const inFlightRef = useRef(new Set<string>());
+  const toastTimersRef = useRef<number[]>([]);
+  const pendingReportIdSet = useMemo(
+    () => new Set(pendingReportIds),
+    [pendingReportIds],
+  );
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await moderatorService.getReportedContent();
-        setReports(data);
-      } catch (err) {
-        setError(getErrorMessage(err, "Failed to load reported content"));
-      } finally {
+  const loadReportedContent = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await moderatorService.getReportedContent();
+      if (!mountedRef.current) return;
+      setReports(data);
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setError(getErrorMessage(err, t("moderator.error.loadReportedContent")));
+      setReports([]);
+    } finally {
+      if (mountedRef.current) {
         setLoading(false);
       }
+    }
+  }, [t]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    void loadReportedContent();
+
+    return () => {
+      mountedRef.current = false;
+      toastTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+      toastTimersRef.current = [];
     };
-    load();
+  }, [loadReportedContent]);
+
+  const addPendingReport = useCallback((reportId: string) => {
+    setPendingReportIds((prev) =>
+      prev.includes(reportId) ? prev : [...prev, reportId],
+    );
+  }, []);
+
+  const removePendingReport = useCallback((reportId: string) => {
+    setPendingReportIds((prev) => prev.filter((id) => id !== reportId));
   }, []);
 
   const showToast = (
     message: string,
     variant: ModeratorToast["variant"] = "success",
   ) => {
-    const id = Date.now();
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setToasts((prev) => [...prev, { id, message, variant }]);
-    setTimeout(
-      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-      3000,
-    );
+    const timerId = window.setTimeout(() => {
+      if (!mountedRef.current) return;
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+      toastTimersRef.current = toastTimersRef.current.filter(
+        (value) => value !== timerId,
+      );
+    }, 3200);
+
+    toastTimersRef.current.push(timerId);
   };
 
   const handleStatusChange = async (
     reportId: string,
     status: ReportedContent["status"],
   ) => {
-    await moderatorService.updateReportStatus(reportId, status);
-    setReports((prev) =>
-      prev.map((r) =>
-        r.id === reportId
-          ? {
-              ...r,
-              status,
-              ...(["resolved", "dismissed"].includes(status)
-                ? { resolvedAt: new Date() }
-                : {}),
-            }
-          : r,
-      ),
-    );
+    const actionKey = `${reportId}_status_${status}`;
+
+    if (inFlightRef.current.has(actionKey)) {
+      return;
+    }
+
+    inFlightRef.current.add(actionKey);
+    addPendingReport(reportId);
+    setActionLoading(actionKey);
+    setError(null);
+
+    try {
+      await moderatorService.updateReportStatus(reportId, status);
+      if (!mountedRef.current) return;
+
+      setReports((prev) =>
+        prev.map((report) =>
+          report.id === reportId
+            ? {
+                ...report,
+                status,
+                ...(["resolved", "dismissed"].includes(status)
+                  ? { resolvedAt: new Date() }
+                  : {}),
+              }
+            : report,
+        ),
+      );
+
+      showToast(
+        t("moderator.reports.toast.statusUpdated", {
+          status: t(`moderator.report.status.${status}`),
+        }),
+        "info",
+      );
+    } catch (err) {
+      if (!mountedRef.current) return;
+
+      const message = getErrorMessage(
+        err,
+        t("moderator.error.updateReportStatus"),
+      );
+      setError(message);
+      showToast(message, "error");
+    } finally {
+      inFlightRef.current.delete(actionKey);
+
+      if (mountedRef.current) {
+        setActionLoading(null);
+        removePendingReport(reportId);
+      }
+    }
   };
 
   const handleDeleteReview = async (reportId: string) => {
+    const actionKey = `${reportId}_delete`;
+    if (inFlightRef.current.has(actionKey)) {
+      return;
+    }
+
     try {
-      setActionLoading(reportId + "_delete");
+      inFlightRef.current.add(actionKey);
+      addPendingReport(reportId);
+      setActionLoading(actionKey);
+      setError(null);
+
       await moderatorService.deleteReview(reportId);
+      if (!mountedRef.current) return;
+
       setReports((prev) =>
         prev.map((r) =>
           r.id === reportId
@@ -109,33 +215,37 @@ export const useReportedContent = (): UseReportedContentReturn => {
         ),
       );
       setExpandedId(null);
-      showToast("Review deleted successfully.", "destructive");
+      showToast(t("moderator.reports.toast.reviewDeleted"), "destructive");
+    } catch (err) {
+      if (!mountedRef.current) return;
+
+      const message = getErrorMessage(err, t("moderator.error.deleteReview"));
+      setError(message);
+      showToast(message, "error");
     } finally {
-      setActionLoading(null);
+      inFlightRef.current.delete(actionKey);
+      if (mountedRef.current) {
+        setActionLoading(null);
+        removePendingReport(reportId);
+      }
     }
   };
 
   const handleWarnUser = async (reportId: string, authorName?: string) => {
-    try {
-      setActionLoading(reportId + "_warn");
-      await moderatorService.warnUser(reportId);
-      setReports((prev) =>
-        prev.map((r) =>
-          r.id === reportId
-            ? { ...r, status: "resolved", resolvedAt: new Date() }
-            : r,
-        ),
-      );
-      showToast(`Warning sent to ${authorName ?? "user"}.`, "warning");
-    } finally {
-      setActionLoading(null);
+    const actionKey = `${reportId}_warn`;
+    if (inFlightRef.current.has(actionKey)) {
+      return;
     }
-  };
 
-  const handleBanUser = async (reportId: string, authorName?: string) => {
     try {
-      setActionLoading(reportId + "_ban");
-      await moderatorService.banUser(reportId);
+      inFlightRef.current.add(actionKey);
+      addPendingReport(reportId);
+      setActionLoading(actionKey);
+      setError(null);
+
+      await moderatorService.warnUser(reportId);
+      if (!mountedRef.current) return;
+
       setReports((prev) =>
         prev.map((r) =>
           r.id === reportId
@@ -144,28 +254,81 @@ export const useReportedContent = (): UseReportedContentReturn => {
         ),
       );
       showToast(
-        `${authorName ?? "User"} escalated to admin for ban review.`,
-        "destructive",
+        t("moderator.reports.toast.warningSent", {
+          name: authorName ?? t("profile.userFallback"),
+        }),
+        "warning",
       );
+    } catch (err) {
+      if (!mountedRef.current) return;
+
+      const message = getErrorMessage(err, t("moderator.error.warnUser"));
+      setError(message);
+      showToast(message, "error");
     } finally {
-      setActionLoading(null);
+      inFlightRef.current.delete(actionKey);
+      if (mountedRef.current) {
+        setActionLoading(null);
+        removePendingReport(reportId);
+      }
     }
   };
 
-  const filteredReports = reports.filter((r) => {
-    const matchesSearch =
-      r.reportedItemName.toLowerCase().includes(search.toLowerCase()) ||
-      r.reporterName.toLowerCase().includes(search.toLowerCase()) ||
-      r.reason.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || r.status === statusFilter;
-    const matchesType = typeFilter === "all" || r.type === typeFilter;
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  const handleBanUser = async (reportId: string, authorName?: string) => {
+    const actionKey = `${reportId}_ban`;
+    if (inFlightRef.current.has(actionKey)) {
+      return;
+    }
+
+    try {
+      inFlightRef.current.add(actionKey);
+      addPendingReport(reportId);
+      setActionLoading(actionKey);
+      setError(null);
+
+      await moderatorService.banUser(reportId);
+      if (!mountedRef.current) return;
+
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === reportId
+            ? { ...r, status: "resolved", resolvedAt: new Date() }
+            : r,
+        ),
+      );
+      showToast(
+        t("moderator.reports.toast.banEscalated", {
+          name: authorName ?? t("profile.userFallback"),
+        }),
+        "destructive",
+      );
+    } catch (err) {
+      if (!mountedRef.current) return;
+
+      const message = getErrorMessage(err, t("moderator.error.banUser"));
+      setError(message);
+      showToast(message, "error");
+    } finally {
+      inFlightRef.current.delete(actionKey);
+      if (mountedRef.current) {
+        setActionLoading(null);
+        removePendingReport(reportId);
+      }
+    }
+  };
+
+  const filteredReports = useMemo(
+    () =>
+      filterReportedContent(reports, deferredSearch, statusFilter, typeFilter),
+    [reports, deferredSearch, statusFilter, typeFilter],
+  );
 
   return {
     reports,
     loading,
     error,
+    pendingReportIds,
+    pendingReportIdSet,
     search,
     statusFilter,
     typeFilter,
@@ -177,6 +340,7 @@ export const useReportedContent = (): UseReportedContentReturn => {
     setStatusFilter,
     setTypeFilter,
     setExpandedId,
+    retry: loadReportedContent,
     handleStatusChange,
     handleDeleteReview,
     handleWarnUser,

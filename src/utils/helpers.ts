@@ -3,6 +3,21 @@
  * Shared utility functions used across the application
  */
 
+const getCurrentLocale = (): string => {
+  if (typeof document !== "undefined") {
+    const current = document.documentElement.lang?.trim();
+    if (current) {
+      return current;
+    }
+  }
+
+  if (typeof navigator !== "undefined") {
+    return navigator.language || "en-US";
+  }
+
+  return "en-US";
+};
+
 /**
  * Format rating value to display string
  */
@@ -22,7 +37,7 @@ export function formatSentiment(score: number): string {
  */
 export function formatDate(
   date: Date | string,
-  locale: string = "en-US",
+  locale: string = getCurrentLocale(),
 ): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return d.toLocaleDateString(locale);
@@ -33,7 +48,7 @@ export function formatDate(
  */
 export function formatTime(
   date: Date | string,
-  locale: string = "en-US",
+  locale: string = getCurrentLocale(),
 ): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return d.toLocaleTimeString(locale, {

@@ -7,14 +7,18 @@ import {
   Loader2,
   Calendar,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useEditProfile } from "@/features/profile/hooks/useEditProfile";
 import { buildDefaultAvatarDataUrl } from "@/features/profile/utils/defaultAvatar";
+import { useI18n } from "@/components/i18n";
 
 const EditProfilePage = () => {
+  const navigate = useNavigate();
+  const { t } = useI18n();
   const {
     formData,
     avatarPreview,
@@ -26,7 +30,10 @@ const EditProfilePage = () => {
     handleAvatarChange,
     handleChange,
     handleSubmit,
+    reloadProfile,
   } = useEditProfile();
+
+  const maxBirthDate = new Date().toISOString().slice(0, 10);
 
   if (loading) {
     return (
@@ -40,33 +47,64 @@ const EditProfilePage = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button
-            onClick={() => history.back()}
-            className="p-2 hover:bg-muted rounded-full transition-colors"
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/profile")}
+            aria-label={t("profile.edit.backToProfileAria")}
+            className="h-11 w-11 rounded-full"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
-          <h1 className="text-xl font-bold text-foreground">Edit Profile</h1>
+          </Button>
+          <h1 className="text-role-subheading text-foreground">
+            {t("profile.edit.title")}
+          </h1>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-3xl mx-auto px-4 pb-24 pt-[clamp(1rem,2vw,1.5rem)] sm:pb-6 sm:pt-[clamp(1.25rem,2.5vw,2rem)] space-y-[clamp(1rem,2.2vw,1.8rem)]">
         {error && (
-          <p className="text-sm text-destructive text-center">{error}</p>
+          <div
+            className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 p-3"
+            role="alert"
+            aria-live="assertive"
+          >
+            <p className="text-sm text-destructive text-center break-words">
+              {error}
+            </p>
+            <div className="mt-3 flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void reloadProfile()}
+                disabled={loading || saving}
+              >
+                {t("common.retry")}
+              </Button>
+            </div>
+          </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form
+          id="edit-profile-form"
+          onSubmit={handleSubmit}
+          className="space-y-[clamp(1rem,2vw,1.75rem)]"
+        >
           {/* Profile Photo */}
-          <div className="flex flex-col items-center gap-4">
+          <section className="flex flex-col items-center gap-4 rounded-2xl border border-border/70 bg-card/50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
             <div className="relative">
               <div className="h-24 w-24 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
                 <img
                   src={
                     avatarPreview ||
-                    buildDefaultAvatarDataUrl(formData.name || "User")
+                    buildDefaultAvatarDataUrl(
+                      formData.name || t("profile.userFallback"),
+                    )
                   }
-                  alt="Profile avatar"
+                  alt={t("profile.edit.avatarAlt")}
                   className="h-full w-full object-cover"
                 />
               </div>
@@ -82,7 +120,8 @@ const EditProfilePage = () => {
                 type="button"
                 onClick={triggerFilePicker}
                 disabled={saving}
-                className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-secondary text-white flex items-center justify-center hover:bg-secondary/90 transition-colors disabled:opacity-50"
+                aria-label={t("profile.edit.changePhotoAria")}
+                className="absolute bottom-0 right-0 h-11 w-11 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center hover:bg-secondary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors disabled:opacity-50"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -91,21 +130,21 @@ const EditProfilePage = () => {
                 )}
               </button>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-role-secondary text-muted-foreground">
               {avatarPreview
-                ? "Click the camera to change photo"
-                : "Click to upload a new photo"}
+                ? t("profile.edit.photoHint.withPhoto")
+                : t("profile.edit.photoHint.withoutPhoto")}
             </p>
-          </div>
+          </section>
 
           {/* Form Fields */}
-          <div className="space-y-4">
-            <div className="space-y-2">
+          <section className="grid gap-4 rounded-2xl border border-border/70 bg-card/40 p-4 sm:grid-cols-2 sm:p-5">
+            <div className="space-y-2 sm:col-span-1">
               <Label
                 htmlFor="name"
-                className="text-sm font-medium text-foreground"
+                className="text-role-secondary font-semibold text-foreground"
               >
-                Full Name
+                {t("profile.edit.name")}
               </Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -114,42 +153,20 @@ const EditProfilePage = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
+                  maxLength={100}
+                  autoComplete="name"
                   className="pl-10"
-                  placeholder="Enter your name"
+                  placeholder={t("profile.edit.namePlaceholder")}
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-sm font-medium text-foreground"
-              >
-                Email
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  readOnly
-                  className="pl-10"
-                  placeholder="Email"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Email is managed by your account settings.
-              </p>
-            </div>
-
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-1">
               <Label
                 htmlFor="phoneNumber"
-                className="text-sm font-medium text-foreground"
+                className="text-role-secondary font-semibold text-foreground"
               >
-                Phone Number
+                {t("profile.edit.phone")}
               </Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -159,21 +176,80 @@ const EditProfilePage = () => {
                   type="tel"
                   value={formData.phoneNumber}
                   onChange={handleChange}
+                  maxLength={30}
+                  inputMode="tel"
+                  autoComplete="tel"
                   className="pl-10"
-                  placeholder="e.g. +20 123 456 7890"
+                  placeholder={t("profile.edit.phonePlaceholder")}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Use international format with country code.
+              <p className="text-role-caption text-muted-foreground">
+                {t("profile.edit.phoneHint")}
               </p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label
+                htmlFor="email"
+                className="text-role-secondary font-semibold text-foreground"
+              >
+                {t("profile.edit.email")}
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  readOnly
+                  autoComplete="email"
+                  className="pl-10"
+                  placeholder={t("profile.edit.email")}
+                />
+              </div>
+              <p className="text-role-caption text-muted-foreground">
+                {t("profile.edit.emailHint")}
+              </p>
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <Label
+                htmlFor="bio"
+                className="text-role-secondary font-semibold text-foreground"
+              >
+                {t("profile.edit.bio")}
+              </Label>
+              <textarea
+                id="bio"
+                name="bio"
+                value={formData.bio}
+                onChange={handleChange}
+                maxLength={500}
+                rows={4}
+                dir="auto"
+                className="flex min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder={t("profile.edit.bioPlaceholder")}
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-role-caption text-muted-foreground">
+                  {t("profile.edit.bioHint", { max: 500 })}
+                </p>
+                <p className="text-role-caption text-muted-foreground text-numeric-tabular">
+                  {t("profile.edit.bioCounter", {
+                    count: formData.bio.length,
+                    max: 500,
+                  })}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 sm:col-span-1">
               <Label
                 htmlFor="birthDate"
-                className="text-sm font-medium text-foreground"
+                className="text-role-secondary font-semibold text-foreground"
               >
-                Birth Date
+                {t("profile.edit.birthDate")}
               </Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -183,32 +259,56 @@ const EditProfilePage = () => {
                   type="date"
                   value={formData.birthDate}
                   onChange={handleChange}
+                  max={maxBirthDate}
                   className="pl-10"
-                  placeholder="Select your birth date"
+                  placeholder={t("profile.edit.birthDatePlaceholder")}
                 />
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="hidden gap-3 pt-2 sm:flex">
             <Button
               type="button"
               variant="ghost"
-              onClick={() => history.back()}
+              onClick={() => navigate("/profile")}
               className="flex-1"
             >
-              Cancel
+              {t("profile.edit.cancel")}
             </Button>
             <Button
               type="submit"
               disabled={saving}
               className="flex-1 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? t("profile.edit.saving") : t("profile.edit.save")}
             </Button>
           </div>
         </form>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur-sm sm:hidden">
+        <div className="mx-auto max-w-3xl px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => navigate("/profile")}
+              className="flex-1"
+            >
+              {t("profile.edit.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              form="edit-profile-form"
+              disabled={saving}
+              className="flex-1 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
+            >
+              {saving ? t("profile.edit.saving") : t("profile.edit.save")}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

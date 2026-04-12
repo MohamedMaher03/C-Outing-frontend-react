@@ -22,6 +22,9 @@ export {
   markAllNotificationsAsRead,
   deleteNotification,
 } from "./services/notificationsService";
+export { notificationsDataSource } from "./services/notificationsDataSource";
+
+export type { NotificationsDataSource } from "./types/dataSource";
 
 // Shared presentation helpers
 export {

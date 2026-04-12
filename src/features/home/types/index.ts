@@ -8,17 +8,13 @@ import type {
   MoodOption,
   TrendingTag,
 } from "@/mocks/mockData";
+import type { CanonicalPriceLevel } from "@/utils/priceLevels";
 
 /** Active filter pill identifiers */
 export type FilterType = "all" | "near-me" | "open-now" | "saved" | "has-wifi";
 
 /** Canonical backend budget bands used by Venue/price-range. */
-export type VenuePriceRange =
-  | "price_cheapest"
-  | "cheap"
-  | "mid_range"
-  | "expensive"
-  | "luxury";
+export type VenuePriceRange = CanonicalPriceLevel;
 
 export type DiscoverySource =
   | "district"
@@ -111,6 +107,8 @@ export interface PlaceCardProps {
   variant?: "horizontal" | "grid";
   userLocation?: UserLocationState | null;
   onToggleSave?: (id: string) => void;
+  isSavePending?: boolean;
+  hideTopRatedBadge?: boolean;
   onClick?: (id: string) => void;
 }
 

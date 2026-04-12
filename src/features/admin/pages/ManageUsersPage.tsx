@@ -5,6 +5,8 @@
  * Follows the project's card-based design with secondary accent.
  */
 
+import { useEffect, useMemo } from "react";
+
 import {
   Search,
   ShieldCheck,
@@ -12,6 +14,9 @@ import {
   Ban,
   CheckCircle,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,80 +25,174 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import { useManageUsers } from "@/features/admin/hooks/useManageUsers";
 import {
+  AdminEmptyState,
+  AdminErrorBanner,
+  AdminFilterChips,
+  AdminPageLayout,
+  AdminPageHeader,
+  AdminSection,
+} from "@/features/admin/components";
+import { USER_ROLE_FILTER_OPTIONS } from "@/features/admin/constants/filterOptions";
+import {
   userRoleBadge,
   userStatusBadge,
 } from "@/features/admin/constants/statusConfigs";
+import { useI18n } from "@/components/i18n";
 
 const ManageUsersPage = () => {
+  const { t, locale, formatNumber } = useI18n();
   const {
     users,
     loading,
+    error,
+    updatingUserId,
     search,
     roleFilter,
     actionMenu,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
     filteredUsers,
     setSearch,
     setRoleFilter,
     setActionMenu,
+    retry,
+    goToPreviousPage,
+    goToNextPage,
     handleStatusChange,
   } = useManageUsers();
 
-  if (loading) {
-    return <LoadingSpinner size="md" text="Loading users..." fullScreen />;
+  const monthYearFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: "short",
+        year: "numeric",
+      }),
+    [locale],
+  );
+
+  const roleFilterOptions = useMemo(
+    () =>
+      USER_ROLE_FILTER_OPTIONS.map((option) => ({
+        ...option,
+        label:
+          option.value === "all"
+            ? t("admin.filter.all")
+            : t(`admin.role.${option.value}`),
+      })),
+    [t],
+  );
+
+  const getStatusLabel = (status: keyof typeof userStatusBadge): string =>
+    t(`admin.status.${status}`);
+
+  const getRoleLabel = (role: keyof typeof userRoleBadge): string =>
+    t(`admin.role.${role}`);
+
+  useEffect(() => {
+    if (!actionMenu) return;
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const withinOpenMenu = target?.closest(
+        `[data-user-menu-root="${actionMenu}"]`,
+      );
+
+      if (!withinOpenMenu) {
+        setActionMenu(null);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setActionMenu(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [actionMenu, setActionMenu]);
+
+  const activeUsersCount = useMemo(
+    () => users.filter((user) => user.status === "active").length,
+    [users],
+  );
+
+  const currentPageNumber = pageIndex;
+
+  if (loading && users.length === 0) {
+    return (
+      <LoadingSpinner size="md" text={t("admin.users.loading")} fullScreen />
+    );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <AdminPageLayout>
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-secondary" />
-          Manage Users
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {users.length} total users ·{" "}
-          {users.filter((u) => u.status === "active").length} active
-        </p>
-      </div>
+      <AdminPageHeader
+        title={t("admin.users.header.title")}
+        description={t("admin.users.header.description", {
+          total: formatNumber(totalCount),
+          active: formatNumber(activeUsersCount),
+        })}
+        icon={ShieldCheck}
+      />
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex gap-2">
-          {["all", "user", "moderator", "admin"].map((role) => (
-            <button
-              key={role}
-              onClick={() => setRoleFilter(role)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all border",
-                roleFilter === role
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/40",
-              )}
-            >
-              {role === "all"
-                ? "All"
-                : role.charAt(0).toUpperCase() + role.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
+      <AdminErrorBanner
+        title={t("admin.users.error.updateTitle")}
+        message={error}
+        onRetry={() => {
+          void retry();
+        }}
+      />
 
-      {/* Users List */}
-      <div className="space-y-3">
-        {filteredUsers.length === 0 ? (
-          <div className="text-center py-12">
-            <User className="h-12 w-12 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-muted-foreground">No users found</p>
+      <AdminSection
+        tone="muted"
+        title={t("admin.users.filters.title")}
+        description={t("admin.users.filters.description")}
+      >
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t("admin.users.filters.searchPlaceholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
           </div>
+          <div className="lg:w-auto">
+            <AdminFilterChips
+              label={t("admin.filter.role")}
+              options={roleFilterOptions}
+              value={roleFilter}
+              onChange={setRoleFilter}
+            />
+          </div>
+        </div>
+      </AdminSection>
+
+      <AdminSection
+        title={t("admin.users.records.title")}
+        description={t("admin.users.records.description", {
+          count: formatNumber(totalCount),
+        })}
+        contentClassName="gap-3"
+      >
+        {filteredUsers.length === 0 ? (
+          <AdminEmptyState
+            icon={User}
+            title={t("admin.users.empty.title")}
+            description={t("admin.users.empty.description")}
+          />
         ) : (
           filteredUsers.map((user) => {
             const role = userRoleBadge[user.role];
@@ -103,94 +202,133 @@ const ManageUsersPage = () => {
             return (
               <div
                 key={user.userId}
-                className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-secondary/30 hover:shadow-sm transition-all"
+                className="relative flex min-w-0 flex-col gap-4 rounded-xl border border-border bg-card p-4 transition-all motion-reduce:transition-none hover:border-secondary/35 hover:shadow-sm sm:flex-row sm:items-center"
               >
                 {/* Avatar */}
-                <div className="h-11 w-11 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary/10">
                   {user.avatar ? (
                     <img
                       src={user.avatar}
                       alt={user.name}
                       className="h-full w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
-                    <User className="h-5 w-5 text-secondary" />
+                    <User className="h-5 w-5 text-secondary dark:text-primary" />
                   )}
                 </div>
 
                 {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-foreground truncate">
+                <div className="mt-2 min-w-0 flex-1 sm:mt-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="truncate text-role-secondary font-semibold text-foreground">
                       {user.name}
                     </p>
                     <Badge
                       variant="outline"
-                      className={cn("text-[10px] px-1.5 py-0", role.class)}
+                      className={cn(
+                        "px-1.5 py-0 text-role-caption",
+                        role.class,
+                      )}
                     >
-                      {role.label}
+                      {getRoleLabel(user.role)}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="truncate text-role-caption text-muted-foreground">
                     {user.email}
                   </p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                  <div className="mt-1 flex flex-wrap items-center gap-3 text-role-caption text-muted-foreground">
                     <span
                       className={cn("flex items-center gap-1", status.class)}
                     >
-                      <StatusIcon className="h-3 w-3" /> {status.label}
+                      <StatusIcon className="h-3 w-3" />
+                      {getStatusLabel(user.status)}
                     </span>
                     <span>·</span>
-                    <span>{user.reviewCount} reviews</span>
+                    <span>
+                      {t("admin.users.meta.reviews", {
+                        count: formatNumber(user.reviewCount),
+                      })}
+                    </span>
                     <span>·</span>
                     <span>
-                      Joined{" "}
-                      {new Date(user.joinedDate).toLocaleDateString("en-US", {
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {t("admin.users.meta.joined")}{" "}
+                      {monthYearFormatter.format(new Date(user.joinedDate))}
                     </span>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="relative flex-shrink-0">
+                <div
+                  className="relative mt-3 w-full flex-shrink-0 sm:mt-0 sm:w-auto"
+                  data-user-menu-root={user.userId}
+                >
                   <Button
                     variant="ghost"
                     size="sm"
+                    type="button"
                     onClick={() =>
                       setActionMenu(
                         actionMenu === user.userId ? null : user.userId,
                       )
                     }
-                    className="gap-1 text-xs"
+                    className="min-h-11 w-full gap-1 text-role-secondary sm:w-auto"
+                    aria-haspopup="menu"
+                    aria-expanded={actionMenu === user.userId}
+                    aria-controls={`user-actions-menu-${user.userId}`}
+                    disabled={updatingUserId === user.userId}
                   >
-                    Actions <ChevronDown className="h-3 w-3" />
+                    {updatingUserId === user.userId ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        {t("admin.users.actions.updating")}
+                      </>
+                    ) : (
+                      <>
+                        {t("admin.users.actions.menu")}{" "}
+                        <ChevronDown className="h-3 w-3" />
+                      </>
+                    )}
                   </Button>
 
                   {actionMenu === user.userId && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-card border border-border rounded-xl shadow-lg z-20 py-2">
-                      <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        Status
+                    <div
+                      id={`user-actions-menu-${user.userId}`}
+                      role="menu"
+                      className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-border bg-card py-2 shadow-lg"
+                    >
+                      <p className="px-3 py-1 text-role-caption uppercase text-muted-foreground">
+                        {t("admin.filter.status")}
                       </p>
                       {user.status !== "active" && (
                         <button
+                          type="button"
+                          role="menuitem"
                           onClick={() =>
-                            handleStatusChange(user.userId, "active")
+                            void handleStatusChange(user.userId, "active")
                           }
-                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-emerald-600"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-role-secondary text-primary transition-colors motion-reduce:transition-none hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          disabled={updatingUserId === user.userId}
+                          aria-disabled={updatingUserId === user.userId}
                         >
-                          <CheckCircle className="h-3.5 w-3.5" /> Activate
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          {t("admin.users.actions.activate")}
                         </button>
                       )}
                       {user.status !== "banned" && (
                         <button
+                          type="button"
+                          role="menuitem"
                           onClick={() =>
-                            handleStatusChange(user.userId, "banned")
+                            void handleStatusChange(user.userId, "banned")
                           }
-                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-red-600"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-role-secondary text-destructive transition-colors motion-reduce:transition-none hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          disabled={updatingUserId === user.userId}
+                          aria-disabled={updatingUserId === user.userId}
                         >
-                          <Ban className="h-3.5 w-3.5" /> Ban User
+                          <Ban className="h-3.5 w-3.5" />
+                          {t("admin.users.actions.ban")}
                         </button>
                       )}
                     </div>
@@ -200,8 +338,54 @@ const ManageUsersPage = () => {
             );
           })
         )}
-      </div>
-    </div>
+
+        {totalPages > 1 ? (
+          <div className="mt-2 flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-role-caption text-muted-foreground">
+              {t("admin.users.pagination.summary", {
+                page: formatNumber(currentPageNumber),
+                totalPages: formatNumber(totalPages),
+                totalCount: formatNumber(totalCount),
+                pageSize: formatNumber(pageSize),
+              })}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={!hasPreviousPage || loading}
+                className="min-h-11"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                {t("admin.users.pagination.previous")}
+              </Button>
+
+              <span className="inline-flex min-h-11 items-center rounded-lg border border-border bg-card px-3 text-role-caption font-medium text-foreground">
+                {t("admin.users.pagination.page", {
+                  page: formatNumber(currentPageNumber),
+                  totalPages: formatNumber(totalPages),
+                })}
+              </span>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={!hasNextPage || loading}
+                className="min-h-11"
+              >
+                {t("admin.users.pagination.next")}
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </AdminSection>
+    </AdminPageLayout>
   );
 };
 

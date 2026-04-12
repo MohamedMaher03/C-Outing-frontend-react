@@ -18,6 +18,7 @@ interface UseHomeSeeAllReturn {
   error: string | null;
   count: number;
   setCount: (count: number) => void;
+  retryFetch: () => void;
   requestUserLocation: () => void;
   userLocation: ReturnType<typeof useUserLocation>;
 }
@@ -29,6 +30,7 @@ export const useHomeSeeAll = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [count, setCount] = useState<number>(20);
+  const [reloadKey, setReloadKey] = useState(0);
   const userLocation = useUserLocation();
 
   const safeCollection = useMemo<HomeRecommendationCollection | null>(() => {
@@ -67,7 +69,7 @@ export const useHomeSeeAll = ({
     return () => {
       cancelled = true;
     };
-  }, [safeCollection, count]);
+  }, [safeCollection, count, reloadKey]);
 
   return {
     safeCollection,
@@ -76,6 +78,7 @@ export const useHomeSeeAll = ({
     error,
     count,
     setCount,
+    retryFetch: () => setReloadKey((prev) => prev + 1),
     requestUserLocation: userLocation.requestLocation,
     userLocation,
   };

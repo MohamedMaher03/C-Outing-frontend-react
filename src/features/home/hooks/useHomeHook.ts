@@ -3,7 +3,7 @@
  * Manages all state and logic for the HomePage.
  */
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   CATEGORIES,
   MOOD_OPTIONS,
@@ -35,6 +35,7 @@ interface UseHomeReturn {
   similarPlaces: HomePlace[];
   isSimilarLoading: boolean;
   similarError: string | null;
+  saveError: string | null;
 
   // Endpoint-driven discovery state
   selectedDistrict: string | null;
@@ -56,6 +57,7 @@ interface UseHomeReturn {
   trendingPlaces: HomePlace[];
   moodPlaces: HomePlace[];
   isMoodLoading: boolean;
+  moodError: string | null;
   userLocation: UserLocationState;
 
   // Static data
@@ -76,6 +78,11 @@ interface UseHomeReturn {
   selectPlaceForSimilar: (placeId: string | null) => void;
   requestUserLocation: () => void;
   toggleSave: (id: string) => void;
+  retryDiscovery: () => void;
+  retrySimilar: () => void;
+  retryMood: () => void;
+  clearSaveError: () => void;
+  isPlaceSavePending: (id: string) => boolean;
   reloadPlaces: () => Promise<void>;
 }
 
@@ -89,6 +96,7 @@ export const useHome = (): UseHomeReturn => {
   const [error, setError] = useState<string | null>(null);
   const [moodPlaces, setMoodPlaces] = useState<HomePlace[]>([]);
   const [isMoodLoading, setIsMoodLoading] = useState(false);
+  const [moodError, setMoodError] = useState<string | null>(null);
   const [selectedSimilarSeedId, setSelectedSimilarSeedId] = useState<
     string | null
   >(null);
@@ -96,6 +104,12 @@ export const useHome = (): UseHomeReturn => {
   const [similarPlaces, setSimilarPlaces] = useState<HomePlace[]>([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
   const [similarError, setSimilarError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [similarReloadKey, setSimilarReloadKey] = useState(0);
+  const [moodReloadKey, setMoodReloadKey] = useState(0);
+  const [savePendingMap, setSavePendingMap] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const [selectedVenueType, setSelectedVenueType] = useState<string | null>(
@@ -122,6 +136,8 @@ export const useHome = (): UseHomeReturn => {
   const [topRatedInAreaError, setTopRatedInAreaError] = useState<string | null>(
     null,
   );
+  const [discoveryReloadKey, setDiscoveryReloadKey] = useState(0);
+  const saveInFlightIds = useRef<Set<string>>(new Set());
 
   const [rawCurated, setRawCurated] = useState<HomePlace[]>([]);
   const [rawTrending, setRawTrending] = useState<HomePlace[]>([]);
@@ -194,21 +210,26 @@ export const useHome = (): UseHomeReturn => {
     return () => {
       cancelled = true;
     };
-  }, [selectedSimilarSeedId]);
+  }, [selectedSimilarSeedId, similarReloadKey]);
 
   useEffect(() => {
     if (!selectedMood) {
       setMoodPlaces([]);
+      setMoodError(null);
       return;
     }
     let cancelled = false;
     const fetchMoodPlaces = async () => {
       setIsMoodLoading(true);
+      setMoodError(null);
       try {
         const places = await homeService.fetchPlacesByMood(selectedMood);
         if (!cancelled) setMoodPlaces(places);
       } catch (err) {
-        if (!cancelled) console.error("Failed to fetch mood places:", err);
+        if (!cancelled) {
+          setMoodPlaces([]);
+          setMoodError(getErrorMessage(err, "Failed to load mood picks"));
+        }
       } finally {
         if (!cancelled) setIsMoodLoading(false);
       }
@@ -217,7 +238,7 @@ export const useHome = (): UseHomeReturn => {
     return () => {
       cancelled = true;
     };
-  }, [selectedMood]);
+  }, [selectedMood, moodReloadKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -246,7 +267,7 @@ export const useHome = (): UseHomeReturn => {
     return () => {
       cancelled = true;
     };
-  }, [activeDiscoverySource]);
+  }, [activeDiscoverySource, discoveryReloadKey]);
 
   useEffect(() => {
     if (activeDiscoverySource !== "district") return;
@@ -279,7 +300,7 @@ export const useHome = (): UseHomeReturn => {
     return () => {
       cancelled = true;
     };
-  }, [selectedDistrict, activeDiscoverySource]);
+  }, [selectedDistrict, activeDiscoverySource, discoveryReloadKey]);
 
   useEffect(() => {
     if (activeDiscoverySource !== "type") return;
@@ -310,7 +331,7 @@ export const useHome = (): UseHomeReturn => {
     return () => {
       cancelled = true;
     };
-  }, [selectedVenueType, activeDiscoverySource]);
+  }, [selectedVenueType, activeDiscoverySource, discoveryReloadKey]);
 
   useEffect(() => {
     if (activeDiscoverySource !== "price-range") return;
@@ -343,7 +364,7 @@ export const useHome = (): UseHomeReturn => {
     return () => {
       cancelled = true;
     };
-  }, [selectedPriceRange, activeDiscoverySource]);
+  }, [selectedPriceRange, activeDiscoverySource, discoveryReloadKey]);
 
   useEffect(() => {
     if (!selectedArea) return;
@@ -381,7 +402,7 @@ export const useHome = (): UseHomeReturn => {
     return () => {
       cancelled = true;
     };
-  }, [selectedArea, activeDiscoverySource]);
+  }, [selectedArea, activeDiscoverySource, discoveryReloadKey]);
 
   useEffect(() => {
     if (activeDiscoverySource === "top-rated") {
@@ -414,7 +435,14 @@ export const useHome = (): UseHomeReturn => {
 
   const toggleSave = useCallback(
     async (id: string) => {
+      if (saveInFlightIds.current.has(id)) {
+        return;
+      }
+
       try {
+        setSaveError(null);
+        saveInFlightIds.current.add(id);
+        setSavePendingMap((prev) => ({ ...prev, [id]: true }));
         const place =
           rawCurated.find((p) => p.id === id) ||
           rawTrending.find((p) => p.id === id);
@@ -436,7 +464,16 @@ export const useHome = (): UseHomeReturn => {
         setSimilarSeedPlaces((prev) => toggle(prev));
         setSimilarPlaces((prev) => toggle(prev));
       } catch (toggleError) {
-        console.error("Failed to toggle save", toggleError);
+        setSaveError(
+          getErrorMessage(toggleError, "Could not update favorites right now."),
+        );
+      } finally {
+        saveInFlightIds.current.delete(id);
+        setSavePendingMap((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
       }
     },
     [rawCurated, rawTrending],
@@ -448,11 +485,14 @@ export const useHome = (): UseHomeReturn => {
 
       if (search) {
         const q = search.toLowerCase();
+        const toSafeLower = (value: unknown) =>
+          typeof value === "string" ? value.toLowerCase() : "";
         result = result.filter(
           (p) =>
-            p.name.toLowerCase().includes(q) ||
-            p.address.toLowerCase().includes(q) ||
-            (p.atmosphereTags ?? []).some((t) => t.toLowerCase().includes(q)),
+            toSafeLower(p.name).includes(q) ||
+            toSafeLower(p.address).includes(q) ||
+            toSafeLower(p.category).includes(q) ||
+            (p.atmosphereTags ?? []).some((t) => toSafeLower(t).includes(q)),
         );
       }
 
@@ -468,19 +508,25 @@ export const useHome = (): UseHomeReturn => {
       if (selectedFilters.includes("near-me")) {
         if (userLocation.status === "granted" && userLocation.coordinates) {
           const { latitude, longitude } = userLocation.coordinates;
+          const getPlaceDistance = (place: HomePlace) => {
+            if (
+              !Number.isFinite(place.latitude) ||
+              !Number.isFinite(place.longitude)
+            ) {
+              return Number.POSITIVE_INFINITY;
+            }
+
+            return calculateDistanceKm(
+              latitude,
+              longitude,
+              place.latitude,
+              place.longitude,
+            );
+          };
+
           result = result.sort((a, b) => {
-            const distA = calculateDistanceKm(
-              latitude,
-              longitude,
-              a.latitude,
-              a.longitude,
-            );
-            const distB = calculateDistanceKm(
-              latitude,
-              longitude,
-              b.latitude,
-              b.longitude,
-            );
+            const distA = getPlaceDistance(a);
+            const distB = getPlaceDistance(b);
             return distA - distB;
           });
         }
@@ -504,6 +550,27 @@ export const useHome = (): UseHomeReturn => {
     [discoveryPlaces, applyFilters],
   );
 
+  const retryDiscovery = useCallback(() => {
+    setDiscoveryReloadKey((prev) => prev + 1);
+  }, []);
+
+  const retrySimilar = useCallback(() => {
+    setSimilarReloadKey((prev) => prev + 1);
+  }, []);
+
+  const retryMood = useCallback(() => {
+    setMoodReloadKey((prev) => prev + 1);
+  }, []);
+
+  const isPlaceSavePending = useCallback(
+    (id: string) => Boolean(savePendingMap[id]),
+    [savePendingMap],
+  );
+
+  const clearSaveError = useCallback(() => {
+    setSaveError(null);
+  }, []);
+
   return {
     search,
     selectedFilters,
@@ -515,6 +582,7 @@ export const useHome = (): UseHomeReturn => {
     similarPlaces,
     isSimilarLoading,
     similarError,
+    saveError,
 
     selectedDistrict,
     selectedVenueType,
@@ -534,6 +602,7 @@ export const useHome = (): UseHomeReturn => {
     trendingPlaces,
     moodPlaces,
     isMoodLoading,
+    moodError,
     userLocation,
 
     categories: CATEGORIES,
@@ -552,6 +621,11 @@ export const useHome = (): UseHomeReturn => {
     selectPlaceForSimilar: setSelectedSimilarSeedId,
     requestUserLocation: userLocation.requestLocation,
     toggleSave,
+    retryDiscovery,
+    retrySimilar,
+    retryMood,
+    clearSaveError,
+    isPlaceSavePending,
     reloadPlaces: loadPlaces,
   };
 };

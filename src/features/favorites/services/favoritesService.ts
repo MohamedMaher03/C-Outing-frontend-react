@@ -1,101 +1,72 @@
 /**
  * Favorites Service — Business Logic Layer
  *
- * Sits between hooks/components and the HTTP layer (favoritesApi).
+ * Sits between hooks/components and the datasource layer.
  * Responsibilities:
- *   • Call favoritesApi functions
+ *   • Call favoritesDataSource functions
  *   • Transform DTOs to UI models if needed
  *   • Centralise error handling
  *
  * ┌──────────────────────────────────────────────────────────────┐
- * │  useFavorites  →  favoritesService  →  favoritesApi  →  axios│
+ * │  useFavorites  →  favoritesService  →  favoritesDataSource  │
  * └──────────────────────────────────────────────────────────────┘
- *
- * 🔧 To use mocks during development, swap the import:
- *   import { favoritesMock as favoritesApi } from "../mocks/favoritesMock";
  */
 
 import type { PaginatedResponse } from "@/types";
-import { favoritesApi } from "../api/favoritesApi";
 import type {
   FavoriteItem,
   FavoriteListParams,
 } from "@/features/favorites/types";
+import { mapFavoritesPage } from "../mappers/favoritesMapper";
+import {
+  normalizePageIndex,
+  normalizePageNumber,
+  normalizePageSize,
+  normalizePlaceId,
+} from "../utils/favoritesParams";
+import { favoritesDataSource } from "./favoritesDataSource";
 
-// ── Favorites Service ────────────────────────────────────────
+export const getFavorites = async (
+  params?: FavoriteListParams,
+): Promise<PaginatedResponse<FavoriteItem>> => {
+  const response = await favoritesDataSource.getFavorites({
+    pageIndex: normalizePageIndex(params?.pageIndex),
+    page: normalizePageNumber(params?.page),
+    pageSize: normalizePageSize(params?.pageSize),
+  });
 
-export const favoritesService = {
-  /**
-   * Fetch all saved places for the current user.
-   */
-  async getFavorites(
-    params?: FavoriteListParams,
-  ): Promise<PaginatedResponse<FavoriteItem>> {
-    try {
-      return await favoritesApi.getFavorites(params);
-    } catch (error) {
-      console.error("Error fetching favorites:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Add a place to favorites.
-   */
-  async addToFavorites(placeId: string): Promise<void> {
-    try {
-      await favoritesApi.addToFavorites(placeId);
-    } catch (error) {
-      console.error("Error adding to favorites:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Remove a place from favorites.
-   */
-  async removeFromFavorites(placeId: string): Promise<void> {
-    try {
-      await favoritesApi.removeFromFavorites(placeId);
-    } catch (error) {
-      console.error("Error removing from favorites:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Toggle favorite status for a place.
-   */
-  async toggleFavorite(placeId: string, isFavorite: boolean): Promise<void> {
-    if (isFavorite) {
-      await this.removeFromFavorites(placeId);
-    } else {
-      await this.addToFavorites(placeId);
-    }
-  },
-
-  /**
-   * Check if a place is favorited.
-   */
-  async checkIsFavorite(placeId: string): Promise<boolean> {
-    try {
-      return await favoritesApi.checkIsFavorite(placeId);
-    } catch (error) {
-      console.error("Error checking favorite status:", error);
-      throw error;
-    }
-  },
+  return mapFavoritesPage(response);
 };
 
-// ── Legacy named exports (keep backward compatibility with hooks) ──
+export const addToFavorites = async (placeId: string): Promise<void> => {
+  await favoritesDataSource.addToFavorites(normalizePlaceId(placeId));
+};
 
-export const getFavorites =
-  favoritesService.getFavorites.bind(favoritesService);
-export const addToFavorites =
-  favoritesService.addToFavorites.bind(favoritesService);
-export const removeFromFavorites =
-  favoritesService.removeFromFavorites.bind(favoritesService);
-export const toggleFavorite =
-  favoritesService.toggleFavorite.bind(favoritesService);
-export const checkIsFavorite =
-  favoritesService.checkIsFavorite.bind(favoritesService);
+export const removeFromFavorites = async (placeId: string): Promise<void> => {
+  await favoritesDataSource.removeFromFavorites(normalizePlaceId(placeId));
+};
+
+export const toggleFavorite = async (
+  placeId: string,
+  isFavorite: boolean,
+): Promise<void> => {
+  const normalizedPlaceId = normalizePlaceId(placeId);
+
+  if (isFavorite) {
+    await removeFromFavorites(normalizedPlaceId);
+  } else {
+    await addToFavorites(normalizedPlaceId);
+  }
+};
+
+export const checkIsFavorite = async (placeId: string): Promise<boolean> => {
+  return await favoritesDataSource.checkIsFavorite(normalizePlaceId(placeId));
+};
+
+export const favoritesService = {
+  getFavorites,
+  addToFavorites,
+  removeFromFavorites,
+  toggleFavorite,
+  checkIsFavorite,
+};

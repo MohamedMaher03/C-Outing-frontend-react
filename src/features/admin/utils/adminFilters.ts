@@ -1,9 +1,16 @@
-import type { AdminPlace, AdminReview, AdminUser } from "../types";
+import type {
+  AdminPlace,
+  AdminPlaceStatusFilter,
+  AdminReview,
+  AdminReviewStatusFilter,
+  AdminUser,
+  AdminUserRoleFilter,
+} from "../types";
 
 export const filterUsers = (
   users: AdminUser[],
   search: string,
-  roleFilter: string,
+  roleFilter: AdminUserRoleFilter,
 ): AdminUser[] => {
   const normalizedSearch = search.toLowerCase();
 
@@ -20,7 +27,7 @@ export const filterUsers = (
 export const filterPlaces = (
   places: AdminPlace[],
   search: string,
-  statusFilter: string,
+  statusFilter: AdminPlaceStatusFilter,
 ): AdminPlace[] => {
   const normalizedSearch = search.toLowerCase();
 
@@ -38,7 +45,7 @@ export const filterPlaces = (
 export const filterReviews = (
   reviews: AdminReview[],
   search: string,
-  statusFilter: string,
+  statusFilter: AdminReviewStatusFilter,
 ): AdminReview[] => {
   const normalizedSearch = search.toLowerCase();
 

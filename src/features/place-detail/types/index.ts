@@ -3,13 +3,9 @@
  */
 
 import type { PaginatedResponse } from "@/types";
+import type { CanonicalPriceLevel } from "@/utils/priceLevels";
 
-export type PriceLevel =
-  | "price_cheapest"
-  | "cheap"
-  | "mid_range"
-  | "expensive"
-  | "luxury";
+export type PriceLevel = CanonicalPriceLevel;
 
 export type InteractionActionType =
   | "Click"
@@ -36,6 +32,13 @@ export interface ReportPayload {
   description?: string;
 }
 
+export interface MetroStation {
+  rank: number;
+  stationName: string;
+  distance: string;
+  time: string;
+}
+
 export interface PlaceBase {
   id: string;
   name: string;
@@ -50,7 +53,6 @@ export interface PlaceBase {
   averageRating?: number;
   reviewCount: number;
   likeCount?: number;
-  totalReviews?: number;
   description: string;
   image: string;
   displayImageUrl?: string;
@@ -74,26 +76,25 @@ export interface PlaceBase {
   seatingType?: Array<"indoor" | "outdoor">;
   parkingAvailable?: boolean;
   accessibilityScore?: number;
+  noiseScore?: number;
   menuImagesCount?: number;
   menuImagesUrls?: string[];
+  menuCurrency?: string;
+  metroStations?: MetroStation[];
   isSaved?: boolean;
   isFavorited?: boolean;
   isLiked?: boolean;
   matchScore?: number;
+  googleMapsRatingStars?: string;
+  googleMapsRatingCount?: number;
 }
 
-/**
- * Extended place with detail-page-only fields.
- * All venue metadata (phone, website, hours, etc.) lives on the base Place type.
- */
-export interface PlaceDetail extends PlaceBase {
-  reviews?: Review[];
-}
+/** Place detail payload from venue endpoint. */
+export interface PlaceDetail extends PlaceBase {}
 
 /** A user-submitted review on the website */
 export interface Review {
-  id?: string;
-  reviewId?: string;
+  id: string;
   venueId: string;
   venueName: string;
   userId: string;
@@ -102,15 +103,17 @@ export interface Review {
   rating: number;
   comment: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string | null;
 }
 
 export interface ReviewListParams {
+  pageIndex?: number;
   page?: number;
   pageSize?: number;
 }
 
 export type ReviewListResponse = PaginatedResponse<Review>;
+export type SocialReviewListResponse = PaginatedResponse<SocialMediaReview>;
 
 export interface CreateReviewPayload {
   venueId: string;
@@ -137,10 +140,13 @@ export interface VenueAverageRating {
 export interface SocialMediaReview {
   id: string;
   platform: "instagram" | "twitter" | "facebook" | "tiktok" | "google";
+  source?: string;
   author: string;
   authorAvatar?: string;
   content: string;
+  rating?: number;
   sentiment: "positive" | "neutral" | "negative";
+  sentimentScore?: number;
   date: Date;
   likes?: number;
   url?: string;

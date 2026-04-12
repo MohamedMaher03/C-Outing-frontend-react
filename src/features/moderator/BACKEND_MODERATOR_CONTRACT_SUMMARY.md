@@ -1,138 +1,119 @@
-# Moderator Backend Contract Summary
+# Moderator Backend Contract Summary (Mock Parity)
 
-## Purpose
+## Objective
 
-This contract defines the moderator APIs needed so the current React moderator screens work end-to-end without frontend logic changes.
+This document defines the backend API contract required for the Moderator feature to behave exactly like the current mock-driven frontend.
 
-Business rule aligned with frontend:
+Scope includes:
 
-- Moderator can approve places
-- Moderator can flag places
-- Moderator can delete places directly
-- Any place flagged by moderator must become visible in admin flagged queue
+- Moderator Dashboard
+- Reported Content moderation
+- Moderate Places (shared with Admin APIs)
+- Moderate Reviews (shared with Admin APIs)
 
-## Global Response Envelope
+## Global API Rules
 
-All endpoints must return the standard envelope used across frontend:
+## Enums Used by Frontend
+
+### Reported Content
+
+- `type`: `review | place | user`
+- `status`: `open | investigating | resolved | dismissed`
+- `priority`: `low | medium | high`
+
+### Moderation Actions
+
+- `action`: `approved | removed | warned | escalated`
+
+### Place Moderation
+
+- `status`: `active | pending | flagged | removed`
+
+### Review Moderation
+
+- `status`: `published | pending | flagged | removed`
+
+## Required Endpoints
+
+## A) Moderator-specific Endpoints
+
+### 1. Get Moderator Stats
+
+- Method: `GET`
+- Path: `/moderator/stats`
+- Used by: Moderator Dashboard
+
+Success `data` shape:
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
-  "message": "Operation completed successfully",
-  "data": {}
+  "pendingReviews": 12,
+  "flaggedPlaces": 3,
+  "openReports": 7,
+  "resolvedToday": 4,
+  "resolvedThisWeek": 18,
+  "totalModerated": 342
 }
 ```
 
-Validation/error shape (same standard):
+### 2. Get Recent Moderator Actions
+
+- Method: `GET`
+- Path: `/moderator/actions`
+- Used by: Moderator Dashboard
+
+Success `data` shape:
 
 ```json
-{
-  "success": false,
-  "statusCode": 400,
-  "message": "Validation failed",
-  "title": "One or more validation errors occurred.",
-  "errors": {
-    "fieldName": ["Error message"]
-  },
-  "data": null
-}
-```
-
----
-
-## 1) Moderator Dashboard
-
-### GET `/api/v1/Moderator/dashboard`
-
-Expected request:
-
-- No body
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Moderator dashboard fetched successfully",
-  "data": {
-    "stats": {
-      "pendingReviews": 12,
-      "flaggedPlaces": 3,
-      "openReports": 7,
-      "resolvedToday": 4,
-      "resolvedThisWeek": 18,
-      "totalModerated": 342
-    },
-    "recentActions": [
-      {
-        "id": "ma1",
-        "action": "approved",
-        "moderatorName": "Sara Mohamed",
-        "itemType": "place",
-        "itemName": "New Cafe in Maadi",
-        "timestamp": "2026-03-24T10:00:00Z",
-        "note": "Looks valid"
-      }
-    ]
+[
+  {
+    "id": "ma1",
+    "action": "removed",
+    "moderatorName": "Sara Mohamed",
+    "itemType": "review",
+    "itemName": "Spam review on Zooba",
+    "timestamp": "2026-03-03T10:00:00Z",
+    "note": "optional"
   }
-}
+]
 ```
 
----
+### 3. Get Reported Content Queue
 
-## 2) Reported Content List
+- Method: `GET`
+- Path: `/moderator/reports`
+- Used by: Reported Content page
 
-### GET `/api/v1/Moderator/reports?type=review|place|user&status=open|investigating|resolved|dismissed&priority=high|medium|low&search=&page=1&count=20`
-
-Expected request:
-
-- Query params are optional except `page` and `count`
-
-Expected response:
+Success `data` shape:
 
 ```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Reported content fetched successfully",
-  "data": {
-    "items": [
-      {
-        "id": "rpt1",
-        "type": "review",
-        "reportedItemId": "r3",
-        "reportedItemName": "Review on Cairo Jazz Club",
-        "reporterName": "Ahmed Khalil",
-        "reporterId": 1,
-        "reason": "Inappropriate content",
-        "description": "This review contains offensive language.",
-        "reviewContent": "Bad words...",
-        "reviewAuthorName": "Mohamed Nasser",
-        "status": "open",
-        "priority": "high",
-        "createdAt": "2026-03-24T08:30:00Z",
-        "resolvedAt": null
-      }
-    ],
-    "pageIndex": 1,
-    "pageSize": 20,
-    "totalCount": 1,
-    "totalPages": 1,
-    "hasPreviousPage": false,
-    "hasNextPage": false
+[
+  {
+    "id": "rpt1",
+    "type": "review",
+    "reportedItemId": "r3",
+    "reportedItemName": "Review on Cairo Jazz Club",
+    "reporterName": "Ahmed Khalil",
+    "reporterId": 1,
+    "reason": "Inappropriate content",
+    "description": "This review contains offensive language.",
+    "reviewContent": "optional - only for type=review",
+    "reviewAuthorName": "optional - only for type=review",
+    "status": "open",
+    "priority": "high",
+    "createdAt": "2026-03-02T14:20:00Z",
+    "resolvedAt": "optional ISO date"
   }
-}
+]
 ```
 
----
+### 4. Update Report Status
 
-## 3) Update Report Status
+- Method: `PATCH`
+- Path: `/moderator/reports/{reportId}/status`
+- Used by: Reported Content page (Investigate, Dismiss, Mark Resolved)
 
-### PATCH `/api/v1/Moderator/reports/{reportId}/status`
-
-Expected request body:
+Request body:
 
 ```json
 {
@@ -140,367 +121,254 @@ Expected request body:
 }
 ```
 
-Allowed status values:
+Allowed status values: `open | investigating | resolved | dismissed`
 
-- `open`
-- `investigating`
-- `resolved`
-- `dismissed`
+Success response:
 
-Expected response:
+- Preferred: `200` with updated report in `data`
+- Also acceptable: `204 No Content`
+
+### 5. Delete Reported Review (Resolution Action)
+
+- Method: `POST`
+- Path: `/moderator/reports/{reportId}/delete-review`
+- Used by: Reported Content page action button
+- Request body: none
+
+Success response:
+
+- Preferred: `200` or `204`
+- Frontend behavior after success: marks report as resolved locally
+
+### 6. Warn User (Resolution Action)
+
+- Method: `POST`
+- Path: `/moderator/reports/{reportId}/warn`
+- Used by: Reported Content page action button
+- Request body: none
+
+Success response:
+
+- Preferred: `200` or `204`
+- Frontend behavior after success: marks report as resolved locally
+
+### 7. Escalate User for Ban Review (Resolution Action)
+
+- Method: `POST`
+- Path: `/moderator/reports/{reportId}/ban`
+- Used by: Reported Content page action button
+- Request body: none
+
+Success response:
+
+- Preferred: `200` or `204`
+- Frontend behavior after success: marks report as resolved locally
+
+## B) Shared Admin Endpoints Required by Moderator Places/Reviews
+
+These are called from moderator flow through `moderatorService -> adminService`.
+
+### 8. Get Venues List (for Moderate Places)
+
+- Method: `GET`
+- Path: `/api/v1/Admin/venues`
+- Query: `page` (default `1`), `count` (default `100`)
+- Used by: Moderate Places page list
+
+Success `data` shape (paginated):
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
-  "message": "Report status updated successfully",
-  "data": {
-    "reportId": "rpt1",
-    "status": "investigating",
-    "resolvedAt": null
+  "items": [
+    {
+      "id": "venue-id",
+      "name": "Venue name",
+      "location": "full address or short location",
+      "category": "Cafe",
+      "district": "Maadi",
+      "type": "Cafe",
+      "priceRange": 3,
+      "latitude": 30.0,
+      "longitude": 31.0,
+      "averageRating": 4.4,
+      "reviewCount": 120,
+      "displayImageUrl": "https://...",
+      "thumbnailUrl": "https://...",
+      "isOpen": true,
+      "atmosphereTags": ["Cozy", "Quiet"],
+      "hasWifi": true,
+      "isSaved": false
+    }
+  ],
+  "pageIndex": 0,
+  "pageSize": 100,
+  "totalCount": 1,
+  "totalPages": 1,
+  "hasPreviousPage": false,
+  "hasNextPage": false
+}
+```
+
+Notes:
+
+- Frontend computes moderator place status from endpoint #9:
+  - if venue id in reported set -> `flagged`
+  - else -> `active`
+
+### 9. Get Reported Venues (for flagged mapping)
+
+- Method: `GET`
+- Path: `/api/v1/Admin/venues/reported`
+- Used by: Moderate Places status mapping
+
+Current expected `data` shape:
+
+```json
+[
+  {
+    "id": "venue-id",
+    "name": "Venue name"
   }
-}
+]
 ```
 
----
+Important:
 
-## 4) Delete Review From Report Action
+- Frontend currently only uses `id` from this response.
 
-### POST `/api/v1/Moderator/reports/{reportId}/delete-review`
+### 10. Delete Venue
 
-Expected request body (optional note):
+- Method: `DELETE`
+- Path: `/api/v1/Admin/venues/{venueId}`
+- Used by: Moderate Places "Delete"
+- Request body: none
 
-```json
-{
-  "note": "Contains hate speech"
-}
-```
+Success response:
 
-Expected response:
+- `204` preferred
 
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Review deleted and report resolved",
-  "data": {
-    "reportId": "rpt1",
-    "reviewId": "r3",
-    "reportStatus": "resolved",
-    "resolvedAt": "2026-03-24T11:25:00Z"
-  }
-}
-```
+### 11. Create Venue (Needed for Add Place)
 
----
+- Method: `POST`
+- Path: `/api/v1/Admin/venues`
+- Used by: Moderate Places "Submit Place"
 
-## 5) Warn User From Report Action
-
-### POST `/api/v1/Moderator/reports/{reportId}/warn-user`
-
-Expected request body:
-
-```json
-{
-  "message": "Your review violates community guidelines.",
-  "note": "First warning"
-}
-```
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Warning sent and report resolved",
-  "data": {
-    "reportId": "rpt1",
-    "userId": "5",
-    "reportStatus": "resolved",
-    "warningId": "warn_123",
-    "resolvedAt": "2026-03-24T11:30:00Z"
-  }
-}
-```
-
----
-
-## 6) Escalate User Ban Review
-
-### POST `/api/v1/Moderator/reports/{reportId}/escalate-ban`
-
-Expected request body:
-
-```json
-{
-  "reason": "Repeated violations after warning",
-  "evidence": ["review:r3", "review:r8"]
-}
-```
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Ban request escalated to admin and report resolved",
-  "data": {
-    "reportId": "rpt1",
-    "userId": "5",
-    "reportStatus": "resolved",
-    "adminQueueItemId": "banq_77",
-    "resolvedAt": "2026-03-24T11:35:00Z"
-  }
-}
-```
-
----
-
-## 7) Moderator Places List
-
-### GET `/api/v1/Moderator/places?status=all|pending|flagged|active|removed&search=&page=1&count=20`
-
-Expected request:
-
-- Query params optional except `page` and `count`
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Moderator places fetched successfully",
-  "data": {
-    "items": [
-      {
-        "id": "5",
-        "name": "New Cafe Pending",
-        "category": "Food & Drink",
-        "district": "Maadi",
-        "rating": 0,
-        "reviewCount": 0,
-        "status": "pending",
-        "createdAt": "2026-03-24T09:00:00Z",
-        "image": "https://example.com/p.jpg",
-        "tags": ["Casual", "Budget Friendly"],
-        "description": "A cozy cafe",
-        "priceLevel": "mid_range",
-        "phone": "+20 2 1234 5678",
-        "website": "https://example.com"
-      }
-    ],
-    "pageIndex": 1,
-    "pageSize": 20,
-    "totalCount": 1,
-    "totalPages": 1,
-    "hasPreviousPage": false,
-    "hasNextPage": false
-  }
-}
-```
-
----
-
-## 8) Moderator Add Place
-
-### POST `/api/v1/Moderator/places`
-
-Expected request body:
+Request body expected from frontend:
 
 ```json
 {
   "name": "Al-Azhar Park",
-  "category": "Parks",
-  "district": "Nasr City",
-  "description": "Large public park with city views and walking tracks.",
+  "category": "Park",
+  "district": "El Darb El Ahmar",
+  "image": "https://images.example.com/place.jpg",
+  "tags": ["Family", "Outdoor"],
+  "description": "Large public park with city views...",
   "priceLevel": "mid_range",
-  "tags": ["Outdoor", "Family-friendly"],
-  "image": "https://example.com/alazhar.jpg",
-  "phone": "+20 2 2510 0000",
-  "website": "https://example.com/alazhar"
+  "phone": "+20 2 1234 5678",
+  "website": "https://example.com"
 }
 ```
 
-Expected response:
+`priceLevel` enum expected:
+
+- `price_cheapest | cheap | mid_range | expensive | luxury`
+
+Success response `data` should include at least:
 
 ```json
 {
-  "success": true,
-  "statusCode": 201,
-  "message": "Place submitted successfully",
-  "data": {
-    "id": "place_998",
-    "name": "Al-Azhar Park",
-    "category": "Parks",
-    "district": "Nasr City",
-    "rating": 0,
-    "reviewCount": 0,
+  "id": "new-venue-id",
+  "name": "Al-Azhar Park",
+  "category": "Park",
+  "district": "El Darb El Ahmar",
+  "rating": 0,
+  "reviewCount": 0,
+  "status": "pending",
+  "createdAt": "2026-03-31T12:00:00Z",
+  "image": "https://images.example.com/place.jpg",
+  "tags": ["Family", "Outdoor"],
+  "description": "Large public park with city views...",
+  "priceLevel": "mid_range",
+  "phone": "+20 2 1234 5678",
+  "website": "https://example.com"
+}
+```
+
+### 12. Update Venue Moderation Status (Needed)
+
+- Method: `PATCH`
+- Path: `/api/v1/Admin/venues/{venueId}/status`
+- Used by: Moderate Places Approve/Flag actions
+
+Request body:
+
+```json
+{
+  "status": "active"
+}
+```
+
+Allowed status values: `active | pending | flagged | removed`
+
+Success response:
+
+- `200` or `204`
+
+### 13. Get Categories (Needed)
+
+- Method: `GET`
+- Path: `/api/v1/Admin/categories`
+- Used by: Add Place form category dropdown
+
+Success `data` shape:
+
+```json
+[
+  {
+    "id": "cafes",
+    "label": "Cafes",
+    "icon": "MapPin",
+    "count": 42,
+    "color": "bg-slate-100",
+    "status": "active"
+  }
+]
+```
+
+### 14. Get Reviews List (Needed for Moderate Reviews)
+
+- Method: `GET`
+- Path: `/api/v1/Admin/reviews`
+- Query suggestion: `page`, `count`, `status`, `searchTerm`
+- Used by: Moderate Reviews list
+
+Success `data` shape (array or paginated items):
+
+```json
+[
+  {
+    "id": "review-id",
+    "userId": "user-id",
+    "userName": "User Name",
+    "userAvatar": "https://...",
+    "placeId": "venue-id",
+    "placeName": "Venue Name",
+    "rating": 4,
+    "comment": "Great place",
     "status": "pending",
-    "createdAt": "2026-03-24T12:00:00Z",
-    "image": "https://example.com/alazhar.jpg",
-    "tags": ["Outdoor", "Family-friendly"],
-    "description": "Large public park with city views and walking tracks.",
-    "priceLevel": "mid_range",
-    "phone": "+20 2 2510 0000",
-    "website": "https://example.com/alazhar"
+    "reportCount": 2,
+    "createdAt": "2026-03-31T09:00:00Z"
   }
-}
+]
 ```
 
----
+### 15. Update Review Moderation Status (Needed)
 
-## 9) Moderator Update Place Status
+- Method: `PATCH`
+- Path: `/api/v1/Admin/reviews/{reviewId}/status`
+- Used by: Moderate Reviews Approve/Flag/Reject
 
-### PATCH `/api/v1/Moderator/places/{placeId}/status`
-
-Expected request body:
-
-```json
-{
-  "status": "flagged",
-  "reason": "Suspicious/fake listing"
-}
-```
-
-Allowed status values:
-
-- `active`
-- `flagged`
-- `removed`
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Place status updated successfully",
-  "data": {
-    "placeId": "5",
-    "status": "flagged",
-    "flaggedBy": {
-      "moderatorId": "mod_1",
-      "moderatorName": "Sara Mohamed",
-      "flaggedAt": "2026-03-24T12:10:00Z",
-      "reason": "Suspicious/fake listing"
-    },
-    "forwardedToAdmin": true,
-    "adminQueueItemId": "plq_901"
-  }
-}
-```
-
-Important behavior:
-
-- When `status = flagged` by moderator, backend must automatically create/admin-link an admin queue record so flagged places appear in admin flagged places workflow.
-
----
-
-## 10) Moderator Delete Place (Direct Delete)
-
-### DELETE `/api/v1/Moderator/places/{placeId}`
-
-Expected request:
-
-- No body
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Place deleted successfully",
-  "data": {
-    "placeId": "5",
-    "deletedAt": "2026-03-24T12:20:00Z"
-  }
-}
-```
-
----
-
-## 11) Moderator Categories (for Add Place Form)
-
-### GET `/api/v1/Moderator/categories`
-
-Expected request:
-
-- No body
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Categories fetched successfully",
-  "data": [
-    {
-      "id": "food",
-      "label": "Food & Drink",
-      "icon": "UtensilsCrossed",
-      "count": 124,
-      "color": "bg-orange-100",
-      "status": "active"
-    }
-  ]
-}
-```
-
----
-
-## 12) Moderator Reviews List
-
-### GET `/api/v1/Moderator/reviews?status=all|pending|flagged|published|removed&search=&page=1&count=20`
-
-Expected request:
-
-- Query params optional except `page` and `count`
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Moderator reviews fetched successfully",
-  "data": {
-    "items": [
-      {
-        "id": "r5",
-        "userId": "8",
-        "userName": "Nour Samir",
-        "userAvatar": "https://example.com/u8.jpg",
-        "placeId": "1",
-        "placeName": "Nile Felucca Experience",
-        "rating": 2,
-        "comment": "Spam review with external links",
-        "status": "pending",
-        "reportCount": 3,
-        "createdAt": "2026-03-24T09:40:00Z"
-      }
-    ],
-    "pageIndex": 1,
-    "pageSize": 20,
-    "totalCount": 1,
-    "totalPages": 1,
-    "hasPreviousPage": false,
-    "hasNextPage": false
-  }
-}
-```
-
----
-
-## 13) Moderator Update Review Status
-
-### PATCH `/api/v1/Moderator/reviews/{reviewId}/status`
-
-Expected request body:
+Request body:
 
 ```json
 {
@@ -508,35 +376,34 @@ Expected request body:
 }
 ```
 
-Allowed status values:
+Allowed status values: `published | pending | flagged | removed`
 
-- `published`
-- `flagged`
-- `removed`
+Success response:
 
-Expected response:
+- `200` or `204`
 
-```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Review status updated successfully",
-  "data": {
-    "reviewId": "r5",
-    "status": "published",
-    "updatedAt": "2026-03-24T12:30:00Z"
-  }
-}
-```
+## Backend Delivery Checklist
 
----
+To make moderator UI work with APIs exactly like mocks, backend must provide:
 
-## Frontend Readiness Checklist (Backend)
+1. `GET /moderator/stats`
+2. `GET /moderator/actions`
+3. `GET /moderator/reports`
+4. `PATCH /moderator/reports/{reportId}/status`
+5. `POST /moderator/reports/{reportId}/delete-review`
+6. `POST /moderator/reports/{reportId}/warn`
+7. `POST /moderator/reports/{reportId}/ban`
+8. `GET /api/v1/Admin/venues`
+9. `GET /api/v1/Admin/venues/reported`
+10. `DELETE /api/v1/Admin/venues/{venueId}`
+11. `POST /api/v1/Admin/venues`
+12. `PATCH /api/v1/Admin/venues/{venueId}/status`
+13. `GET /api/v1/Admin/categories`
+14. `GET /api/v1/Admin/reviews`
+15. `PATCH /api/v1/Admin/reviews/{reviewId}/status`
 
-When these endpoints are implemented with the above request/response contracts, moderator pages in React can be fully API-driven:
+## Current Frontend Gap Notes
 
-- Dashboard
-- Reported content actions
-- Place moderation (approve, flag, delete, add)
-- Review moderation
-- Category loading for place submission
+Some moderator flows still depend on admin API methods that are currently marked TODO in the frontend API layer (`addPlace`, `updatePlaceStatus`, `getReviews`, `updateReviewStatus`).
+
+This contract allows backend to implement the routes now. After backend delivery, frontend should wire these TODO methods to real HTTP calls so all moderator actions become fully API-driven.

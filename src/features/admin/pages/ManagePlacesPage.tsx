@@ -2,10 +2,10 @@
  * Manage Places Page (Admin)
  *
  * Full CRUD on places: list, search, filter by status, change status, delete.
- * Enhanced: Add Place form with validated fields, dropdowns, photo preview & toast feedback.
+ * Add Place flow uses Google Maps URL scraping initiation.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 import {
   Search,
   MapPin,
@@ -16,10 +16,10 @@ import {
   XCircle,
   Plus,
   X,
-  Upload,
-  DollarSign,
-  ChevronDown,
-  ChevronUp,
+  Link2,
+  Navigation,
+  CircleAlert,
+  Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,13 +40,30 @@ import {
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useManagePlaces } from "@/features/admin/hooks/useManagePlaces";
-import { DISTRICTS } from "@/mocks/mockData";
 import {
-  COMMON_PLACE_TAGS,
-  PRICE_LEVEL_OPTIONS,
-} from "@/features/admin/constants/placeManagement";
-import { placeStatusConfig } from "@/features/admin/constants/statusConfigs";
-import { EMPTY_PLACE_FORM } from "@/features/admin/utils/placeForm";
+  AdminEmptyState,
+  AdminErrorBanner,
+  AdminFilterChips,
+  AdminPageLayout,
+  AdminPageHeader,
+  AdminSection,
+} from "@/features/admin/components";
+import { PLACE_STATUS_FILTER_OPTIONS } from "@/features/admin/constants/filterOptions";
+import {
+  adminToastClasses,
+  placeStatusConfig,
+} from "@/features/admin/constants/statusConfigs";
+import {
+  EMPTY_PLACE_FORM,
+  isGoogleMapsVenueUrl,
+} from "@/features/admin/utils/placeForm";
+import { useI18n } from "@/components/i18n";
+
+const ADMIN_LIST_ROW_STYLE: CSSProperties = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "110px",
+  contain: "layout paint style",
+};
 
 // ── Constants ─────────────────────────────────────────────────
 
@@ -54,12 +71,14 @@ import { EMPTY_PLACE_FORM } from "@/features/admin/utils/placeForm";
 
 const ManagePlacesPage = () => {
   const navigate = useNavigate();
+  const { t, formatNumber } = useI18n();
   const formRef = useRef<HTMLDivElement>(null);
 
   const {
     places,
-    categories,
     loading,
+    error,
+    pendingPlaceIds,
     search,
     statusFilter,
     filteredPlaces: filtered,
@@ -67,23 +86,42 @@ const ManagePlacesPage = () => {
     form,
     formErrors,
     submittingForm,
-    showTagPicker,
+    scrapeStartedMessage,
+    placeActionNotice,
     toasts,
     setSearch,
     setStatusFilter,
     setShowAddForm,
     setForm,
-    setShowTagPicker,
+    dismissScrapeStartedMessage,
+    dismissPlaceActionNotice,
+    retry,
     handleStatusChange,
     handleDelete,
     handleAddPlace,
-    toggleTag,
   } = useManagePlaces();
+
+  const statusFilterOptions = useMemo(
+    () =>
+      PLACE_STATUS_FILTER_OPTIONS.map((option) => ({
+        ...option,
+        label:
+          option.value === "all"
+            ? t("admin.filter.all")
+            : t(`admin.status.${option.value}`),
+      })),
+    [t],
+  );
+
+  const getStatusLabel = (status: string): string =>
+    t(`admin.status.${status}`, undefined, status);
 
   // Scroll to form when opened (DOM-specific side effect stays in the component)
   useEffect(() => {
+    let timerId: number | null = null;
+
     if (showAddForm) {
-      setTimeout(
+      timerId = window.setTimeout(
         () =>
           formRef.current?.scrollIntoView({
             behavior: "smooth",
@@ -92,24 +130,45 @@ const ManagePlacesPage = () => {
         50,
       );
     }
+
+    return () => {
+      if (timerId) {
+        window.clearTimeout(timerId);
+      }
+    };
   }, [showAddForm]);
 
+  const placeSummary = useMemo(
+    () => ({
+      flagged: places.filter((place) => place.status === "flagged").length,
+    }),
+    [places],
+  );
+
+  const normalizedVenueUrl = form.venueUrl.trim();
+  const hasTypedVenueUrl = normalizedVenueUrl.length > 0;
+  const hasValidVenueUrl = isGoogleMapsVenueUrl(normalizedVenueUrl);
+
   if (loading) {
-    return <LoadingSpinner size="md" text="Loading places..." fullScreen />;
+    return (
+      <LoadingSpinner size="md" text={t("admin.places.loading")} fullScreen />
+    );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <AdminPageLayout>
       {/* Toast Notifications */}
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+      <div
+        className="fixed top-4 left-4 right-4 z-50 flex flex-col gap-2 pointer-events-none sm:left-auto sm:right-4"
+        role="status"
+        aria-live="polite"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}
             className={cn(
-              "px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white max-w-xs pointer-events-auto transition-all",
-              t.variant === "success" && "bg-emerald-600",
-              t.variant === "error" && "bg-red-600",
-              t.variant === "info" && "bg-blue-600",
+              "max-w-xs rounded-xl px-4 py-3 text-role-secondary font-medium pointer-events-auto transition-all",
+              adminToastClasses[t.variant],
             )}
           >
             {t.message}
@@ -117,390 +176,382 @@ const ManagePlacesPage = () => {
         ))}
       </div>
 
+      <AdminErrorBanner
+        title={t("admin.places.error.updateTitle")}
+        message={error}
+        onRetry={() => {
+          void retry();
+        }}
+      />
+
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <MapPin className="h-6 w-6 text-secondary" />
-            Manage Places
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {places.length} total places ·{" "}
-            {places.filter((p) => p.status === "flagged").length} flagged
-          </p>
-        </div>
-        <Button
-          onClick={() => setShowAddForm((v) => !v)}
-          className="gap-2 flex-shrink-0"
-          variant={showAddForm ? "outline" : "default"}
+      <AdminPageHeader
+        title={t("admin.places.header.title")}
+        description={t("admin.places.header.description", {
+          total: formatNumber(places.length),
+          flagged: formatNumber(placeSummary.flagged),
+        })}
+        icon={MapPin}
+        actions={
+          <Button
+            onClick={() => setShowAddForm((v) => !v)}
+            className="gap-2 flex-shrink-0 w-full sm:w-auto"
+            variant={showAddForm ? "outline" : "default"}
+            aria-expanded={showAddForm}
+            aria-controls="admin-add-place-form"
+          >
+            {showAddForm ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            {showAddForm
+              ? t("admin.places.actions.cancel")
+              : t("admin.places.actions.addPlace")}
+          </Button>
+        }
+      />
+
+      {scrapeStartedMessage ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3"
         >
-          {showAddForm ? (
-            <X className="h-4 w-4" />
-          ) : (
-            <Plus className="h-4 w-4" />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-2">
+              <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+              <div className="min-w-0 space-y-0.5">
+                <p className="text-sm font-semibold text-foreground">
+                  {t(
+                    "admin.places.notice.scrapeStartedTitle",
+                    undefined,
+                    "Scraping has started",
+                  )}
+                </p>
+                <p className="text-role-caption break-words text-muted-foreground">
+                  {scrapeStartedMessage}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={dismissScrapeStartedMessage}
+              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-primary/15 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label={t(
+                "admin.places.notice.dismissAria",
+                undefined,
+                "Dismiss scrape status message",
+              )}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {placeActionNotice ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className={cn(
+            "rounded-xl px-4 py-3",
+            placeActionNotice.type === "deleted"
+              ? "border border-destructive/30 bg-destructive/10"
+              : "border border-amber-500/30 bg-amber-500/10",
           )}
-          {showAddForm ? "Cancel" : "Add Place"}
-        </Button>
-      </div>
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-2">
+              {placeActionNotice.type === "deleted" ? (
+                <Trash2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-destructive" />
+              ) : (
+                <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-700 dark:text-amber-400" />
+              )}
+
+              <div className="min-w-0 space-y-0.5">
+                <p className="text-sm font-semibold text-foreground">
+                  {placeActionNotice.type === "deleted"
+                    ? t(
+                        "admin.places.notice.deletedTitle",
+                        undefined,
+                        "Place deleted",
+                      )
+                    : t(
+                        "admin.places.notice.removedTitle",
+                        undefined,
+                        "Place removed",
+                      )}
+                </p>
+                <p className="text-role-caption break-words text-muted-foreground">
+                  {placeActionNotice.message}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={dismissPlaceActionNotice}
+              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-card/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label={t(
+                "admin.places.notice.dismissActionAria",
+                undefined,
+                "Dismiss place update message",
+              )}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Add Place Form */}
       {showAddForm && (
-        <div
-          ref={formRef}
-          className="rounded-2xl border border-border bg-card p-6 space-y-5 shadow-sm"
-        >
-          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <Plus className="h-4 w-4 text-secondary" />
-            New Place
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Name */}
-            <div className="space-y-1.5">
-              <Label htmlFor="place-name">Place Name *</Label>
-              <Input
-                id="place-name"
-                placeholder="e.g. Al-Azhar Park"
-                value={form.name}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, name: e.target.value }))
-                }
-                className={cn(formErrors.name && "border-red-400")}
-              />
-              {formErrors.name && (
-                <p className="text-xs text-red-500">{formErrors.name}</p>
-              )}
-            </div>
-
-            {/* Category */}
-            <div className="space-y-1.5">
-              <Label htmlFor="place-category">Category *</Label>
-              <select
-                id="place-category"
-                value={form.category}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, category: e.target.value }))
-                }
-                className={cn(
-                  "w-full h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring",
-                  formErrors.category && "border-red-400",
+        <AdminSection tone="surface" className="py-0" contentClassName="gap-6">
+          <div
+            id="admin-add-place-form"
+            ref={formRef}
+            className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+          >
+            <div className="rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 via-card to-background p-5 sm:p-6">
+              <h2 className="flex items-center gap-2 text-role-body font-semibold text-foreground">
+                <Navigation className="h-4 w-4 text-secondary" />
+                {t(
+                  "admin.places.form.scrapeTitle",
+                  undefined,
+                  "Add Place via Google Maps",
                 )}
-              >
-                <option value="">Select category…</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.label}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-              {formErrors.category && (
-                <p className="text-xs text-red-500">{formErrors.category}</p>
-              )}
-            </div>
-
-            {/* District */}
-            <div className="space-y-1.5">
-              <Label htmlFor="place-district">District *</Label>
-              <select
-                id="place-district"
-                value={form.district}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, district: e.target.value }))
-                }
-                className={cn(
-                  "w-full h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring",
-                  formErrors.district && "border-red-400",
+              </h2>
+              <p className="mt-2 text-role-secondary text-muted-foreground">
+                {t(
+                  "admin.places.form.scrapeDescription",
+                  undefined,
+                  "Paste a Google Maps venue URL and we will scrape details automatically. Manual place fields are no longer required.",
                 )}
-              >
-                <option value="">Select district…</option>
-                {DISTRICTS.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-              {formErrors.district && (
-                <p className="text-xs text-red-500">{formErrors.district}</p>
-              )}
-            </div>
+              </p>
 
-            {/* Price Level */}
-            <div className="space-y-1.5">
-              <Label>Price Level</Label>
-              <div className="flex gap-2">
-                {PRICE_LEVEL_OPTIONS.map((lvl) => (
-                  <button
-                    key={lvl.value}
-                    type="button"
-                    onClick={() =>
-                      setForm((p) => ({ ...p, priceLevel: lvl.value }))
-                    }
-                    className={cn(
-                      "flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
-                      form.priceLevel === lvl.value
-                        ? "bg-secondary text-secondary-foreground border-secondary"
-                        : "border-border text-muted-foreground hover:border-secondary/50",
+              <div className="mt-4 space-y-3 rounded-xl border border-border/70 bg-card/80 p-4">
+                <p className="text-role-secondary font-semibold text-foreground">
+                  {t(
+                    "admin.places.form.scrapeRulesTitle",
+                    undefined,
+                    "Submission Rules",
+                  )}
+                </p>
+                <div className="space-y-2 text-role-caption text-muted-foreground">
+                  <p className="flex items-start gap-2">
+                    <CircleAlert className="mt-0.5 h-3.5 w-3.5 text-secondary" />
+                    {t(
+                      "admin.places.form.scrapeRuleGoogleOnly",
+                      undefined,
+                      "Only Google Maps links are accepted.",
                     )}
-                  >
-                    {Array.from({ length: lvl.signs }).map((_, i) => (
-                      <DollarSign key={i} className="h-3.5 w-3.5" />
-                    ))}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Phone */}
-            <div className="space-y-1.5">
-              <Label htmlFor="place-phone">Phone</Label>
-              <Input
-                id="place-phone"
-                placeholder="+20 2 1234 5678"
-                value={form.phone}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, phone: e.target.value }))
-                }
-              />
-            </div>
-
-            {/* Website */}
-            <div className="space-y-1.5">
-              <Label htmlFor="place-website">Website</Label>
-              <Input
-                id="place-website"
-                placeholder="https://example.com"
-                value={form.website}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, website: e.target.value }))
-                }
-              />
-            </div>
-          </div>
-
-          {/* About */}
-          <div className="space-y-1.5">
-            <Label htmlFor="place-desc">About *</Label>
-            <textarea
-              id="place-desc"
-              rows={3}
-              placeholder="Describe the place (at least 20 characters)…"
-              value={form.description}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, description: e.target.value }))
-              }
-              className={cn(
-                "w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring",
-                formErrors.description && "border-red-400",
-              )}
-            />
-            <div className="flex justify-between items-center">
-              {formErrors.description ? (
-                <p className="text-xs text-red-500">{formErrors.description}</p>
-              ) : (
-                <span />
-              )}
-              <span className="text-xs text-muted-foreground">
-                {form.description.length} chars
-              </span>
-            </div>
-          </div>
-
-          {/* Why Recommend */}
-          <div className="space-y-1.5">
-            <Label htmlFor="place-why">Why Recommend</Label>
-            <textarea
-              id="place-why"
-              rows={2}
-              placeholder="What makes this place special?"
-              value={form.whyRecommend}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, whyRecommend: e.target.value }))
-              }
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-1.5">
-            <Label>Tags</Label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowTagPicker(!showTagPicker)}
-                className="flex items-center justify-between w-full h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm hover:border-ring transition-colors"
-              >
-                <span className="text-muted-foreground">
-                  {form.tags.length === 0
-                    ? "Select tags…"
-                    : `${form.tags.length} tag(s) selected`}
-                </span>
-                {showTagPicker ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </button>
-              {showTagPicker && (
-                <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-card border border-border rounded-xl p-3 shadow-lg flex flex-wrap gap-2">
-                  {COMMON_PLACE_TAGS.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleTag(tag)}
-                      className={cn(
-                        "px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
-                        form.tags.includes(tag)
-                          ? "bg-secondary text-secondary-foreground border-secondary"
-                          : "border-border text-muted-foreground hover:border-secondary/50",
-                      )}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            {form.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {form.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-medium"
-                  >
-                    {tag}
-                    <button onClick={() => toggleTag(tag)}>
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Image URL */}
-          <div className="space-y-1.5">
-            <Label htmlFor="place-image">Image URL *</Label>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <Input
-                  id="place-image"
-                  placeholder="https://images.example.com/place.jpg"
-                  value={form.image}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, image: e.target.value }))
-                  }
-                  className={cn(formErrors.image && "border-red-400")}
-                />
-                {formErrors.image && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {formErrors.image}
                   </p>
-                )}
+                  <p className="flex items-start gap-2">
+                    <CircleAlert className="mt-0.5 h-3.5 w-3.5 text-secondary" />
+                    {t(
+                      "admin.places.form.scrapeRuleExamples",
+                      undefined,
+                      "Accepted formats: maps.app.goo.gl, goo.gl/maps, or google.com/maps/...",
+                    )}
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <CircleAlert className="mt-0.5 h-3.5 w-3.5 text-secondary" />
+                    {t(
+                      "admin.places.form.scrapeRuleNoHome",
+                      undefined,
+                      "Do not use generic home pages or non-maps URLs.",
+                    )}
+                  </p>
+                </div>
               </div>
-              {form.image && (
-                <div className="h-16 w-16 rounded-xl overflow-hidden border border-border flex-shrink-0">
-                  <img
-                    src={form.image}
-                    alt="preview"
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "";
-                    }}
-                  />
-                </div>
-              )}
-              {!form.image && (
-                <div className="h-16 w-16 rounded-xl border-2 border-dashed border-border flex items-center justify-center flex-shrink-0">
-                  <Upload className="h-5 w-5 text-muted-foreground/50" />
-                </div>
-              )}
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+              <Label
+                htmlFor="admin-venue-url"
+                className="text-role-secondary font-semibold"
+              >
+                {t(
+                  "admin.places.form.venueUrlLabel",
+                  undefined,
+                  "Google Maps place URL",
+                )}
+              </Label>
+
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+                <Input
+                  id="admin-venue-url"
+                  placeholder="https://maps.app.goo.gl/..."
+                  value={form.venueUrl}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      venueUrl: event.target.value,
+                    }))
+                  }
+                  className={cn(
+                    "min-h-11",
+                    formErrors.venueUrl && "border-destructive",
+                  )}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  inputMode="url"
+                />
+                {hasValidVenueUrl ? (
+                  <a
+                    href={normalizedVenueUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border px-4 text-role-secondary font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <Link2 className="h-4 w-4" />
+                    {t("admin.places.form.openUrl", undefined, "Open")}
+                  </a>
+                ) : null}
+              </div>
+
+              {formErrors.venueUrl ? (
+                <p className="mt-1 text-role-caption text-destructive">
+                  {formErrors.venueUrl}
+                </p>
+              ) : null}
+
+              <p
+                className={cn(
+                  "mt-2 text-role-caption",
+                  !hasTypedVenueUrl
+                    ? "text-muted-foreground"
+                    : hasValidVenueUrl
+                      ? "text-primary"
+                      : "text-destructive",
+                )}
+              >
+                {!hasTypedVenueUrl
+                  ? t(
+                      "admin.places.form.urlHintDefault",
+                      undefined,
+                      "Paste a Google Maps link to continue.",
+                    )
+                  : hasValidVenueUrl
+                    ? t(
+                        "admin.places.form.urlHintValid",
+                        undefined,
+                        "Looks valid. You can start scraping now.",
+                      )
+                    : t(
+                        "admin.places.form.urlHintInvalid",
+                        undefined,
+                        "Invalid URL. Use a Google Maps place link.",
+                      )}
+              </p>
+
+              <p className="mt-3 text-role-caption text-muted-foreground">
+                {t("admin.places.form.urlExampleLabel", undefined, "Example:")}{" "}
+                <span className="font-medium text-foreground">
+                  https://www.google.com/maps/place/...
+                </span>
+              </p>
+
+              <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setForm(EMPTY_PLACE_FORM);
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  {t("admin.places.actions.cancel")}
+                </Button>
+
+                <Button
+                  onClick={handleAddPlace}
+                  disabled={submittingForm || !hasValidVenueUrl}
+                  className="gap-2 w-full sm:w-auto"
+                >
+                  {submittingForm ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("admin.places.actions.saving")}
+                    </>
+                  ) : (
+                    <>
+                      <Navigation className="h-4 w-4" />
+                      {t(
+                        "admin.places.actions.startScrape",
+                        undefined,
+                        "Start Scraping",
+                      )}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
-
-          {/* Submit */}
-          <div className="flex justify-end gap-3 pt-2 border-t border-border">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowAddForm(false);
-                setForm(EMPTY_PLACE_FORM);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddPlace}
-              disabled={submittingForm}
-              className="gap-2"
-            >
-              {submittingForm ? (
-                <>
-                  <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{" "}
-                  Saving…
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" /> Add Place
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
+        </AdminSection>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search places or districts..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {["all", "active", "pending", "flagged", "removed"].map((status) => (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all border",
-                statusFilter === status
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/40",
-              )}
-            >
-              {status === "all"
-                ? "All"
-                : status.charAt(0).toUpperCase() + status.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Places List */}
-      <div className="space-y-3">
-        {filtered.length === 0 ? (
-          <div className="text-center py-12">
-            <MapPin className="h-12 w-12 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-muted-foreground">No places found</p>
+      <AdminSection
+        tone="muted"
+        title={t("admin.places.filters.title")}
+        description={t("admin.places.filters.description")}
+      >
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t("admin.places.filters.searchPlaceholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
           </div>
+          <div className="lg:w-auto">
+            <AdminFilterChips
+              label={t("admin.filter.status")}
+              options={statusFilterOptions}
+              value={statusFilter}
+              onChange={setStatusFilter}
+            />
+          </div>
+        </div>
+      </AdminSection>
+
+      <AdminSection
+        title={t("admin.places.records.title")}
+        description={t("admin.places.records.description", {
+          count: formatNumber(filtered.length),
+        })}
+        contentClassName="gap-3"
+      >
+        {filtered.length === 0 ? (
+          <AdminEmptyState
+            icon={MapPin}
+            title={t("admin.places.empty.title")}
+            description={t("admin.places.empty.description")}
+          />
         ) : (
           filtered.map((place) => {
             const config = placeStatusConfig[place.status];
             const StatusIcon = config.icon;
+            const isPendingAction = pendingPlaceIds.includes(place.id);
 
             return (
               <div
                 key={place.id}
-                className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-secondary/30 hover:shadow-sm transition-all"
+                className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 transition-all motion-reduce:transition-none hover:border-secondary/30 hover:shadow-sm sm:flex-row sm:items-center"
+                style={ADMIN_LIST_ROW_STYLE}
               >
                 {/* Image */}
                 <img
                   src={place.image}
                   alt={place.name}
                   className="h-14 w-14 rounded-xl object-cover flex-shrink-0"
+                  loading="lazy"
+                  decoding="async"
                 />
 
                 {/* Info */}
@@ -511,45 +562,62 @@ const ManagePlacesPage = () => {
                     </p>
                     <Badge
                       variant="outline"
-                      className={cn("text-[10px] px-1.5 py-0", config.class)}
+                      className={cn(
+                        "px-1.5 py-0 text-role-caption",
+                        config.class,
+                      )}
                     >
                       <StatusIcon className="h-2.5 w-2.5 mr-0.5" />{" "}
-                      {config.label}
+                      {getStatusLabel(place.status)}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                  <div className="mt-1 flex flex-wrap items-center gap-3 text-role-caption text-muted-foreground">
                     <span>{place.category}</span>
                     <span>·</span>
                     <span>{place.district}</span>
                     <span>·</span>
                     <span className="flex items-center gap-0.5">
-                      <Star className="h-3 w-3 text-secondary fill-secondary" />{" "}
+                      <Star className="h-3 w-3 text-secondary fill-secondary dark:text-primary dark:fill-primary" />{" "}
                       {place.rating}
                     </span>
                     <span>·</span>
-                    <span>{place.reviewCount} reviews</span>
+                    <span>
+                      {t("admin.places.records.reviewCount", {
+                        count: formatNumber(place.reviewCount),
+                      })}
+                    </span>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-shrink-0 w-full sm:w-auto justify-end">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => navigate(`/venue/${place.id}`)}
-                    className="text-xs gap-1 h-8"
+                    className="text-xs gap-1 min-h-11 sm:h-8"
+                    disabled={isPendingAction}
                   >
-                    <Eye className="h-3.5 w-3.5" /> View
+                    <Eye className="h-3.5 w-3.5" />{" "}
+                    {t("admin.places.actions.view")}
                   </Button>
 
                   {place.status === "pending" && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleStatusChange(place.id, "active")}
-                      className="text-xs gap-1 h-8 text-emerald-600 hover:text-emerald-700"
+                      onClick={() =>
+                        void handleStatusChange(place.id, "active")
+                      }
+                      className="min-h-11 gap-1 text-role-secondary text-primary hover:text-primary sm:h-8"
+                      disabled={isPendingAction}
                     >
-                      <CheckCircle className="h-3.5 w-3.5" /> Approve
+                      {isPendingAction ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <CheckCircle className="h-3.5 w-3.5" />
+                      )}{" "}
+                      {t("admin.places.actions.approve")}
                     </Button>
                   )}
 
@@ -558,18 +626,26 @@ const ManagePlacesPage = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleStatusChange(place.id, "active")}
-                        className="text-xs gap-1 h-8 text-emerald-600 hover:text-emerald-700"
+                        onClick={() =>
+                          void handleStatusChange(place.id, "active")
+                        }
+                        className="min-h-11 gap-1 text-role-secondary text-primary hover:text-primary sm:h-8"
+                        disabled={isPendingAction}
                       >
-                        <CheckCircle className="h-3.5 w-3.5" /> Clear
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        {t("admin.places.actions.clear")}
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleStatusChange(place.id, "removed")}
-                        className="text-xs gap-1 h-8 text-red-600 hover:text-red-700"
+                        onClick={() =>
+                          void handleStatusChange(place.id, "removed")
+                        }
+                        className="min-h-11 gap-1 text-role-secondary text-destructive hover:text-destructive sm:h-8"
+                        disabled={isPendingAction}
                       >
-                        <XCircle className="h-3.5 w-3.5" /> Remove
+                        <XCircle className="h-3.5 w-3.5" />
+                        {t("admin.places.actions.remove")}
                       </Button>
                     </>
                   )}
@@ -579,26 +655,38 @@ const ManagePlacesPage = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs gap-1 h-8 text-destructive hover:text-destructive"
+                        className="text-xs gap-1 min-h-11 sm:h-8 text-destructive hover:text-destructive"
+                        disabled={isPendingAction}
+                        aria-label={t("admin.places.actions.deleteAria", {
+                          name: place.name,
+                        })}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Place</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          {t("admin.places.dialog.deleteTitle")}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to permanently delete "
-                          {place.name}"? This action cannot be undone.
+                          {t("admin.places.dialog.deleteDescription", {
+                            name: place.name,
+                          })}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>
+                          {t("admin.places.actions.cancel")}
+                        </AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => handleDelete(place.id, place.name)}
+                          onClick={() =>
+                            void handleDelete(place.id, place.name)
+                          }
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          disabled={isPendingAction}
                         >
-                          Delete
+                          {t("admin.places.actions.delete")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -608,8 +696,8 @@ const ManagePlacesPage = () => {
             );
           })
         )}
-      </div>
-    </div>
+      </AdminSection>
+    </AdminPageLayout>
   );
 };
 

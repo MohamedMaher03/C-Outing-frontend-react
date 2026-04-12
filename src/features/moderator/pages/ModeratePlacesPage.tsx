@@ -5,24 +5,21 @@
  * and delete places directly.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 import {
   Search,
   MapPin,
   Star,
   CheckCircle,
-  Clock,
-  AlertTriangle,
-  XCircle,
   Eye,
   Flag,
   Plus,
   X,
-  Upload,
-  DollarSign,
-  ChevronDown,
-  ChevronUp,
+  Link2,
+  Navigation,
+  CircleAlert,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -42,99 +39,49 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import { DISTRICTS } from "@/mocks/mockData";
 import { useModeratePlaces } from "@/features/moderator/hooks/useModeratePlaces";
-import type { PriceLevel } from "@/features/admin/types";
+import { isGoogleMapsVenueUrl } from "@/features/admin/utils/placeForm";
+import {
+  moderatorPlaceStatusConfig,
+  moderatorPlaceRowStateClass,
+  moderatorToastClasses,
+} from "@/features/moderator/constants/statusConfigs";
+import { MODERATOR_PLACE_STATUS_FILTER_OPTIONS } from "@/features/moderator/constants/filterOptions";
+import {
+  ModeratorEmptyState,
+  ModeratorErrorBanner,
+  ModeratorFilterChips,
+  ModeratorPageHeader,
+  ModeratorPageLayout,
+  ModeratorSection,
+} from "@/features/moderator/components";
+import { formatCount } from "@/features/moderator/utils/formatters";
+import { useI18n } from "@/components/i18n";
 
-// ── Constants ─────────────────────────────────────────────────
-
-const COMMON_TAGS = [
-  "Outdoor",
-  "Romantic",
-  "Scenic",
-  "Street Food",
-  "Casual",
-  "Local",
-  "Art",
-  "Culture",
-  "Free Entry",
-  "Co-working",
-  "Tech",
-  "Historical",
-  "Shopping",
-  "Iconic",
-  "Nightlife",
-  "Live Music",
-  "Parks",
-  "Family-friendly",
-  "Rooftop",
-  "Fine Dining",
-  "Nile View",
-  "Late Night",
-  "Hidden Gem",
-  "Budget Friendly",
-  "Pet Friendly",
-  "Instagrammable",
-];
-
-const PRICE_LEVEL_OPTIONS: Array<{ value: PriceLevel; signs: number }> = [
-  { value: "price_cheapest", signs: 1 },
-  { value: "cheap", signs: 2 },
-  { value: "mid_range", signs: 3 },
-  { value: "expensive", signs: 4 },
-  { value: "luxury", signs: 5 },
-];
-
-// ── Config ────────────────────────────────────────────────────
-
-const statusConfig: Record<
-  string,
-  { label: string; class: string; icon: typeof CheckCircle }
-> = {
-  active: {
-    label: "Active",
-    class: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    icon: CheckCircle,
-  },
-  pending: {
-    label: "Pending",
-    class: "bg-amber-100 text-amber-700 border-amber-200",
-    icon: Clock,
-  },
-  flagged: {
-    label: "Flagged",
-    class: "bg-red-100 text-red-700 border-red-200",
-    icon: AlertTriangle,
-  },
-  removed: {
-    label: "Removed",
-    class: "bg-gray-100 text-gray-500 border-gray-200",
-    icon: XCircle,
-  },
-};
+const PLACE_PLACEHOLDER_IMAGE =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' fill='%23f4efe5'/%3E%3Crect x='14' y='18' width='68' height='60' rx='10' fill='%23e5d8bf'/%3E%3Ccircle cx='38' cy='42' r='9' fill='%23967f59'/%3E%3Cpath d='M24 67c4-8 12-12 20-12s16 4 20 12' stroke='%23806a49' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E";
 
 const EMPTY_FORM = {
-  name: "",
-  category: "",
-  district: "",
-  description: "",
-  priceLevel: "mid_range" as PriceLevel,
-  tags: [] as string[],
-  image: "",
-  phone: "",
-  website: "",
+  venueUrl: "",
 };
 
-// ── Component ─────────────────────────────────────────────────
+const MODERATOR_PLACE_ROW_STYLE: CSSProperties = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "116px",
+  contain: "layout paint style",
+};
 
 const ModeratePlacesPage = () => {
   const navigate = useNavigate();
   const formRef = useRef<HTMLDivElement>(null);
+  const { t, locale } = useI18n();
 
   const {
     places,
-    categories,
     loading,
+    error,
+    queueErrorState,
+    pendingPlaceIdSet,
     search,
     statusFilter,
     filteredPlaces: filtered,
@@ -142,23 +89,35 @@ const ModeratePlacesPage = () => {
     form,
     formErrors,
     submittingForm,
-    showTagPicker,
     toasts,
     setSearch,
     setStatusFilter,
     setShowAddForm,
     setForm,
-    setShowTagPicker,
+    retry,
     handleApprove,
     handleFlag,
     handleDeletePlace,
     handleAddPlace,
-    toggleTag,
   } = useModeratePlaces();
 
+  const statusFilterOptions = useMemo(
+    () =>
+      MODERATOR_PLACE_STATUS_FILTER_OPTIONS.map((option) => ({
+        ...option,
+        label:
+          option.value === "all"
+            ? t("admin.filter.all")
+            : t(`admin.status.${option.value}`),
+      })),
+    [t],
+  );
+
   useEffect(() => {
+    let timerId: number | null = null;
+
     if (showAddForm) {
-      setTimeout(
+      timerId = window.setTimeout(
         () =>
           formRef.current?.scrollIntoView({
             behavior: "smooth",
@@ -167,510 +126,540 @@ const ModeratePlacesPage = () => {
         50,
       );
     }
+
+    return () => {
+      if (timerId) {
+        window.clearTimeout(timerId);
+      }
+    };
   }, [showAddForm]);
 
-  // Handlers
+  const placeSummary = useMemo(
+    () =>
+      places.reduce(
+        (summary, place) => {
+          if (place.status === "pending") {
+            summary.pending += 1;
+          }
+          if (place.status === "flagged") {
+            summary.flagged += 1;
+          }
+          return summary;
+        },
+        { pending: 0, flagged: 0 },
+      ),
+    [places],
+  );
+
+  const normalizedVenueUrl = form.venueUrl.trim();
+  const hasTypedVenueUrl = normalizedVenueUrl.length > 0;
+  const hasValidVenueUrl = isGoogleMapsVenueUrl(normalizedVenueUrl);
 
   if (loading) {
-    return <LoadingSpinner size="md" text="Loading places..." fullScreen />;
+    return (
+      <LoadingSpinner
+        size="md"
+        text={t("moderator.places.loading")}
+        fullScreen
+      />
+    );
   }
 
-  const pendingCount = places.filter((p) => p.status === "pending").length;
-  const flaggedCount = places.filter((p) => p.status === "flagged").length;
+  if (queueErrorState?.kind === "forbidden") {
+    return (
+      <ModeratorPageLayout>
+        <ModeratorPageHeader
+          title={t("moderator.places.header.title")}
+          description={t("moderator.places.header.description", {
+            pending: formatCount(placeSummary.pending, locale),
+            flagged: formatCount(placeSummary.flagged, locale),
+          })}
+          icon={MapPin}
+        />
+
+        <ModeratorSection contentClassName="gap-0">
+          <ModeratorEmptyState
+            icon={Flag}
+            title={t("moderator.places.error.forbiddenTitle")}
+            description={t("moderator.places.error.forbiddenMessage")}
+            action={
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button variant="outline" onClick={() => navigate(-1)}>
+                  {t("moderator.places.actions.goBack")}
+                </Button>
+                <Button
+                  onClick={() => {
+                    void retry();
+                  }}
+                >
+                  {t("common.retry")}
+                </Button>
+              </div>
+            }
+          />
+        </ModeratorSection>
+      </ModeratorPageLayout>
+    );
+  }
+
+  const queueErrorTitle =
+    queueErrorState?.kind === "load-failure"
+      ? t("moderator.places.error.loadFailureTitle")
+      : t("moderator.places.error.updateTitle");
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Toast Notifications */}
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
-        {toasts.map((t) => (
+    <ModeratorPageLayout>
+      <div
+        className="fixed top-4 left-4 right-4 z-50 flex flex-col gap-2 pointer-events-none sm:left-auto sm:right-4"
+        role="status"
+        aria-live="polite"
+      >
+        {toasts.map((toast) => (
           <div
-            key={t.id}
+            key={toast.id}
             className={cn(
-              "px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white max-w-xs pointer-events-auto transition-all",
-              t.variant === "success" && "bg-emerald-600",
-              t.variant === "error" && "bg-red-600",
-              t.variant === "warning" && "bg-amber-500",
-              t.variant === "info" && "bg-blue-600",
+              "max-w-xs rounded-xl px-4 py-3 text-role-secondary font-medium pointer-events-auto transition-all motion-reduce:transition-none",
+              moderatorToastClasses[toast.variant],
             )}
           >
-            {t.message}
+            {toast.message}
           </div>
         ))}
       </div>
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <MapPin className="h-6 w-6 text-secondary" />
-            Moderate Places
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {pendingCount} pending · {flaggedCount} flagged
-          </p>
-        </div>
-        <Button
-          onClick={() => setShowAddForm((v) => !v)}
-          className="gap-2 flex-shrink-0"
-          variant={showAddForm ? "outline" : "default"}
-        >
-          {showAddForm ? (
-            <X className="h-4 w-4" />
-          ) : (
-            <Plus className="h-4 w-4" />
-          )}
-          {showAddForm ? "Cancel" : "Add Place"}
-        </Button>
-      </div>
+      <ModeratorErrorBanner
+        title={queueErrorTitle}
+        message={error}
+        onRetry={() => {
+          void retry();
+        }}
+      />
 
-      {/* Add Place Form */}
-      {showAddForm && (
-        <div
-          ref={formRef}
-          className="rounded-2xl border border-border bg-card p-6 space-y-5 shadow-sm"
-        >
-          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <Plus className="h-4 w-4 text-secondary" />
-            Submit New Place
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Name */}
-            <div className="space-y-1.5">
-              <Label htmlFor="mod-place-name">Place Name *</Label>
-              <Input
-                id="mod-place-name"
-                placeholder="e.g. Al-Azhar Park"
-                value={form.name}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, name: e.target.value }))
-                }
-                className={cn(formErrors.name && "border-red-400")}
-              />
-              {formErrors.name && (
-                <p className="text-xs text-red-500">{formErrors.name}</p>
-              )}
-            </div>
-
-            {/* Category */}
-            <div className="space-y-1.5">
-              <Label htmlFor="mod-place-category">Category *</Label>
-              <select
-                id="mod-place-category"
-                value={form.category}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, category: e.target.value }))
-                }
-                className={cn(
-                  "w-full h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring",
-                  formErrors.category && "border-red-400",
-                )}
-              >
-                <option value="">Select category…</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.label}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-              {formErrors.category && (
-                <p className="text-xs text-red-500">{formErrors.category}</p>
-              )}
-            </div>
-
-            {/* District */}
-            <div className="space-y-1.5">
-              <Label htmlFor="mod-place-district">District *</Label>
-              <select
-                id="mod-place-district"
-                value={form.district}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, district: e.target.value }))
-                }
-                className={cn(
-                  "w-full h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring",
-                  formErrors.district && "border-red-400",
-                )}
-              >
-                <option value="">Select district…</option>
-                {DISTRICTS.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-              {formErrors.district && (
-                <p className="text-xs text-red-500">{formErrors.district}</p>
-              )}
-            </div>
-
-            {/* Price Level */}
-            <div className="space-y-1.5">
-              <Label>Price Level</Label>
-              <div className="flex gap-2">
-                {PRICE_LEVEL_OPTIONS.map((lvl) => (
-                  <button
-                    key={lvl.value}
-                    type="button"
-                    onClick={() =>
-                      setForm((p) => ({ ...p, priceLevel: lvl.value }))
-                    }
-                    className={cn(
-                      "flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all",
-                      form.priceLevel === lvl.value
-                        ? "bg-secondary text-secondary-foreground border-secondary"
-                        : "border-border text-muted-foreground hover:border-secondary/50",
-                    )}
-                  >
-                    {Array.from({ length: lvl.signs }).map((_, i) => (
-                      <DollarSign key={i} className="h-3.5 w-3.5" />
-                    ))}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Phone */}
-            <div className="space-y-1.5">
-              <Label htmlFor="mod-place-phone">Phone</Label>
-              <Input
-                id="mod-place-phone"
-                placeholder="+20 2 1234 5678"
-                value={form.phone}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, phone: e.target.value }))
-                }
-              />
-            </div>
-
-            {/* Website */}
-            <div className="space-y-1.5">
-              <Label htmlFor="mod-place-website">Website</Label>
-              <Input
-                id="mod-place-website"
-                placeholder="https://example.com"
-                value={form.website}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, website: e.target.value }))
-                }
-              />
-            </div>
-          </div>
-
-          {/* About */}
-          <div className="space-y-1.5">
-            <Label htmlFor="mod-place-desc">About *</Label>
-            <textarea
-              id="mod-place-desc"
-              rows={3}
-              placeholder="Describe the place (at least 20 characters)…"
-              value={form.description}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, description: e.target.value }))
-              }
-              className={cn(
-                "w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring",
-                formErrors.description && "border-red-400",
-              )}
-            />
-            <div className="flex justify-between items-center">
-              {formErrors.description ? (
-                <p className="text-xs text-red-500">{formErrors.description}</p>
-              ) : (
-                <span />
-              )}
-              <span className="text-xs text-muted-foreground">
-                {form.description.length} chars
-              </span>
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-1.5">
-            <Label>Tags</Label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowTagPicker(!showTagPicker)}
-                className="flex items-center justify-between w-full h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm hover:border-ring transition-colors"
-              >
-                <span className="text-muted-foreground">
-                  {form.tags.length === 0
-                    ? "Select tags…"
-                    : `${form.tags.length} tag(s) selected`}
-                </span>
-                {showTagPicker ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </button>
-              {showTagPicker && (
-                <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-card border border-border rounded-xl p-3 shadow-lg flex flex-wrap gap-2">
-                  {COMMON_TAGS.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleTag(tag)}
-                      className={cn(
-                        "px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
-                        form.tags.includes(tag)
-                          ? "bg-secondary text-secondary-foreground border-secondary"
-                          : "border-border text-muted-foreground hover:border-secondary/50",
-                      )}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            {form.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {form.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-medium"
-                  >
-                    {tag}
-                    <button onClick={() => toggleTag(tag)}>
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
+      <ModeratorPageHeader
+        title={t("moderator.places.header.title")}
+        description={t("moderator.places.header.description", {
+          pending: formatCount(placeSummary.pending, locale),
+          flagged: formatCount(placeSummary.flagged, locale),
+        })}
+        icon={MapPin}
+        actions={
+          <Button
+            onClick={() => setShowAddForm((value) => !value)}
+            className="gap-2 flex-shrink-0 w-full sm:w-auto"
+            variant={showAddForm ? "outline" : "default"}
+            aria-expanded={showAddForm}
+            aria-controls="moderator-add-place-form"
+          >
+            {showAddForm ? (
+              <X className="h-4 w-4" />
+            ) : (
+              <Plus className="h-4 w-4" />
             )}
-          </div>
+            {showAddForm
+              ? t("admin.places.actions.cancel")
+              : t("admin.places.actions.addPlace")}
+          </Button>
+        }
+      />
 
-          {/* Image URL */}
-          <div className="space-y-1.5">
-            <Label htmlFor="mod-place-image">Image URL *</Label>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <Input
-                  id="mod-place-image"
-                  placeholder="https://images.example.com/place.jpg"
-                  value={form.image}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, image: e.target.value }))
-                  }
-                  className={cn(formErrors.image && "border-red-400")}
-                />
-                {formErrors.image && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {formErrors.image}
-                  </p>
+      {showAddForm ? (
+        <ModeratorSection
+          tone="surface"
+          className="py-0"
+          contentClassName="gap-6"
+        >
+          <div
+            id="moderator-add-place-form"
+            ref={formRef}
+            className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+          >
+            <div className="rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 via-card to-background p-5 sm:p-6">
+              <h2 className="flex items-center gap-2 text-role-body font-semibold text-foreground">
+                <Navigation className="h-4 w-4 text-secondary" />
+                {t(
+                  "moderator.places.form.scrapeTitle",
+                  undefined,
+                  "Submit Place via Google Maps",
                 )}
+              </h2>
+              <p className="mt-2 text-role-secondary text-muted-foreground">
+                {t(
+                  "moderator.places.form.scrapeDescription",
+                  undefined,
+                  "Paste a Google Maps place URL to start auto-scraping and moderation review.",
+                )}
+              </p>
+
+              <div className="mt-4 space-y-3 rounded-xl border border-border/70 bg-card/80 p-4">
+                <p className="text-role-secondary font-semibold text-foreground">
+                  {t(
+                    "moderator.places.form.scrapeRulesTitle",
+                    undefined,
+                    "Submission Rules",
+                  )}
+                </p>
+                <div className="space-y-2 text-role-caption text-muted-foreground">
+                  <p className="flex items-start gap-2">
+                    <CircleAlert className="mt-0.5 h-3.5 w-3.5 text-secondary" />
+                    {t(
+                      "moderator.places.form.scrapeRuleGoogleOnly",
+                      undefined,
+                      "Only Google Maps URLs are accepted.",
+                    )}
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <CircleAlert className="mt-0.5 h-3.5 w-3.5 text-secondary" />
+                    {t(
+                      "moderator.places.form.scrapeRuleExamples",
+                      undefined,
+                      "Use maps.app.goo.gl, goo.gl/maps, or google.com/maps links.",
+                    )}
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <CircleAlert className="mt-0.5 h-3.5 w-3.5 text-secondary" />
+                    {t(
+                      "moderator.places.form.scrapeRuleRejected",
+                      undefined,
+                      "Non-Google links are rejected automatically.",
+                    )}
+                  </p>
+                </div>
               </div>
-              {form.image ? (
-                <div className="h-16 w-16 rounded-xl overflow-hidden border border-border flex-shrink-0">
-                  <img
-                    src={form.image}
-                    alt="preview"
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "";
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="h-16 w-16 rounded-xl border-2 border-dashed border-border flex items-center justify-center flex-shrink-0">
-                  <Upload className="h-5 w-5 text-muted-foreground/50" />
-                </div>
-              )}
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+              <Label
+                htmlFor="moderator-venue-url"
+                className="text-role-secondary font-semibold"
+              >
+                {t(
+                  "moderator.places.form.venueUrlLabel",
+                  undefined,
+                  "Google Maps place URL",
+                )}
+              </Label>
+
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+                <Input
+                  id="moderator-venue-url"
+                  placeholder="https://maps.app.goo.gl/..."
+                  value={form.venueUrl}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      venueUrl: event.target.value,
+                    }))
+                  }
+                  className={cn(
+                    "min-h-11",
+                    formErrors.venueUrl && "border-destructive",
+                  )}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  inputMode="url"
+                />
+
+                {hasValidVenueUrl ? (
+                  <a
+                    href={normalizedVenueUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border px-4 text-role-secondary font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <Link2 className="h-4 w-4" />
+                    {t("moderator.places.form.openUrl", undefined, "Open")}
+                  </a>
+                ) : null}
+              </div>
+
+              {formErrors.venueUrl ? (
+                <p className="mt-1 text-role-caption text-destructive">
+                  {formErrors.venueUrl}
+                </p>
+              ) : null}
+
+              <p
+                className={cn(
+                  "mt-2 text-role-caption",
+                  !hasTypedVenueUrl
+                    ? "text-muted-foreground"
+                    : hasValidVenueUrl
+                      ? "text-primary"
+                      : "text-destructive",
+                )}
+              >
+                {!hasTypedVenueUrl
+                  ? t(
+                      "moderator.places.form.urlHintDefault",
+                      undefined,
+                      "Paste a Google Maps link to continue.",
+                    )
+                  : hasValidVenueUrl
+                    ? t(
+                        "moderator.places.form.urlHintValid",
+                        undefined,
+                        "Valid link. Ready to start scraping.",
+                      )
+                    : t(
+                        "moderator.places.form.urlHintInvalid",
+                        undefined,
+                        "Invalid URL. Use a Google Maps place link.",
+                      )}
+              </p>
+
+              <p className="mt-3 text-role-caption text-muted-foreground">
+                {t(
+                  "moderator.places.form.urlExampleLabel",
+                  undefined,
+                  "Example:",
+                )}{" "}
+                <span className="font-medium text-foreground">
+                  https://www.google.com/maps/place/...
+                </span>
+              </p>
+
+              <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
+                <Button
+                  variant="outline"
+                  className="min-h-11"
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setForm(EMPTY_FORM);
+                  }}
+                >
+                  {t("admin.places.actions.cancel")}
+                </Button>
+                <Button
+                  onClick={handleAddPlace}
+                  disabled={submittingForm || !hasValidVenueUrl}
+                  className="gap-2 min-h-11"
+                >
+                  {submittingForm ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("moderator.places.actions.submitting")}
+                    </>
+                  ) : (
+                    <>
+                      <Navigation className="h-4 w-4" />
+                      {t(
+                        "moderator.places.actions.startScrape",
+                        undefined,
+                        "Start Scraping",
+                      )}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
+        </ModeratorSection>
+      ) : null}
 
-          {/* Submit */}
-          <div className="flex justify-end gap-3 pt-2 border-t border-border">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowAddForm(false);
-                setForm(EMPTY_FORM);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddPlace}
-              disabled={submittingForm}
-              className="gap-2"
-            >
-              {submittingForm ? (
-                <>
-                  <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{" "}
-                  Submitting…
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" /> Submit Place
-                </>
-              )}
-            </Button>
+      <ModeratorSection
+        tone="muted"
+        title={t("moderator.places.filters.title")}
+        description={t("moderator.places.filters.description")}
+      >
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t("moderator.places.filters.searchPlaceholder")}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="lg:min-w-[16rem]">
+            <ModeratorFilterChips
+              label={t("admin.filter.status")}
+              options={statusFilterOptions}
+              value={statusFilter}
+              onChange={setStatusFilter}
+            />
           </div>
         </div>
-      )}
+      </ModeratorSection>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search places or districts..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {["all", "pending", "flagged", "active"].map((status) => (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all border",
-                statusFilter === status
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/40",
-              )}
-            >
-              {status === "all"
-                ? "All"
-                : status.charAt(0).toUpperCase() + status.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Places List */}
-      <div className="space-y-3">
+      <ModeratorSection
+        title={t("moderator.places.queue.title")}
+        description={t("moderator.places.queue.description", {
+          count: formatCount(filtered.length, locale),
+        })}
+        contentClassName="gap-4"
+      >
         {filtered.length === 0 ? (
-          <div className="text-center py-12 space-y-2">
-            <CheckCircle className="h-12 w-12 text-emerald-300 mx-auto" />
-            <p className="text-muted-foreground font-medium">All clear!</p>
-            <p className="text-sm text-muted-foreground">
-              No places match the current filter.
-            </p>
-          </div>
+          <ModeratorEmptyState
+            icon={MapPin}
+            title={t("moderator.places.empty.title")}
+            description={
+              search.trim().length > 0
+                ? t("moderator.places.empty.withSearch")
+                : t("moderator.places.empty.default")
+            }
+          />
         ) : (
           filtered.map((place) => {
-            const config = statusConfig[place.status];
+            const config = moderatorPlaceStatusConfig[place.status];
             const StatusIcon = config.icon;
+            const isPending = pendingPlaceIdSet.has(place.id);
 
             return (
               <div
                 key={place.id}
                 className={cn(
-                  "flex items-center gap-4 p-4 rounded-xl bg-card border hover:shadow-sm transition-all",
-                  place.status === "flagged"
-                    ? "border-red-200 bg-red-50/30"
-                    : place.status === "pending"
-                      ? "border-amber-200 bg-amber-50/30"
-                      : "border-border",
+                  "space-y-4 rounded-xl border bg-card p-4 transition-all motion-reduce:transition-none hover:shadow-sm",
+                  moderatorPlaceRowStateClass[place.status],
                 )}
+                aria-busy={isPending}
+                style={MODERATOR_PLACE_ROW_STYLE}
               >
-                {/* Image */}
-                <img
-                  src={place.image}
-                  alt={place.name}
-                  className="h-14 w-14 rounded-xl object-cover flex-shrink-0"
-                />
+                <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
+                  <img
+                    src={place.image}
+                    alt={place.name}
+                    className="h-14 w-14 rounded-xl object-cover flex-shrink-0"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(event) => {
+                      (event.currentTarget as HTMLImageElement).src =
+                        PLACE_PLACEHOLDER_IMAGE;
+                    }}
+                  />
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {place.name}
-                    </p>
-                    <Badge
-                      variant="outline"
-                      className={cn("text-[10px] px-1.5 py-0", config.class)}
-                    >
-                      <StatusIcon className="h-2.5 w-2.5 mr-0.5" />{" "}
-                      {config.label}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                    <span>{place.category}</span>
-                    <span>·</span>
-                    <span>{place.district}</span>
-                    {place.rating > 0 && (
-                      <>
-                        <span>·</span>
-                        <span className="flex items-center gap-0.5">
-                          <Star className="h-3 w-3 text-secondary fill-secondary" />{" "}
-                          {place.rating}
-                        </span>
-                      </>
-                    )}
-                    <span>·</span>
-                    <span>{place.reviewCount} reviews</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-role-secondary font-semibold text-foreground break-words">
+                        {place.name}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-role-caption px-1.5 py-0",
+                          config.class,
+                        )}
+                      >
+                        <StatusIcon className="h-2.5 w-2.5 mr-0.5" />{" "}
+                        {t(`admin.status.${place.status}`)}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-3 mt-1 text-role-caption text-muted-foreground flex-wrap">
+                      <span className="break-words">{place.category}</span>
+                      <span>·</span>
+                      <span className="break-words">{place.district}</span>
+
+                      {place.rating > 0 ? (
+                        <>
+                          <span>·</span>
+                          <span className="flex items-center gap-0.5">
+                            <Star className="h-3 w-3 text-secondary fill-secondary" />
+                            {place.rating}
+                          </span>
+                        </>
+                      ) : null}
+
+                      <span>·</span>
+                      <span>
+                        {t("moderator.places.meta.reviews", {
+                          count: formatCount(place.reviewCount, locale),
+                        })}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex w-full flex-wrap items-center gap-2 border-t border-border/60 pt-3 sm:justify-end sm:flex-nowrap">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => navigate(`/venue/${place.id}`)}
-                    className="text-xs gap-1 h-8"
+                    className="text-role-secondary gap-1 min-h-11 sm:h-8"
                   >
-                    <Eye className="h-3.5 w-3.5" /> View
+                    <Eye className="h-3.5 w-3.5" />{" "}
+                    {t("admin.places.actions.view")}
                   </Button>
 
-                  {(place.status === "pending" ||
-                    place.status === "flagged") && (
+                  {place.status === "pending" || place.status === "flagged" ? (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleApprove(place.id)}
-                      className="text-xs gap-1 h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                      disabled={isPending}
+                      className="text-role-secondary gap-1 min-h-11 sm:h-8 text-primary hover:text-primary hover:bg-primary/10"
                     >
-                      <CheckCircle className="h-3.5 w-3.5" /> Approve
+                      {isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <CheckCircle className="h-3.5 w-3.5" />
+                      )}
+                      {t("admin.places.actions.approve")}
                     </Button>
-                  )}
+                  ) : null}
 
-                  {place.status === "active" && (
+                  {place.status === "active" ? (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleFlag(place.id)}
-                      className="text-xs gap-1 h-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                      disabled={isPending}
+                      className="text-role-secondary gap-1 min-h-11 sm:h-8 text-foreground hover:text-foreground hover:bg-secondary/20"
                     >
-                      <Flag className="h-3.5 w-3.5" /> Flag
+                      {isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Flag className="h-3.5 w-3.5" />
+                      )}
+                      {t("moderator.places.actions.flag")}
                     </Button>
-                  )}
+                  ) : null}
 
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs gap-1 h-8 text-destructive hover:text-destructive"
-                        title="Delete place"
+                        disabled={isPending}
+                        className="text-role-secondary gap-1 min-h-11 sm:h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        aria-label={t("admin.places.actions.deleteAria", {
+                          name: place.name,
+                        })}
+                        title={t("admin.places.actions.deleteAria", {
+                          name: place.name,
+                        })}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        {isPending ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                        {t("admin.places.actions.delete")}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Place</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          {t("admin.places.dialog.deleteTitle")}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will permanently delete "{place.name}". This
-                          action cannot be undone.
+                          {t("admin.places.dialog.deleteDescription", {
+                            name: place.name,
+                          })}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>
+                          {t("admin.places.actions.cancel")}
+                        </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() =>
                             handleDeletePlace(place.id, place.name)
                           }
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                          Delete
+                          {t("admin.places.actions.delete")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -680,17 +669,17 @@ const ModeratePlacesPage = () => {
             );
           })
         )}
-      </div>
+      </ModeratorSection>
 
-      {/* Info Note */}
-      <div className="p-4 rounded-xl bg-secondary/5 border border-secondary/20">
-        <p className="text-sm text-foreground">
-          <span className="font-medium">ℹ️ Note:</span> As a moderator, you can
-          approve, flag, delete, or submit new places. Flagged places are sent
-          to admin for follow-up.
+      <ModeratorSection tone="muted" contentClassName="gap-0">
+        <p className="text-role-secondary text-foreground break-words">
+          <span className="font-medium">
+            {t("moderator.places.note.label")}
+          </span>{" "}
+          {t("moderator.places.note.body")}
         </p>
-      </div>
-    </div>
+      </ModeratorSection>
+    </ModeratorPageLayout>
   );
 };
 

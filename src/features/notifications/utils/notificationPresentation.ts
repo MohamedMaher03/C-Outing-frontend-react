@@ -2,47 +2,105 @@ import type { Notification } from "../types";
 
 export type NotificationDateGroup = "Today" | "Yesterday" | "Earlier";
 
-export function formatRelativeNotificationTime(input: Date): string {
-  const diffMs = Date.now() - input.getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
+const formatterCache = new Map<string, Intl.RelativeTimeFormat>();
+const dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
 
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
+const getLocale = (): string => {
+  if (typeof document !== "undefined") {
+    const lang = document.documentElement.lang?.trim();
+    if (lang) return lang;
+  }
 
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (typeof navigator !== "undefined") {
+    return navigator.language || "en";
+  }
 
-  return input.toLocaleDateString("en-US", {
+  return "en";
+};
+
+const getRelativeFormatter = (locale: string): Intl.RelativeTimeFormat => {
+  const cached = formatterCache.get(locale);
+  if (cached) return cached;
+
+  const next = new Intl.RelativeTimeFormat(locale, {
+    numeric: "auto",
+    style: "short",
+  });
+  formatterCache.set(locale, next);
+  return next;
+};
+
+const getDateFormatter = (locale: string): Intl.DateTimeFormat => {
+  const cached = dateFormatterCache.get(locale);
+  if (cached) return cached;
+
+  const next = new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
   });
+  dateFormatterCache.set(locale, next);
+  return next;
+};
+
+const toValidDate = (input: Date | string | number): Date | null => {
+  const date = input instanceof Date ? input : new Date(input);
+  return Number.isFinite(date.getTime()) ? date : null;
+};
+
+const getRecentlyLabel = (locale: string): string =>
+  locale.toLowerCase().startsWith("ar") ? "مؤخرًا" : "Recently";
+
+export function formatRelativeNotificationTime(
+  input: Date | string | number,
+): string {
+  const date = toValidDate(input);
+  const locale = getLocale();
+
+  if (!date) {
+    return getRecentlyLabel(locale);
+  }
+
+  const formatter = getRelativeFormatter(locale);
+  const diffMs = date.getTime() - Date.now();
+  const absMs = Math.abs(diffMs);
+
+  if (absMs < 60_000) {
+    return formatter.format(Math.round(diffMs / 1000), "second");
+  }
+
+  if (absMs < 60 * 60_000) {
+    return formatter.format(Math.round(diffMs / 60_000), "minute");
+  }
+
+  if (absMs < DAY_IN_MS) {
+    return formatter.format(Math.round(diffMs / (60 * 60_000)), "hour");
+  }
+
+  if (absMs < 7 * DAY_IN_MS) {
+    return formatter.format(Math.round(diffMs / DAY_IN_MS), "day");
+  }
+
+  return getDateFormatter(locale).format(date);
 }
 
 function getDateGroup(input: Date): NotificationDateGroup {
+  if (!Number.isFinite(input.getTime())) {
+    return "Earlier";
+  }
+
   const now = new Date();
-  const itemDate = new Date(input);
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  );
+  const startOfYesterday = new Date(startOfToday);
+  startOfYesterday.setDate(startOfToday.getDate() - 1);
 
-  const isToday =
-    itemDate.getDate() === now.getDate() &&
-    itemDate.getMonth() === now.getMonth() &&
-    itemDate.getFullYear() === now.getFullYear();
-
-  if (isToday) return "Today";
-
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-
-  const isYesterday =
-    itemDate.getDate() === yesterday.getDate() &&
-    itemDate.getMonth() === yesterday.getMonth() &&
-    itemDate.getFullYear() === yesterday.getFullYear();
-
-  if (isYesterday) return "Yesterday";
-
+  if (input >= startOfToday) return "Today";
+  if (input >= startOfYesterday) return "Yesterday";
   return "Earlier";
 }
 
