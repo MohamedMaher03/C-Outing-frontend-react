@@ -15,9 +15,9 @@ import {
   Flag,
   Plus,
   X,
-  Upload,
-  ChevronDown,
-  ChevronUp,
+  Link2,
+  Navigation,
+  CircleAlert,
   Trash2,
   Loader2,
 } from "lucide-react";
@@ -39,13 +39,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import { DISTRICTS } from "@/mocks/mockData";
 import { useModeratePlaces } from "@/features/moderator/hooks/useModeratePlaces";
-import type { PriceLevel } from "@/features/admin/types";
-import {
-  COMMON_PLACE_TAGS,
-  PRICE_LEVEL_OPTIONS,
-} from "@/features/admin/constants/placeManagement";
+import { isGoogleMapsVenueUrl } from "@/features/admin/utils/placeForm";
 import {
   moderatorPlaceStatusConfig,
   moderatorPlaceRowStateClass,
@@ -67,15 +62,7 @@ const PLACE_PLACEHOLDER_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' fill='%23f4efe5'/%3E%3Crect x='14' y='18' width='68' height='60' rx='10' fill='%23e5d8bf'/%3E%3Ccircle cx='38' cy='42' r='9' fill='%23967f59'/%3E%3Cpath d='M24 67c4-8 12-12 20-12s16 4 20 12' stroke='%23806a49' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E";
 
 const EMPTY_FORM = {
-  name: "",
-  category: "",
-  district: "",
-  description: "",
-  priceLevel: "mid_range" as PriceLevel,
-  tags: [] as string[],
-  image: "",
-  phone: "",
-  website: "",
+  venueUrl: "",
 };
 
 const MODERATOR_PLACE_ROW_STYLE: CSSProperties = {
@@ -87,12 +74,10 @@ const MODERATOR_PLACE_ROW_STYLE: CSSProperties = {
 const ModeratePlacesPage = () => {
   const navigate = useNavigate();
   const formRef = useRef<HTMLDivElement>(null);
-  const tagPickerRef = useRef<HTMLDivElement>(null);
   const { t, locale } = useI18n();
 
   const {
     places,
-    categories,
     loading,
     error,
     queueErrorState,
@@ -104,19 +89,16 @@ const ModeratePlacesPage = () => {
     form,
     formErrors,
     submittingForm,
-    showTagPicker,
     toasts,
     setSearch,
     setStatusFilter,
     setShowAddForm,
     setForm,
-    setShowTagPicker,
     retry,
     handleApprove,
     handleFlag,
     handleDeletePlace,
     handleAddPlace,
-    toggleTag,
   } = useModeratePlaces();
 
   const statusFilterOptions = useMemo(
@@ -152,31 +134,6 @@ const ModeratePlacesPage = () => {
     };
   }, [showAddForm]);
 
-  useEffect(() => {
-    if (!showTagPicker) return;
-
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (!tagPickerRef.current) return;
-      if (!tagPickerRef.current.contains(event.target as Node)) {
-        setShowTagPicker(false);
-      }
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setShowTagPicker(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleOutsideClick);
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [setShowTagPicker, showTagPicker]);
-
   const placeSummary = useMemo(
     () =>
       places.reduce(
@@ -193,6 +150,10 @@ const ModeratePlacesPage = () => {
       ),
     [places],
   );
+
+  const normalizedVenueUrl = form.venueUrl.trim();
+  const hasTypedVenueUrl = normalizedVenueUrl.length > 0;
+  const hasValidVenueUrl = isGoogleMapsVenueUrl(normalizedVenueUrl);
 
   if (loading) {
     return (
@@ -305,379 +266,192 @@ const ModeratePlacesPage = () => {
         <ModeratorSection
           tone="surface"
           className="py-0"
-          contentClassName="gap-5"
+          contentClassName="gap-6"
         >
           <div
             id="moderator-add-place-form"
             ref={formRef}
-            className="space-y-5"
+            className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
           >
-            <h2 className="text-role-body font-semibold text-foreground flex items-center gap-2">
-              <Plus className="h-4 w-4 text-secondary" />
-              {t("moderator.places.form.title")}
-            </h2>
+            <div className="rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 via-card to-background p-5 sm:p-6">
+              <h2 className="flex items-center gap-2 text-role-body font-semibold text-foreground">
+                <Navigation className="h-4 w-4 text-secondary" />
+                {t(
+                  "moderator.places.form.scrapeTitle",
+                  undefined,
+                  "Submit Place via Google Maps",
+                )}
+              </h2>
+              <p className="mt-2 text-role-secondary text-muted-foreground">
+                {t(
+                  "moderator.places.form.scrapeDescription",
+                  undefined,
+                  "Paste a Google Maps place URL to start auto-scraping and moderation review.",
+                )}
+              </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="mod-place-name">
-                  {t("admin.places.form.nameLabel")}
-                </Label>
-                <Input
-                  id="mod-place-name"
-                  placeholder={t("admin.places.form.namePlaceholder")}
-                  value={form.name}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, name: event.target.value }))
-                  }
-                  className={cn(formErrors.name && "border-destructive")}
-                />
-                {formErrors.name ? (
-                  <p className="text-role-caption text-destructive">
-                    {formErrors.name}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="mod-place-category">
-                  {t("admin.places.form.categoryLabel")}
-                </Label>
-                <select
-                  id="mod-place-category"
-                  value={form.category}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      category: event.target.value,
-                    }))
-                  }
-                  className={cn(
-                    "w-full min-h-11 rounded-md border border-input bg-background px-3 text-role-secondary shadow-sm focus:outline-none focus:ring-1 focus:ring-ring",
-                    formErrors.category && "border-destructive",
+              <div className="mt-4 space-y-3 rounded-xl border border-border/70 bg-card/80 p-4">
+                <p className="text-role-secondary font-semibold text-foreground">
+                  {t(
+                    "moderator.places.form.scrapeRulesTitle",
+                    undefined,
+                    "Submission Rules",
                   )}
-                >
-                  <option value="">
-                    {t("admin.places.form.selectCategory")}
-                  </option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.label}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.category ? (
-                  <p className="text-role-caption text-destructive">
-                    {formErrors.category}
+                </p>
+                <div className="space-y-2 text-role-caption text-muted-foreground">
+                  <p className="flex items-start gap-2">
+                    <CircleAlert className="mt-0.5 h-3.5 w-3.5 text-secondary" />
+                    {t(
+                      "moderator.places.form.scrapeRuleGoogleOnly",
+                      undefined,
+                      "Only Google Maps URLs are accepted.",
+                    )}
                   </p>
-                ) : null}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="mod-place-district">
-                  {t("admin.places.form.districtLabel")}
-                </Label>
-                <select
-                  id="mod-place-district"
-                  value={form.district}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      district: event.target.value,
-                    }))
-                  }
-                  className={cn(
-                    "w-full min-h-11 rounded-md border border-input bg-background px-3 text-role-secondary shadow-sm focus:outline-none focus:ring-1 focus:ring-ring",
-                    formErrors.district && "border-destructive",
-                  )}
-                >
-                  <option value="">
-                    {t("admin.places.form.selectDistrict")}
-                  </option>
-                  {DISTRICTS.map((district) => (
-                    <option key={district} value={district}>
-                      {district}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.district ? (
-                  <p className="text-role-caption text-destructive">
-                    {formErrors.district}
+                  <p className="flex items-start gap-2">
+                    <CircleAlert className="mt-0.5 h-3.5 w-3.5 text-secondary" />
+                    {t(
+                      "moderator.places.form.scrapeRuleExamples",
+                      undefined,
+                      "Use maps.app.goo.gl, goo.gl/maps, or google.com/maps links.",
+                    )}
                   </p>
-                ) : null}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>{t("admin.places.form.priceLevelLabel")}</Label>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {PRICE_LEVEL_OPTIONS.map((level) => (
-                    <button
-                      key={level.value}
-                      type="button"
-                      onClick={() =>
-                        setForm((prev) => ({
-                          ...prev,
-                          priceLevel: level.value,
-                        }))
-                      }
-                      className={cn(
-                        "min-h-11 rounded-lg border px-3 py-2 text-left transition-all motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        form.priceLevel === level.value
-                          ? "bg-secondary text-secondary-foreground border-secondary"
-                          : "border-border text-muted-foreground hover:border-secondary/50",
-                      )}
-                    >
-                      <div className="space-y-0.5">
-                        <p className="text-role-caption font-semibold leading-tight text-foreground">
-                          {t(`budget.${level.value}`, undefined, level.label)}
-                        </p>
-                        <p className="text-[10px] leading-tight text-muted-foreground">
-                          {t(
-                            `moderator.places.priceCaption.${level.value}`,
-                            undefined,
-                            level.caption,
-                          )}
-                          <span className="ml-1 font-semibold">
-                            {level.symbol}
-                          </span>
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+                  <p className="flex items-start gap-2">
+                    <CircleAlert className="mt-0.5 h-3.5 w-3.5 text-secondary" />
+                    {t(
+                      "moderator.places.form.scrapeRuleRejected",
+                      undefined,
+                      "Non-Google links are rejected automatically.",
+                    )}
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="mod-place-phone">
-                  {t("admin.places.form.phoneLabel")}
-                </Label>
-                <Input
-                  id="mod-place-phone"
-                  placeholder={t("admin.places.form.phonePlaceholder")}
-                  value={form.phone}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, phone: event.target.value }))
-                  }
-                  className={cn(formErrors.phone && "border-destructive")}
-                />
-                {formErrors.phone ? (
-                  <p className="text-role-caption text-destructive">
-                    {formErrors.phone}
-                  </p>
-                ) : null}
-              </div>
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+              <Label
+                htmlFor="moderator-venue-url"
+                className="text-role-secondary font-semibold"
+              >
+                {t(
+                  "moderator.places.form.venueUrlLabel",
+                  undefined,
+                  "Google Maps place URL",
+                )}
+              </Label>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="mod-place-website">
-                  {t("admin.places.form.websiteLabel")}
-                </Label>
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row">
                 <Input
-                  id="mod-place-website"
-                  placeholder={t("admin.places.form.websitePlaceholder")}
-                  value={form.website}
+                  id="moderator-venue-url"
+                  placeholder="https://maps.app.goo.gl/..."
+                  value={form.venueUrl}
                   onChange={(event) =>
                     setForm((prev) => ({
                       ...prev,
-                      website: event.target.value,
+                      venueUrl: event.target.value,
                     }))
                   }
-                  className={cn(formErrors.website && "border-destructive")}
-                />
-                {formErrors.website ? (
-                  <p className="text-role-caption text-destructive">
-                    {formErrors.website}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="mod-place-desc">
-                {t("admin.places.form.aboutLabel")}
-              </Label>
-              <textarea
-                id="mod-place-desc"
-                rows={3}
-                placeholder={t("admin.places.form.aboutPlaceholder")}
-                value={form.description}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    description: event.target.value,
-                  }))
-                }
-                className={cn(
-                  "w-full rounded-md border border-input bg-background px-3 py-2 text-role-secondary shadow-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring",
-                  formErrors.description && "border-destructive",
-                )}
-              />
-              <div className="flex justify-between items-center gap-2">
-                {formErrors.description ? (
-                  <p className="text-role-caption text-destructive">
-                    {formErrors.description}
-                  </p>
-                ) : (
-                  <span />
-                )}
-                <span className="text-role-caption text-muted-foreground shrink-0">
-                  {t("admin.places.form.charCount", {
-                    count: formatCount(form.description.length, locale),
-                  })}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-1.5" ref={tagPickerRef}>
-              <Label>{t("admin.places.form.tagsLabel")}</Label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowTagPicker(!showTagPicker)}
-                  className="flex items-center justify-between w-full min-h-11 rounded-md border border-input bg-background px-3 text-role-secondary shadow-sm hover:border-ring transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  aria-haspopup="listbox"
-                  aria-expanded={showTagPicker}
-                  aria-controls="moderator-tag-picker-options"
-                >
-                  <span className="text-muted-foreground">
-                    {form.tags.length === 0
-                      ? t("admin.places.form.tagsPlaceholder")
-                      : t("admin.places.form.tagsSelected", {
-                          count: formatCount(form.tags.length, locale),
-                        })}
-                  </span>
-                  {showTagPicker ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
+                  className={cn(
+                    "min-h-11",
+                    formErrors.venueUrl && "border-destructive",
                   )}
-                </button>
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  inputMode="url"
+                />
 
-                {showTagPicker ? (
-                  <div
-                    id="moderator-tag-picker-options"
-                    role="listbox"
-                    className="absolute z-20 top-full mt-1 left-0 right-0 bg-card border border-border rounded-xl p-3 shadow-lg flex flex-wrap gap-2"
+                {hasValidVenueUrl ? (
+                  <a
+                    href={normalizedVenueUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border px-4 text-role-secondary font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
-                    {COMMON_PLACE_TAGS.map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        role="option"
-                        aria-selected={form.tags.includes(tag)}
-                        onClick={() => toggleTag(tag)}
-                        className={cn(
-                          "px-2.5 py-1 rounded-full text-role-caption font-medium border transition-all motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                          form.tags.includes(tag)
-                            ? "bg-secondary text-secondary-foreground border-secondary"
-                            : "border-border text-muted-foreground hover:border-secondary/50",
-                        )}
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
+                    <Link2 className="h-4 w-4" />
+                    {t("moderator.places.form.openUrl", undefined, "Open")}
+                  </a>
                 ) : null}
               </div>
 
-              {form.tags.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {form.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-role-caption font-medium"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => toggleTag(tag)}
-                        aria-label={t("admin.places.form.removeTagAria", {
-                          tag,
-                        })}
-                        className="rounded-sm text-secondary transition-colors motion-reduce:transition-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
+              {formErrors.venueUrl ? (
+                <p className="mt-1 text-role-caption text-destructive">
+                  {formErrors.venueUrl}
+                </p>
               ) : null}
-            </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="mod-place-image">
-                {t("admin.places.form.imageLabel")}
-              </Label>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <Input
-                    id="mod-place-image"
-                    placeholder={t("admin.places.form.imagePlaceholder")}
-                    value={form.image}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        image: event.target.value,
-                      }))
-                    }
-                    className={cn(formErrors.image && "border-destructive")}
-                  />
-                  {formErrors.image ? (
-                    <p className="text-role-caption text-destructive mt-1">
-                      {formErrors.image}
-                    </p>
-                  ) : null}
-                </div>
-
-                {form.image ? (
-                  <div className="h-16 w-16 rounded-xl overflow-hidden border border-border flex-shrink-0">
-                    <img
-                      src={form.image}
-                      alt={t("admin.places.form.imagePreviewAlt")}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                      decoding="async"
-                      onError={(event) => {
-                        (event.currentTarget as HTMLImageElement).src =
-                          PLACE_PLACEHOLDER_IMAGE;
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="h-16 w-16 rounded-xl border-2 border-dashed border-border flex items-center justify-center flex-shrink-0">
-                    <Upload className="h-5 w-5 text-muted-foreground/50" />
-                  </div>
+              <p
+                className={cn(
+                  "mt-2 text-role-caption",
+                  !hasTypedVenueUrl
+                    ? "text-muted-foreground"
+                    : hasValidVenueUrl
+                      ? "text-primary"
+                      : "text-destructive",
                 )}
+              >
+                {!hasTypedVenueUrl
+                  ? t(
+                      "moderator.places.form.urlHintDefault",
+                      undefined,
+                      "Paste a Google Maps link to continue.",
+                    )
+                  : hasValidVenueUrl
+                    ? t(
+                        "moderator.places.form.urlHintValid",
+                        undefined,
+                        "Valid link. Ready to start scraping.",
+                      )
+                    : t(
+                        "moderator.places.form.urlHintInvalid",
+                        undefined,
+                        "Invalid URL. Use a Google Maps place link.",
+                      )}
+              </p>
+
+              <p className="mt-3 text-role-caption text-muted-foreground">
+                {t(
+                  "moderator.places.form.urlExampleLabel",
+                  undefined,
+                  "Example:",
+                )}{" "}
+                <span className="font-medium text-foreground">
+                  https://www.google.com/maps/place/...
+                </span>
+              </p>
+
+              <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
+                <Button
+                  variant="outline"
+                  className="min-h-11"
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setForm(EMPTY_FORM);
+                  }}
+                >
+                  {t("admin.places.actions.cancel")}
+                </Button>
+                <Button
+                  onClick={handleAddPlace}
+                  disabled={submittingForm || !hasValidVenueUrl}
+                  className="gap-2 min-h-11"
+                >
+                  {submittingForm ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("moderator.places.actions.submitting")}
+                    </>
+                  ) : (
+                    <>
+                      <Navigation className="h-4 w-4" />
+                      {t(
+                        "moderator.places.actions.startScrape",
+                        undefined,
+                        "Start Scraping",
+                      )}
+                    </>
+                  )}
+                </Button>
               </div>
-            </div>
-
-            <div className="sticky bottom-0 z-10 -mx-4 mt-2 flex flex-col-reverse gap-3 border-t border-border/70 bg-card/95 px-4 pt-3 pb-[max(0.35rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-card/85 sm:static sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:bg-transparent sm:px-0 sm:pt-2 sm:pb-0 sm:backdrop-blur-0">
-              <Button
-                variant="outline"
-                className="min-h-11"
-                onClick={() => {
-                  setShowAddForm(false);
-                  setShowTagPicker(false);
-                  setForm(EMPTY_FORM);
-                }}
-              >
-                {t("admin.places.actions.cancel")}
-              </Button>
-              <Button
-                onClick={handleAddPlace}
-                disabled={submittingForm}
-                className="gap-2 min-h-11"
-              >
-                {submittingForm ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />{" "}
-                    {t("moderator.places.actions.submitting")}
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4" />{" "}
-                    {t("moderator.places.actions.submit")}
-                  </>
-                )}
-              </Button>
             </div>
           </div>
         </ModeratorSection>

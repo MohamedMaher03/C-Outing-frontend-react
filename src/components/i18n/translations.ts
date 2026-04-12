@@ -725,6 +725,13 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.places.toast.deleted": '"{name}" has been permanently deleted.',
     "admin.places.toast.added":
       '"{name}" added successfully! Status: pending review.',
+    "admin.places.toast.scrapeStarted":
+      "Scraping started. The venue will appear after processing.",
+    "admin.places.notice.scrapeStartedTitle": "Scraping has started",
+    "admin.places.notice.dismissAria": "Dismiss scrape status message",
+    "admin.places.notice.removedTitle": "Place removed",
+    "admin.places.notice.deletedTitle": "Place deleted",
+    "admin.places.notice.dismissActionAria": "Dismiss place update message",
     "admin.places.form.title": "New Place",
     "admin.places.form.nameLabel": "Place Name *",
     "admin.places.form.namePlaceholder": "e.g. Al-Azhar Park",
@@ -2024,6 +2031,13 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.places.toast.deleted": 'تم حذف "{name}" نهائيًا.',
     "admin.places.toast.added":
       'تمت إضافة "{name}" بنجاح! الحالة: قيد المراجعة.',
+    "admin.places.toast.scrapeStarted":
+      "بدأ السحب. سيظهر المكان بعد اكتمال المعالجة.",
+    "admin.places.notice.scrapeStartedTitle": "تم بدء السحب",
+    "admin.places.notice.dismissAria": "إغلاق رسالة حالة السحب",
+    "admin.places.notice.removedTitle": "تمت إزالة المكان",
+    "admin.places.notice.deletedTitle": "تم حذف المكان",
+    "admin.places.notice.dismissActionAria": "إغلاق رسالة تحديث المكان",
     "admin.places.form.title": "مكان جديد",
     "admin.places.form.nameLabel": "اسم المكان *",
     "admin.places.form.namePlaceholder": "مثال: حديقة الأزهر",

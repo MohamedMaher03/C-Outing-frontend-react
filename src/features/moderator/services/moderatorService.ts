@@ -63,10 +63,10 @@ export const moderatorService = {
     );
   },
 
-  async addPlace(placeData: CreateAdminPlaceInput): Promise<AdminPlace> {
+  async addPlace(placeData: CreateAdminPlaceInput): Promise<void> {
     return withModeratorServiceError(
       () => adminService.addPlace(placeData),
-      "Failed to add place",
+      "Failed to start venue scraping",
     );
   },
 

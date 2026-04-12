@@ -2,7 +2,6 @@
  * Moderator Feature — Type Definitions
  */
 
-import type { PriceLevel } from "@/features/admin/types";
 import type {
   AdminFilterValue,
   AdminPlaceStatus,
@@ -62,25 +61,11 @@ export interface ModeratorToast {
 }
 
 export interface ModeratePlaceFormData {
-  name: string;
-  category: string;
-  district: string;
-  description: string;
-  priceLevel: PriceLevel;
-  tags: string[];
-  image: string;
-  phone: string;
-  website: string;
+  venueUrl: string;
 }
 
 export interface ModeratePlaceFormErrors {
-  name?: string;
-  category?: string;
-  district?: string;
-  description?: string;
-  image?: string;
-  phone?: string;
-  website?: string;
+  venueUrl?: string;
 }
 
 export interface ModeratePlaceToast {

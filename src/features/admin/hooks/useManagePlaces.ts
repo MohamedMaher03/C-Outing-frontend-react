@@ -15,7 +15,6 @@ import { adminService } from "@/features/admin/services/adminService";
 import type {
   AdminPlace,
   AdminPlaceStatusFilter,
-  AdminCategory,
   AdminToast,
   PlaceFormData,
   PlaceFormErrors,
@@ -29,10 +28,16 @@ import {
 import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
+type PlaceActionNoticeType = "removed" | "deleted";
+
+interface PlaceActionNotice {
+  type: PlaceActionNoticeType;
+  message: string;
+}
+
 interface UseManagePlacesReturn {
   // Data state
   places: AdminPlace[];
-  categories: AdminCategory[];
   loading: boolean;
   error: string | null;
   pendingPlaceIds: string[];
@@ -47,7 +52,8 @@ interface UseManagePlacesReturn {
   form: PlaceFormData;
   formErrors: PlaceFormErrors;
   submittingForm: boolean;
-  showTagPicker: boolean;
+  scrapeStartedMessage: string | null;
+  placeActionNotice: PlaceActionNotice | null;
 
   // Toast state
   toasts: AdminToast[];
@@ -59,7 +65,8 @@ interface UseManagePlacesReturn {
   setForm: (
     value: PlaceFormData | ((prev: PlaceFormData) => PlaceFormData),
   ) => void;
-  setShowTagPicker: (value: boolean) => void;
+  dismissScrapeStartedMessage: () => void;
+  dismissPlaceActionNotice: () => void;
 
   // Actions
   retry: () => Promise<void>;
@@ -69,13 +76,11 @@ interface UseManagePlacesReturn {
   ) => Promise<void>;
   handleDelete: (placeId: string, placeName: string) => Promise<void>;
   handleAddPlace: () => Promise<void>;
-  toggleTag: (tag: string) => void;
 }
 
 export const useManagePlaces = (): UseManagePlacesReturn => {
   const { t } = useI18n();
   const [places, setPlaces] = useState<AdminPlace[]>([]);
-  const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingPlaceIds, setPendingPlaceIds] = useState<string[]>([]);
@@ -87,7 +92,11 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
   const [form, setForm] = useState<PlaceFormData>(EMPTY_PLACE_FORM);
   const [formErrors, setFormErrors] = useState<PlaceFormErrors>({});
   const [submittingForm, setSubmittingForm] = useState(false);
-  const [showTagPicker, setShowTagPicker] = useState(false);
+  const [scrapeStartedMessage, setScrapeStartedMessage] = useState<
+    string | null
+  >(null);
+  const [placeActionNotice, setPlaceActionNotice] =
+    useState<PlaceActionNotice | null>(null);
   const [toasts, setToasts] = useState<AdminToast[]>([]);
   const mountedRef = useRef(true);
   const inFlightRef = useRef(new Set<string>());
@@ -111,15 +120,11 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     setError(null);
 
     try {
-      const [placesData, catsData] = await Promise.all([
-        adminService.getPlaces(),
-        adminService.getCategories(),
-      ]);
+      const placesData = await adminService.getPlaces();
 
       if (!mountedRef.current) return;
 
       setPlaces(placesData);
-      setCategories(catsData);
     } catch (err) {
       if (!mountedRef.current) return;
       setError(getErrorMessage(err, t("admin.error.loadPlaces")));
@@ -158,6 +163,14 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     toastTimersRef.current.push(timerId);
   };
 
+  const dismissScrapeStartedMessage = () => {
+    setScrapeStartedMessage(null);
+  };
+
+  const dismissPlaceActionNotice = () => {
+    setPlaceActionNotice(null);
+  };
+
   const handleStatusChange = async (
     placeId: string,
     status: AdminPlace["status"],
@@ -177,11 +190,18 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
       setPlaces((prev) =>
         prev.map((p) => (p.id === placeId ? { ...p, status } : p)),
       );
-      showToast(
-        t("admin.places.toast.statusUpdated", {
-          status: getStatusLabel(status),
-        }),
-      );
+      const statusUpdatedMessage = t("admin.places.toast.statusUpdated", {
+        status: getStatusLabel(status),
+      });
+
+      if (status === "removed") {
+        setPlaceActionNotice({
+          type: "removed",
+          message: statusUpdatedMessage,
+        });
+      } else {
+        showToast(statusUpdatedMessage);
+      }
     } catch (err) {
       if (!mountedRef.current) return;
       const message = getErrorMessage(err, t("admin.error.updatePlaceStatus"));
@@ -209,10 +229,10 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
       if (!mountedRef.current) return;
 
       setPlaces((prev) => prev.filter((p) => p.id !== placeId));
-      showToast(
-        t("admin.places.toast.deleted", { name: placeName }),
-        "warning",
-      );
+      setPlaceActionNotice({
+        type: "deleted",
+        message: t("admin.places.toast.deleted", { name: placeName }),
+      });
     } catch (err) {
       if (!mountedRef.current) return;
       const message = getErrorMessage(err, t("admin.error.deletePlace"));
@@ -238,19 +258,25 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
       return;
     }
 
+    setScrapeStartedMessage(null);
     setSubmittingForm(true);
     setError(null);
 
     try {
-      const newPlace = await adminService.addPlace(toCreatePlaceInput(form));
+      await adminService.addPlace(toCreatePlaceInput(form));
       if (!mountedRef.current) return;
 
-      setPlaces((prev) => [newPlace, ...prev]);
+      const startedMessage = t(
+        "admin.places.toast.scrapeStarted",
+        undefined,
+        "Scraping started. The venue will appear after processing.",
+      );
+
+      void loadPlaces();
       setForm(EMPTY_PLACE_FORM);
       setFormErrors({});
       setShowAddForm(false);
-      setShowTagPicker(false);
-      showToast(t("admin.places.toast.added", { name: newPlace.name }));
+      setScrapeStartedMessage(startedMessage);
     } catch (err) {
       if (!mountedRef.current) return;
       const message = getErrorMessage(err, t("admin.error.addPlace"));
@@ -263,16 +289,6 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     }
   };
 
-  const toggleTag = (tag: string) => {
-    setError(null);
-    setForm((prev) => ({
-      ...prev,
-      tags: prev.tags.includes(tag)
-        ? prev.tags.filter((t) => t !== tag)
-        : [...prev.tags, tag],
-    }));
-  };
-
   const filteredPlaces = useMemo(
     () => filterPlaces(places, deferredSearch, statusFilter),
     [places, deferredSearch, statusFilter],
@@ -280,7 +296,6 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
 
   return {
     places,
-    categories,
     loading,
     error,
     pendingPlaceIds,
@@ -291,17 +306,18 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     form,
     formErrors,
     submittingForm,
-    showTagPicker,
+    scrapeStartedMessage,
+    placeActionNotice,
     toasts,
     setSearch,
     setStatusFilter,
     setShowAddForm,
     setForm,
-    setShowTagPicker,
+    dismissScrapeStartedMessage,
+    dismissPlaceActionNotice,
     retry: loadPlaces,
     handleStatusChange,
     handleDelete,
     handleAddPlace,
-    toggleTag,
   };
 };

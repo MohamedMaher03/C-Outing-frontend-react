@@ -13,11 +13,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type {
-  AdminCategory,
-  AdminPlace,
-  AdminPlaceStatus,
-} from "@/features/admin/types";
+import type { AdminPlace, AdminPlaceStatus } from "@/features/admin/types";
 import { moderatorService } from "@/features/moderator/services/moderatorService";
 import type {
   ModeratePlaceFormData,
@@ -25,6 +21,7 @@ import type {
   ModeratorPlaceStatusFilter,
   ModeratePlaceToast,
 } from "@/features/moderator/types";
+import { isGoogleMapsVenueUrl } from "@/features/admin/utils/placeForm";
 import { filterModerationPlaces } from "@/features/moderator/utils/moderatorFilters";
 import {
   getErrorMessage,
@@ -34,21 +31,12 @@ import {
 import { useI18n } from "@/components/i18n";
 
 const EMPTY_FORM: ModeratePlaceFormData = {
-  name: "",
-  category: "",
-  district: "",
-  description: "",
-  priceLevel: "mid_range",
-  tags: [],
-  image: "",
-  phone: "",
-  website: "",
+  venueUrl: "",
 };
 
 interface UseModeratePlacesReturn {
   // Data state
   places: AdminPlace[];
-  categories: AdminCategory[];
   loading: boolean;
   error: string | null;
   queueErrorState: ApiUiErrorState | null;
@@ -65,7 +53,6 @@ interface UseModeratePlacesReturn {
   form: ModeratePlaceFormData;
   formErrors: ModeratePlaceFormErrors;
   submittingForm: boolean;
-  showTagPicker: boolean;
 
   // Toast state
   toasts: ModeratePlaceToast[];
@@ -79,7 +66,6 @@ interface UseModeratePlacesReturn {
       | ModeratePlaceFormData
       | ((prev: ModeratePlaceFormData) => ModeratePlaceFormData),
   ) => void;
-  setShowTagPicker: (value: boolean) => void;
 
   // Actions
   retry: () => Promise<void>;
@@ -87,13 +73,11 @@ interface UseModeratePlacesReturn {
   handleFlag: (placeId: string) => Promise<void>;
   handleDeletePlace: (placeId: string, placeName: string) => Promise<void>;
   handleAddPlace: () => Promise<void>;
-  toggleTag: (tag: string) => void;
 }
 
 export const useModeratePlaces = (): UseModeratePlacesReturn => {
   const { t } = useI18n();
   const [places, setPlaces] = useState<AdminPlace[]>([]);
-  const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [queueErrorState, setQueueErrorState] =
@@ -107,7 +91,6 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
   const [form, setForm] = useState<ModeratePlaceFormData>(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<ModeratePlaceFormErrors>({});
   const [submittingForm, setSubmittingForm] = useState(false);
-  const [showTagPicker, setShowTagPicker] = useState(false);
   const [toasts, setToasts] = useState<ModeratePlaceToast[]>([]);
   const mountedRef = useRef(true);
   const inFlightRef = useRef(new Set<string>());
@@ -123,15 +106,11 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     setQueueErrorState(null);
 
     try {
-      const [placesData, categoriesData] = await Promise.all([
-        moderatorService.getPlaces(),
-        moderatorService.getCategories(),
-      ]);
+      const placesData = await moderatorService.getPlaces();
 
       if (!mountedRef.current) return;
 
       setPlaces(placesData);
-      setCategories(categoriesData);
       setQueueErrorState(null);
     } catch (err) {
       if (!mountedRef.current) return;
@@ -145,7 +124,6 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
       setQueueErrorState(resolvedError);
       setError(resolvedError.message);
       setPlaces([]);
-      setCategories([]);
     } finally {
       if (mountedRef.current) {
         setLoading(false);
@@ -247,44 +225,20 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
 
   const validateForm = (): boolean => {
     const errors: ModeratePlaceFormErrors = {};
-    const trimmedName = form.name.trim();
-    const trimmedDescription = form.description.trim();
-    const trimmedImage = form.image.trim();
+    const trimmedVenueUrl = form.venueUrl.trim();
 
-    if (!trimmedName) {
-      errors.name = t("admin.places.form.error.nameRequired");
-    } else if (trimmedName.length > 120) {
-      errors.name = t("admin.places.form.error.nameMax", { max: 120 });
-    }
-
-    if (!form.category)
-      errors.category = t("admin.places.form.error.categoryRequired");
-    if (!form.district)
-      errors.district = t("admin.places.form.error.districtRequired");
-
-    if (!trimmedDescription) {
-      errors.description = t("admin.places.form.error.descriptionRequired");
-    } else if (trimmedDescription.length < 20) {
-      errors.description = t("admin.places.form.error.descriptionMin", {
-        min: 20,
-      });
-    } else if (trimmedDescription.length > 1200) {
-      errors.description = t("admin.places.form.error.descriptionMax", {
-        max: 1200,
-      });
-    }
-
-    if (!trimmedImage) {
-      errors.image = t("admin.places.form.error.imageRequired");
-    } else {
-      const isValidImageUrl = /^https?:\/\//i.test(trimmedImage);
-      if (!isValidImageUrl) {
-        errors.image = t("admin.places.form.error.imageUrlInvalid");
-      }
-    }
-
-    if (form.website.trim() && !/^https?:\/\//i.test(form.website.trim())) {
-      errors.website = t("admin.places.form.error.websiteUrlInvalid");
+    if (!trimmedVenueUrl) {
+      errors.venueUrl = t(
+        "admin.places.form.error.venueUrlRequired",
+        undefined,
+        "Google Maps URL is required.",
+      );
+    } else if (!isGoogleMapsVenueUrl(trimmedVenueUrl)) {
+      errors.venueUrl = t(
+        "admin.places.form.error.venueUrlInvalid",
+        undefined,
+        "Please enter a valid Google Maps place URL.",
+      );
     }
 
     setFormErrors(errors);
@@ -372,26 +326,23 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     setError(null);
 
     try {
-      const newPlace = await moderatorService.addPlace({
-        name: form.name.trim(),
-        category: form.category,
-        district: form.district,
-        image: form.image.trim(),
-        tags: form.tags,
-        description: form.description.trim(),
-        priceLevel: form.priceLevel,
-        phone: form.phone.trim(),
-        website: form.website.trim(),
+      await moderatorService.addPlace({
+        venueUrl: form.venueUrl.trim(),
       });
 
       if (!mountedRef.current) return;
 
-      setPlaces((prev) => [newPlace, ...prev]);
+      void loadPlaces();
       setForm(EMPTY_FORM);
       setFormErrors({});
       setShowAddForm(false);
-      setShowTagPicker(false);
-      showToast(t("moderator.places.toast.submitted", { name: newPlace.name }));
+      showToast(
+        t(
+          "moderator.places.toast.scrapeStarted",
+          undefined,
+          "Scraping started. The venue will appear after processing.",
+        ),
+      );
     } catch (err) {
       if (!mountedRef.current) return;
 
@@ -415,16 +366,6 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     }
   };
 
-  const toggleTag = (tag: string) => {
-    setError(null);
-    setForm((prev) => ({
-      ...prev,
-      tags: prev.tags.includes(tag)
-        ? prev.tags.filter((t) => t !== tag)
-        : [...prev.tags, tag],
-    }));
-  };
-
   const filteredPlaces = useMemo(
     () => filterModerationPlaces(places, deferredSearch, statusFilter),
     [places, deferredSearch, statusFilter],
@@ -432,7 +373,6 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
 
   return {
     places,
-    categories,
     loading,
     error,
     queueErrorState,
@@ -445,18 +385,15 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     form,
     formErrors,
     submittingForm,
-    showTagPicker,
     toasts,
     setSearch,
     setStatusFilter,
     setShowAddForm,
     setForm,
-    setShowTagPicker,
     retry: loadPlaces,
     handleApprove,
     handleFlag,
     handleDeletePlace,
     handleAddPlace,
-    toggleTag,
   };
 };

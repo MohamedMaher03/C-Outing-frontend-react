@@ -33,7 +33,6 @@ import {
   mapAdminReviews,
   mapAdminUsersPage,
   mapAdminVenuesPage,
-  mapCreatedAdminPlace,
   mapReportedVenueIds,
   mapStats,
   toRecentActivity,
@@ -215,28 +214,13 @@ export const adminApi = {
   },
 
   /**
-   * POST /admin/places
-   * Creates a new place.
+   * POST /api/v1/Venue/scrape/initiate
+   * Initiates venue scraping using a Google Maps URL.
    */
-  async addPlace(placeData: CreateAdminPlaceInput): Promise<AdminPlace> {
-    const payload = {
-      name: placeData.name,
-      category: placeData.category,
-      district: placeData.district,
-      image: placeData.image,
-      tags: placeData.tags ?? [],
-      description: placeData.description ?? "",
-      priceLevel: placeData.priceLevel ?? "mid_range",
-      phone: placeData.phone ?? "",
-      website: placeData.website ?? "",
-    };
-
-    const { data } = await axiosInstance.post(
-      API_ENDPOINTS.admin.createVenue,
-      payload,
-    );
-
-    return mapCreatedAdminPlace(data);
+  async addPlace(placeData: CreateAdminPlaceInput): Promise<void> {
+    await axiosInstance.post(API_ENDPOINTS.places.scrapeInitiate, {
+      venueUrl: placeData.venueUrl,
+    });
   },
 
   /**

@@ -96,6 +96,7 @@ export const API_ENDPOINTS = {
   // ── Places / Detail ──────────────────────────────────────────
   places: {
     getById: (id: string) => `/api/v1/Venue/${id}`,
+    scrapeInitiate: "/api/v1/Venue/scrape/initiate",
     toggleLike: (id: string) => `/api/v1/Venue/${id}/like`,
     getReviews: (venueId: string) => `/api/v1/Review/venue/${venueId}`,
     submitReview: "/api/v1/Review",
@@ -138,7 +139,6 @@ export const API_ENDPOINTS = {
     banUser: (userId: string) => `/api/v1/Admin/users/${userId}/ban`,
     unbanUser: (userId: string) => `/api/v1/Admin/users/${userId}/unban`,
     getVenues: "/api/v1/Admin/venues",
-    createVenue: "/api/v1/Admin/venues",
     deleteVenue: (venueId: string) => `/api/v1/Admin/venues/${venueId}`,
     updateVenueStatus: (venueId: string) =>
       `/api/v1/Admin/venues/${venueId}/status`,

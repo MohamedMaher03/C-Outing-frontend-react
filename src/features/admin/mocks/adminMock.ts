@@ -491,18 +491,31 @@ export const adminMock = {
     if (idx !== -1) MOCK_ADMIN_PLACES.splice(idx, 1);
   },
 
-  async addPlace(data: CreateAdminPlaceInput): Promise<AdminPlace> {
+  async addPlace(data: CreateAdminPlaceInput): Promise<void> {
     await delay(600);
+    let derivedName = "Google Maps Submission";
+
+    try {
+      const parsed = new URL(data.venueUrl.trim());
+      derivedName = `Scraped from ${parsed.hostname.replace(/^www\./i, "")}`;
+    } catch {
+      // Ignore invalid parsing in mock mode; frontend validation handles this earlier.
+    }
+
     const newPlace: AdminPlace = {
-      ...data,
       id: `place_${Date.now()}`,
+      name: derivedName,
+      category: "Pending",
+      district: "Unknown",
       rating: 0,
       reviewCount: 0,
       status: "pending",
       createdAt: new Date(),
+      image:
+        "https://images.unsplash.com/photo-1527838832700-5059252407fa?w=100&h=100&fit=crop",
+      description: data.venueUrl,
     };
     MOCK_ADMIN_PLACES.push(newPlace);
-    return newPlace;
   },
 
   async getReviews(): Promise<AdminReview[]> {

@@ -124,10 +124,9 @@ export type AdminActivityType =
   | "place_added"
   | "report_filed";
 
-export type CreateAdminPlaceInput = Omit<
-  AdminPlace,
-  "id" | "rating" | "reviewCount" | "createdAt" | "status"
->;
+export interface CreateAdminPlaceInput {
+  venueUrl: string;
+}
 
 // ── Shared UI Types ───────────────────────────────────────────
 
@@ -138,25 +137,9 @@ export interface AdminToast {
 }
 
 export interface PlaceFormData {
-  name: string;
-  category: string;
-  district: string;
-  description: string;
-  whyRecommend: string;
-  priceLevel: PriceLevel;
-  tags: string[];
-  image: string;
-  phone: string;
-  website: string;
+  venueUrl: string;
 }
 
 export interface PlaceFormErrors {
-  name?: string;
-  category?: string;
-  district?: string;
-  description?: string;
-  whyRecommend?: string;
-  image?: string;
-  phone?: string;
-  website?: string;
+  venueUrl?: string;
 }

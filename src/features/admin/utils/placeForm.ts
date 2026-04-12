@@ -5,34 +5,51 @@ import type {
 } from "../types";
 
 export const EMPTY_PLACE_FORM: PlaceFormData = {
-  name: "",
-  category: "",
-  district: "",
-  description: "",
-  whyRecommend: "",
-  priceLevel: "mid_range",
-  tags: [],
-  image: "",
-  phone: "",
-  website: "",
+  venueUrl: "",
 };
 
-const MAX_NAME_LENGTH = 100;
-const MAX_DESCRIPTION_LENGTH = 1200;
-const MAX_WHY_RECOMMEND_LENGTH = 600;
-const MAX_PHONE_LENGTH = 30;
+const GOOGLE_DOMAIN_REGEX = /(^|\.)google\.[a-z.]+$/i;
+const GOO_GL_DOMAIN_REGEX = /(^|\.)goo\.gl$/i;
 
-const isValidUrl = (value: string): boolean => {
+const isHttpUrl = (value: string): URL | null => {
   try {
     const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return null;
+    }
+
+    return url;
   } catch {
-    return false;
+    return null;
   }
 };
 
-const isReasonablePhone = (value: string): boolean => {
-  return /^[+()\-\s\d]{6,30}$/.test(value);
+export const isGoogleMapsVenueUrl = (value: string): boolean => {
+  const parsed = isHttpUrl(value);
+  if (!parsed) {
+    return false;
+  }
+
+  const host = parsed.hostname.toLowerCase();
+  const path = parsed.pathname.toLowerCase();
+
+  if (host === "maps.app.goo.gl") {
+    return path.length > 1;
+  }
+
+  if (GOO_GL_DOMAIN_REGEX.test(host)) {
+    return path.startsWith("/maps");
+  }
+
+  if (host.startsWith("maps.google.")) {
+    return true;
+  }
+
+  if (GOOGLE_DOMAIN_REGEX.test(host) && path.startsWith("/maps")) {
+    return true;
+  }
+
+  return false;
 };
 
 type PlaceFormTranslator = (
@@ -58,101 +75,17 @@ export const validatePlaceForm = (
   };
 
   const errors: PlaceFormErrors = {};
-  const normalizedName = form.name.trim();
-  const normalizedDescription = form.description.trim();
-  const normalizedImage = form.image.trim();
-  const normalizedPhone = form.phone.trim();
-  const normalizedWebsite = form.website.trim();
-  const normalizedWhyRecommend = form.whyRecommend.trim();
+  const normalizedVenueUrl = form.venueUrl.trim();
 
-  if (!normalizedName) {
-    errors.name = message(
-      "admin.places.form.error.nameRequired",
-      "Place name is required.",
+  if (!normalizedVenueUrl) {
+    errors.venueUrl = message(
+      "admin.places.form.error.venueUrlRequired",
+      "Google Maps URL is required.",
     );
-  } else if (normalizedName.length > MAX_NAME_LENGTH) {
-    errors.name = message(
-      "admin.places.form.error.nameMax",
-      `Place name must be ${MAX_NAME_LENGTH} characters or less.`,
-      { max: MAX_NAME_LENGTH },
-    );
-  }
-
-  if (!form.category) {
-    errors.category = message(
-      "admin.places.form.error.categoryRequired",
-      "Please select a category.",
-    );
-  }
-
-  if (!form.district) {
-    errors.district = message(
-      "admin.places.form.error.districtRequired",
-      "Please select a district.",
-    );
-  }
-
-  if (!normalizedDescription) {
-    errors.description = message(
-      "admin.places.form.error.descriptionRequired",
-      "Description is required.",
-    );
-  } else if (normalizedDescription.length < 20) {
-    errors.description = message(
-      "admin.places.form.error.descriptionMin",
-      "Description must be at least 20 characters.",
-      { min: 20 },
-    );
-  } else if (normalizedDescription.length > MAX_DESCRIPTION_LENGTH) {
-    errors.description = message(
-      "admin.places.form.error.descriptionMax",
-      `Description must be ${MAX_DESCRIPTION_LENGTH} characters or less.`,
-      { max: MAX_DESCRIPTION_LENGTH },
-    );
-  }
-
-  if (!normalizedImage) {
-    errors.image = message(
-      "admin.places.form.error.imageRequired",
-      "Image URL is required.",
-    );
-  } else if (!isValidUrl(normalizedImage)) {
-    errors.image = message(
-      "admin.places.form.error.imageUrlInvalid",
-      "Image URL must start with http:// or https://.",
-    );
-  }
-
-  if (
-    normalizedWhyRecommend &&
-    normalizedWhyRecommend.length > MAX_WHY_RECOMMEND_LENGTH
-  ) {
-    errors.whyRecommend = message(
-      "admin.places.form.error.whyRecommendMax",
-      `Why recommend must be ${MAX_WHY_RECOMMEND_LENGTH} characters or less.`,
-      { max: MAX_WHY_RECOMMEND_LENGTH },
-    );
-  }
-
-  if (normalizedPhone) {
-    if (normalizedPhone.length > MAX_PHONE_LENGTH) {
-      errors.phone = message(
-        "admin.places.form.error.phoneMax",
-        `Phone number must be ${MAX_PHONE_LENGTH} characters or less.`,
-        { max: MAX_PHONE_LENGTH },
-      );
-    } else if (!isReasonablePhone(normalizedPhone)) {
-      errors.phone = message(
-        "admin.places.form.error.phoneInvalid",
-        "Phone number contains unsupported characters or format.",
-      );
-    }
-  }
-
-  if (normalizedWebsite && !isValidUrl(normalizedWebsite)) {
-    errors.website = message(
-      "admin.places.form.error.websiteUrlInvalid",
-      "Website URL must start with http:// or https://.",
+  } else if (!isGoogleMapsVenueUrl(normalizedVenueUrl)) {
+    errors.venueUrl = message(
+      "admin.places.form.error.venueUrlInvalid",
+      "Please enter a valid Google Maps place URL (e.g. maps.app.goo.gl or google.com/maps).",
     );
   }
 
@@ -162,14 +95,5 @@ export const validatePlaceForm = (
 export const toCreatePlaceInput = (
   form: PlaceFormData,
 ): CreateAdminPlaceInput => ({
-  name: form.name.trim(),
-  category: form.category,
-  district: form.district,
-  image: form.image.trim(),
-  tags: Array.from(new Set(form.tags.map((tag) => tag.trim()).filter(Boolean))),
-  description: form.description.trim(),
-  whyRecommend: form.whyRecommend.trim(),
-  priceLevel: form.priceLevel,
-  phone: form.phone.trim(),
-  website: form.website.trim(),
+  venueUrl: form.venueUrl.trim(),
 });

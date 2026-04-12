@@ -21,7 +21,7 @@ export interface AdminDataSource {
     status: AdminUserStatus,
   ) => Promise<void>;
   getPlaces: () => Promise<AdminPlace[]>;
-  addPlace: (placeData: CreateAdminPlaceInput) => Promise<AdminPlace>;
+  addPlace: (placeData: CreateAdminPlaceInput) => Promise<void>;
   updatePlaceStatus: (
     placeId: string,
     status: AdminPlace["status"],
