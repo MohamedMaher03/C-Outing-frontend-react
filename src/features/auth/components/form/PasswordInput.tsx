@@ -43,8 +43,7 @@ export const PasswordInput = ({
         disabled={disabled}
         aria-label={visible ? t("auth.hidePassword") : t("auth.showPassword")}
         aria-pressed={visible}
-        className="absolute top-1/2 -translate-y-1/2 flex min-h-11 min-w-11 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-        style={{ insetInlineEnd: "0.25rem" }}
+        className="absolute right-1 top-1/2 -translate-y-1/2 flex min-h-11 min-w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
       >
         {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
       </button>

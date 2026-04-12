@@ -699,6 +699,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.users.actions.menu": "Actions",
     "admin.users.actions.activate": "Activate",
     "admin.users.actions.ban": "Ban User",
+    "admin.users.pagination.summary":
+      "Page {page} of {totalPages} · {totalCount} users total · {pageSize} per page",
+    "admin.users.pagination.page": "Page {page} / {totalPages}",
+    "admin.users.pagination.previous": "Previous",
+    "admin.users.pagination.next": "Next",
 
     "admin.places.loading": "Loading places...",
     "admin.places.error.updateTitle": "Couldn't update places",
@@ -1994,6 +1999,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.users.actions.menu": "الإجراءات",
     "admin.users.actions.activate": "تفعيل",
     "admin.users.actions.ban": "حظر المستخدم",
+    "admin.users.pagination.summary":
+      "الصفحة {page} من {totalPages} · إجمالي {totalCount} مستخدمًا · {pageSize} لكل صفحة",
+    "admin.users.pagination.page": "الصفحة {page} / {totalPages}",
+    "admin.users.pagination.previous": "السابق",
+    "admin.users.pagination.next": "التالي",
 
     "admin.places.loading": "جارٍ تحميل الأماكن...",
     "admin.places.error.updateTitle": "تعذر تحديث الأماكن",

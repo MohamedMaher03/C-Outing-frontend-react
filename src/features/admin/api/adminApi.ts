@@ -16,8 +16,10 @@ import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type {
   AdminStats,
-  AdminUser,
   AdminUserId,
+  AdminUserRoleFilter,
+  AdminUsersPage,
+  AdminUsersQuery,
   AdminUserStatus,
   AdminPlace,
   AdminReview,
@@ -38,12 +40,8 @@ import {
   toSystemSettings,
 } from "./adminApi.mapper";
 
-interface UsersParams {
-  searchTerm?: string;
-  role?: number;
+interface UsersParams extends AdminUsersQuery {
   isBanned?: boolean;
-  page?: number;
-  count?: number;
 }
 
 interface VenuesParams {
@@ -72,13 +70,31 @@ const toQueryParams = (params: Record<string, unknown>): URLSearchParams => {
   return query;
 };
 
-const getUsers = async (params: UsersParams = {}): Promise<AdminUser[]> => {
+const mapRoleFilterToApiRole = (
+  roleFilter: AdminUserRoleFilter | undefined,
+): string | undefined => {
+  if (!roleFilter || roleFilter === "all") {
+    return undefined;
+  }
+
+  if (roleFilter === "admin") {
+    return "Admin";
+  }
+
+  if (roleFilter === "moderator") {
+    return "Moderator";
+  }
+
+  return "User";
+};
+
+const getUsers = async (params: UsersParams = {}): Promise<AdminUsersPage> => {
   const query = toQueryParams({
     SearchTerm: params.searchTerm,
-    Role: params.role,
+    Role: mapRoleFilterToApiRole(params.role),
     IsBanned: params.isBanned,
     page: params.page ?? 1,
-    count: params.count ?? 100,
+    count: params.count ?? 10,
   });
 
   const { data } = await axiosInstance.get(
@@ -158,10 +174,15 @@ export const adminApi = {
 
   /**
    * GET /admin/users
-   * Returns all registered users.
+   * Returns paginated users.
    */
-  async getUsers(): Promise<AdminUser[]> {
-    return getUsers({ page: 1, count: 100 });
+  async getUsers(params: AdminUsersQuery = {}): Promise<AdminUsersPage> {
+    return getUsers({
+      page: params.page ?? 1,
+      count: params.count ?? 10,
+      role: params.role,
+      searchTerm: params.searchTerm,
+    });
   },
 
   /**

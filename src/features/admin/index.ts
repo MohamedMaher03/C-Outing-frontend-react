@@ -31,6 +31,8 @@ export type {
   AdminStats,
   AdminUser,
   AdminUserId,
+  AdminUsersPage,
+  AdminUsersQuery,
   AdminUserRole,
   AdminUserRoleFilter,
   AdminUserStatus,

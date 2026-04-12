@@ -2,6 +2,7 @@
  * Admin Feature — Type Definitions
  */
 
+import type { PaginatedResponse } from "@/types";
 import type { CanonicalPriceLevel } from "@/utils/priceLevels";
 
 export interface AdminStats {
@@ -37,6 +38,15 @@ export interface AdminUser {
   reviewCount: number;
   avatar?: string;
 }
+
+export interface AdminUsersQuery {
+  page?: number;
+  count?: number;
+  searchTerm?: string;
+  role?: AdminUserRoleFilter;
+}
+
+export type AdminUsersPage = PaginatedResponse<AdminUser>;
 
 export interface AdminPlace {
   id: string;

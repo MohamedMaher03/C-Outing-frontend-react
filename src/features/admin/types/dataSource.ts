@@ -1,7 +1,8 @@
 import type {
   AdminStats,
-  AdminUser,
   AdminUserId,
+  AdminUsersPage,
+  AdminUsersQuery,
   AdminUserStatus,
   AdminPlace,
   AdminReview,
@@ -14,7 +15,7 @@ import type {
 export interface AdminDataSource {
   getStats: () => Promise<AdminStats>;
   getRecentActivity: () => Promise<RecentActivity[]>;
-  getUsers: () => Promise<AdminUser[]>;
+  getUsers: (params?: AdminUsersQuery) => Promise<AdminUsersPage>;
   updateUserStatus: (
     userId: AdminUserId,
     status: AdminUserStatus,

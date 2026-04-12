@@ -160,7 +160,7 @@ const NotificationsPage = () => {
               {/* Section Header */}
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                  <group.icon className="h-5 w-5 text-secondary" />
+                  <group.icon className="h-5 w-5 text-secondary dark:text-primary" />
                 </div>
                 <div>
                   <h2 className="text-role-body font-semibold text-foreground">

@@ -8,6 +8,7 @@ import type {
   RecentActivity,
   SystemSettings,
 } from "../types";
+import type { PaginatedResponse } from "@/types";
 
 interface ApiEnvelope<T> {
   success: boolean;
@@ -33,7 +34,7 @@ interface AdminUserDto {
   phoneNumber: string | null;
   birthDate: string | null;
   age: number;
-  role: number;
+  role: number | string;
   totalInteractions: number;
   isBanned: boolean;
   isEmailVerified: boolean;
@@ -145,13 +146,42 @@ const asDate = (value: string | null | undefined): Date => {
   return parsed;
 };
 
-const mapRole = (role: number): AdminUserRole => {
-  if (role === 2) {
+const mapRoleFromNumericCode = (roleCode: number): AdminUserRole => {
+  if (roleCode === 2) {
     return "moderator";
   }
 
-  if (role === 3) {
+  if (roleCode === 3) {
     return "admin";
+  }
+
+  return "user";
+};
+
+const mapRole = (role: unknown): AdminUserRole => {
+  if (typeof role === "number") {
+    return mapRoleFromNumericCode(role);
+  }
+
+  if (typeof role === "string") {
+    const normalized = role.trim().toLowerCase();
+
+    if (normalized === "admin") {
+      return "admin";
+    }
+
+    if (normalized === "moderator") {
+      return "moderator";
+    }
+
+    if (normalized === "user") {
+      return "user";
+    }
+
+    const numericRole = Number(normalized);
+    if (Number.isFinite(numericRole)) {
+      return mapRoleFromNumericCode(numericRole);
+    }
   }
 
   return "user";
@@ -256,9 +286,37 @@ export const mapAdminUser = (dto: AdminUserDto): AdminUser => ({
 
 export const mapAdminUsersPage = (
   payload: ApiEnvelope<PaginatedDto<AdminUserDto>> | PaginatedDto<AdminUserDto>,
-): AdminUser[] => {
+): PaginatedResponse<AdminUser> => {
   const page = unwrapEnvelope(payload);
-  return page.items.map(mapAdminUser);
+  const mappedItems = page.items.map(mapAdminUser);
+
+  const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
+  const pageIndex = Math.max(1, Math.trunc(toFiniteNumber(page.pageIndex, 1)));
+  const totalCount = Math.max(
+    0,
+    Math.trunc(toFiniteNumber(page.totalCount, mappedItems.length)),
+  );
+  const fallbackTotalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const totalPages = Math.max(
+    1,
+    Math.trunc(toFiniteNumber(page.totalPages, fallbackTotalPages)),
+  );
+
+  return {
+    items: mappedItems,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage:
+      typeof page.hasPreviousPage === "boolean"
+        ? page.hasPreviousPage
+        : pageIndex > 1,
+    hasNextPage:
+      typeof page.hasNextPage === "boolean"
+        ? page.hasNextPage
+        : pageIndex < totalPages,
+  };
 };
 
 export const mapAdminPlace = (

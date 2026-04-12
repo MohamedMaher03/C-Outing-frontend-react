@@ -14,8 +14,9 @@
 
 import type {
   AdminStats,
-  AdminUser,
   AdminUserId,
+  AdminUsersPage,
+  AdminUsersQuery,
   AdminUserStatus,
   AdminPlace,
   AdminReview,
@@ -44,9 +45,9 @@ export const adminService = {
     );
   },
 
-  async getUsers(): Promise<AdminUser[]> {
+  async getUsers(params: AdminUsersQuery = {}): Promise<AdminUsersPage> {
     return withAdminServiceError(
-      () => adminDataSource.getUsers(),
+      () => adminDataSource.getUsers(params),
       "Failed to load users",
     );
   },

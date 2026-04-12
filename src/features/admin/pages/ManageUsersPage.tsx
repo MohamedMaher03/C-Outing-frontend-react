@@ -14,6 +14,8 @@ import {
   Ban,
   CheckCircle,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -47,11 +49,19 @@ const ManageUsersPage = () => {
     search,
     roleFilter,
     actionMenu,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
     filteredUsers,
     setSearch,
     setRoleFilter,
     setActionMenu,
     retry,
+    goToPreviousPage,
+    goToNextPage,
     handleStatusChange,
   } = useManageUsers();
 
@@ -116,7 +126,9 @@ const ManageUsersPage = () => {
     [users],
   );
 
-  if (loading) {
+  const currentPageNumber = pageIndex;
+
+  if (loading && users.length === 0) {
     return (
       <LoadingSpinner size="md" text={t("admin.users.loading")} fullScreen />
     );
@@ -128,7 +140,7 @@ const ManageUsersPage = () => {
       <AdminPageHeader
         title={t("admin.users.header.title")}
         description={t("admin.users.header.description", {
-          total: formatNumber(users.length),
+          total: formatNumber(totalCount),
           active: formatNumber(activeUsersCount),
         })}
         icon={ShieldCheck}
@@ -171,7 +183,7 @@ const ManageUsersPage = () => {
       <AdminSection
         title={t("admin.users.records.title")}
         description={t("admin.users.records.description", {
-          count: formatNumber(filteredUsers.length),
+          count: formatNumber(totalCount),
         })}
         contentClassName="gap-3"
       >
@@ -203,7 +215,7 @@ const ManageUsersPage = () => {
                       decoding="async"
                     />
                   ) : (
-                    <User className="h-5 w-5 text-secondary" />
+                    <User className="h-5 w-5 text-secondary dark:text-primary" />
                   )}
                 </div>
 
@@ -326,6 +338,52 @@ const ManageUsersPage = () => {
             );
           })
         )}
+
+        {totalPages > 1 ? (
+          <div className="mt-2 flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-role-caption text-muted-foreground">
+              {t("admin.users.pagination.summary", {
+                page: formatNumber(currentPageNumber),
+                totalPages: formatNumber(totalPages),
+                totalCount: formatNumber(totalCount),
+                pageSize: formatNumber(pageSize),
+              })}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={!hasPreviousPage || loading}
+                className="min-h-11"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                {t("admin.users.pagination.previous")}
+              </Button>
+
+              <span className="inline-flex min-h-11 items-center rounded-lg border border-border bg-card px-3 text-role-caption font-medium text-foreground">
+                {t("admin.users.pagination.page", {
+                  page: formatNumber(currentPageNumber),
+                  totalPages: formatNumber(totalPages),
+                })}
+              </span>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={!hasNextPage || loading}
+                className="min-h-11"
+              >
+                {t("admin.users.pagination.next")}
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </AdminSection>
     </AdminPageLayout>
   );

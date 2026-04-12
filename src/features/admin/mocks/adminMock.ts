@@ -9,6 +9,8 @@ import type {
   AdminStats,
   AdminUser,
   AdminUserId,
+  AdminUsersPage,
+  AdminUsersQuery,
   AdminUserRole,
   AdminUserStatus,
   AdminPlace,
@@ -413,9 +415,42 @@ export const adminMock = {
     return { ...MOCK_ADMIN_STATS };
   },
 
-  async getUsers(): Promise<AdminUser[]> {
+  async getUsers(params: AdminUsersQuery = {}): Promise<AdminUsersPage> {
     await delay(700);
-    return [...MOCK_ADMIN_USERS];
+
+    const normalizedSearch = (params.searchTerm ?? "").trim().toLowerCase();
+
+    const roleFilteredUsers =
+      params.role && params.role !== "all"
+        ? MOCK_ADMIN_USERS.filter((user) => user.role === params.role)
+        : MOCK_ADMIN_USERS;
+
+    const matchedUsers =
+      normalizedSearch.length > 0
+        ? roleFilteredUsers.filter(
+            (user) =>
+              user.name.toLowerCase().includes(normalizedSearch) ||
+              user.email.toLowerCase().includes(normalizedSearch),
+          )
+        : roleFilteredUsers;
+
+    const pageSize = Math.max(1, Math.trunc(params.count ?? 10));
+    const totalCount = matchedUsers.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const requestedPage = Math.max(1, Math.trunc(params.page ?? 1));
+    const pageIndex = Math.min(requestedPage, totalPages);
+    const start = (pageIndex - 1) * pageSize;
+    const end = start + pageSize;
+
+    return {
+      items: matchedUsers.slice(start, end),
+      pageIndex,
+      pageSize,
+      totalCount,
+      totalPages,
+      hasPreviousPage: pageIndex > 1,
+      hasNextPage: pageIndex < totalPages,
+    };
   },
 
   async updateUserRole(
