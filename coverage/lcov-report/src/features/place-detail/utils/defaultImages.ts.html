@@ -1,0 +1,160 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for src/features/place-detail/utils/defaultImages.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../../../prettify.css" />
+    <link rel="stylesheet" href="../../../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../../../index.html">All files</a> / <a href="index.html">src/features/place-detail/utils</a> defaultImages.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>15/15</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">50% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>1/2</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>6/6</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>15/15</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const encodeSvg = (svg: string): string =&gt;
+  `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+&nbsp;
+const toSafeInitial = (value: string): string =&gt; {
+  const trimmed = value.trim();
+  return trimmed.length &gt; 0 ? trimmed[0]!.toUpperCase() : <span class="branch-1 cbranch-no" title="branch not covered" >"U";</span>
+};
+&nbsp;
+const buildAvatarSvg = (name: string): string =&gt; {
+  const initial = toSafeInitial(name);
+&nbsp;
+  return `&lt;svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none"&gt;&lt;defs&gt;&lt;linearGradient id="avatarGradient" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse"&gt;&lt;stop stop-color="#143A5E"/&gt;&lt;stop offset="1" stop-color="#E67E22"/&gt;&lt;/linearGradient&gt;&lt;/defs&gt;&lt;rect width="256" height="256" rx="128" fill="url(#avatarGradient)"/&gt;&lt;text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="112" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="#FFF6E9"&gt;${initial}&lt;/text&gt;&lt;/svg&gt;`;
+};
+&nbsp;
+const buildVenuePlaceholderSvg = (name: string): string =&gt; {
+  const initial = toSafeInitial(name);
+&nbsp;
+  return `&lt;svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" fill="none"&gt;&lt;defs&gt;&lt;linearGradient id="venueGradient" x1="0" y1="0" x2="1200" y2="700" gradientUnits="userSpaceOnUse"&gt;&lt;stop stop-color="#143A5E"/&gt;&lt;stop offset="1" stop-color="#E67E22"/&gt;&lt;/linearGradient&gt;&lt;/defs&gt;&lt;rect width="1200" height="700" rx="36" fill="url(#venueGradient)"/&gt;&lt;circle cx="1050" cy="120" r="110" fill="#FFF6E9" fill-opacity="0.14"/&gt;&lt;circle cx="120" cy="620" r="170" fill="#FFF6E9" fill-opacity="0.08"/&gt;&lt;text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-size="220" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="#FFF6E9"&gt;${initial}&lt;/text&gt;&lt;/svg&gt;`;
+};
+&nbsp;
+export const getDefaultAvatarDataUrl = (name: string): string =&gt;
+  encodeSvg(buildAvatarSvg(name));
+&nbsp;
+export const getDefaultVenueImageDataUrl = (name: string): string =&gt;
+  encodeSvg(buildVenuePlaceholderSvg(name));
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-04-16T23:49:44.474Z
+            </div>
+        <script src="../../../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../../../sorter.js"></script>
+        <script src="../../../../block-navigation.js"></script>
+    </body>
+</html>
+    
