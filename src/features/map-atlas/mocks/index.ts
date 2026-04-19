@@ -1,0 +1,1 @@
+export { mapAtlasMock } from "./mapAtlasMock";

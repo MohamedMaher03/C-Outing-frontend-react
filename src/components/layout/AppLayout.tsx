@@ -1,7 +1,7 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Home, Heart, User, LogOut } from "lucide-react";
+import { Home, Heart, User, LogOut, Map } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useLogout } from "@/features/auth/hooks/useLogout";
 import NotificationBell from "@/features/notifications/components/NotificationBell";
 import { NotificationsCountProvider } from "@/features/notifications/context/NotificationsCountContext";
@@ -30,6 +30,7 @@ const AppLayout = () => {
 
   const navItems = [
     { path: "/", label: t("nav.home"), icon: Home },
+    { path: "/map", label: t("nav.map", undefined, "Map"), icon: Map },
     { path: "/favorites", label: t("nav.saved"), icon: Heart },
     { path: "/profile", label: t("nav.profile"), icon: User },
   ];
@@ -114,23 +115,18 @@ const AppLayout = () => {
 
         {/* Page Content */}
         <main className="flex-1 pb-[calc(5rem+max(env(safe-area-inset-bottom),0px))] md:pb-0">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={
-                shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }
-              }
-              animate={{ opacity: 1, y: 0 }}
-              exit={
-                shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -12 }
-              }
-              transition={
-                shouldReduceMotion ? { duration: 0 } : { duration: 0.2 }
-              }
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          <motion.div
+            key={location.pathname}
+            initial={
+              shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }
+            }
+            animate={{ opacity: 1, y: 0 }}
+            transition={
+              shouldReduceMotion ? { duration: 0 } : { duration: 0.2 }
+            }
+          >
+            <Outlet />
+          </motion.div>
         </main>
 
         <div className="fixed bottom-[calc(5.35rem+max(env(safe-area-inset-bottom),0px))] z-50 flex items-center gap-2 md:hidden [inset-inline-end:1rem]">
@@ -143,7 +139,12 @@ const AppLayout = () => {
           className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 supports-[backdrop-filter]:bg-card/85 supports-[backdrop-filter]:backdrop-blur"
           aria-label={t("layout.bottomNavigation")}
         >
-          <div className="grid grid-cols-5 items-stretch gap-1 px-1.5 py-2 pb-[calc(0.625rem+max(env(safe-area-inset-bottom),0px))]">
+          <div
+            className="grid items-stretch gap-1 px-1.5 py-2 pb-[calc(0.625rem+max(env(safe-area-inset-bottom),0px))]"
+            style={{
+              gridTemplateColumns: `repeat(${navItems.length + 2}, minmax(0, 1fr))`,
+            }}
+          >
             {navItems.map((item) => {
               const active = location.pathname === item.path;
               return (

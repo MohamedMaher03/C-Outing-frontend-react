@@ -45,6 +45,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "app.loading.finding": "Finding the best places for you...",
 
     "nav.home": "Home",
+    "nav.map": "Map",
     "nav.saved": "Saved",
     "nav.profile": "Profile",
     "nav.notifications": "Notifications",
@@ -477,6 +478,91 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.seeAll.errorTitle": "Failed to load places",
     "home.seeAll.emptyTitle": "No places found",
     "home.seeAll.emptyDescription": "Try another list size or come back later.",
+
+    "mapAtlas.badge": "Cairo Atlas",
+    "mapAtlas.title": "Map-First Place Discovery",
+    "mapAtlas.subtitle":
+      "Switch recommendation sources, inspect clusters, and pick your next place directly from Cairo's map.",
+    "mapAtlas.loading.title": "Loading Map Atlas",
+    "mapAtlas.loading.subtitle":
+      "Preparing Cairo pins and personalized places...",
+    "mapAtlas.error.badge": "Map Atlas unavailable",
+    "mapAtlas.error.title": "We could not load your map experience right now",
+    "mapAtlas.error.backHome": "Back to Home",
+
+    "mapAtlas.source.discovery": "Discovery",
+    "mapAtlas.source.curated": "Curated",
+    "mapAtlas.source.trending": "Trending",
+    "mapAtlas.source.mood": "Mood",
+    "mapAtlas.source.similar": "Similar",
+
+    "mapAtlas.action.fit": "Fit results",
+    "mapAtlas.action.centerMe": "Center on me",
+    "mapAtlas.action.details": "Details",
+    "mapAtlas.action.directions": "Directions",
+    "mapAtlas.action.save": "Save",
+    "mapAtlas.action.saved": "Saved",
+    "mapAtlas.action.openVenue": "Open venue",
+
+    "mapAtlas.search.label": "Search map places",
+    "mapAtlas.search.placeholder":
+      "Search by place, district, category, or atmosphere tag...",
+
+    "mapAtlas.discovery.district": "Select district",
+    "mapAtlas.discovery.type": "Select venue type",
+    "mapAtlas.discovery.price": "Select budget level",
+    "mapAtlas.discovery.area": "Select area",
+    "mapAtlas.discovery.mode": "Mode: {mode}",
+
+    "mapAtlas.category.food": "Food & Drink",
+    "mapAtlas.category.nightlife": "Nightlife",
+    "mapAtlas.category.culture": "Culture & Art",
+    "mapAtlas.category.outdoor": "Outdoors",
+    "mapAtlas.category.shopping": "Shopping",
+    "mapAtlas.category.wellness": "Wellness",
+    "mapAtlas.category.activities": "Activities",
+    "mapAtlas.category.coworking": "Co-working",
+
+    "mapAtlas.similar.reference":
+      "Choose a reference place for similar recommendations",
+
+    "mapAtlas.stats.total": "Total",
+    "mapAtlas.stats.open": "Open now",
+    "mapAtlas.stats.saved": "Saved",
+    "mapAtlas.stats.avg": "Avg rating",
+
+    "mapAtlas.rating.all": "All ratings",
+    "mapAtlas.rating.4plus": "4.0+",
+    "mapAtlas.rating.45plus": "4.5+",
+
+    "mapAtlas.location.label": "Location status",
+    "mapAtlas.location.granted": "Location active",
+    "mapAtlas.location.loading": "Locating...",
+    "mapAtlas.location.denied":
+      "Location denied. Use browser settings to enable it.",
+    "mapAtlas.location.unsupported":
+      "Geolocation is not supported on this browser.",
+    "mapAtlas.location.unavailable": "Location unavailable right now.",
+    "mapAtlas.location.error": "Could not read your location.",
+    "mapAtlas.location.idle": "Enable location to unlock near-me guidance.",
+
+    "mapAtlas.side.title": "Mapped places",
+    "mapAtlas.side.subtitle": "{count} places in {source}",
+
+    "mapAtlas.empty.title": "No places for this map state",
+    "mapAtlas.empty.subtitle":
+      "Try another source, adjust filters, or lower minimum rating.",
+    "mapAtlas.selection.label": "Selected place",
+    "mapAtlas.badge.wifi": "Wi-Fi",
+
+    "mapAtlas.map.keyboardHint":
+      "Map markers are mirrored in the mapped places list for keyboard and screen-reader navigation.",
+    "mapAtlas.map.showing": "Showing {count} places",
+    "mapAtlas.map.focused": "Focused: {name}",
+    "mapAtlas.map.userLocation": "Your location",
+    "mapAtlas.map.empty.title": "No places to map yet",
+    "mapAtlas.map.empty.subtitle":
+      "Change source, search, or filters to load map pins.",
 
     "favorites.title": "Saved Places",
     "favorites.countLabel": "{count} saved places",
@@ -1362,6 +1448,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "app.loading.finding": "نبحث عن أفضل الأماكن المناسبة لك...",
 
     "nav.home": "الرئيسية",
+    "nav.map": "الخريطة",
     "nav.saved": "المحفوظات",
     "nav.profile": "الملف الشخصي",
     "nav.notifications": "الإشعارات",
@@ -1786,6 +1873,87 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.seeAll.errorTitle": "فشل تحميل الأماكن",
     "home.seeAll.emptyTitle": "لا توجد أماكن",
     "home.seeAll.emptyDescription": "جرّب عددًا مختلفًا أو عد لاحقًا.",
+
+    "mapAtlas.badge": "أطلس القاهرة",
+    "mapAtlas.title": "اكتشاف الأماكن عبر الخريطة",
+    "mapAtlas.subtitle":
+      "بدّل بين مصادر التوصيات، واستكشف التجمعات، واختر وجهتك القادمة مباشرة من خريطة القاهرة.",
+    "mapAtlas.loading.title": "جارٍ تحميل أطلس الخريطة",
+    "mapAtlas.loading.subtitle": "نجهز نقاط القاهرة واقتراحاتك المخصصة...",
+    "mapAtlas.error.badge": "أطلس الخريطة غير متاح",
+    "mapAtlas.error.title": "تعذر تحميل تجربة الخريطة الآن",
+    "mapAtlas.error.backHome": "العودة للرئيسية",
+
+    "mapAtlas.source.discovery": "استكشاف",
+    "mapAtlas.source.curated": "مختارة",
+    "mapAtlas.source.trending": "رائجة",
+    "mapAtlas.source.mood": "مزاج",
+    "mapAtlas.source.similar": "مشابهة",
+
+    "mapAtlas.action.fit": "عرض كل النتائج",
+    "mapAtlas.action.centerMe": "التوسيط على موقعي",
+    "mapAtlas.action.details": "التفاصيل",
+    "mapAtlas.action.directions": "الاتجاهات",
+    "mapAtlas.action.save": "حفظ",
+    "mapAtlas.action.saved": "محفوظ",
+    "mapAtlas.action.openVenue": "فتح المكان",
+
+    "mapAtlas.search.label": "البحث في أماكن الخريطة",
+    "mapAtlas.search.placeholder":
+      "ابحث بالاسم أو المنطقة أو الفئة أو الوسوم...",
+
+    "mapAtlas.discovery.district": "اختر المنطقة",
+    "mapAtlas.discovery.type": "اختر نوع المكان",
+    "mapAtlas.discovery.price": "اختر مستوى الميزانية",
+    "mapAtlas.discovery.area": "اختر النطاق",
+    "mapAtlas.discovery.mode": "الوضع: {mode}",
+
+    "mapAtlas.category.food": "أكل ومشروبات",
+    "mapAtlas.category.nightlife": "حياة ليلية",
+    "mapAtlas.category.culture": "ثقافة وفنون",
+    "mapAtlas.category.outdoor": "أماكن خارجية",
+    "mapAtlas.category.shopping": "تسوق",
+    "mapAtlas.category.wellness": "عافية",
+    "mapAtlas.category.activities": "أنشطة",
+    "mapAtlas.category.coworking": "عمل مشترك",
+
+    "mapAtlas.similar.reference": "اختر مكانًا مرجعيًا للتوصيات المشابهة",
+
+    "mapAtlas.stats.total": "الإجمالي",
+    "mapAtlas.stats.open": "مفتوح الآن",
+    "mapAtlas.stats.saved": "محفوظ",
+    "mapAtlas.stats.avg": "متوسط التقييم",
+
+    "mapAtlas.rating.all": "كل التقييمات",
+    "mapAtlas.rating.4plus": "+4.0",
+    "mapAtlas.rating.45plus": "+4.5",
+
+    "mapAtlas.location.label": "حالة الموقع",
+    "mapAtlas.location.granted": "الموقع مفعل",
+    "mapAtlas.location.loading": "جارٍ تحديد الموقع...",
+    "mapAtlas.location.denied": "تم رفض إذن الموقع. فعّله من إعدادات المتصفح.",
+    "mapAtlas.location.unsupported": "تحديد الموقع غير مدعوم في هذا المتصفح.",
+    "mapAtlas.location.unavailable": "الموقع غير متاح حاليًا.",
+    "mapAtlas.location.error": "تعذر قراءة موقعك.",
+    "mapAtlas.location.idle": "فعّل الموقع لعرض إرشادات بالقرب مني.",
+
+    "mapAtlas.side.title": "أماكن الخريطة",
+    "mapAtlas.side.subtitle": "{count} مكان في {source}",
+
+    "mapAtlas.empty.title": "لا توجد أماكن لهذه الحالة",
+    "mapAtlas.empty.subtitle":
+      "جرّب مصدرًا آخر أو عدّل الفلاتر أو خفّض الحد الأدنى للتقييم.",
+    "mapAtlas.selection.label": "المكان المحدد",
+    "mapAtlas.badge.wifi": "واي فاي",
+
+    "mapAtlas.map.keyboardHint":
+      "يمكنك استخدام قائمة الأماكن للتنقل بلوحة المفاتيح وقارئ الشاشة بدل التفاعل المباشر مع الخريطة.",
+    "mapAtlas.map.showing": "عرض {count} مكان",
+    "mapAtlas.map.focused": "المحدد: {name}",
+    "mapAtlas.map.userLocation": "موقعك الحالي",
+    "mapAtlas.map.empty.title": "لا توجد أماكن على الخريطة بعد",
+    "mapAtlas.map.empty.subtitle":
+      "غيّر المصدر أو البحث أو الفلاتر لإظهار نقاط على الخريطة.",
 
     "favorites.title": "الأماكن المحفوظة",
     "favorites.countLabel": "{count} مكان محفوظ",
