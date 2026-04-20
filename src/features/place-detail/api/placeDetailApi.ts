@@ -1,17 +1,3 @@
-/**
- * Place Detail API Layer
- *
- * Pure HTTP functions — no business logic, no side effects, no storage.
- * Each function maps 1-to-1 with a backend endpoint.
- *
- * The shared axios instance (src/config/axios.config.ts) handles:
- *   • Attaching the Authorization header on every request
- *   • Handling 401 responses globally
- *
- * To switch to mocks during development, swap the import in placeDetailService.ts:
- *   import { placeDetailMock as placeDetailApi } from "../mocks/placeDetailMock";
- */
-
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type { PaginatedResponse } from "@/types";
@@ -61,10 +47,6 @@ const buildPaginationParams = (params?: ReviewListParams) => {
 };
 
 export const placeDetailApi = {
-  /**
-   * GET /places/:placeId
-   * Fetches full place details.
-   */
   async getPlaceById(placeId: string): Promise<PlaceDetail> {
     const { data } = await axiosInstance.get<unknown>(
       API_ENDPOINTS.places.getById(placeId),
@@ -80,10 +62,6 @@ export const placeDetailApi = {
     return normalizeLikeState(data);
   },
 
-  /**
-   * GET /places/:placeId/reviews
-   * Fetches user-submitted reviews for a place.
-   */
   async getPlaceReviews(
     venueId: string,
     params?: ReviewListParams,
@@ -97,10 +75,6 @@ export const placeDetailApi = {
     return normalizePaginatedReviews(data);
   },
 
-  /**
-   * GET /places/:placeId/social-reviews
-   * Fetches scraped social-media reviews for a place.
-   */
   async getSocialMediaReviews(
     venueId: string,
     params?: ReviewListParams,
@@ -114,10 +88,6 @@ export const placeDetailApi = {
     return normalizePaginatedSocialReviews(data);
   },
 
-  /**
-   * POST /places/:placeId/reviews
-   * Submits a new user review for a place.
-   */
   async submitReview(
     venueId: string,
     rating: number,
@@ -197,10 +167,6 @@ export const placeDetailApi = {
     });
   },
 
-  /**
-   * POST /interactions
-   * Records a user interaction event (view, click, rate, etc.).
-   */
   async recordInteraction(payload: RecordInteractionRequest): Promise<void> {
     await axiosInstance.post(API_ENDPOINTS.interactions.record, payload);
   },

@@ -29,7 +29,6 @@ import { useI18n } from "@/components/i18n";
 
 const OTP_LENGTH = AUTH_OTP_LENGTH;
 
-/** Masks an email: john.doe@example.com → j*****e@example.com */
 function maskEmail(email: string): string {
   const [local, domain] = email.split("@");
   if (!domain || local.length <= 2) return email;
@@ -62,19 +61,15 @@ export default function ResetPasswordPage() {
     defaultValues: { email, otp: "", newPassword: "", confirmPassword: "" },
   });
 
-  // Keep hidden email field in sync
   useEffect(() => {
     setValue("email", email);
   }, [email, setValue]);
 
-  // Keep hidden otp field in sync with digit boxes
   useEffect(() => {
     setValue("otp", digits.join(""));
   }, [digits, setValue]);
 
   if (!email) return <Navigate to="/forgot-password" replace />;
-
-  // ── OTP box handlers ──────────────────────────────────────
 
   const handleDigitChange = (index: number, raw: string) => {
     const pasted = raw.replace(/\D/g, "");
@@ -120,15 +115,11 @@ export default function ResetPasswordPage() {
     inputRefs.current[Math.min(text.length, OTP_LENGTH - 1)]?.focus();
   };
 
-  // ── Submit ────────────────────────────────────────────────
-
   const onSubmit = async (data: ResetPasswordFormData) => {
     clearError();
     const ok = await resetPassword(data);
     if (ok) setSuccess(true);
   };
-
-  // ── Success screen ────────────────────────────────────────
 
   if (success) {
     return (
@@ -156,8 +147,6 @@ export default function ResetPasswordPage() {
     );
   }
 
-  // ── Main form ─────────────────────────────────────────────
-
   const otpComplete =
     digits.length === OTP_LENGTH && digits.every((d) => d !== "");
   const maskedEmail = `\u2068${maskEmail(email)}\u2069`;
@@ -165,7 +154,6 @@ export default function ResetPasswordPage() {
   return (
     <AuthShell>
       <AuthSurface>
-        {/* Back */}
         <button
           type="button"
           onClick={() => navigate("/forgot-password")}
@@ -175,7 +163,6 @@ export default function ResetPasswordPage() {
           {t("auth.back")}
         </button>
 
-        {/* Header */}
         <div className="text-center space-y-3">
           <div className="flex justify-center">
             <div className="rounded-full bg-accent/15 p-3.5">
@@ -192,20 +179,16 @@ export default function ResetPasswordPage() {
           </p>
         </div>
 
-        {/* Error Banner */}
         {error && <AuthStatusBanner message={error} onDismiss={clearError} />}
 
-        {/* Form */}
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-5"
           noValidate
           aria-busy={isLoading}
         >
-          {/* Hidden email field */}
           <input type="hidden" {...register("email")} />
 
-          {/* OTP Boxes */}
           <div className="space-y-2">
             <Label>{t("auth.reset.codeLabel")}</Label>
             <Controller
@@ -250,7 +233,6 @@ export default function ResetPasswordPage() {
             <FormError message={errors.otp?.message} />
           </div>
 
-          {/* New Password */}
           <div className="space-y-2">
             <Label htmlFor="newPassword">{t("auth.reset.newPassword")}</Label>
             <div className="relative">
@@ -285,7 +267,6 @@ export default function ResetPasswordPage() {
             <FormError message={errors.newPassword?.message} />
           </div>
 
-          {/* Confirm Password */}
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">
               {t("auth.reset.confirmPassword")}
@@ -338,7 +319,6 @@ export default function ResetPasswordPage() {
           </Button>
         </form>
 
-        {/* Footer */}
         <p className="text-center text-sm text-muted-foreground">
           {t("auth.reset.noCode")}{" "}
           <button

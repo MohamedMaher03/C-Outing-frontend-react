@@ -1,8 +1,3 @@
-/**
- * usePlaceDetail Hook
- * Manages place detail page state and resilient actions for reviews/interactions.
- */
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -75,7 +70,6 @@ const isNotFoundApiError = (error: unknown): boolean =>
   isApiError(error) && error.statusCode === 404;
 
 export interface UsePlaceDetailReturn {
-  // State
   place: PlaceDetail | null;
   loading: boolean;
   error: string | null;
@@ -91,7 +85,6 @@ export interface UsePlaceDetailReturn {
     action: "added" | "removed" | "submitted";
   };
 
-  // Reviews
   reviews: Review[];
   reviewsPagination: ReviewsPaginationState;
   loadingMoreReviews: boolean;
@@ -106,14 +99,12 @@ export interface UsePlaceDetailReturn {
   reviewsError: string | null;
   socialReviewsError: string | null;
 
-  // Review form
   submittingReview: boolean;
   deletingReview: boolean;
   reportingReview: boolean;
   reviewSubmitted: boolean;
   reviewActionError: string | null;
 
-  // Actions
   toggleFavorite: () => Promise<void>;
   toggleLike: () => Promise<void>;
   isReviewReported: (reviewId: string) => boolean;
@@ -155,7 +146,6 @@ export const usePlaceDetail = (
     new Set(),
   );
 
-  // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsPagination, setReviewsPagination] =
     useState<ReviewsPaginationState>(DEFAULT_PAGINATION);
@@ -176,7 +166,6 @@ export const usePlaceDetail = (
     null,
   );
 
-  // Review action state
   const [submittingReview, setSubmittingReview] = useState(false);
   const [deletingReview, setDeletingReview] = useState(false);
   const [reportingReview, setReportingReview] = useState(false);

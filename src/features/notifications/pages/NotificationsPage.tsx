@@ -9,8 +9,6 @@ import NotificationItem from "../components/NotificationItem";
 import { useNotifications } from "../hooks/useNotifications";
 import { groupNotificationsByDate } from "../utils/notificationPresentation";
 
-// ── Page ─────────────────────────────────────────────────────
-
 const NotificationsPage = () => {
   const shouldReduceMotion = useReducedMotion();
   const {
@@ -52,7 +50,6 @@ const NotificationsPage = () => {
           : `${unreadCount} unread notifications`}
       </p>
 
-      {/* ── Sticky Header ─────────────────────────────────── */}
       <div className="sticky top-0 z-10 border-b border-border bg-background">
         <div className="mx-auto w-full max-w-3xl px-4 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -90,7 +87,6 @@ const NotificationsPage = () => {
             )}
           </div>
 
-          {/* ── Filter Tabs ─────────────────────────────────── */}
           <div className="mt-4 grid grid-cols-2 gap-1 rounded-full bg-muted/60 p-1 sm:inline-grid sm:min-w-[240px]">
             {(["all", "unread"] as const).map((tab) => (
               <button
@@ -111,9 +107,7 @@ const NotificationsPage = () => {
         </div>
       </div>
 
-      {/* ── Body ─────────────────────────────────────────────── */}
       <div className="mx-auto w-full max-w-3xl space-y-8 px-4 py-6">
-        {/* Error banner */}
         {displayError && (
           <Alert variant="destructive" className="border-destructive/30">
             <AlertTitle>
@@ -144,7 +138,6 @@ const NotificationsPage = () => {
           </Alert>
         )}
 
-        {/* Empty state */}
         {filteredNotifications.length === 0 && !displayError && (
           <div className="flex flex-col items-center justify-center space-y-3 py-24 text-center">
             <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
@@ -163,13 +156,11 @@ const NotificationsPage = () => {
           </div>
         )}
 
-        {/* Grouped notification list */}
         {groupedNotifications.map(([group, items]) => (
           <section
             key={group}
             className="space-y-3 [content-visibility:auto] [contain-intrinsic-size:560px]"
           >
-            {/* Date group header */}
             <div className="flex items-center gap-3">
               <span className="text-role-caption text-muted-foreground uppercase">
                 {group}
@@ -177,7 +168,6 @@ const NotificationsPage = () => {
               <div className="flex-1 h-px bg-border" />
             </div>
 
-            {/* Notification items */}
             <div className="space-y-2">
               {items.map((notification) => (
                 <NotificationItem

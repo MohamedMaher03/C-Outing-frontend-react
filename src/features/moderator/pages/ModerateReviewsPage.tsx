@@ -1,10 +1,3 @@
-/**
- * Moderate Reviews Page (Moderator)
- *
- * Review moderation queue: approve, reject, or flag reviews.
- * Moderators cannot delete reviews (only admins can).
- */
-
 import { useMemo, type CSSProperties } from "react";
 import {
   Search,
@@ -187,7 +180,6 @@ const ModerateReviewsPage = () => {
                 aria-busy={isPending}
                 style={MODERATOR_REVIEW_ROW_STYLE}
               >
-                {/* Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-9 w-9 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">

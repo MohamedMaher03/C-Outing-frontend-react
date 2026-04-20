@@ -1,8 +1,3 @@
-/**
- * useManagePlaces Hook
- * Manages state and actions for the Manage Places admin page.
- */
-
 import {
   useCallback,
   useDeferredValue,
@@ -36,29 +31,20 @@ interface PlaceActionNotice {
 }
 
 interface UseManagePlacesReturn {
-  // Data state
   places: AdminPlace[];
   loading: boolean;
   error: string | null;
   pendingPlaceIds: string[];
-
-  // Filter state
   search: string;
   statusFilter: AdminPlaceStatusFilter;
   filteredPlaces: AdminPlace[];
-
-  // Form state
   showAddForm: boolean;
   form: PlaceFormData;
   formErrors: PlaceFormErrors;
   submittingForm: boolean;
   scrapeStartedMessage: string | null;
   placeActionNotice: PlaceActionNotice | null;
-
-  // Toast state
   toasts: AdminToast[];
-
-  // Setters
   setSearch: (value: string) => void;
   setStatusFilter: (value: AdminPlaceStatusFilter) => void;
   setShowAddForm: (value: boolean | ((prev: boolean) => boolean)) => void;
@@ -67,8 +53,6 @@ interface UseManagePlacesReturn {
   ) => void;
   dismissScrapeStartedMessage: () => void;
   dismissPlaceActionNotice: () => void;
-
-  // Actions
   retry: () => Promise<void>;
   handleStatusChange: (
     placeId: string,

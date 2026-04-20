@@ -167,20 +167,15 @@ const ProfilePage = () => {
   const profileInteractions = formatNumber(profile?.totalInteractions ?? 0);
 
   const handleSave = async () => {
-    try {
-      await savePreferences();
-    } catch {
-      // Error state is surfaced by the hook.
-    }
+    await savePreferences().catch(() => undefined);
   };
 
   const handleLogout = async () => {
-    try {
-      await handleSignOut();
-      navigate("/");
-    } catch {
-      // Error state is surfaced by the hook.
-    }
+    await handleSignOut()
+      .then(() => {
+        navigate("/");
+      })
+      .catch(() => undefined);
   };
 
   if (loading) {
@@ -227,7 +222,6 @@ const ProfilePage = () => {
         </div>
       ) : null}
 
-      {/* Profile Header */}
       <div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-card/60 p-4 sm:p-5">
         <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
           <img
@@ -345,7 +339,6 @@ const ProfilePage = () => {
             value="preferences"
             className="space-y-[clamp(1rem,2.2vw,1.85rem)] pt-4"
           >
-            {/* Interests */}
             <div className="space-y-2.5">
               <h3 className="text-role-caption text-foreground uppercase tracking-wider">
                 {t("profile.preferences.interests")}
@@ -370,7 +363,6 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Vibe */}
             <div className="space-y-2.5">
               <h3 className="text-role-caption text-foreground uppercase tracking-wider">
                 {t("profile.preferences.vibe")}
@@ -392,7 +384,6 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Districts */}
             <div className="space-y-2.5">
               <h3 className="text-role-caption text-foreground uppercase tracking-wider">
                 {t("profile.preferences.areas")}
@@ -411,7 +402,6 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            {/* Budget */}
             <div className="space-y-2.5">
               <h3 className="text-role-caption text-foreground uppercase tracking-wider">
                 {t("profile.preferences.budget")}

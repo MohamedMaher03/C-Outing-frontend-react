@@ -1,8 +1,3 @@
-/**
- * useModeratorDashboard Hook
- * Manages state for the Moderator Dashboard page.
- */
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { moderatorService } from "@/features/moderator/services/moderatorService";
 import type {

@@ -1,10 +1,3 @@
-/**
- * Public Profile Page
- *
- * Read-only view for another user's profile and recent review activity.
- * Hardened for long text, retriable failures, and partial-data rendering.
- */
-
 import { useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {

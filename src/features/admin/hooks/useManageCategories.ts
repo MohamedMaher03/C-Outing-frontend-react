@@ -1,8 +1,3 @@
-/**
- * useManageCategories Hook
- * Manages state and actions for the Manage Categories admin page.
- */
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { AdminCategory } from "@/features/admin/types";
@@ -10,7 +5,6 @@ import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
 interface UseManageCategoriesReturn {
-  // State
   categories: AdminCategory[];
   loading: boolean;
   error: string | null;
@@ -21,15 +15,11 @@ interface UseManageCategoriesReturn {
   showAdd: boolean;
   newLabel: string;
   newIcon: string;
-
-  // Setters
   setEditLabel: (value: string) => void;
   setEditIcon: (value: string) => void;
   setShowAdd: (value: boolean) => void;
   setNewLabel: (value: string) => void;
   setNewIcon: (value: string) => void;
-
-  // Actions
   retry: () => Promise<void>;
   handleToggleStatus: (catId: string) => Promise<void>;
   handleStartEdit: (cat: AdminCategory) => void;

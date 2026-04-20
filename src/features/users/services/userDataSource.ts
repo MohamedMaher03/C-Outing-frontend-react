@@ -21,8 +21,6 @@ const resolveFeatureMockFlag = (featureValue: unknown): boolean => {
 const shouldUseMocks = resolveFeatureMockFlag(
   import.meta.env.VITE_USERS_USE_MOCKS,
 );
-
-// API remains the explicit default datasource for production behavior.
 export const usersDataSource: UsersDataSource = shouldUseMocks
   ? usersMock
   : userApi;

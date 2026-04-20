@@ -1,10 +1,3 @@
-/**
- * Moderate Places Page (Moderator)
- *
- * Verify/edit place information. Moderators can approve, flag, add,
- * and delete places directly.
- */
-
 import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 import {
   Search,

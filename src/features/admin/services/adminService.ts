@@ -1,17 +1,3 @@
-/**
- * Admin Service — Business Logic Layer
- *
- * Sits between hooks and the datasource layer.
- * Responsibilities:
- *   • Call adminDataSource functions
- *   • Transform DTOs to UI models if needed
- *   • Centralise error handling
- *
- * ┌───────────────────────────────────────────────────────────────┐
- * │ useAdmin* → adminService → adminDataSource → API/mock         │
- * └───────────────────────────────────────────────────────────────┘
- */
-
 import type {
   AdminStats,
   AdminUserId,
@@ -27,8 +13,6 @@ import type {
 } from "../types";
 import { adminDataSource } from "./adminDataSource";
 import { withAdminServiceError } from "./adminServiceError";
-
-// ── Admin Service ─────────────────────────────────────────────
 
 export const adminService = {
   async getStats(): Promise<AdminStats> {

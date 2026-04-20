@@ -21,8 +21,6 @@ const resolveFeatureMockFlag = (featureValue: unknown): boolean => {
 const shouldUseMocks = resolveFeatureMockFlag(
   import.meta.env.VITE_NOTIFICATIONS_USE_MOCKS,
 );
-
-// API is the default source to keep production behavior explicit.
 export const notificationsDataSource: NotificationsDataSource = shouldUseMocks
   ? notificationsMock
   : notificationsApi;

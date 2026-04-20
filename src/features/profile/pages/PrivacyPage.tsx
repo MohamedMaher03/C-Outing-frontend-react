@@ -92,7 +92,6 @@ const PrivacyPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
           <Button
@@ -139,7 +138,6 @@ const PrivacyPage = () => {
         )}
         <div className="grid gap-[clamp(1rem,2vw,1.75rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
           <div className="space-y-[clamp(1rem,2.2vw,1.75rem)]">
-            {/* Privacy Settings */}
             {PRIVACY_SECTIONS.map((section) => (
               <section key={section.titleKey} className="space-y-3">
                 <div className="flex items-center gap-3">
@@ -183,7 +181,6 @@ const PrivacyPage = () => {
             ))}
           </div>
 
-          {/* Data Management */}
           <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
@@ -249,7 +246,6 @@ const PrivacyPage = () => {
           </aside>
         </div>
 
-        {/* Info Card */}
         <Card className="rounded-xl border-secondary/20 bg-secondary/5">
           <CardContent className="p-4">
             <p className="text-role-secondary text-foreground">
@@ -268,7 +264,6 @@ const PrivacyPage = () => {
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
         <div className="hidden gap-3 pt-4 sm:flex">
           <Button
             type="button"

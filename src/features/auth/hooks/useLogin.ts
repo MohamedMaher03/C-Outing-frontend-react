@@ -1,14 +1,3 @@
-/**
- * useLogin Hook
- *
- * Handles the complete login flow:
- *   1. Calls AuthContext.login (which delegates to authService → authApi)
- *   2. Surfaces loading and error state to the UI
- *   3. Returns a boolean indicating success so the caller can navigate
- *
- * Flow: LoginForm → useLogin → AuthContext.login → authService → authApi → axios
- */
-
 import { useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getAuthErrorMessage, isEmailNotVerifiedError } from "../errors";

@@ -1,20 +1,12 @@
-/**
- * Profile API Layer
- *
- * Pure HTTP functions with no business-side effects.
- * The service layer owns validation/normalization and can swap this API
- * source with mocks via `profileDataSource`.
- */
-
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type {
   NotificationSettings,
   PrivacySettings,
   UpdatePreferencesRequest,
-  UserProfile,
   UpdateUserProfileRequest,
   UserPreferences,
+  UserProfile,
 } from "../types";
 import type { ProfileDataSource } from "../types/dataSource";
 
@@ -31,13 +23,8 @@ const toDateOnly = (value: string): string => {
 
   return trimmed;
 };
-// NOTE: All axiosInstance calls below use `T` as the generic (not `ApiResponse<T>`).
-// The axiosInstance response interceptor automatically unwraps the
-// { success, data: T, message } envelope, so response.data IS T directly.
 
 export const profileApi = {
-  // ── Profile ────────────────────────────────────────────────
-
   async getProfile(): Promise<UserProfile> {
     const { data } = await axiosInstance.get<UserProfile>(
       API_ENDPOINTS.profile.getCurrentProfile,
@@ -99,8 +86,6 @@ export const profileApi = {
     return data;
   },
 
-  // ── Preferences ────────────────────────────────────────────
-
   async getPreferences(userId: string): Promise<UserPreferences> {
     const { data } = await axiosInstance.get<UserPreferences>(
       API_ENDPOINTS.users.getPreferences(userId),
@@ -119,8 +104,6 @@ export const profileApi = {
     return data;
   },
 
-  // ── Notifications ──────────────────────────────────────────
-
   async getNotifications(): Promise<NotificationSettings> {
     const { data } = await axiosInstance.get<NotificationSettings>(
       API_ENDPOINTS.profile.getCurrentNotifications,
@@ -138,8 +121,6 @@ export const profileApi = {
     return data;
   },
 
-  // ── Privacy ────────────────────────────────────────────────
-
   async getPrivacy(): Promise<PrivacySettings> {
     const { data } = await axiosInstance.get<PrivacySettings>(
       API_ENDPOINTS.profile.getCurrentPrivacy,
@@ -154,8 +135,6 @@ export const profileApi = {
     );
     return data;
   },
-
-  // ── Account Management ─────────────────────────────────────
 
   async downloadData(): Promise<Blob> {
     const { data } = await axiosInstance.get<Blob>(

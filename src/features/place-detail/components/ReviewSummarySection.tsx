@@ -18,7 +18,6 @@ interface ReviewSummarySectionProps {
   loading: boolean;
 }
 
-/** NLP-generated Review Summary section */
 const ReviewSummarySectionComponent = ({
   summary,
   loading,
@@ -51,7 +50,6 @@ const ReviewSummarySectionComponent = ({
 
   return (
     <Card className="rounded-2xl border-border/70 bg-card/95 p-5 space-y-4 shadow-sm">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-role-subheading text-secondary flex items-center gap-1.5 min-w-0">
           <Sparkles className="h-4 w-4" />
@@ -80,7 +78,6 @@ const ReviewSummarySectionComponent = ({
         </div>
       </div>
 
-      {/* Summary text */}
       <p
         className="pd-type-body pd-measure text-muted-foreground break-words whitespace-pre-wrap"
         dir="auto"
@@ -88,7 +85,6 @@ const ReviewSummarySectionComponent = ({
         {summary.summary}
       </p>
 
-      {/* Highlights */}
       <div className="space-y-2">
         <p className="pd-type-kicker text-foreground">Key Highlights</p>
         {summary.highlights.length === 0 ? (
@@ -112,7 +108,6 @@ const ReviewSummarySectionComponent = ({
         )}
       </div>
 
-      {/* Expandable topics */}
       <Button
         type="button"
         variant="ghost"

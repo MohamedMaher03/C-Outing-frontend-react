@@ -1,8 +1,3 @@
-/**
- * useFavorites Hook
- * Manages favorites page state and actions
- */
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getFavorites,
@@ -13,7 +8,6 @@ import { normalizePageSize } from "@/features/favorites/utils/favoritesParams";
 import { getErrorMessage, isApiError } from "@/utils/apiError";
 
 interface UseFavoritesReturn {
-  // State
   favorites: FavoriteItem[];
   loading: boolean;
   error: string | null;
@@ -25,8 +19,6 @@ interface UseFavoritesReturn {
   hasNextPage: boolean;
   savePendingMap: Record<string, boolean>;
   actionError: string | null;
-
-  // Actions
   toggleSave: (placeId: string) => Promise<void>;
   refreshFavorites: (options?: {
     showLoader?: boolean;
@@ -184,7 +176,6 @@ export const useFavorites = (): UseFavoritesReturn => {
         );
         const isFavorite = !!currentPlace;
 
-        // Optimistic update
         if (isFavorite) {
           setFavorites((prev) =>
             prev.filter((item) => item.venue.id !== placeId),
@@ -192,21 +183,16 @@ export const useFavorites = (): UseFavoritesReturn => {
           setTotalCount((prev) => Math.max(0, prev - 1));
         }
 
-        // Call API
         await toggleFavoriteService(placeId, isFavorite);
 
-        // Keep remove-from-favorites snappy without a follow-up refetch.
-        // Adding back (rare on this page) still reloads to hydrate full venue data.
+        // Removing is optimistic; adding back refetches full venue payload.
         if (!isFavorite) {
           await fetchFavorites({ showLoader: false, showPageError: false });
         }
-
-        // If API fails, the error will be caught and state will be reverted
       } catch (err) {
         setActionError(
           toFriendlyErrorMessage(err, "We could not update your saved places."),
         );
-        // Revert optimistic update on error
         await fetchFavorites({ showLoader: false, showPageError: false });
         throw err;
       } finally {
@@ -223,21 +209,8 @@ export const useFavorites = (): UseFavoritesReturn => {
     [favorites, fetchFavorites],
   );
 
-  const refreshFavorites = useCallback(
-    async (
-      options: {
-        showLoader?: boolean;
-        showPageError?: boolean;
-      } = {},
-    ) => {
-      await fetchFavorites(options);
-    },
-    [fetchFavorites],
-  );
-
-  const clearActionError = useCallback(() => {
-    setActionError(null);
-  }, []);
+  const refreshFavorites = fetchFavorites;
+  const clearActionError = () => setActionError(null);
 
   return {
     favorites,

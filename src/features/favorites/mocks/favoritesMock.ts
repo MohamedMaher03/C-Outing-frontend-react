@@ -1,36 +1,15 @@
-/**
- * Favorites Mock Implementations
- *
- * Drop-in replacement for favoritesApi. It mirrors the same datasource
- * interface and is selected through favoritesDataSource.
- *
- * Set VITE_USE_MOCKS=true to activate this datasource.
- *
- * Simulates realistic network latency and in-memory favorites storage.
- */
-
 import { PLACES } from "@/mocks/mockData";
 import type { PaginatedResponse } from "@/types";
 import type { FavoriteItem, FavoriteListParams } from "../types";
 import type { FavoritesDataSource } from "../types/dataSource";
 import { createInitialFavorites } from "./createInitialFavorites";
 
-// ── In-memory mock store ─────────────────────────────────────
-
 let mockFavorites: FavoriteItem[] = createInitialFavorites();
-
-// ── Helper ───────────────────────────────────────────────────
 
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-// ── Mock Favorites API ───────────────────────────────────────
-// Interface intentionally mirrors favoritesApi so they are interchangeable.
-
 export const favoritesMock: FavoritesDataSource = {
-  /**
-   * Mock GET /api/v1/Favorite
-   */
   async getFavorites(
     params?: FavoriteListParams,
   ): Promise<PaginatedResponse<FavoriteItem>> {
@@ -57,10 +36,6 @@ export const favoritesMock: FavoritesDataSource = {
       hasNextPage: pageIndex + 1 < totalPages,
     };
   },
-
-  /**
-   * Mock POST /api/v1/Favorite
-   */
   async addToFavorites(placeId: string): Promise<void> {
     await delay(900);
 
@@ -72,18 +47,10 @@ export const favoritesMock: FavoritesDataSource = {
       });
     }
   },
-
-  /**
-   * Mock DELETE /api/v1/Favorite/{venueId}
-   */
   async removeFromFavorites(placeId: string): Promise<void> {
     await delay(300);
     mockFavorites = mockFavorites.filter((f) => f.venue.id !== placeId);
   },
-
-  /**
-   * Mock GET /api/v1/Favorite/check/{venueId}
-   */
   async checkIsFavorite(placeId: string): Promise<boolean> {
     await delay(200);
     return !!mockFavorites.find((f) => f.venue.id === placeId);

@@ -1,12 +1,3 @@
-/**
- * Profile Service
- *
- * Business logic layer — composes datasource calls and applies
- * feature-level validation/normalization in a clean architecture flow:
- *
- * UI/Hook -> Service -> Mapper -> DataSource -> API/Mock
- */
-
 import { profileDataSource } from "./profileDataSource";
 import { isApiError } from "@/utils/apiError";
 import {
@@ -31,7 +22,6 @@ import type {
   UserPreferences,
 } from "@/features/profile/types";
 
-// Re-export types for consumers that import from the service directly
 export type {
   UserProfile,
   UpdateUserProfileRequest,
@@ -81,16 +71,11 @@ const getFallbackName = (): string => {
 const isMissingPreferencesEndpointError = (error: unknown): boolean =>
   isApiError(error) && error.statusCode === 404;
 
-// ── Profile ─────────────────────────────────────────────────────────────────
-
 export const getUserProfile = async (): Promise<UserProfile> => {
   const profile = await profileDataSource.getProfile();
   return normalizeProfile(profile, getFallbackName());
 };
 
-/**
- * Update user profile via authenticated /api/v1/User/profile endpoint.
- */
 export const updateUserProfile = async (
   data: UpdateUserProfileRequest,
   avatarFile?: File,
@@ -112,10 +97,6 @@ export const updateUserProfile = async (
   return normalizeProfile(updated, payload.name);
 };
 
-/**
- * Backward-compatible avatar upload helper.
- * Kept to avoid stale HMR imports while profile update is now unified.
- */
 export const uploadAvatar = async (
   file: File,
 ): Promise<{ avatarUrl: string }> => {
@@ -123,14 +104,10 @@ export const uploadAvatar = async (
   return { avatarUrl: updated.avatarUrl ?? "" };
 };
 
-// ── Edit Profile (extended fields) ──────────────────────────────────────────
-
-/** Fetch edit profile form model mapped from backend profile payload. */
 export const getEditProfile = async (): Promise<EditProfileData> => {
   return mapProfileToEditProfile(await getUserProfile());
 };
 
-/** Save edit profile form model to backend profile endpoint. */
 export const updateEditProfile = async (
   data: Partial<EditProfileData>,
   avatarFile?: File,
@@ -143,13 +120,6 @@ export const updateEditProfile = async (
   return mapProfileToEditProfile(updated);
 };
 
-// ── Preferences ──────────────────────────────────────────────────────────────
-
-/**
- * Fetch user preferences (interests, vibe, districts, budget).
- * TODO: Uncomment when backend is ready:
- *   return profileApi.getPreferences(CURRENT_USER_ID);
- */
 export const getUserPreferences = async (): Promise<UserPreferences> => {
   const userId = resolveCurrentUserId();
   try {
@@ -166,11 +136,6 @@ export const getUserPreferences = async (): Promise<UserPreferences> => {
   }
 };
 
-/**
- * Update user preferences.
- * TODO: Uncomment when backend is ready:
- *   return profileApi.updatePreferences(CURRENT_USER_ID, data);
- */
 export const updateUserPreferences = async (
   data: UpdatePreferencesRequest,
 ): Promise<UserPreferences> => {
@@ -185,24 +150,12 @@ export const updateUserPreferences = async (
   return normalizePreferences(updated);
 };
 
-// ── Notifications ────────────────────────────────────────────────────────────
-
-/**
- * Fetch notification settings.
- * TODO: Uncomment when backend is ready:
- *   return profileApi.getNotifications(CURRENT_USER_ID);
- */
 export const getNotificationSettings =
   async (): Promise<NotificationSettings> => {
     const settings = await profileDataSource.getNotifications();
     return normalizeNotificationSettings(settings);
   };
 
-/**
- * Save notification settings.
- * TODO: Uncomment when backend is ready:
- *   return profileApi.updateNotifications(CURRENT_USER_ID, data);
- */
 export const updateNotificationSettings = async (
   data: NotificationSettings,
 ): Promise<NotificationSettings> => {
@@ -212,23 +165,11 @@ export const updateNotificationSettings = async (
   return normalizeNotificationSettings(updated);
 };
 
-// ── Privacy ──────────────────────────────────────────────────────────────────
-
-/**
- * Fetch privacy settings.
- * TODO: Uncomment when backend is ready:
- *   return profileApi.getPrivacy(CURRENT_USER_ID);
- */
 export const getPrivacySettings = async (): Promise<PrivacySettings> => {
   const settings = await profileDataSource.getPrivacy();
   return normalizePrivacySettings(settings);
 };
 
-/**
- * Save privacy settings.
- * TODO: Uncomment when backend is ready:
- *   return profileApi.updatePrivacy(CURRENT_USER_ID, data);
- */
 export const updatePrivacySettings = async (
   data: PrivacySettings,
 ): Promise<PrivacySettings> => {
@@ -238,17 +179,6 @@ export const updatePrivacySettings = async (
   return normalizePrivacySettings(updated);
 };
 
-// ── Account Management ───────────────────────────────────────────────────────
-
-/**
- * Request data export (returns a downloadable Blob).
- * TODO: Uncomment when backend is ready:
- *   const blob = await profileApi.downloadData(CURRENT_USER_ID);
- *   const url = URL.createObjectURL(blob);
- *   const a = document.createElement("a");
- *   a.href = url; a.download = "my-data.json"; a.click();
- *   URL.revokeObjectURL(url);
- */
 export const requestDataDownload = async (): Promise<void> => {
   const blob = await profileDataSource.downloadData();
   const url = URL.createObjectURL(blob);
@@ -259,20 +189,10 @@ export const requestDataDownload = async (): Promise<void> => {
   URL.revokeObjectURL(url);
 };
 
-/**
- * Permanently delete the user account.
- * TODO: Uncomment when backend is ready:
- *   await profileApi.deleteAccount(CURRENT_USER_ID);
- */
 export const deleteUserAccount = async (): Promise<void> => {
   await profileDataSource.deleteAccount();
 };
 
-/**
- * Sign out user (clear local session).
- * TODO: Uncomment when backend is ready:
- *   await axiosInstance.post(API_ENDPOINTS.auth.logout);
- */
 export const signOut = async (): Promise<void> => {
   await profileDataSource.signOut();
 };

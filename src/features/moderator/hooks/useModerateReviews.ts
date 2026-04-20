@@ -1,10 +1,3 @@
-/**
- * useModerateReviews Hook
- * Manages state and actions for the Moderate Reviews moderator page.
- *
- * Data access is delegated to moderatorService to keep hook concerns focused on UI state.
- */
-
 import {
   useCallback,
   useDeferredValue,
@@ -21,7 +14,6 @@ import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
 interface UseModerateReviewsReturn {
-  // State
   reviews: AdminReview[];
   loading: boolean;
   error: string | null;
@@ -31,11 +23,9 @@ interface UseModerateReviewsReturn {
   statusFilter: ModeratorReviewStatusFilter;
   filteredReviews: AdminReview[];
 
-  // Setters
   setSearch: (value: string) => void;
   setStatusFilter: (value: ModeratorReviewStatusFilter) => void;
 
-  // Actions
   retry: () => Promise<void>;
   handleApprove: (reviewId: string) => Promise<void>;
   handleReject: (reviewId: string) => Promise<void>;

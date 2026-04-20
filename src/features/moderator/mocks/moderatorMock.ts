@@ -1,21 +1,11 @@
-/**
- * Moderator Feature — Mock Data
- *
- * Provides realistic mock data for moderator dashboard views.
- */
-
 import type {
   ModeratorStats,
   ReportedContent,
   ModerationAction,
 } from "../types";
 
-// ── Helper ───────────────────────────────────────────────────
-
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
-
-// ── Mock Data ────────────────────────────────────────────────
 
 export const MOCK_MODERATOR_STATS: ModeratorStats = {
   pendingReviews: 12,
@@ -183,8 +173,6 @@ export const MOCK_MODERATION_ACTIONS: ModerationAction[] = [
     timestamp: new Date("2026-02-28T14:00:00"),
   },
 ];
-
-// ── Mock Moderator API ───────────────────────────────────────
 
 export const moderatorMock = {
   async getStats(): Promise<ModeratorStats> {

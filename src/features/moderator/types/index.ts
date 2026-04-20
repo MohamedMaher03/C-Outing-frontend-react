@@ -1,7 +1,3 @@
-/**
- * Moderator Feature — Type Definitions
- */
-
 import type {
   AdminFilterValue,
   AdminPlaceStatus,
@@ -26,9 +22,7 @@ export interface ReportedContent {
   reporterId: number;
   reason: string;
   description: string;
-  /** Original text of the reported review (populated for type="review") */
   reviewContent?: string;
-  /** Username of the review author (populated for type="review") */
   reviewAuthorName?: string;
   status: "open" | "investigating" | "resolved" | "dismissed";
   priority: "low" | "medium" | "high";
@@ -51,8 +45,6 @@ export interface ModerationAction {
   timestamp: Date;
   note?: string;
 }
-
-// ── Shared UI Types ───────────────────────────────────────────
 
 export interface ModeratorToast {
   id: string;

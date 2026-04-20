@@ -4,10 +4,6 @@ import {
   type NotificationsCountContextType,
 } from "../context/notificationsCount.context";
 
-/**
- * useNotificationsCount — read or update the global unread badge count.
- * Must be used inside NotificationsCountProvider.
- */
 export function useNotificationsCount(): NotificationsCountContextType {
   const ctx = useContext(NotificationsCountContext);
 

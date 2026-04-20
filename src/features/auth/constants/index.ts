@@ -1,15 +1,9 @@
-/**
- * Auth Feature — Constants
- */
-
-/** LocalStorage key names used by auth. Centralised so every layer reads from one place. */
 export const AUTH_STORAGE_KEYS = {
   TOKEN: "authToken",
   USER: "authUser",
   PENDING_VERIFICATION_EMAIL: "authPendingVerificationEmail",
 } as const;
 
-/** Shared auth input constraints used across validation schemas and pages. */
 export const AUTH_PASSWORD_RULES = {
   MIN_LENGTH: 8,
   MAX_LENGTH: 100,
@@ -30,7 +24,6 @@ export const AUTH_TIMEOUTS = {
 
 export const AUTH_OTP_LENGTH = 6;
 
-/** Human-readable error messages surfaced to the UI. */
 export const AUTH_ERROR_MESSAGES = {
   INVALID_CREDENTIALS: "Invalid email or password. Please try again.",
   EMAIL_NOT_VERIFIED:
@@ -52,5 +45,4 @@ export const AUTH_ERROR_MESSAGES = {
 
 export type AuthErrorKey = keyof typeof AUTH_ERROR_MESSAGES;
 
-/** Alias — preferred name in the errors/ module. */
 export type AuthErrorCode = AuthErrorKey;

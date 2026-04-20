@@ -1,8 +1,3 @@
-/**
- * useSystemSettings Hook
- * Manages state and actions for the System Settings admin page.
- */
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { SystemSettings } from "@/features/admin/types";
@@ -10,15 +5,12 @@ import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
 interface UseSystemSettingsReturn {
-  // State
   settings: SystemSettings | null;
   loading: boolean;
   saving: boolean;
   saved: boolean;
   error: string | null;
   hasUnsavedChanges: boolean;
-
-  // Actions
   retry: () => Promise<void>;
   update: <K extends keyof SystemSettings>(
     key: K,

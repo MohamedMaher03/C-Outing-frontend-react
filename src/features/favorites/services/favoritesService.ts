@@ -1,17 +1,3 @@
-/**
- * Favorites Service — Business Logic Layer
- *
- * Sits between hooks/components and the datasource layer.
- * Responsibilities:
- *   • Call favoritesDataSource functions
- *   • Transform DTOs to UI models if needed
- *   • Centralise error handling
- *
- * ┌──────────────────────────────────────────────────────────────┐
- * │  useFavorites  →  favoritesService  →  favoritesDataSource  │
- * └──────────────────────────────────────────────────────────────┘
- */
-
 import type { PaginatedResponse } from "@/types";
 import type {
   FavoriteItem,
@@ -53,14 +39,14 @@ export const toggleFavorite = async (
   const normalizedPlaceId = normalizePlaceId(placeId);
 
   if (isFavorite) {
-    await removeFromFavorites(normalizedPlaceId);
+    await favoritesDataSource.removeFromFavorites(normalizedPlaceId);
   } else {
-    await addToFavorites(normalizedPlaceId);
+    await favoritesDataSource.addToFavorites(normalizedPlaceId);
   }
 };
 
 export const checkIsFavorite = async (placeId: string): Promise<boolean> => {
-  return await favoritesDataSource.checkIsFavorite(normalizePlaceId(placeId));
+  return favoritesDataSource.checkIsFavorite(normalizePlaceId(placeId));
 };
 
 export const favoritesService = {

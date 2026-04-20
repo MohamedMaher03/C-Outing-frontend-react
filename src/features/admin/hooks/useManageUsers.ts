@@ -1,13 +1,7 @@
-/**
- * useManageUsers Hook
- * Manages state and actions for the Manage Users admin page.
- */
-
 import {
   useCallback,
   useDeferredValue,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -22,7 +16,6 @@ import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
 interface UseManageUsersReturn {
-  // State
   users: AdminUser[];
   loading: boolean;
   error: string | null;
@@ -36,14 +29,9 @@ interface UseManageUsersReturn {
   totalPages: number;
   hasPreviousPage: boolean;
   hasNextPage: boolean;
-  filteredUsers: AdminUser[];
-
-  // Setters
   setSearch: (value: string) => void;
   setRoleFilter: (value: AdminUserRoleFilter) => void;
   setActionMenu: (userId: AdminUserId | null) => void;
-
-  // Actions
   retry: () => Promise<void>;
   goToPreviousPage: () => void;
   goToNextPage: () => void;
@@ -198,8 +186,6 @@ export const useManageUsers = (): UseManageUsersReturn => {
     }
   };
 
-  const filteredUsers = useMemo(() => users, [users]);
-
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearch(value);
@@ -283,7 +269,6 @@ export const useManageUsers = (): UseManageUsersReturn => {
     totalPages,
     hasPreviousPage,
     hasNextPage,
-    filteredUsers,
     setSearch: handleSearchChange,
     setRoleFilter: handleRoleFilterChange,
     setActionMenu,

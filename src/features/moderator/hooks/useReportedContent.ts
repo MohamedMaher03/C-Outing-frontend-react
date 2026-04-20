@@ -1,8 +1,3 @@
-/**
- * useReportedContent Hook
- * Manages state and actions for the Reported Content moderator page.
- */
-
 import {
   useCallback,
   useDeferredValue,
@@ -23,7 +18,6 @@ import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
 interface UseReportedContentReturn {
-  // State
   reports: ReportedContent[];
   loading: boolean;
   error: string | null;
@@ -37,13 +31,11 @@ interface UseReportedContentReturn {
   toasts: ModeratorToast[];
   filteredReports: ReportedContent[];
 
-  // Setters
   setSearch: (value: string) => void;
   setStatusFilter: (value: ReportedContentStatusFilter) => void;
   setTypeFilter: (value: ReportedContentTypeFilter) => void;
   setExpandedId: (id: string | null) => void;
 
-  // Actions
   retry: () => Promise<void>;
   handleStatusChange: (
     reportId: string,

@@ -1,9 +1,3 @@
-/**
- * Users Feature — Mock Data
- * Simulates public user profiles and their review activity.
- * Replace with real API calls when the backend is ready.
- */
-
 import type { PublicUserProfile, UserReviewActivity } from "../types";
 
 export const MOCK_PUBLIC_PROFILES: Record<string, PublicUserProfile> = {

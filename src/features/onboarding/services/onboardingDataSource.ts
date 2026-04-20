@@ -21,8 +21,6 @@ const resolveFeatureMockFlag = (featureValue: unknown): boolean => {
 const shouldUseMocks = resolveFeatureMockFlag(
   import.meta.env.VITE_ONBOARDING_USE_MOCKS,
 );
-
-// API remains the explicit default source for production behavior.
 export const onboardingDataSource: OnboardingDataSource = shouldUseMocks
   ? onboardingMock
   : onboardingApi;

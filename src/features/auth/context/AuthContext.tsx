@@ -1,19 +1,6 @@
-/**
- * Authentication Context
- *
- * Defines the auth context shape and exports the raw context object
- * and the useAuth hook. The provider lives in AuthProvider.tsx.
- *
- * ┌──────────────────────────────────────────────────────────┐
- * │  AuthContext  →  authService  →  authApi  →  axios       │
- * └──────────────────────────────────────────────────────────┘
- */
-
 import { createContext, useContext } from "react";
 import type { User } from "@/types";
 import type { RegisterRequest } from "../types";
-
-// ── Context type ────────────────────────────────────────────────
 
 export interface AuthContextType {
   user: User | null;
@@ -31,18 +18,10 @@ export interface AuthContextType {
   updateUser: (user: User) => void;
 }
 
-// ── Context ─────────────────────────────────────────────────────
-
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined,
 );
 
-// ── Hook ───────────────────────────────────────────────────────
-
-/**
- * useAuth — access the auth context anywhere inside AuthProvider.
- * Throws a clear error if used outside the provider tree.
- */
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {

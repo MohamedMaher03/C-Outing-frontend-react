@@ -1,8 +1,3 @@
-/**
- * useAdminDashboard Hook
- * Manages state for the Admin Dashboard page.
- */
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type { AdminStats, RecentActivity } from "@/features/admin/types";

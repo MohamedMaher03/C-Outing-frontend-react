@@ -1,14 +1,3 @@
-/**
- * useLogout Hook
- *
- * Handles the complete logout flow:
- *   1. Calls AuthContext.logout (which delegates to authService, clears storage)
- *   2. Navigates to /login on success
- *   3. Surfaces loading and error state to the UI
- *
- * Flow: Component \u2192 useLogout \u2192 AuthContext.logout \u2192 authService \u2192 authApi \u2192 axios
- */
-
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -32,7 +21,7 @@ export const useLogout = (): UseLogoutReturn => {
     try {
       await import("@/features/auth/pages/LoginPage");
     } catch {
-      // Navigation should continue even if preloading fails.
+      return;
     }
   };
 

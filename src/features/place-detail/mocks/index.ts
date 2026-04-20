@@ -1,14 +1,5 @@
-/**
- * Place Detail Feature — Mock Data
- * All mock reviews, social reviews, and review summaries.
- * Will be replaced by real API responses.
- */
-
 import type { Review, SocialMediaReview, ReviewSummary } from "../types";
 
-// ============ User Reviews ============
-
-//string is the placeId, value is the array of reviews for that place
 export const MOCK_REVIEWS: Record<string, Review[]> = {
   "1": [
     {
@@ -99,8 +90,6 @@ export const MOCK_REVIEWS: Record<string, Review[]> = {
   ],
 };
 
-// ============ Social Media Reviews ============
-
 export const MOCK_SOCIAL_REVIEWS: Record<string, SocialMediaReview[]> = {
   "1": [
     {
@@ -188,8 +177,6 @@ export const MOCK_SOCIAL_REVIEWS: Record<string, SocialMediaReview[]> = {
   ],
 };
 
-// ============ Review Summaries ============
-
 export const MOCK_REVIEW_SUMMARIES: Record<string, ReviewSummary> = {
   "1": {
     overallSentiment: "positive",
@@ -232,8 +219,6 @@ export const MOCK_REVIEW_SUMMARIES: Record<string, ReviewSummary> = {
     ],
   },
 };
-
-// ============ Defaults for places without specific data ============
 
 export const DEFAULT_REVIEWS: Review[] = [
   {

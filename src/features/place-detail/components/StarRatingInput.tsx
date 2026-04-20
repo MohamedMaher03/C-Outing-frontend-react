@@ -9,7 +9,6 @@ interface StarRatingInputProps {
   disabled?: boolean;
 }
 
-/** Interactive star rating input for the review form */
 export const StarRatingInput = ({
   rating,
   onRate,

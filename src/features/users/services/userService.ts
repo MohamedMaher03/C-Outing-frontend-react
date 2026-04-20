@@ -163,10 +163,6 @@ const fetchPublicProfileBundle = async (
   throw new ApiError("Failed to load public profile");
 };
 
-/**
- * Fetches public profile data + recent reviews with backend-aware fallbacks.
- * Keeps profile rendering resilient even when review activity endpoint fails.
- */
 export const getPublicProfileBundle = async (
   userId: string,
   currentUserId?: string,

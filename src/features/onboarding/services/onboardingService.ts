@@ -1,17 +1,3 @@
-/**
- * Onboarding Service — Business Logic Layer
- *
- * Sits between hooks/components and the datasource layer.
- * Responsibilities:
- *   • Call onboardingDataSource functions
- *   • Transform DTOs to UI models if needed
- *   • Validate and normalize payloads
- *
- * ┌────────────────────────────────────────────────────────────────────┐
- * │ useOnboarding → onboardingService → onboardingDataSource → API/mock │
- * └────────────────────────────────────────────────────────────────────┘
- */
-
 import type { OnboardingPreferences } from "@/features/onboarding/types";
 import {
   mapSubmitPreferences,
@@ -20,12 +6,7 @@ import {
 import { onboardingDataSource } from "./onboardingDataSource";
 import { normalizeUserId } from "../utils/onboardingPreferences";
 
-// ── Onboarding Service ───────────────────────────────────────
-
 export const onboardingService = {
-  /**
-   * Submit user onboarding preferences.
-   */
   async submitPreferences(
     userId: string,
     preferences: OnboardingPreferences,
@@ -36,9 +17,6 @@ export const onboardingService = {
     );
   },
 
-  /**
-   * Update user preferences (can be called after initial onboarding).
-   */
   async updatePreferences(
     userId: string,
     preferences: Partial<OnboardingPreferences>,
@@ -55,8 +33,6 @@ export const onboardingService = {
     );
   },
 };
-
-// ── Legacy named exports (keep backward compatibility with hooks) ──
 
 export const submitOnboardingPreferences = onboardingService.submitPreferences;
 export const updateUserPreferences = onboardingService.updatePreferences;

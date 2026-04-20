@@ -1,9 +1,3 @@
-/**
- * Manage Reviews Page (Admin)
- *
- * Full control over reviews: list, filter by status, approve/reject/remove.
- */
-
 import {
   Search,
   MessageSquare,
@@ -80,28 +74,23 @@ const ManageReviewsPage = () => {
     [locale],
   );
 
-  const statusFilterOptions = useMemo(
-    () =>
-      REVIEW_STATUS_FILTER_OPTIONS.map((option) => ({
-        ...option,
-        label:
-          option.value === "all"
-            ? t("admin.filter.all")
-            : t(`admin.status.${option.value}`),
-      })),
-    [t],
-  );
+  const statusFilterOptions = REVIEW_STATUS_FILTER_OPTIONS.map((option) => ({
+    ...option,
+    label:
+      option.value === "all"
+        ? t("admin.filter.all")
+        : t(`admin.status.${option.value}`),
+  }));
 
   const getStatusLabel = (status: keyof typeof reviewStatusConfig): string =>
     t(`admin.status.${status}`);
 
-  const reviewSummary = useMemo(
-    () => ({
-      flagged: reviews.filter((review) => review.status === "flagged").length,
-      pending: reviews.filter((review) => review.status === "pending").length,
-    }),
-    [reviews],
-  );
+  const flaggedReviewsCount = reviews.filter(
+    (review) => review.status === "flagged",
+  ).length;
+  const pendingReviewsCount = reviews.filter(
+    (review) => review.status === "pending",
+  ).length;
 
   if (loading) {
     return (
@@ -115,8 +104,8 @@ const ManageReviewsPage = () => {
         title={t("admin.reviews.header.title")}
         description={t("admin.reviews.header.description", {
           total: formatNumber(reviews.length),
-          flagged: formatNumber(reviewSummary.flagged),
-          pending: formatNumber(reviewSummary.pending),
+          flagged: formatNumber(flaggedReviewsCount),
+          pending: formatNumber(pendingReviewsCount),
         })}
         icon={MessageSquare}
       />
@@ -183,7 +172,6 @@ const ManageReviewsPage = () => {
                 )}
                 style={ADMIN_REVIEW_ROW_STYLE}
               >
-                {/* Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-9 w-9 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -239,13 +227,9 @@ const ManageReviewsPage = () => {
                     </Badge>
                   </div>
                 </div>
-
-                {/* Comment */}
                 <p className="line-clamp-3 break-words pl-0 text-role-secondary leading-relaxed text-muted-foreground sm:line-clamp-2 sm:pl-12">
                   {review.comment}
                 </p>
-
-                {/* Reports badge */}
                 {review.reportCount > 0 && (
                   <div className="pl-0 sm:pl-12">
                     <span className="flex items-center gap-1 text-role-caption font-semibold text-destructive">
@@ -256,8 +240,6 @@ const ManageReviewsPage = () => {
                     </span>
                   </div>
                 )}
-
-                {/* Actions */}
                 <div className="flex items-center gap-2 flex-wrap pl-0 sm:pl-12">
                   {(review.status === "pending" ||
                     review.status === "flagged") && (

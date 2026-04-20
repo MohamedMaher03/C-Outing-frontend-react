@@ -1,20 +1,3 @@
-/**
- * Home Service — Business Logic Layer
- *
- * Sits between hooks/components and the HTTP layer (homeApi).
- * Responsibilities:
- *   • Call homeApi functions
- *   • Transform DTOs to UI models if needed
- *   • Centralise error handling
- *
- * ┌────────────────────────────────────────────────────────────┐
- * │  useHome  →  homeService  →  homeApi  →  axios            │
- * └────────────────────────────────────────────────────────────┘
- *
- * Mock control:
- *   VITE_HOME_USE_MOCKS=true|false
- * Falls back to VITE_USE_MOCKS when VITE_HOME_USE_MOCKS is not set.
- */
 import { homeApi } from "../api/homeApi";
 import { homeMock } from "../mocks/homeMock";
 import type {
@@ -47,124 +30,106 @@ const shouldUseHomeMocks = resolveFeatureMockFlag(
 );
 const homeDataSource = shouldUseHomeMocks ? homeMock : homeApi;
 
-// ── Home Service ─────────────────────────────────────────────
+const withServiceError = async <T>(
+  operation: () => Promise<T>,
+  fallbackMessage: string,
+): Promise<T> => {
+  try {
+    return await operation();
+  } catch {
+    throw new Error(fallbackMessage);
+  }
+};
 
 export const homeService = {
-  /**
-   * Fetch home page data for a specific user.
-   *
-   * @param userId - Required. curatedPlaces are personalized recommendations
-   *                 computed from the user's preference vector by the backend.
-   *                 trending is global, and the call is batched
-   *                 together for a single loading state.
-   */
   async fetchHomePageData(
     params?: HomeRecommendationsQuery,
   ): Promise<HomePageData> {
-    try {
-      return await homeDataSource.fetchHomePageData(params);
-    } catch {
-      throw new Error("Failed to fetch home page data");
-    }
+    return withServiceError(
+      () => homeDataSource.fetchHomePageData(params),
+      "Failed to fetch home page data",
+    );
   },
 
   async fetchPersonalizedRecommendations(
     params?: HomeRecommendationsQuery,
   ): Promise<HomePlace[]> {
-    try {
-      return await homeDataSource.fetchPersonalizedRecommendations(params);
-    } catch {
-      throw new Error("Failed to fetch personalized recommendations");
-    }
+    return withServiceError(
+      () => homeDataSource.fetchPersonalizedRecommendations(params),
+      "Failed to fetch personalized recommendations",
+    );
   },
 
   async fetchTrendingRecommendations(
     params?: HomeRecommendationsQuery,
   ): Promise<HomePlace[]> {
-    try {
-      return await homeDataSource.fetchTrendingRecommendations(params);
-    } catch {
-      throw new Error("Failed to fetch trending recommendations");
-    }
+    return withServiceError(
+      () => homeDataSource.fetchTrendingRecommendations(params),
+      "Failed to fetch trending recommendations",
+    );
   },
 
   async fetchSimilarRecommendations(
     params: SimilarRecommendationsParams,
   ): Promise<HomePlace[]> {
-    try {
-      return await homeDataSource.fetchSimilarRecommendations(params);
-    } catch {
-      throw new Error("Failed to fetch similar recommendations");
-    }
+    return withServiceError(
+      () => homeDataSource.fetchSimilarRecommendations(params),
+      "Failed to fetch similar recommendations",
+    );
   },
 
-  /**
-   * Toggle save/bookmark status for a place.
-   */
   async togglePlaceSave(placeId: string, isSaved: boolean): Promise<void> {
-    try {
-      await homeDataSource.togglePlaceSave(placeId, isSaved);
-    } catch {
-      throw new Error("Failed to toggle place save");
-    }
+    return withServiceError(
+      () => homeDataSource.togglePlaceSave(placeId, isSaved),
+      "Failed to toggle place save",
+    );
   },
 
-  /**
-   * Fetch places that match a given mood.
-   * @param moodId - One of: "chill" | "adventure" | "romantic" | "social" | "explore" | "foodie"
-   * Expected response: HomePlace[] sorted by relevance/rating (backend-ranked).
-   */
   async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
-    try {
-      return await homeDataSource.fetchPlacesByMood(moodId);
-    } catch {
-      throw new Error("Failed to fetch mood-based places");
-    }
+    return withServiceError(
+      () => homeDataSource.fetchPlacesByMood(moodId),
+      "Failed to fetch mood-based places",
+    );
   },
 
   async fetchVenuesByDistrict(
     params: VenueByDistrictParams,
   ): Promise<HomePlace[]> {
-    try {
-      return await homeDataSource.fetchVenuesByDistrict(params);
-    } catch {
-      throw new Error("Failed to fetch venues by district");
-    }
+    return withServiceError(
+      () => homeDataSource.fetchVenuesByDistrict(params),
+      "Failed to fetch venues by district",
+    );
   },
 
   async fetchVenuesByType(params: VenueByTypeParams): Promise<HomePlace[]> {
-    try {
-      return await homeDataSource.fetchVenuesByType(params);
-    } catch {
-      throw new Error("Failed to fetch venues by type");
-    }
+    return withServiceError(
+      () => homeDataSource.fetchVenuesByType(params),
+      "Failed to fetch venues by type",
+    );
   },
 
   async fetchVenuesByPriceRange(
     params: VenueByPriceRangeParams,
   ): Promise<HomePlace[]> {
-    try {
-      return await homeDataSource.fetchVenuesByPriceRange(params);
-    } catch {
-      throw new Error("Failed to fetch venues by price range");
-    }
+    return withServiceError(
+      () => homeDataSource.fetchVenuesByPriceRange(params),
+      "Failed to fetch venues by price range",
+    );
   },
 
   async fetchVenueTopRated(): Promise<HomePlace[]> {
-    try {
-      return await homeDataSource.fetchVenueTopRated();
-    } catch {
-      throw new Error("Failed to fetch top-rated venues");
-    }
+    return withServiceError(
+      () => homeDataSource.fetchVenueTopRated(),
+      "Failed to fetch top-rated venues",
+    );
   },
 
   async fetchVenueTopRatedInArea(
     params: VenueTopRatedInAreaParams,
   ): Promise<HomePlace[]> {
-    try {
-      return await homeDataSource.fetchVenueTopRatedInArea(params);
-    } catch {
-      throw new Error("Failed to fetch top-rated venues in area");
-    }
+    return withServiceError(
+      () => homeDataSource.fetchVenueTopRatedInArea(params),
+      "Failed to fetch top-rated venues in area",
+    );
   },
 };

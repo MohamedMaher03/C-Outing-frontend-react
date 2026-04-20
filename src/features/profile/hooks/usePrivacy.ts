@@ -1,11 +1,3 @@
-/**
- * usePrivacy Hook
- *
- * Manages state and async actions for the Privacy & Data page.
- * All data flows through profileService → (mock | API) according to
- * which path is active in the service layer.
- */
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -18,23 +10,14 @@ import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
 interface UsePrivacyReturn {
-  /** Current privacy toggle values */
   privacySettings: PrivacySettings;
-  /** True while the initial data is being fetched */
   loading: boolean;
-  /** True while a save request is in-flight */
   saving: boolean;
-  /** True while an account deletion request is in-flight */
   deleting: boolean;
-  /** Error message, if any */
   error: string | null;
-  /** Toggle a single privacy flag */
   toggleSetting: (key: keyof PrivacySettings) => void;
-  /** Persist current settings and navigate back */
   handleSave: () => Promise<void>;
-  /** Permanently delete the account */
   handleDeleteAccount: () => Promise<void>;
-  /** Re-fetch privacy settings after an error */
   reloadSettings: () => Promise<void>;
 }
 
@@ -82,13 +65,12 @@ export const usePrivacy = (): UsePrivacyReturn => {
     }
   }, [t]);
 
-  // Load current settings on mount
   useEffect(() => {
     void reloadSettings();
   }, [reloadSettings]);
 
   const toggleSetting = (key: keyof PrivacySettings) => {
-    setError((prev) => (prev ? null : prev));
+    setError(null);
     setPrivacySettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
@@ -123,7 +105,6 @@ export const usePrivacy = (): UsePrivacyReturn => {
       setDeleting(true);
       setError(null);
       await deleteUserAccount();
-      // After deletion, clear local auth data and redirect
       localStorage.removeItem("authToken");
       localStorage.removeItem("authUser");
       navigate("/login");

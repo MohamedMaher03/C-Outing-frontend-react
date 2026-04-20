@@ -1,20 +1,9 @@
-/**
- * Notifications Mock Implementation
- *
- * Drop-in replacement for notificationsApi through notificationsDataSource.
- * Enable with VITE_NOTIFICATIONS_USE_MOCKS=true.
- *
- * Simulates realistic network latency and in-memory notifications storage.
- */
-
 import type {
   Notification,
   NotificationsQueryParams,
   NotificationsResponse,
   NotificationActionResponse,
 } from "../types";
-
-// ── Seed data ───────────────────────────────────────────────
 
 const now = new Date();
 
@@ -34,7 +23,6 @@ const earlierMinus = (days: number) => {
 };
 
 export const MOCK_NOTIFICATIONS: Notification[] = [
-  // ── Today ───────────────────────────────────────────────
   {
     id: "n1",
     type: "recommendation",
@@ -64,7 +52,6 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     createdAt: todayMinus(180),
     actionUrl: "/venue/cairo-jazz-club",
   },
-  // ── Yesterday ────────────────────────────────────────────
   {
     id: "n4",
     type: "favorite_update",
@@ -95,7 +82,6 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     createdAt: yesterdayMinus(9),
     actionUrl: "/venue/kazoku-sushi",
   },
-  // ── Earlier ───────────────────────────────────────────────
   {
     id: "n7",
     type: "system",
@@ -128,11 +114,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   },
 ];
 
-// ── In-memory mock store ─────────────────────────────────────
-
 let mockNotifications: Notification[] = [...MOCK_NOTIFICATIONS];
-
-// ── Helper ───────────────────────────────────────────────────
 
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -145,13 +127,7 @@ const clampInt = (value: unknown, min: number, max: number): number => {
   return Math.min(max, Math.max(min, Math.floor(value)));
 };
 
-// ── Mock Notifications API ───────────────────────────────────
-// Interface intentionally mirrors notificationsApi so they are interchangeable.
-
 export const notificationsMock = {
-  /**
-   * Mock GET /users/:userId/notifications
-   */
   async getNotifications(
     params?: NotificationsQueryParams,
   ): Promise<NotificationsResponse> {
@@ -177,25 +153,16 @@ export const notificationsMock = {
     };
   },
 
-  /**
-   * Mock GET /api/v1/Notification/unread
-   */
   async getUnreadNotifications(): Promise<Notification[]> {
     await delay(250);
     return mockNotifications.filter((n) => !n.isRead);
   },
 
-  /**
-   * Mock GET /api/v1/Notification/unread-count
-   */
   async getUnreadCount(): Promise<number> {
     await delay(150);
     return mockNotifications.filter((n) => !n.isRead).length;
   },
 
-  /**
-   * Mock PATCH /notifications/:notificationId/read
-   */
   async markAsRead(
     notificationId: string,
   ): Promise<NotificationActionResponse> {
@@ -206,18 +173,12 @@ export const notificationsMock = {
     return "Notification marked as read";
   },
 
-  /**
-   * Mock PATCH /users/:userId/notifications/read-all
-   */
   async markAllAsRead(): Promise<NotificationActionResponse> {
     await delay(300);
     mockNotifications = mockNotifications.map((n) => ({ ...n, isRead: true }));
     return "All notifications marked as read";
   },
 
-  /**
-   * Mock DELETE /notifications/:notificationId
-   */
   async deleteNotification(
     notificationId: string,
   ): Promise<NotificationActionResponse> {

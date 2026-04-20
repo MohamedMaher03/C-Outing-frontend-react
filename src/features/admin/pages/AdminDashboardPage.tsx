@@ -1,9 +1,3 @@
-/**
- * Admin Dashboard Page
- *
- * Overview of system-wide stats, recent activity, and quick actions.
- */
-
 import {
   Users,
   MapPin,

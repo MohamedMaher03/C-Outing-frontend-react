@@ -5,10 +5,6 @@ const EMAIL_NOT_VERIFIED_MESSAGE_PATTERN =
   /(email.*not\s*verif|verify\s*your\s*email|unverified\s*email|confirm\s*your\s*email|account\s*not\s*verified)/i;
 const TIMEOUT_MESSAGE_PATTERN = /(timeout|timed\s*out|exceeded)/i;
 
-/**
- * Converts any auth-domain error into a user-facing string.
- * Prefers backend messages when present, otherwise falls back to mapped copy.
- */
 export function getAuthErrorMessage(error: unknown): string {
   if (error instanceof AuthError) {
     if (

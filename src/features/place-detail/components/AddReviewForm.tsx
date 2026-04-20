@@ -37,7 +37,6 @@ interface AddReviewFormProps {
   errorMessage?: string | null;
 }
 
-/** Review form for submitting user reviews */
 export const AddReviewForm = ({
   onSubmit,
   submitting,

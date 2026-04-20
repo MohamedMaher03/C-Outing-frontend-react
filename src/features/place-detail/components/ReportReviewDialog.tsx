@@ -1,10 +1,3 @@
-/**
- * ReportReviewDialog
- *
- * Modal dialog for reporting a user review. Ensures one-report-per-review
- * per user and collects a required reason + optional description.
- */
-
 import { useEffect, useId, useRef, useState } from "react";
 import { Flag, CheckCircle2 } from "lucide-react";
 import {
@@ -110,7 +103,6 @@ export function ReportReviewDialog({
     }
   };
 
-  // Already reported — show static disabled icon
   if (alreadyReported) {
     return (
       <Button
@@ -169,7 +161,6 @@ export function ReportReviewDialog({
           </div>
         ) : (
           <div className="space-y-4 py-2">
-            {/* Reason selection */}
             <div
               className="space-y-2"
               role="radiogroup"
@@ -200,7 +191,6 @@ export function ReportReviewDialog({
               </div>
             </div>
 
-            {/* Optional description */}
             <div className="space-y-2">
               <Label htmlFor={descriptionFieldId} className="pd-type-label">
                 {t("placeDetail.report.additionalDetails")}{" "}

@@ -1,12 +1,6 @@
-/**
- * Auth Feature — Form Field Constants
- * Static configuration for login and sign-up forms.
- */
-
 import { User, Mail, Phone, Calendar } from "lucide-react";
 import type { LoginField, SignUpFieldConfig } from "../types";
 
-/** Field definitions for the login form */
 export const LOGIN_FORM_FIELDS: LoginField[] = [
   {
     id: "email",
@@ -16,7 +10,6 @@ export const LOGIN_FORM_FIELDS: LoginField[] = [
   },
 ];
 
-/** Field definitions for the sign-up form (Icon is a component reference) */
 export const SIGN_UP_FORM_FIELDS: SignUpFieldConfig[] = [
   {
     id: "fullName",

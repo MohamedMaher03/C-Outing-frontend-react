@@ -1,8 +1,3 @@
-/**
- * useHome Hook
- * Manages all state and logic for the HomePage.
- */
-
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   CATEGORIES,
@@ -24,7 +19,6 @@ import { useUserLocation } from "@/features/home/hooks/useUserLocation";
 import { calculateDistanceKm } from "@/features/home/utils/distance";
 
 interface UseHomeReturn {
-  // State
   search: string;
   selectedFilters: FilterType[];
   selectedMood: string | null;
@@ -36,8 +30,6 @@ interface UseHomeReturn {
   isSimilarLoading: boolean;
   similarError: string | null;
   saveError: string | null;
-
-  // Endpoint-driven discovery state
   selectedDistrict: string | null;
   selectedVenueType: string | null;
   selectedPriceRange: VenuePriceRange | null;
@@ -51,22 +43,16 @@ interface UseHomeReturn {
   isGlobalTopRatedLoading: boolean;
   isTopRatedInAreaLoading: boolean;
   topRatedInAreaError: string | null;
-
-  // Computed / filtered data
   curatedPlaces: HomePlace[];
   trendingPlaces: HomePlace[];
   moodPlaces: HomePlace[];
   isMoodLoading: boolean;
   moodError: string | null;
   userLocation: UserLocationState;
-
-  // Static data
   categories: typeof CATEGORIES;
   moodOptions: typeof MOOD_OPTIONS;
   trendingTags: typeof TRENDING_TAGS;
   popularDistricts: typeof POPULAR_DISTRICTS;
-
-  // Actions
   setSearch: (search: string) => void;
   toggleFilter: (filter: FilterType) => void;
   setSelectedMood: (mood: string | null) => void;

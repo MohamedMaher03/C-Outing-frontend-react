@@ -1,11 +1,3 @@
-/**
- * useEditProfile Hook
- *
- * Manages state and async actions for the Edit Profile page.
- * All data flows through profileService → (mock | API) according to
- * which path is active in the service layer.
- */
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,36 +8,24 @@ import type { EditProfileData } from "@/features/profile/types";
 import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
-/** Max file size: 5 MB */
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_BIO_LENGTH = 500;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const PHONE_REGEX = /^\+[0-9]{1,3}[0-9\s\-()]{8,}$/;
 
 interface UseEditProfileReturn {
-  /** Current form values */
   formData: EditProfileData;
-  /** Local preview URL for the selected avatar (before upload) */
   avatarPreview: string | null;
-  /** True while the initial data is being fetched */
   loading: boolean;
-  /** True while a save request is in-flight */
   saving: boolean;
-  /** Error message, if any */
   error: string | null;
-  /** Ref for the hidden file input */
   fileInputRef: React.RefObject<HTMLInputElement | null>;
-  /** Opens the native file picker */
   triggerFilePicker: () => void;
-  /** Handles file selection from the hidden input */
   handleAvatarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  /** Update a single field in the form */
   handleChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
-  /** Submit the form — saves to service then navigates back */
   handleSubmit: (e: React.FormEvent) => Promise<void>;
-  /** Re-fetch profile settings after a load failure */
   reloadProfile: () => Promise<void>;
 }
 
@@ -108,12 +88,10 @@ export const useEditProfile = (): UseEditProfileReturn => {
     }
   }, [t]);
 
-  // Load current profile data on mount
   useEffect(() => {
     void reloadProfile();
   }, [reloadProfile]);
 
-  // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
       if (avatarPreview && avatarPreview.startsWith("blob:")) {
@@ -130,13 +108,11 @@ export const useEditProfile = (): UseEditProfileReturn => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       setError(t("profile.edit.error.fileType"));
       return;
     }
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       setError(t("profile.edit.error.fileSize"));
       return;
@@ -144,17 +120,14 @@ export const useEditProfile = (): UseEditProfileReturn => {
 
     setError(null);
 
-    // Create instant local preview
     const previewUrl = URL.createObjectURL(file);
     setAvatarPreview((previous) => {
       revokeIfBlobUrl(previous);
       return previewUrl;
     });
 
-    // Store the file so it gets uploaded on form submit
     pendingAvatarFile.current = file;
 
-    // Reset the input so selecting the same file again still triggers onChange
     e.target.value = "";
   };
 

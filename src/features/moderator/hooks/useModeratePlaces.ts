@@ -1,10 +1,3 @@
-/**
- * useModeratePlaces Hook
- * Manages state and actions for the Moderate Places moderator page.
- *
- * Data access is delegated to moderatorService to keep hook concerns focused on UI state.
- */
-
 import {
   useCallback,
   useDeferredValue,
@@ -35,7 +28,6 @@ const EMPTY_FORM: ModeratePlaceFormData = {
 };
 
 interface UseModeratePlacesReturn {
-  // Data state
   places: AdminPlace[];
   loading: boolean;
   error: string | null;
@@ -43,21 +35,17 @@ interface UseModeratePlacesReturn {
   pendingPlaceIds: string[];
   pendingPlaceIdSet: ReadonlySet<string>;
 
-  // Filter state
   search: string;
   statusFilter: ModeratorPlaceStatusFilter;
   filteredPlaces: AdminPlace[];
 
-  // Form state
   showAddForm: boolean;
   form: ModeratePlaceFormData;
   formErrors: ModeratePlaceFormErrors;
   submittingForm: boolean;
 
-  // Toast state
   toasts: ModeratePlaceToast[];
 
-  // Setters
   setSearch: (value: string) => void;
   setStatusFilter: (value: ModeratorPlaceStatusFilter) => void;
   setShowAddForm: (value: boolean | ((prev: boolean) => boolean)) => void;
@@ -67,7 +55,6 @@ interface UseModeratePlacesReturn {
       | ((prev: ModeratePlaceFormData) => ModeratePlaceFormData),
   ) => void;
 
-  // Actions
   retry: () => Promise<void>;
   handleApprove: (placeId: string) => Promise<void>;
   handleFlag: (placeId: string) => Promise<void>;

@@ -1,10 +1,3 @@
-/**
- * Admin Feature — Mock Data
- *
- * Provides realistic mock data for all admin dashboard views.
- * Used during development without a running backend.
- */
-
 import type {
   AdminStats,
   AdminUser,
@@ -21,12 +14,8 @@ import type {
   CreateAdminPlaceInput,
 } from "../types";
 
-// ── Helper ───────────────────────────────────────────────────
-
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
-
-// ── Mock Data ────────────────────────────────────────────────
 
 export const MOCK_ADMIN_STATS: AdminStats = {
   totalUsers: 1247,
@@ -406,8 +395,6 @@ export const MOCK_RECENT_ACTIVITY: RecentActivity[] = [
     timestamp: new Date("2026-02-27T16:00:00"),
   },
 ];
-
-// ── Mock Admin API ───────────────────────────────────────────
 
 export const adminMock = {
   async getStats(): Promise<AdminStats> {

@@ -37,8 +37,7 @@ import type { ApiResponse } from "@/types";
 // ── Instance ─────────────────────────────────────────────────
 
 const axiosInstance: AxiosInstance = axios.create({
-  // baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
-  baseURL: "https://dark-olva-tccd-a34be896.koyeb.app",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
   timeout: 30_000,
   headers: {
     "Content-Type": "application/json",

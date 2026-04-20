@@ -1,9 +1,3 @@
-/**
- * Manage Categories Page (Admin)
- *
- * CRUD operations on venue categories. Includes icon picker using Lucide icons.
- */
-
 import {
   Layers,
   Edit2,
@@ -31,8 +25,6 @@ import {
 import { CURATED_CATEGORY_ICONS } from "@/features/admin/constants/categoryIcons";
 import { useI18n } from "@/components/i18n";
 
-// ── Icon Picker Data ───────────────────────────────────────────
-
 const ICON_MAP: Record<
   string,
   React.ComponentType<{ className?: string }>
@@ -50,8 +42,6 @@ const CategoryIcon = ({
   const IconComp = ICON_MAP[name] ?? MapPin;
   return <IconComp className={className} />;
 };
-
-// ── Component ─────────────────────────────────────────────────
 
 const ManageCategoriesPage = () => {
   const { t, formatNumber } = useI18n();
@@ -98,7 +88,6 @@ const ManageCategoriesPage = () => {
 
   return (
     <AdminPageLayout maxWidth="4xl">
-      {/* Header */}
       <AdminPageHeader
         title={t("admin.categories.header.title")}
         description={t("admin.categories.header.description", {
@@ -126,8 +115,6 @@ const ManageCategoriesPage = () => {
           void retry();
         }}
       />
-
-      {/* Add Category Form */}
       {showAdd && (
         <AdminSection
           title={t("admin.categories.create.title")}
@@ -216,7 +203,6 @@ const ManageCategoriesPage = () => {
                   : "border-border hover:border-secondary/30 hover:shadow-sm",
               )}
             >
-              {/* Color dot + icon */}
               <div
                 className={cn(
                   "h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0",
@@ -225,8 +211,6 @@ const ManageCategoriesPage = () => {
               >
                 <CategoryIcon name={cat.icon ?? "MapPin"} className="h-5 w-5" />
               </div>
-
-              {/* Label */}
               <div className="flex-1 min-w-0">
                 {editingId === cat.id ? (
                   <div className="space-y-2">
@@ -306,8 +290,6 @@ const ManageCategoriesPage = () => {
                   </div>
                 )}
               </div>
-
-              {/* Status + Actions */}
               <div className="flex items-center justify-end gap-3 flex-shrink-0 w-full sm:w-auto">
                 <Badge
                   variant="outline"

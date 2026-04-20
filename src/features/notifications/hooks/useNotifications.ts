@@ -1,10 +1,3 @@
-/**
- * useNotifications Hook
- *
- * Manages the notification feed, filter state, and async actions.
- * All data flows through notificationsService → (mock | API).
- */
-
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { notificationsService } from "@/features/notifications/services/notificationsService";
 import { useNotificationsCount } from "@/features/notifications/hooks/useNotificationsCount";
@@ -24,35 +17,20 @@ interface UseNotificationsOptions {
 }
 
 interface UseNotificationsReturn {
-  /** Full notification list (un-filtered) */
   notifications: Notification[];
-  /** Notification list after applying the active filter tab */
   filteredNotifications: Notification[];
-  /** Total number of unread notifications */
   unreadCount: number;
-  /** True while the initial data is being fetched */
   loading: boolean;
-  /** Error message, if any */
   error: string | null;
-  /** Error from optimistic actions (mark/delete) */
   actionError: string | null;
-  /** Active filter tab */
   filterTab: NotificationFilterTab;
-  /** True while mark-all is in flight */
   markAllPending: boolean;
-  /** True for IDs currently being updated */
   itemPendingMap: Record<string, boolean>;
-  /** Switch between "all" and "unread" */
   setFilterTab: (tab: NotificationFilterTab) => void;
-  /** Mark a single notification as read (optimistic) */
   markAsRead: (id: string) => Promise<void>;
-  /** Mark all notifications as read (optimistic) */
   markAllRead: () => Promise<void>;
-  /** Delete a notification (optimistic) */
   removeNotification: (id: string) => Promise<void>;
-  /** Clear action error text */
   clearActionError: () => void;
-  /** Re-fetch the notification feed */
   refresh: (options?: RefreshNotificationsOptions) => Promise<void>;
 }
 
@@ -108,8 +86,6 @@ export const useNotifications = (
   const hasFetchedOnceRef = useRef(false);
   const itemActionsInFlightRef = useRef(new Set<string>());
   const markAllInFlightRef = useRef(false);
-
-  // Shared unread count context keeps both page and bell badges in sync.
   const { unreadCount, setUnreadCount: setGlobalUnreadCount } =
     useNotificationsCount();
 

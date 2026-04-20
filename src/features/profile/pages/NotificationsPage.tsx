@@ -112,7 +112,6 @@ const NotificationsPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
           <Button
@@ -157,7 +156,6 @@ const NotificationsPage = () => {
         <div className="grid gap-[clamp(1rem,2vw,1.75rem)] xl:grid-cols-2">
           {NOTIFICATION_GROUPS.map((group) => (
             <section key={group.id} className="space-y-3">
-              {/* Section Header */}
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
                   <group.icon className="h-5 w-5 text-secondary dark:text-primary" />
@@ -172,7 +170,6 @@ const NotificationsPage = () => {
                 </div>
               </div>
 
-              {/* Notification Items */}
               <Card className="overflow-hidden rounded-2xl border-border/80 bg-card/60">
                 <CardContent className="divide-y divide-border/70 p-0">
                   {group.items.map((item) => {
@@ -221,7 +218,6 @@ const NotificationsPage = () => {
           ))}
         </div>
 
-        {/* Info Card */}
         <Card className="rounded-xl border-secondary/20 bg-secondary/5">
           <CardContent className="p-4">
             <p className="text-role-secondary text-foreground">
@@ -233,7 +229,6 @@ const NotificationsPage = () => {
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
         <div className="hidden gap-3 pt-2 sm:flex">
           <Button
             type="button"

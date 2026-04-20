@@ -49,7 +49,6 @@ const LoginForm = () => {
   const onSubmit = async (data: LoginFormData) => {
     setVerificationHint(null);
     await loginUser(data);
-    // Navigation is handled by PublicRoute based on user.hasCompletedOnboarding
   };
 
   const handleOpenVerification = () => {
@@ -82,7 +81,6 @@ const LoginForm = () => {
           </p>
         </div>
 
-        {/* API Error Banner */}
         {error && <AuthStatusBanner message={error} onDismiss={clearError} />}
 
         {pendingVerificationEmail && (
@@ -142,14 +140,12 @@ const LoginForm = () => {
           </div>
         )}
 
-        {/* Form */}
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-4"
           noValidate
           aria-busy={isLoading}
         >
-          {/* Render form fields using map */}
           {LOGIN_FORM_FIELDS.map((field: LoginField) => (
             <FormField
               key={field.id}
@@ -169,7 +165,6 @@ const LoginForm = () => {
             />
           ))}
 
-          {/* Password Field */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">{t("auth.password")}</Label>
@@ -208,7 +203,6 @@ const LoginForm = () => {
           </Button>
         </form>
 
-        {/* Sign up link */}
         <p className="text-center text-sm text-muted-foreground">
           {t("auth.noAccount")}{" "}
           <button
@@ -221,7 +215,6 @@ const LoginForm = () => {
         </p>
       </AuthSurface>
 
-      {/* Footer */}
       <p className="mt-4 pb-2 text-center text-sm text-cream/75 sm:mt-6 sm:pb-0">
         {t("auth.footer")}
       </p>

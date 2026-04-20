@@ -21,8 +21,6 @@ const resolveFeatureMockFlag = (featureValue: unknown): boolean => {
 const shouldUseMocks = resolveFeatureMockFlag(
   import.meta.env.VITE_PLACE_DETAIL_USE_MOCKS,
 );
-
-// API is the default source to keep production behavior explicit.
 export const placeDetailDataSource: PlaceDetailDataSource = shouldUseMocks
   ? placeDetailMock
   : placeDetailApi;

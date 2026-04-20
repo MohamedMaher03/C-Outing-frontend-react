@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { homeService } from "@/features/home/services/homeService";
 import { useUserLocation } from "@/features/home/hooks/useUserLocation";
 import type {
@@ -33,12 +33,8 @@ export const useHomeSeeAll = ({
   const [reloadKey, setReloadKey] = useState(0);
   const userLocation = useUserLocation();
 
-  const safeCollection = useMemo<HomeRecommendationCollection | null>(() => {
-    if (collection === "curated" || collection === "trending") {
-      return collection;
-    }
-    return null;
-  }, [collection]);
+  const safeCollection: HomeRecommendationCollection | null =
+    collection === "curated" || collection === "trending" ? collection : null;
 
   useEffect(() => {
     if (!safeCollection) return;

@@ -42,7 +42,6 @@ export default function ForgotPasswordPage() {
   return (
     <AuthShell>
       <AuthSurface>
-        {/* Back to Login */}
         <button
           type="button"
           onClick={() => navigate("/login")}
@@ -52,7 +51,6 @@ export default function ForgotPasswordPage() {
           {t("auth.backToLogin")}
         </button>
 
-        {/* Header */}
         <div className="text-center space-y-3">
           <div className="flex justify-center">
             <div className="rounded-full bg-accent/15 p-3.5">
@@ -67,10 +65,8 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        {/* Error Banner */}
         {error && <AuthStatusBanner message={error} onDismiss={clearError} />}
 
-        {/* Form */}
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-5"

@@ -1,18 +1,9 @@
-/**
- * Authentication Provider
- *
- * Manages global auth state (user, token, loading).
- * All side effects (HTTP calls + localStorage) are delegated to authService.
- */
-
 import React, { useState, useEffect, useCallback } from "react";
 import type { User } from "@/types";
 import { authService } from "../services/authService";
 import type { RegisterRequest } from "../types";
 import { AuthContext } from "./AuthContext";
 import type { AuthContextType } from "./AuthContext";
-
-// ── Provider ──────────────────────────────────────────────────
 
 export interface AuthProviderProps {
   children: React.ReactNode;
@@ -28,7 +19,6 @@ export function AuthProvider({
   >(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // On mount: restore stored session (token + user from localStorage).
   useEffect(() => {
     const init = async () => {
       const session = authService.restoreSession();
@@ -44,10 +34,6 @@ export function AuthProvider({
     init();
   }, []);
 
-  /**
-   * Login — delegates to authService (handles HTTP + storage),
-   *          then syncs the returned data into React state.
-   */
   const login = useCallback(
     async (email: string, password: string): Promise<void> => {
       const response = await authService.login({ email, password });
@@ -58,20 +44,11 @@ export function AuthProvider({
     [],
   );
 
-  /**
-   * Register — triggers account creation + OTP email dispatch.
-   * Does NOT set user/token; the user must verify their email first.
-   */
   const register = useCallback(async (data: RegisterRequest): Promise<void> => {
     await authService.register(data);
     setPendingVerificationEmailState(data.email.trim().toLowerCase());
   }, []);
 
-  /**
-   * Verify email — validates the OTP. On success the backend returns a
-   * full auth session; we persist it and set user + token in state so
-   * the user is automatically logged in and redirected to onboarding.
-   */
   const verifyEmail = useCallback(
     async (email: string, otp: string): Promise<void> => {
       const response = await authService.verifyEmail({ email, otp });
@@ -82,9 +59,6 @@ export function AuthProvider({
     [],
   );
 
-  /**
-   * Resend OTP — requests a new verification code for the given email.
-   */
   const resendOtp = useCallback(async (email: string): Promise<void> => {
     await authService.resendOtp({ email });
     setPendingVerificationEmailState(email.trim().toLowerCase());
@@ -101,10 +75,6 @@ export function AuthProvider({
     setPendingVerificationEmailState(null);
   }, []);
 
-  /**
-   * Logout — delegates to authService (clears storage + calls BE),
-   *           then resets React state.
-   */
   const logout = useCallback(async (): Promise<void> => {
     await authService.logout();
     setUser(null);
@@ -112,10 +82,6 @@ export function AuthProvider({
     setPendingVerificationEmailState(null);
   }, []);
 
-  /**
-   * UpdateUser — syncs an updated user object into context + storage
-   *              (e.g. called after a profile edit).
-   */
   const updateUser = useCallback((updatedUser: User): void => {
     setUser(updatedUser);
     authService.updateStoredUser(updatedUser);

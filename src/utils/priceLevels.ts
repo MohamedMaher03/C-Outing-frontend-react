@@ -4,7 +4,7 @@ export const PRICE_LEVEL_VALUES = [
   "mid_range",
   "expensive",
   "luxury",
-] as const;
+] as const; //here i define only aloowed values make it const to prevent modification and to get literal types
 
 export type CanonicalPriceLevel = (typeof PRICE_LEVEL_VALUES)[number];
 
@@ -54,6 +54,13 @@ export const PRICE_LEVEL_OPTIONS: PriceLevelOption[] = PRICE_LEVEL_VALUES.map(
     ...PRICE_LEVEL_META[value],
   }),
 );
+//here i become have shape like this :
+// {
+//   value: "cheap",
+//   label: "Value",
+//   caption: "Great value",
+//   symbol: "$$"
+// }
 
 export const BUDGET_OPTIONS: Array<{
   value: CanonicalPriceLevel;
@@ -62,3 +69,8 @@ export const BUDGET_OPTIONS: Array<{
   value: option.value,
   label: `${option.label} (${option.symbol})`,
 }));
+/*'
+This code can separte 
+in ui use label ->Value ($$) or Luxury ($$$$$)
+but system-> will only get value like cheap or luxury when user select an option
+*/

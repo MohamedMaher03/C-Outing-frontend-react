@@ -1,8 +1,3 @@
-/**
- * useManageReviews Hook
- * Manages state and actions for the Manage Reviews admin page.
- */
-
 import {
   useCallback,
   useDeferredValue,
@@ -21,7 +16,6 @@ import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
 interface UseManageReviewsReturn {
-  // State
   reviews: AdminReview[];
   loading: boolean;
   error: string | null;
@@ -29,12 +23,8 @@ interface UseManageReviewsReturn {
   search: string;
   statusFilter: AdminReviewStatusFilter;
   filteredReviews: AdminReview[];
-
-  // Setters
   setSearch: (value: string) => void;
   setStatusFilter: (value: AdminReviewStatusFilter) => void;
-
-  // Actions
   retry: () => Promise<void>;
   handleStatusChange: (
     reviewId: string,

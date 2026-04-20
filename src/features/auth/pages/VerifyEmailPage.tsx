@@ -25,7 +25,6 @@ const OTP_LENGTH = AUTH_OTP_LENGTH;
 const RESEND_COOLDOWN_SECONDS = 60;
 const SIMPLE_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Masks an email address: john.doe@example.com → j*****e@example.com */
 function maskEmail(email: string): string {
   const [local, domain] = email.split("@");
   if (!domain || local.length <= 2) return email;
@@ -63,7 +62,6 @@ export default function VerifyEmailPage() {
   const [emailEntryError, setEmailEntryError] = useState<string | null>(null);
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [countdown, setCountdown] = useState(RESEND_COOLDOWN_SECONDS);
-  const [canResend, setCanResend] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -76,23 +74,13 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     if (!hasEmailContext) return;
-    setEmailEntry(email);
-    setEmailEntryError(null);
-  }, [email, hasEmailContext]);
 
-  // Countdown timer for resend button
-  useEffect(() => {
-    if (!hasEmailContext) return;
+    if (countdown <= 0) return;
 
-    if (countdown <= 0) {
-      setCanResend(true);
-      return;
-    }
     const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(id);
   }, [countdown, hasEmailContext]);
 
-  // Cleanup pending success banner timeout on unmount.
   useEffect(
     () => () => {
       if (successTimeoutRef.current !== null) {
@@ -103,7 +91,6 @@ export default function VerifyEmailPage() {
   );
 
   const handleDigitChange = (index: number, raw: string) => {
-    // Handle paste of full OTP into any box
     const pasted = raw.replace(/\D/g, "");
     if (pasted.length > 1) {
       const next = [...digits];
@@ -150,6 +137,7 @@ export default function VerifyEmailPage() {
   const otp = digits.join("");
   const isComplete = otp.length === OTP_LENGTH && digits.every((d) => d !== "");
   const maskedEmail = hasEmailContext ? `\u2068${maskEmail(email)}\u2069` : "";
+  const canResend = countdown <= 0;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -170,7 +158,6 @@ export default function VerifyEmailPage() {
     if (success) {
       setPendingVerificationEmail(email);
       setCountdown(RESEND_COOLDOWN_SECONDS);
-      setCanResend(false);
       setDigits(Array(OTP_LENGTH).fill(""));
       setSuccessMessage(t("auth.verify.newCodeSent"));
       inputRefs.current[0]?.focus();
@@ -201,7 +188,6 @@ export default function VerifyEmailPage() {
     setPendingVerificationEmail(normalizedEmail);
     setSuccessMessage(t("auth.verify.recovery.codeSent"));
     setCountdown(RESEND_COOLDOWN_SECONDS);
-    setCanResend(false);
 
     navigate(`/verify-email?email=${encodeURIComponent(normalizedEmail)}`, {
       replace: true,
@@ -301,7 +287,6 @@ export default function VerifyEmailPage() {
   return (
     <AuthShell>
       <AuthSurface>
-        {/* Back to Register */}
         <button
           type="button"
           onClick={() => navigate("/register")}
@@ -311,7 +296,6 @@ export default function VerifyEmailPage() {
           {t("auth.backToRegister")}
         </button>
 
-        {/* Header */}
         <div className="text-center space-y-3">
           <div className="flex justify-center">
             <div className="rounded-full bg-accent/15 p-3.5">
@@ -328,22 +312,18 @@ export default function VerifyEmailPage() {
           </p>
         </div>
 
-        {/* Error Banner */}
         {error && <AuthStatusBanner message={error} onDismiss={clearError} />}
 
-        {/* Success Banner */}
         {successMessage && (
           <AuthStatusBanner message={successMessage} variant="success" />
         )}
 
-        {/* OTP Form */}
         <form
           onSubmit={handleSubmit}
           className="space-y-6"
           noValidate
           aria-busy={isLoading}
         >
-          {/* OTP Input Boxes */}
           <div className="flex justify-center gap-2 sm:gap-3" dir="ltr">
             {digits.map((digit, index) => (
               <input
@@ -378,7 +358,6 @@ export default function VerifyEmailPage() {
             ))}
           </div>
 
-          {/* Submit Button */}
           <Button
             type="submit"
             className="w-full font-medium shadow-sm hover:bg-primary/95"
@@ -395,7 +374,6 @@ export default function VerifyEmailPage() {
           </Button>
         </form>
 
-        {/* Resend Section */}
         <div className="text-center space-y-2">
           <p className="text-sm text-muted-foreground">
             {t("auth.verify.noCode")}

@@ -1,11 +1,4 @@
-/**
- * Manage Places Page (Admin)
- *
- * Full CRUD on places: list, search, filter by status, change status, delete.
- * Add Place flow uses Google Maps URL scraping initiation.
- */
-
-import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import {
   Search,
   MapPin,
@@ -65,10 +58,6 @@ const ADMIN_LIST_ROW_STYLE: CSSProperties = {
   contain: "layout paint style",
 };
 
-// ── Constants ─────────────────────────────────────────────────
-
-// ── Component ─────────────────────────────────────────────────
-
 const ManagePlacesPage = () => {
   const navigate = useNavigate();
   const { t, formatNumber } = useI18n();
@@ -101,17 +90,13 @@ const ManagePlacesPage = () => {
     handleAddPlace,
   } = useManagePlaces();
 
-  const statusFilterOptions = useMemo(
-    () =>
-      PLACE_STATUS_FILTER_OPTIONS.map((option) => ({
-        ...option,
-        label:
-          option.value === "all"
-            ? t("admin.filter.all")
-            : t(`admin.status.${option.value}`),
-      })),
-    [t],
-  );
+  const statusFilterOptions = PLACE_STATUS_FILTER_OPTIONS.map((option) => ({
+    ...option,
+    label:
+      option.value === "all"
+        ? t("admin.filter.all")
+        : t(`admin.status.${option.value}`),
+  }));
 
   const getStatusLabel = (status: string): string =>
     t(`admin.status.${status}`, undefined, status);
@@ -138,12 +123,9 @@ const ManagePlacesPage = () => {
     };
   }, [showAddForm]);
 
-  const placeSummary = useMemo(
-    () => ({
-      flagged: places.filter((place) => place.status === "flagged").length,
-    }),
-    [places],
-  );
+  const flaggedPlacesCount = places.filter(
+    (place) => place.status === "flagged",
+  ).length;
 
   const normalizedVenueUrl = form.venueUrl.trim();
   const hasTypedVenueUrl = normalizedVenueUrl.length > 0;
@@ -157,7 +139,6 @@ const ManagePlacesPage = () => {
 
   return (
     <AdminPageLayout>
-      {/* Toast Notifications */}
       <div
         className="fixed top-4 left-4 right-4 z-50 flex flex-col gap-2 pointer-events-none sm:left-auto sm:right-4"
         role="status"
@@ -183,13 +164,11 @@ const ManagePlacesPage = () => {
           void retry();
         }}
       />
-
-      {/* Header */}
       <AdminPageHeader
         title={t("admin.places.header.title")}
         description={t("admin.places.header.description", {
           total: formatNumber(places.length),
-          flagged: formatNumber(placeSummary.flagged),
+          flagged: formatNumber(flaggedPlacesCount),
         })}
         icon={MapPin}
         actions={
@@ -306,7 +285,6 @@ const ManagePlacesPage = () => {
         </div>
       ) : null}
 
-      {/* Add Place Form */}
       {showAddForm && (
         <AdminSection tone="surface" className="py-0" contentClassName="gap-6">
           <div
@@ -545,7 +523,6 @@ const ManagePlacesPage = () => {
                 className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 transition-all motion-reduce:transition-none hover:border-secondary/30 hover:shadow-sm sm:flex-row sm:items-center"
                 style={ADMIN_LIST_ROW_STYLE}
               >
-                {/* Image */}
                 <img
                   src={place.image}
                   alt={place.name}
@@ -553,8 +530,6 @@ const ManagePlacesPage = () => {
                   loading="lazy"
                   decoding="async"
                 />
-
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-foreground truncate">
@@ -588,8 +563,6 @@ const ManagePlacesPage = () => {
                     </span>
                   </div>
                 </div>
-
-                {/* Actions */}
                 <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-shrink-0 w-full sm:w-auto justify-end">
                   <Button
                     variant="ghost"

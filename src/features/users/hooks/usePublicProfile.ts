@@ -1,10 +1,3 @@
-/**
- * usePublicProfile Hook
- *
- * Fetches public profile data + recent reviews by userId.
- * Hardened for stale requests, partial failures, and retriable reloads.
- */
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getErrorMessage, isApiError } from "@/utils/apiError";
@@ -18,7 +11,6 @@ interface UsePublicProfileReturn {
   isReloading: boolean;
   error: string | null;
   reviewsWarning: string | null;
-  /** True when the viewer is looking at their own profile */
   isOwnProfile: boolean;
   reload: () => Promise<void>;
   clearReviewsWarning: () => void;
@@ -168,9 +160,7 @@ export const usePublicProfile = (userId: string): UsePublicProfileReturn => {
     await reloadPromise;
   }, [loadProfile]);
 
-  const clearReviewsWarning = useCallback(() => {
-    setReviewsWarning(null);
-  }, []);
+  const clearReviewsWarning = () => setReviewsWarning(null);
 
   return {
     profile,

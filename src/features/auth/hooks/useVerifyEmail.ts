@@ -1,14 +1,3 @@
-/**
- * useVerifyEmail Hook
- *
- * Handles the email verification flow:
- *   1. Submits the OTP together with the email to AuthContext.verifyEmail
- *   2. Exposes a resendOtp helper for requesting a new code
- *   3. Surfaces loading, resending, and error state to the UI
- *
- * Flow: VerifyEmailPage → useVerifyEmail → AuthContext.verifyEmail → authService → authApi
- */
-
 import { useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getAuthErrorMessage } from "../errors";

@@ -1,11 +1,3 @@
-/**
- * useNotifications Hook
- *
- * Manages state and async actions for the Notifications settings page.
- * All data flows through profileService → (mock | API) according to
- * which path is active in the service layer.
- */
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -17,23 +9,14 @@ import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
 interface UseNotificationsReturn {
-  /** Current push notification toggles */
   pushNotifications: NotificationSettings["push"];
-  /** Current email notification toggles */
   emailNotifications: NotificationSettings["email"];
-  /** True while the initial data is being fetched */
   loading: boolean;
-  /** True while a save request is in-flight */
   saving: boolean;
-  /** Error message, if any */
   error: string | null;
-  /** Toggle a single push notification flag */
   togglePush: (key: keyof NotificationSettings["push"]) => void;
-  /** Toggle a single email notification flag */
   toggleEmail: (key: keyof NotificationSettings["email"]) => void;
-  /** Persist current settings and navigate back */
   handleSave: () => Promise<void>;
-  /** Re-fetch notification settings after an error */
   reloadSettings: () => Promise<void>;
 }
 
@@ -91,18 +74,17 @@ export const useNotifications = (): UseNotificationsReturn => {
     }
   }, [t]);
 
-  // Load current settings on mount
   useEffect(() => {
     void reloadSettings();
   }, [reloadSettings]);
 
   const togglePush = (key: keyof NotificationSettings["push"]) => {
-    setError((prev) => (prev ? null : prev));
+    setError(null);
     setPushNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const toggleEmail = (key: keyof NotificationSettings["email"]) => {
-    setError((prev) => (prev ? null : prev));
+    setError(null);
     setEmailNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 

@@ -5,7 +5,6 @@ import { useI18n } from "@/components/i18n";
 import type { SocialMediaReview } from "../types";
 import { formatInteger, formatShortDate } from "../utils/formatters";
 
-/** Platform icon for social reviews */
 const PlatformIcon = ({ platform }: { platform: string }) => {
   const iconClass = "h-4 w-4 text-accent";
   switch (platform) {
@@ -28,7 +27,6 @@ const PlatformIcon = ({ platform }: { platform: string }) => {
   }
 };
 
-/** Sentiment badge */
 const SentimentBadge = ({
   sentiment,
 }: {
@@ -48,7 +46,6 @@ const SentimentBadge = ({
   );
 };
 
-/** A single social media review card */
 const SocialReviewCardComponent = ({
   review,
 }: {

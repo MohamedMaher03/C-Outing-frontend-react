@@ -1,7 +1,3 @@
-/**
- * Home Feature — Type Definitions
- */
-
 import type {
   Place as PlaceDetails,
   Category,
@@ -9,11 +5,7 @@ import type {
   TrendingTag,
 } from "@/mocks/mockData";
 import type { CanonicalPriceLevel } from "@/utils/priceLevels";
-
-/** Active filter pill identifiers */
 export type FilterType = "all" | "near-me" | "open-now" | "saved" | "has-wifi";
-
-/** Canonical backend budget bands used by Venue/price-range. */
 export type VenuePriceRange = CanonicalPriceLevel;
 
 export type DiscoverySource =
@@ -46,10 +38,6 @@ export interface UserLocationState {
   requestLocation: () => void;
 }
 
-/**
- * Lightweight venue shape used by the homepage lists/cards.
- * Keep rich venue metadata on the base Place model for detail pages.
- */
 export type HomePlace = Pick<
   PlaceDetails,
   | "id"
@@ -69,7 +57,6 @@ export type HomePlace = Pick<
   | "matchScore"
 >;
 
-/** Shape returned by the home service (backend-computed sections) */
 export interface HomePageData {
   curatedPlaces: HomePlace[];
   trendingPlaces: HomePlace[];
@@ -101,7 +88,6 @@ export interface VenueTopRatedInAreaParams {
   area: string;
 }
 
-/** Props accepted by the PlaceCard component */
 export interface PlaceCardProps {
   place: HomePlace;
   variant?: "horizontal" | "grid";
@@ -112,5 +98,4 @@ export interface PlaceCardProps {
   onClick?: (id: string) => void;
 }
 
-// Re-export shared types used within this feature
 export type { PlaceDetails, Category, MoodOption, TrendingTag };

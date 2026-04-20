@@ -4,7 +4,6 @@ const EARTH_RADIUS_KM = 6371;
 
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
 
-/** Great-circle distance using the Haversine formula. */
 export const calculateDistanceKm = (
   fromLat: number,
   fromLng: number,

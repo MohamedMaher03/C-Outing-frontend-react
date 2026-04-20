@@ -1,9 +1,6 @@
-/**
- * Admin Feature — Type Definitions
- */
-
 import type { PaginatedResponse } from "@/types";
 import type { CanonicalPriceLevel } from "@/utils/priceLevels";
+import type { UserRole } from "@/types";
 
 export interface AdminStats {
   totalUsers: number;
@@ -23,7 +20,7 @@ export type PriceLevel = CanonicalPriceLevel;
 export type AdminFilterValue<T extends string> = "all" | T;
 
 export type AdminUserId = string;
-export type AdminUserRole = "user" | "moderator" | "admin";
+export type AdminUserRole = UserRole;
 export type AdminUserStatus = "active" | "banned" | "suspended";
 export type AdminUserRoleFilter = AdminFilterValue<AdminUserRole>;
 
@@ -58,7 +55,6 @@ export interface AdminPlace {
   status: AdminPlaceStatus;
   createdAt: Date;
   image: string;
-  // Extended fields for the Add/Edit form
   tags?: string[];
   description?: string;
   whyRecommend?: string;
@@ -127,8 +123,6 @@ export type AdminActivityType =
 export interface CreateAdminPlaceInput {
   venueUrl: string;
 }
-
-// ── Shared UI Types ───────────────────────────────────────────
 
 export interface AdminToast {
   id: string;

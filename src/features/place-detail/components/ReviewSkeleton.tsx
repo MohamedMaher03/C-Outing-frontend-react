@@ -1,4 +1,3 @@
-/** Loading skeleton for review cards */
 export const ReviewSkeleton = () => (
   <div className="space-y-4">
     {[1, 2, 3].map((i) => (

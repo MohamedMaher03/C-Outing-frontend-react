@@ -1,15 +1,8 @@
-/**
- * Place Detail Feature — Public API
- */
-
-// Hooks
 export { usePlaceDetail } from "./hooks/usePlaceDetail";
 export type { UsePlaceDetailReturn } from "./hooks/usePlaceDetail";
 
-// API layer (exposed for advanced usage / testing)
 export { placeDetailApi } from "./api/placeDetailApi";
 
-// Mapper layer
 export {
   normalizePlaceDetail,
   normalizeReview,
@@ -21,7 +14,6 @@ export {
   sanitizeReportPayload,
 } from "./mappers/placeDetailMapper";
 
-// Services
 export {
   placeDetailService,
   getPlaceById,
@@ -40,7 +32,6 @@ export {
 } from "./services/placeDetailService";
 export { favoriteAdapter } from "./services/favoriteAdapter";
 
-// Types
 export type {
   PlaceDetail,
   PlaceBase,
@@ -61,12 +52,10 @@ export type {
 } from "./types";
 export { REPORT_REASONS } from "./types";
 
-// Components
 export { ReviewCard } from "./components/ReviewCard";
 export { SocialReviewCard } from "./components/SocialReviewCard";
 export { MenuImageGallery } from "./components/MenuImageGallery";
 export { AddReviewForm } from "./components/AddReviewForm";
 export { ReviewSkeleton } from "./components/ReviewSkeleton";
 
-// Mocks (development use)
 export { placeDetailMock } from "./mocks/placeDetailMock";

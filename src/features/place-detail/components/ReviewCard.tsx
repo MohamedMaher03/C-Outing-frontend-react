@@ -13,7 +13,6 @@ interface ReviewCardProps {
   onReport?: (payload: ReportPayload) => Promise<void> | void;
 }
 
-/** A single user review card */
 const ReviewCardComponent = ({
   review,
   alreadyReported = false,
@@ -60,7 +59,6 @@ const ReviewCardComponent = ({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Star rating */}
           <div className="flex items-center gap-0.5">
             {Array.from({ length: 5 }).map((_, i) => (
               <Star
@@ -74,7 +72,6 @@ const ReviewCardComponent = ({
             ))}
           </div>
 
-          {/* Report button — only rendered when handler is provided */}
           {onReport && review.id && (
             <ReportReviewDialog
               reviewId={review.id}

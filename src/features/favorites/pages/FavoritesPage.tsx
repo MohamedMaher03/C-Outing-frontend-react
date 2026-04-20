@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle, Heart, RefreshCw } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
@@ -30,66 +30,42 @@ const FavoritesPage = () => {
     clearActionError,
   } = useFavorites();
   const userLocation = useUserLocation();
-  const requestUserLocation = userLocation.requestLocation;
-  const formattedTotalCount = useMemo(
-    () => formatNumber(Math.max(0, totalCount)),
-    [formatNumber, totalCount],
-  );
+  const formattedTotalCount = formatNumber(Math.max(0, totalCount));
   const countLabel = t("favorites.countLabel", {
     count: formattedTotalCount,
   });
-  const pendingSaveCount = useMemo(
-    () => Object.keys(savePendingMap).length,
-    [savePendingMap],
-  );
+  const pendingSaveCount = Object.keys(savePendingMap).length;
 
-  const favoritePlaces = useMemo<HomePlace[]>(
-    () => favorites.map((favorite) => ({ ...favorite.venue, isSaved: true })),
-    [favorites],
-  );
+  const favoritePlaces: HomePlace[] = favorites.map((favorite) => ({
+    ...favorite.venue,
+    isSaved: true,
+  }));
 
-  const handleToggleSave = useCallback(
-    async (id: string) => {
-      try {
-        await toggleSave(id);
-      } catch {
-        // Error is already logged in hook
-      }
-    },
-    [toggleSave],
-  );
+  const handleToggleSave = async (id: string) => {
+    await toggleSave(id).catch(() => undefined);
+  };
 
-  const handleOpenVenue = useCallback(
-    (id: string) => {
-      navigate(`/venue/${id}`);
-    },
-    [navigate],
-  );
+  const handleOpenVenue = (id: string) => {
+    navigate(`/venue/${id}`);
+  };
 
-  const handleNavigateHome = useCallback(() => {
+  const handleNavigateHome = () => {
     navigate("/");
-  }, [navigate]);
+  };
 
-  const handleRetryLoad = useCallback(
-    async ({
-      showLoader = false,
-      showPageError = true,
-    }: {
-      showLoader?: boolean;
-      showPageError?: boolean;
-    } = {}) => {
-      setIsRefreshPending(true);
-
-      try {
-        await refreshFavorites({ showLoader, showPageError });
-      } catch {
-        // Error is already handled in hook state
-      } finally {
-        setIsRefreshPending(false);
-      }
-    },
-    [refreshFavorites],
-  );
+  const handleRetryLoad = async ({
+    showLoader = false,
+    showPageError = true,
+  }: {
+    showLoader?: boolean;
+    showPageError?: boolean;
+  } = {}) => {
+    setIsRefreshPending(true);
+    await refreshFavorites({ showLoader, showPageError }).catch(
+      () => undefined,
+    );
+    setIsRefreshPending(false);
+  };
 
   if (loading && favorites.length === 0) {
     return (
@@ -237,7 +213,7 @@ const FavoritesPage = () => {
         <div className="mt-4">
           <LocationPermissionBanner
             userLocation={userLocation}
-            onEnableLocation={requestUserLocation}
+            onEnableLocation={userLocation.requestLocation}
           />
         </div>
 

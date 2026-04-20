@@ -1,15 +1,3 @@
-/**
- * Hook for managing user location state and permissions.
- * Its job is to get the user’s geographic location from the browser safely and manage all cases like:
-    user allows location
-    user denies location
-    browser does not support location
-    timeout
-    location unavailable
-
-    Think of it like a location manager for your React app.
- */
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   UserLocationCoordinates,

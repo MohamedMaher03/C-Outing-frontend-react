@@ -1,7 +1,3 @@
-/**
- * Profile Feature — Type Definitions
- */
-
 import type { PriceLevel } from "@/features/admin/types";
 
 export interface UserProfile {
@@ -42,7 +38,6 @@ export interface UpdatePreferencesRequest {
   budget?: PriceLevel;
 }
 
-/** Data shape used by EditProfilePage */
 export interface EditProfileData {
   name: string;
   email: string;
@@ -52,7 +47,6 @@ export interface EditProfileData {
   avatarUrl?: string;
 }
 
-/** Push + email notification toggles */
 export interface NotificationSettings {
   push: {
     recommendations: boolean;
@@ -67,7 +61,6 @@ export interface NotificationSettings {
   };
 }
 
-/** Privacy & data-collection toggles */
 export interface PrivacySettings {
   showFavorites: boolean;
   showActivity: boolean;

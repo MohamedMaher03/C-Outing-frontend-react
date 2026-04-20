@@ -1,9 +1,3 @@
-/**
- * System Settings Page (Admin)
- *
- * App-wide configuration: maintenance mode, upload limits, feature toggles.
- */
-
 import {
   Settings,
   Save,
@@ -89,7 +83,6 @@ const SystemSettingsPage = () => {
 
   return (
     <AdminPageLayout maxWidth="3xl">
-      {/* Header */}
       <AdminPageHeader
         title={t("admin.settings.header.title")}
         description={t("admin.settings.header.description")}
@@ -150,8 +143,6 @@ const SystemSettingsPage = () => {
           ))}
         </div>
       </AdminSection>
-
-      {/* Maintenance Mode */}
       <AdminSection
         tone="surface"
         className="border-destructive/30"
@@ -186,8 +177,6 @@ const SystemSettingsPage = () => {
           </Label>
         </div>
       </AdminSection>
-
-      {/* Save Button */}
       <div className="sticky bottom-0 flex flex-col-reverse gap-3 border-t border-border/60 bg-background/95 pt-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:flex-row">
         <Button
           variant="ghost"

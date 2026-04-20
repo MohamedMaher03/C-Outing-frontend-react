@@ -1,16 +1,3 @@
-/**
- * Home Mock Implementations
- *
- * Drop-in replacement for homeApi — mirrors the same interface so it can be
- * swapped in homeService.ts without changing any other code:
- *
- *   // homeService.ts — swap this one line:
- *   import { homeMock as homeApi } from "../mocks/homeMock";
- *
- * Simulates realistic network latency so the UI can be fully developed
- * and tested without a running backend.
- */
-
 import { PLACES } from "@/mocks/mockData";
 import type {
   HomePageData,
@@ -22,8 +9,6 @@ import type {
   VenueByTypeParams,
   VenueTopRatedInAreaParams,
 } from "../types";
-
-// ── Helper ───────────────────────────────────────────────────
 
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -58,17 +43,6 @@ const withCount = (
   fallback: number,
 ) => list.slice(0, count ?? fallback);
 
-/**
- * Maps each mood ID to a predicate that decides whether a Place fits.
- *
- * Logic mirrors what the backend GNN/recommendation engine would apply:
- *   chill     → serene / quiet atmospheres
- *   adventure → outdoor / activity-heavy places
- *   romantic  → places tagged Romantic or Upscale
- *   social    → lively, group-friendly spots
- *   explore   → cultural, historic, artistic, or trendy spots
- *   foodie    → food & drink category venues
- */
 const MOOD_FILTER_MAP: Record<string, (p: HomePlace) => boolean> = {
   chill: (p) =>
     (p.atmosphereTags ?? []).some((t) =>
@@ -96,18 +70,7 @@ const MOOD_FILTER_MAP: Record<string, (p: HomePlace) => boolean> = {
     p.category.toLowerCase().includes("cafe"),
 };
 
-// ── Mock Home API ────────────────────────────────────────────
-// Interface intentionally mirrors homeApi so they are interchangeable.
-
 export const homeMock = {
-  /**
-   * Mock GET /recommendations/:userId  (curated)
-   * Mock GET /venues/trending
-   *
-   * userId is accepted so the mock interface matches the real API.
-   * In production the backend sorts by the user's preference vector;
-   * here we approximate with matchScore as a stand-in.
-   */
   async fetchHomePageData(
     params?: HomeRecommendationsQuery,
   ): Promise<HomePageData> {
@@ -115,10 +78,8 @@ export const homeMock = {
 
     const all: HomePlace[] = normalizedPlaces();
 
-    // Curated = personalized — sorted by matchScore (proxy for recommendation rank)
     const curatedPlaces = withCount(sortByPersonalized(all), params?.count, 10);
 
-    // Trending = global — same for every user
     const trendingPlaces = withCount(
       [...all].sort((a, b) => b.reviewCount - a.reviewCount),
       params?.count,
@@ -178,21 +139,12 @@ export const homeMock = {
     return withCount(scored, params.count, 5);
   },
 
-  /**
-   * Mock POST /venues/:placeId/save
-   * Always succeeds after a noticeable delay for spinner QA.
-   */
   async togglePlaceSave(placeId: string, isSaved: boolean): Promise<void> {
     await delay(1400);
     void placeId;
     void isSaved;
   },
 
-  /**
-   * Mock GET /venues/mood/:moodId
-   * Filters PLACES using MOOD_FILTER_MAP and returns matches.
-   * Sorted by rating (desc) so the best picks always surface first.
-   */
   async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
     await delay(2500);
     const filter = MOOD_FILTER_MAP[moodId];

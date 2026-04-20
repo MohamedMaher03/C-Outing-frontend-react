@@ -1,9 +1,3 @@
-/**
- * Reported Content Page (Moderator)
- *
- * Handle user reports — view, investigate, resolve, or dismiss reports.
- */
-
 import {
   Search,
   ShieldAlert,
@@ -279,7 +273,6 @@ const ReportedContentPage = () => {
                 aria-busy={isPending}
                 style={MODERATOR_REPORT_ROW_STYLE}
               >
-                {/* Main Row */}
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-lg bg-muted/50 flex-shrink-0 mt-0.5">
                     <TypeIcon className="h-4 w-4 text-muted-foreground" />
@@ -348,7 +341,6 @@ const ReportedContentPage = () => {
                   </div>
                 </div>
 
-                {/* Expanded Details */}
                 {isExpanded ? (
                   <div
                     id={detailsPanelId}

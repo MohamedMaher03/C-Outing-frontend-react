@@ -1,21 +1,3 @@
-/**
- * Auth Service — Business Logic Layer
- *
- * Sits between AuthContext and the HTTP layer (authApi).
- * Responsibilities:
- *   • Call authApi functions
- *   • Persist / restore / clear the session from localStorage
- *   • Keep storage key names centralised via AUTH_STORAGE_KEYS
- *
- * ┌──────────────────────────────────────────────────────────┐
- * │  AuthContext  →  authService  →  authApi  →  axios       │
- * └──────────────────────────────────────────────────────────┘
- *
- * Mock control:
- *   VITE_AUTH_USE_MOCKS=true|false
- * Falls back to VITE_USE_MOCKS when VITE_AUTH_USE_MOCKS is not set.
- */
-
 import { authApi } from "../api/authApi";
 import { authMock } from "../mocks/authMock";
 import { AUTH_STORAGE_KEYS } from "../constants";
@@ -52,8 +34,6 @@ const shouldUseAuthMocks = resolveFeatureMockFlag(
 );
 const authDataSource = shouldUseAuthMocks ? authMock : authApi;
 
-// ── Session helpers (private) ────────────────────────────────
-
 const canUseStorage = (): boolean =>
   typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 
@@ -84,7 +64,7 @@ const removeStorageItem = (key: string): void => {
   try {
     window.localStorage.removeItem(key);
   } catch {
-    // no-op: storage can be disabled in strict browser modes
+    return;
   }
 };
 
@@ -145,7 +125,6 @@ const persistSession = (token: string, user: User): void => {
     JSON.stringify(user),
   );
 
-  // Keep storage consistent if one write fails.
   if (!tokenStored || !userStored) {
     removeStorageItem(AUTH_STORAGE_KEYS.TOKEN);
     removeStorageItem(AUTH_STORAGE_KEYS.USER);
@@ -157,13 +136,7 @@ const clearSession = (): void => {
   removeStorageItem(AUTH_STORAGE_KEYS.USER);
 };
 
-// ── Auth Service ─────────────────────────────────────────────
-
 export const authService = {
-  /**
-   * Login — extracts user claims from JWT,
-   * persists the session, and returns the internal AuthApiResponse.
-   */
   async login(payload: LoginRequest): Promise<AuthApiResponse> {
     const raw = await authDataSource.login(payload);
     const user: User = buildUserFromAuthToken(raw);
@@ -172,10 +145,6 @@ export const authService = {
     return { token: raw.token, user };
   },
 
-  /**
-   * Register — creates the account and triggers an OTP email.
-   * Does NOT persist a session; the user must verify email first.
-   */
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
     try {
       const response = await authDataSource.register(payload);
@@ -189,13 +158,11 @@ export const authService = {
 
         if (shouldRecover) {
           try {
-            // If account creation already completed on the server, this call
-            // restores a smooth path to verification instead of forcing re-signup.
             await authDataSource.resendOtp({ email: payload.email });
             persistPendingVerificationEmail(payload.email);
             return "Verification code sent to your email";
           } catch {
-            // Keep original register error when recovery is not possible.
+            void 0;
           }
         }
       }
@@ -204,12 +171,6 @@ export const authService = {
     }
   },
 
-  /**
-   * Verify email — validates the OTP against the backend.
-   * On success the backend returns a token payload (same shape as login),
-   * so we derive User claims from the token, persist the session, and return it.
-   * The user is now logged in and should be directed to onboarding.
-   */
   async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
     const raw = await authDataSource.verifyEmail(payload);
     const user: User = buildUserFromAuthToken(raw);
@@ -218,17 +179,10 @@ export const authService = {
     return { token: raw.token, user };
   },
 
-  /**
-   * Resend OTP — requests a new verification code for the given email.
-   */
   async resendOtp(payload: ResendOtpRequest): Promise<void> {
     await authDataSource.resendOtp(payload);
   },
 
-  /**
-   * Logout — calls backend to invalidate session (best-effort),
-   *          then unconditionally clears localStorage.
-   */
   async logout(): Promise<void> {
     try {
       await authDataSource.logout();
@@ -250,11 +204,6 @@ export const authService = {
     clearPendingVerificationEmailStorage();
   },
 
-  /**
-   * Restore session — reads token + user from localStorage.
-   * Called once on app startup to rehydrate the AuthContext.
-   * Returns null if no valid session is stored.
-   */
   restoreSession(): { token: string; user: User } | null {
     const token = getStorageItem(AUTH_STORAGE_KEYS.TOKEN);
     const raw = getStorageItem(AUTH_STORAGE_KEYS.USER);
@@ -270,30 +219,19 @@ export const authService = {
 
       return { token, user: parsed };
     } catch {
-      // Corrupted storage — clear it
       clearSession();
       return null;
     }
   },
 
-  /**
-   * Update stored user — called after profile edits so the cached
-   *                       user stays in sync with the latest data.
-   */
   updateStoredUser(user: User): void {
     setStorageItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
   },
 
-  /**
-   * Forgot password — sends an OTP to the given email for password reset.
-   */
   async forgotPassword(payload: ForgotPasswordRequest): Promise<void> {
     await authDataSource.forgotPassword(payload);
   },
 
-  /**
-   * Reset password — validates the OTP and updates the password.
-   */
   async resetPassword(payload: ResetPasswordRequest): Promise<void> {
     await authDataSource.resetPassword(payload);
   },

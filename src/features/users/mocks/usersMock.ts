@@ -1,12 +1,3 @@
-/**
-  users mock implemenation
-  Drop-in replacement for userApi — mirrors the same interface so it can
-    be swapped in userService.ts without changing any other code:
-    // userService.ts — swap this one line:
-    import { usersMock as userApi } from "../mocks/usersMock";
-    Simulates realistic network latency and in-memory data storage.
- */
-
 import { MOCK_PUBLIC_PROFILES, MOCK_USER_REVIEWS } from "./index";
 import type { PaginatedResponse } from "@/types";
 import type {
@@ -14,8 +5,6 @@ import type {
   UserReviewDto,
   UsersDataSource,
 } from "../types/dataSource";
-
-// ── Helper ───────────────────────────────────────────────────
 
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));

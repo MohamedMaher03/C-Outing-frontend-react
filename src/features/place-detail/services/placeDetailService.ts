@@ -1,17 +1,3 @@
-/**
- * Place Detail Service — Business Logic Layer
- *
- * Sits between hooks/components and the datasource layer.
- * Responsibilities:
- *   • Call placeDetailDataSource functions
- *   • Transform DTOs to UI models if needed
- *   • Centralise error handling
- *
- * ┌──────────────────────────────────────────────────────────────────────┐
- * │  usePlaceDetail  →  placeDetailService  →  placeDetailDataSource     │
- * └──────────────────────────────────────────────────────────────────────┘
- */
-
 import { placeDetailDataSource } from "./placeDetailDataSource";
 import { getCurrentAuthUserProfile } from "../utils/authUser";
 import type {
@@ -26,7 +12,6 @@ import type {
   RecordInteractionRequest,
 } from "@/features/place-detail/types";
 
-// Re-export types for consumers that import from this service
 export type {
   PlaceDetail,
   Review,
@@ -74,12 +59,7 @@ const enrichReviewForImmediateUi = (
   };
 };
 
-// ── Place Detail Service ─────────────────────────────────────
-
 export const placeDetailService = {
-  /**
-   * Fetch place details by ID.
-   */
   async getPlaceById(placeId: string): Promise<PlaceDetail> {
     return placeDetailDataSource.getPlaceById(placeId);
   },
@@ -88,9 +68,6 @@ export const placeDetailService = {
     return placeDetailDataSource.toggleLike(venueId);
   },
 
-  /**
-   * Fetch user reviews for a place (from the website).
-   */
   async getPlaceReviews(
     placeId: string,
     params?: ReviewListParams,
@@ -98,9 +75,6 @@ export const placeDetailService = {
     return placeDetailDataSource.getPlaceReviews(placeId, params);
   },
 
-  /**
-   * Fetch social media reviews (from scraping) for a place.
-   */
   async getSocialMediaReviews(
     placeId: string,
     params?: ReviewListParams,
@@ -108,9 +82,6 @@ export const placeDetailService = {
     return placeDetailDataSource.getSocialMediaReviews(placeId, params);
   },
 
-  /**
-   * Submit a review for a place.
-   */
   async submitReview(
     placeId: string,
     rating: number,
@@ -170,9 +141,6 @@ export const placeDetailService = {
     await placeDetailDataSource.reportReview(reviewId, payload);
   },
 
-  /**
-   * Record a user interaction event.
-   */
   async recordInteraction(data: RecordInteractionRequest): Promise<void> {
     try {
       await placeDetailDataSource.recordInteraction(data);
@@ -181,8 +149,6 @@ export const placeDetailService = {
     }
   },
 };
-
-// ── Legacy named exports (keep backward compatibility with hooks) ──
 
 export const getPlaceById = placeDetailService.getPlaceById;
 export const toggleLike = placeDetailService.toggleLike;

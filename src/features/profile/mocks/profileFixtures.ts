@@ -1,7 +1,3 @@
-/**
- * Profile Feature — Mock Data & UI Constants
- */
-
 import type { LucideIcon } from "lucide-react";
 import {
   Ship,
@@ -79,7 +75,6 @@ export const MOCK_PRIVACY_SETTINGS: PrivacySettings = {
   personalization: true,
 };
 
-/** Maps interest icon names to Lucide icon components */
 export const INTEREST_ICON_MAP: Record<string, LucideIcon> = {
   Ship,
   Utensils,

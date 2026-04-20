@@ -1,14 +1,3 @@
-/**
- * useResetPassword Hook
- *
- * Handles the password-reset flow:
- *   1. Calls authService.resetPassword with email + OTP + new password
- *   2. Returns true on success so the UI can redirect to /login
- *   3. Surfaces loading and error state
- *
- * Flow: ResetPasswordPage → useResetPassword → authService → authApi → axios
- */
-
 import { useRef, useState } from "react";
 import { authService } from "../services/authService";
 import { getAuthErrorMessage } from "../errors";

@@ -88,7 +88,6 @@ const SignUpForm = () => {
   return (
     <AuthShell maxWidth="2xl">
       <AuthSurface>
-        {/* Back to Login Link */}
         <button
           type="button"
           onClick={() => navigate("/login")}
@@ -105,17 +104,14 @@ const SignUpForm = () => {
           <p className="text-muted-foreground text-sm">{t("auth.joinUs")}</p>
         </div>
 
-        {/* API Error Banner */}
         {error && <AuthStatusBanner message={error} onDismiss={clearError} />}
 
-        {/* Form */}
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-5"
           noValidate
           aria-busy={isLoading}
         >
-          {/* Render form fields using map */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {SIGN_UP_FORM_FIELDS.map((field: SignUpFieldConfig) => (
               <FormField
@@ -150,7 +146,6 @@ const SignUpForm = () => {
             ))}
           </div>
 
-          {/* Password */}
           <div className="space-y-2">
             <Label htmlFor="password">{t("auth.password")}</Label>
 
@@ -165,7 +160,6 @@ const SignUpForm = () => {
             <FormError message={errors.password?.message} />
           </div>
 
-          {/* Confirm Password */}
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">{t("auth.confirmPassword")}</Label>
 
@@ -180,7 +174,6 @@ const SignUpForm = () => {
             <FormError message={errors.confirmPassword?.message} />
           </div>
 
-          {/* Avatar (Optional) */}
           <div className="space-y-2">
             <Label htmlFor="avatar">{t("auth.avatarOptional")}</Label>
             <Input
@@ -218,7 +211,6 @@ const SignUpForm = () => {
           </Button>
         </form>
 
-        {/* Login link */}
         <p className="text-center text-sm text-muted-foreground">
           {t("auth.alreadyHaveAccount")}{" "}
           <button
@@ -231,7 +223,6 @@ const SignUpForm = () => {
         </p>
       </AuthSurface>
 
-      {/* Footer */}
       <p className="mt-4 pb-2 text-center text-sm text-cream/75 sm:mt-6 sm:pb-0">
         {t("auth.footer")}
       </p>

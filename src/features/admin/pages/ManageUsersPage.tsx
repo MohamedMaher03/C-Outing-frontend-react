@@ -1,10 +1,3 @@
-/**
- * Manage Users Page (Admin)
- *
- * List all users, search, change roles, and ban/unban.
- * Follows the project's card-based design with secondary accent.
- */
-
 import { useEffect, useMemo } from "react";
 
 import {
@@ -55,7 +48,6 @@ const ManageUsersPage = () => {
     totalPages,
     hasPreviousPage,
     hasNextPage,
-    filteredUsers,
     setSearch,
     setRoleFilter,
     setActionMenu,
@@ -74,17 +66,13 @@ const ManageUsersPage = () => {
     [locale],
   );
 
-  const roleFilterOptions = useMemo(
-    () =>
-      USER_ROLE_FILTER_OPTIONS.map((option) => ({
-        ...option,
-        label:
-          option.value === "all"
-            ? t("admin.filter.all")
-            : t(`admin.role.${option.value}`),
-      })),
-    [t],
-  );
+  const roleFilterOptions = USER_ROLE_FILTER_OPTIONS.map((option) => ({
+    ...option,
+    label:
+      option.value === "all"
+        ? t("admin.filter.all")
+        : t(`admin.role.${option.value}`),
+  }));
 
   const getStatusLabel = (status: keyof typeof userStatusBadge): string =>
     t(`admin.status.${status}`);
@@ -121,12 +109,9 @@ const ManageUsersPage = () => {
     };
   }, [actionMenu, setActionMenu]);
 
-  const activeUsersCount = useMemo(
-    () => users.filter((user) => user.status === "active").length,
-    [users],
-  );
-
-  const currentPageNumber = pageIndex;
+  const activeUsersCount = users.filter(
+    (user) => user.status === "active",
+  ).length;
 
   if (loading && users.length === 0) {
     return (
@@ -136,7 +121,6 @@ const ManageUsersPage = () => {
 
   return (
     <AdminPageLayout>
-      {/* Header */}
       <AdminPageHeader
         title={t("admin.users.header.title")}
         description={t("admin.users.header.description", {
@@ -187,14 +171,14 @@ const ManageUsersPage = () => {
         })}
         contentClassName="gap-3"
       >
-        {filteredUsers.length === 0 ? (
+        {users.length === 0 ? (
           <AdminEmptyState
             icon={User}
             title={t("admin.users.empty.title")}
             description={t("admin.users.empty.description")}
           />
         ) : (
-          filteredUsers.map((user) => {
+          users.map((user) => {
             const role = userRoleBadge[user.role];
             const status = userStatusBadge[user.status];
             const StatusIcon = status.icon;
@@ -204,7 +188,6 @@ const ManageUsersPage = () => {
                 key={user.userId}
                 className="relative flex min-w-0 flex-col gap-4 rounded-xl border border-border bg-card p-4 transition-all motion-reduce:transition-none hover:border-secondary/35 hover:shadow-sm sm:flex-row sm:items-center"
               >
-                {/* Avatar */}
                 <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary/10">
                   {user.avatar ? (
                     <img
@@ -218,8 +201,6 @@ const ManageUsersPage = () => {
                     <User className="h-5 w-5 text-secondary dark:text-primary" />
                   )}
                 </div>
-
-                {/* Info */}
                 <div className="mt-2 min-w-0 flex-1 sm:mt-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="truncate text-role-secondary font-semibold text-foreground">
@@ -258,8 +239,6 @@ const ManageUsersPage = () => {
                     </span>
                   </div>
                 </div>
-
-                {/* Actions */}
                 <div
                   className="relative mt-3 w-full flex-shrink-0 sm:mt-0 sm:w-auto"
                   data-user-menu-root={user.userId}
@@ -343,7 +322,7 @@ const ManageUsersPage = () => {
           <div className="mt-2 flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-role-caption text-muted-foreground">
               {t("admin.users.pagination.summary", {
-                page: formatNumber(currentPageNumber),
+                page: formatNumber(pageIndex),
                 totalPages: formatNumber(totalPages),
                 totalCount: formatNumber(totalCount),
                 pageSize: formatNumber(pageSize),
@@ -365,7 +344,7 @@ const ManageUsersPage = () => {
 
               <span className="inline-flex min-h-11 items-center rounded-lg border border-border bg-card px-3 text-role-caption font-medium text-foreground">
                 {t("admin.users.pagination.page", {
-                  page: formatNumber(currentPageNumber),
+                  page: formatNumber(pageIndex),
                   totalPages: formatNumber(totalPages),
                 })}
               </span>

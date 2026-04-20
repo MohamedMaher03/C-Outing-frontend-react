@@ -45,7 +45,6 @@ const EditProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
           <Button
@@ -93,7 +92,6 @@ const EditProfilePage = () => {
           onSubmit={handleSubmit}
           className="space-y-[clamp(1rem,2vw,1.75rem)]"
         >
-          {/* Profile Photo */}
           <section className="flex flex-col items-center gap-4 rounded-2xl border border-border/70 bg-card/50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
             <div className="relative">
               <div className="h-24 w-24 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
@@ -108,7 +106,6 @@ const EditProfilePage = () => {
                   className="h-full w-full object-cover"
                 />
               </div>
-              {/* Hidden file input */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -137,7 +134,6 @@ const EditProfilePage = () => {
             </p>
           </section>
 
-          {/* Form Fields */}
           <section className="grid gap-4 rounded-2xl border border-border/70 bg-card/40 p-4 sm:grid-cols-2 sm:p-5">
             <div className="space-y-2 sm:col-span-1">
               <Label
@@ -267,7 +263,6 @@ const EditProfilePage = () => {
             </div>
           </section>
 
-          {/* Action Buttons */}
           <div className="hidden gap-3 pt-2 sm:flex">
             <Button
               type="button"

@@ -1,14 +1,3 @@
-/**
- * useForgotPassword Hook
- *
- * Handles the forgot-password flow:
- *   1. Calls authService.forgotPassword with the provided email
- *   2. On success, returns true so the UI can navigate to reset-password
- *   3. Surfaces loading and error state
- *
- * Flow: ForgotPasswordPage → useForgotPassword → authService → authApi → axios
- */
-
 import { useRef, useState } from "react";
 import { authService } from "../services/authService";
 import { getAuthErrorMessage } from "../errors";

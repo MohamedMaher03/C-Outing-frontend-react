@@ -1,11 +1,3 @@
-/**
- * NotificationItem — Single notification row
- *
- * Presentational component. Parent provides callbacks for actions.
- * Unread items have a highlighted border and background.
- * Clicking an unread item marks it as read and navigates to actionUrl.
- */
-
 import { useNavigate } from "react-router-dom";
 import { memo, useCallback } from "react";
 import {
@@ -21,8 +13,6 @@ import { cn } from "@/lib/utils";
 import { formatRelativeNotificationTime } from "../utils/notificationPresentation";
 import type { Notification, NotificationType } from "../types";
 import { useI18n } from "@/components/i18n";
-
-// ── Type → visual config ─────────────────────────────────────
 
 const renderNotificationTypeIcon = (type: string, className: string) => {
   switch (type as NotificationType) {
@@ -41,8 +31,6 @@ const renderNotificationTypeIcon = (type: string, className: string) => {
       return <Bell className={className} />;
   }
 };
-
-// ── Component ────────────────────────────────────────────────
 
 interface NotificationItemProps {
   notification: Notification;
@@ -114,12 +102,10 @@ const NotificationItem = ({
         pending && "opacity-80 cursor-wait",
       )}
     >
-      {/* Unread indicator dot */}
       {!notification.isRead && (
         <span className="absolute top-4 h-2 w-2 shrink-0 rounded-full bg-secondary [inset-inline-end:3.5rem] sm:[inset-inline-end:3rem]" />
       )}
 
-      {/* Type icon */}
       <div
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10",
@@ -131,7 +117,6 @@ const NotificationItem = ({
         {renderNotificationTypeIcon(notification.type, "h-4 w-4 sm:h-5 sm:w-5")}
       </div>
 
-      {/* Content */}
       <div dir="auto" className="flex-1 min-w-0 space-y-0.5 pr-6">
         <p
           className={cn(
@@ -151,7 +136,6 @@ const NotificationItem = ({
         </p>
       </div>
 
-      {/* Delete button */}
       <button
         aria-label={t("notifications.delete")}
         type="button"

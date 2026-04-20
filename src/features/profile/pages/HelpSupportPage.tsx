@@ -150,7 +150,6 @@ const HelpSupportPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-4">
           <Button
@@ -173,7 +172,6 @@ const HelpSupportPage = () => {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 pb-8 pt-[clamp(1rem,2vw,1.5rem)] grid gap-[clamp(1rem,2.2vw,1.9rem)] lg:grid-cols-[17rem_minmax(0,1fr)]">
-        {/* Contact Support */}
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <h2 className="text-role-body font-semibold text-foreground">
             {t("profile.help.contactTitle")}
@@ -235,7 +233,6 @@ const HelpSupportPage = () => {
           </Card>
         </aside>
 
-        {/* FAQ Section */}
         <section className="space-y-[clamp(0.75rem,1.8vw,1.25rem)]">
           <div className="flex items-center justify-between">
             <h2 className="text-role-body font-semibold text-foreground">
@@ -243,7 +240,6 @@ const HelpSupportPage = () => {
             </h2>
           </div>
 
-          {/* Search */}
           <div className="relative">
             <Search
               className={cn(
@@ -275,7 +271,6 @@ const HelpSupportPage = () => {
             ))}
           </div>
 
-          {/* FAQ Items */}
           <div className="overflow-hidden rounded-2xl border border-border/80 bg-card/50">
             {filteredFaqs.length > 0 ? (
               filteredFaqs.map((faq) => {

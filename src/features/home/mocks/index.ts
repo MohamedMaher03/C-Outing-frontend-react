@@ -1,8 +1,3 @@
-/**
- * Home Feature — Mock Data & UI Constants
- * All hardcoded arrays and static configuration used by the home page.
- */
-
 import type { LucideIcon } from "lucide-react";
 import {
   Sparkles,
@@ -31,11 +26,8 @@ import {
 import type { DiscoverySource, FilterType, VenuePriceRange } from "../types";
 import { PRICE_LEVEL_OPTIONS as SHARED_PRICE_LEVEL_OPTIONS } from "@/utils/priceLevels";
 
-// Re-export mock API for convenient access
 export { homeMock } from "./homeMock";
 export { LOCATION_DISTANCE_MOCK_CASES } from "./locationDistanceCases";
-
-// ============ Filter Pills ============
 
 export interface FilterOption {
   id: FilterType;
@@ -78,9 +70,6 @@ export const VENUE_PRICE_RANGE_OPTIONS: VenuePriceRangeOption[] =
     caption: `${option.caption} · ${option.symbol}`,
   }));
 
-// ============ Icon Maps ============
-
-/** Maps category icon names (from backend) to Lucide icon components */
 export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   UtensilsCrossed,
   Moon,
@@ -92,7 +81,6 @@ export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   Laptop,
 };
 
-/** Maps mood icon names (from backend) to Lucide icon components */
 export const MOOD_ICON_MAP: Record<string, LucideIcon> = {
   Coffee,
   Mountain,

@@ -1,9 +1,3 @@
-/**
- * useOnboarding Hook
- * Manages all state and logic for the OnboardingPage
- * Separates business logic from UI components
- */
-
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { submitOnboardingPreferences } from "@/features/onboarding/services/onboardingService";
@@ -15,7 +9,6 @@ import { normalizeVibe } from "../utils/onboardingPreferences";
 import { useI18n } from "@/components/i18n";
 
 interface UseOnboardingReturn {
-  // State
   step: number;
   selectedInterests: string[];
   vibe: number[];
@@ -23,11 +16,7 @@ interface UseOnboardingReturn {
   budget: PriceLevel | null;
   isSubmitting: boolean;
   error: string | null;
-
-  // Validation
   canGoNext: boolean;
-
-  // Actions
   toggleInterest: (id: string) => void;
   setVibe: (value: number[]) => void;
   toggleDistrict: (district: string) => void;
@@ -37,16 +26,12 @@ interface UseOnboardingReturn {
   handleComplete: () => Promise<void>;
 }
 
-/**
- * Custom hook for onboarding page logic
- */
 export const useOnboarding = (): UseOnboardingReturn => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   const submitInFlightRef = useRef(false);
 
-  // State management
   const [step, setStep] = useState(0);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [vibe, setVibeState] = useState([50]);
@@ -56,10 +41,9 @@ export const useOnboarding = (): UseOnboardingReturn => {
   const [error, setError] = useState<string | null>(null);
 
   const clearError = () => {
-    setError((prev) => (prev ? null : prev));
+    setError(null);
   };
 
-  // Toggle interest selection
   const toggleInterest = (id: string) => {
     clearError();
     setSelectedInterests((prev) =>
@@ -73,7 +57,6 @@ export const useOnboarding = (): UseOnboardingReturn => {
     setVibeState([nextVibe]);
   };
 
-  // Toggle district selection
   const toggleDistrict = (district: string) => {
     clearError();
     setSelectedDistricts((prev) =>
@@ -88,14 +71,12 @@ export const useOnboarding = (): UseOnboardingReturn => {
     setBudgetState(nextBudget);
   };
 
-  // Validation for each step
   const canGoNext =
     (step === 0 && selectedInterests.length >= 2) ||
     step === 1 ||
     (step === 2 && selectedDistricts.length >= 1) ||
     (step === 3 && budget !== null);
 
-  // Navigate to next step
   const goToNextStep = () => {
     if (step < 3 && canGoNext) {
       clearError();
@@ -103,7 +84,6 @@ export const useOnboarding = (): UseOnboardingReturn => {
     }
   };
 
-  // Navigate to previous step
   const goToPreviousStep = () => {
     if (step > 0) {
       clearError();
@@ -111,7 +91,6 @@ export const useOnboarding = (): UseOnboardingReturn => {
     }
   };
 
-  // Complete onboarding and submit preferences
   const handleComplete = async () => {
     if (submitInFlightRef.current || isSubmitting) {
       return;
@@ -142,11 +121,8 @@ export const useOnboarding = (): UseOnboardingReturn => {
 
       await submitOnboardingPreferences(user.userId, preferences);
 
-      // Mark onboarding as completed in context + localStorage so the
-      // ProtectedRoute no longer redirects back to /onboarding
       updateUser({ ...user, hasCompletedOnboarding: true });
 
-      // Navigate to home page after successful submission
       navigate("/");
     } catch (err) {
       setError(getErrorMessage(err, t("onboarding.error.submitFailed")));
@@ -157,7 +133,6 @@ export const useOnboarding = (): UseOnboardingReturn => {
   };
 
   return {
-    // State
     step,
     selectedInterests,
     vibe,
@@ -165,11 +140,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
     budget,
     isSubmitting,
     error,
-
-    // Validation
     canGoNext,
-
-    // Actions
     toggleInterest,
     setVibe,
     toggleDistrict,

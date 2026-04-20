@@ -1,10 +1,3 @@
-/**
- * Place Detail Mock Implementations
- *
- * Drop-in datasource replacement for placeDetailApi.
- * Enabled via VITE_USE_MOCKS=true through placeDetailDataSource.
- */
-
 import { PLACES } from "@/mocks/mockData";
 import type {
   PlaceDetail,

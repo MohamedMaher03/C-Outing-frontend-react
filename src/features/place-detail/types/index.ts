@@ -1,7 +1,3 @@
-/**
- * Place Detail Feature — Type Definitions
- */
-
 import type { PaginatedResponse } from "@/types";
 import type { CanonicalPriceLevel } from "@/utils/priceLevels";
 
@@ -89,10 +85,8 @@ export interface PlaceBase {
   googleMapsRatingCount?: number;
 }
 
-/** Place detail payload from venue endpoint. */
-export interface PlaceDetail extends PlaceBase {}
+export type PlaceDetail = PlaceBase;
 
-/** A user-submitted review on the website */
 export interface Review {
   id: string;
   venueId: string;
@@ -136,7 +130,6 @@ export interface VenueAverageRating {
   averageRating: number;
 }
 
-/** A review scraped from a social media platform */
 export interface SocialMediaReview {
   id: string;
   platform: "instagram" | "twitter" | "facebook" | "tiktok" | "google";
@@ -152,7 +145,6 @@ export interface SocialMediaReview {
   url?: string;
 }
 
-/** NLP-generated review summary for a place */
 export interface ReviewSummary {
   overallSentiment: "positive" | "neutral" | "negative";
   averageRating: number;
@@ -166,7 +158,6 @@ export interface ReviewSummary {
   }[];
 }
 
-/** Payload for recording a user interaction event */
 export interface RecordInteractionRequest {
   placeId: string;
   actionType: InteractionActionType;

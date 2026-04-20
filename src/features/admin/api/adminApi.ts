@@ -1,17 +1,3 @@
-/**
- * Admin API Layer
- *
- * Pure HTTP functions — no business logic, no side effects, no storage.
- * Each function maps 1-to-1 with a backend endpoint.
- *
- * The shared axios instance (src/config/axios.config.ts) handles:
- *   • Attaching the Authorization header on every request
- *   • Handling 401 responses globally
- *
- * To switch to mocks during development, swap the import in adminService.ts:
- *   import { adminMock as adminApi } from "../mocks/adminMock";
- */
-
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type {
@@ -142,10 +128,6 @@ const getReviews = async (
 };
 
 export const adminApi = {
-  /**
-   * GET /admin/stats
-   * Returns system-wide aggregate statistics.
-   */
   async getStats(): Promise<AdminStats> {
     const [statsResponse, healthResponse, reportsResponse] = await Promise.all([
       axiosInstance.get(API_ENDPOINTS.admin.getStats),
@@ -158,10 +140,6 @@ export const adminApi = {
     return mapStats(statsResponse.data, healthResponse.data, reports);
   },
 
-  /**
-   * GET /admin/activity
-   * Returns recent system activity feed.
-   */
   async getRecentActivity(): Promise<RecentActivity[]> {
     const [statsResponse, healthResponse] = await Promise.all([
       axiosInstance.get(API_ENDPOINTS.admin.getStats),
@@ -171,10 +149,6 @@ export const adminApi = {
     return toRecentActivity(statsResponse.data, healthResponse.data);
   },
 
-  /**
-   * GET /admin/users
-   * Returns paginated users.
-   */
   async getUsers(params: AdminUsersQuery = {}): Promise<AdminUsersPage> {
     return getUsers({
       page: params.page ?? 1,
@@ -184,10 +158,6 @@ export const adminApi = {
     });
   },
 
-  /**
-   * PATCH /api/v1/Admin/users/:userId/ban and /unban
-   * Updates a user's account status.
-   */
   async updateUserStatus(
     userId: AdminUserId,
     status: AdminUserStatus,
@@ -205,28 +175,16 @@ export const adminApi = {
     throw new Error("Suspend status is not supported by current backend APIs");
   },
 
-  /**
-   * GET /admin/places
-   * Returns all places.
-   */
   async getPlaces(): Promise<AdminPlace[]> {
     return getPlaces({ page: 1, count: 100 });
   },
 
-  /**
-   * POST /api/v1/Venue/scrape/initiate
-   * Initiates venue scraping using a Google Maps URL.
-   */
   async addPlace(placeData: CreateAdminPlaceInput): Promise<void> {
     await axiosInstance.post(API_ENDPOINTS.places.scrapeInitiate, {
       venueUrl: placeData.venueUrl,
     });
   },
 
-  /**
-   * PATCH /admin/places/:placeId/status
-   * Updates the moderation status of a place.
-   */
   async updatePlaceStatus(
     placeId: string,
     status: AdminPlace["status"],
@@ -236,26 +194,14 @@ export const adminApi = {
     });
   },
 
-  /**
-   * DELETE /admin/places/:placeId
-   * Permanently deletes a place.
-   */
   async deletePlace(placeId: string): Promise<void> {
     await axiosInstance.delete(API_ENDPOINTS.admin.deleteVenue(placeId));
   },
 
-  /**
-   * GET /admin/reviews
-   * Returns all reviews.
-   */
   async getReviews(): Promise<AdminReview[]> {
     return getReviews({ page: 1, count: 100 });
   },
 
-  /**
-   * PATCH /admin/reviews/:reviewId/status
-   * Updates the moderation status of a review.
-   */
   async updateReviewStatus(
     reviewId: string,
     status: AdminReview["status"],
@@ -268,27 +214,15 @@ export const adminApi = {
     );
   },
 
-  /**
-   * DELETE /admin/reviews/:reviewId
-   * Permanently deletes a review.
-   */
   async deleteReview(reviewId: string): Promise<void> {
     await axiosInstance.delete(API_ENDPOINTS.admin.deleteReview(reviewId));
   },
 
-  /**
-   * GET /admin/categories
-   * Returns all venue categories.
-   */
   async getCategories(): Promise<AdminCategory[]> {
     const { data } = await axiosInstance.get(API_ENDPOINTS.admin.getCategories);
     return mapAdminCategories(data);
   },
 
-  /**
-   * PATCH /admin/categories/:categoryId
-   * Partially updates a category.
-   */
   async updateCategory(
     categoryId: string,
     categoryData: Partial<AdminCategory>,
@@ -300,10 +234,6 @@ export const adminApi = {
     );
   },
 
-  /**
-   * GET /admin/settings
-   * Returns system-wide configuration.
-   */
   async getSettings(): Promise<SystemSettings> {
     const { data } = await axiosInstance.get(
       API_ENDPOINTS.admin.getSystemHealth,
@@ -311,10 +241,6 @@ export const adminApi = {
     return toSystemSettings(data);
   },
 
-  /**
-   * PATCH /admin/settings
-   * Updates system-wide configuration.
-   */
   async updateSettings(settings: Partial<SystemSettings>): Promise<void> {
     void settings;
     throw new Error(

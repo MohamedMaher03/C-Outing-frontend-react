@@ -1,9 +1,3 @@
-/**
- * Moderator Dashboard Page
- *
- * Overview of moderation queue, stats, and recent actions.
- */
-
 import {
   Shield,
   Activity,

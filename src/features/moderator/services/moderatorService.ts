@@ -1,17 +1,3 @@
-/**
- * Moderator Service — Business Logic Layer
- *
- * Sits between hooks and the datasource layer.
- * Responsibilities:
- *   • Call moderatorDataSource functions
- *   • Transform DTOs to UI models if needed
- *   • Centralise error handling
- *
- * ┌───────────────────────────────────────────────────────────────────┐
- * │ useModerator* → moderatorService → moderatorDataSource → API/mock │
- * └───────────────────────────────────────────────────────────────────┘
- */
-
 import type {
   ModeratorStats,
   ReportedContent,
@@ -28,8 +14,6 @@ import type {
 import { adminService } from "@/features/admin/services/adminService";
 import { moderatorDataSource } from "./moderatorDataSource";
 import { withModeratorServiceError } from "./moderatorServiceError";
-
-// ── Moderator Service ─────────────────────────────────────────
 
 export const moderatorService = {
   async getPlaces(): Promise<AdminPlace[]> {

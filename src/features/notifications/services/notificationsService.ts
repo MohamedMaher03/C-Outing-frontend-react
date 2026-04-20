@@ -1,10 +1,3 @@
-/**
- * Notifications Service — Business Logic Layer
- *
- * Sits between hooks/components and the datasource layer.
- * This layer is intentionally framework-agnostic (no React imports).
- */
-
 import {
   mapNotificationsPage,
   normalizeNotificationId,
@@ -179,7 +172,6 @@ export const notificationsService = {
   },
 };
 
-// Named exports kept for backward compatibility.
 export const getNotifications = notificationsService.getNotifications;
 export const getUnreadNotificationsCount = notificationsService.getUnreadCount;
 export const markNotificationAsRead = notificationsService.markAsRead;

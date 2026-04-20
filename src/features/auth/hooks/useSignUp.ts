@@ -1,14 +1,3 @@
-/**
- * useSignUp Hook
- *
- * Handles the complete registration flow:
- *   1. Calls AuthContext.register (which delegates to authService → authApi)
- *   2. Surfaces loading and error state to the UI
- *   3. Returns a boolean indicating success so the caller can navigate
- *
- * Flow: SignUpForm → useSignUp → AuthContext.register → authService → authApi → axios
- */
-
 import { useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { AuthError, getAuthErrorMessage } from "../errors";

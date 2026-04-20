@@ -1,8 +1,3 @@
-/**
- * useProfile Hook
- * Manages profile page state and actions
- */
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   getUserProfile,
@@ -16,20 +11,17 @@ import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
 interface UseProfileReturn {
-  // State
   profile: UserProfile | null;
   preferences: UserPreferences | null;
   loading: boolean;
   saving: boolean;
   error: string | null;
 
-  // Preferences state
   selectedInterests: string[];
   vibe: number[];
   selectedDistricts: string[];
   selectedBudget: PriceLevel;
 
-  // Actions
   toggleInterest: (id: string) => void;
   setVibe: (value: number[]) => void;
   toggleDistrict: (district: string) => void;
@@ -50,15 +42,12 @@ export const useProfile = (): UseProfileReturn => {
   const saveInFlightRef = useRef(false);
   const signOutInFlightRef = useRef(false);
 
-  // Local state for preferences
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [vibe, setVibe] = useState<number[]>([50]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<PriceLevel>("mid_range");
 
-  const clearError = () => {
-    setError((prev) => (prev ? null : prev));
-  };
+  const clearError = () => setError(null);
 
   const fetchProfileData = useCallback(async () => {
     const runId = ++latestLoadRunRef.current;
@@ -96,7 +85,6 @@ export const useProfile = (): UseProfileReturn => {
     }
   }, [t]);
 
-  // Fetch profile and preferences on mount
   useEffect(() => {
     void fetchProfileData();
   }, [fetchProfileData]);
@@ -156,7 +144,6 @@ export const useProfile = (): UseProfileReturn => {
 
     try {
       await signOut();
-      // Clear local state
       setProfile(null);
       setPreferences(null);
     } finally {
