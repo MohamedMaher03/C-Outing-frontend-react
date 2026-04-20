@@ -9,13 +9,14 @@ import type {
   ReportedContentStatusFilter,
   ReportedContentTypeFilter,
 } from "@/features/moderator/types";
+import { normalizeSearchTerm } from "@/utils/textNormalization";
 
 export const filterModerationPlaces = (
   places: AdminPlace[],
   search: string,
   statusFilter: AdminPlaceStatusFilter,
 ): AdminPlace[] => {
-  const normalizedSearch = search.trim().toLowerCase();
+  const normalizedSearch = normalizeSearchTerm(search);
 
   return places.filter((place) => {
     const matchesSearch =
@@ -36,7 +37,7 @@ export const filterModerationReviews = (
   search: string,
   statusFilter: AdminReviewStatusFilter,
 ): AdminReview[] => {
-  const normalizedSearch = search.trim().toLowerCase();
+  const normalizedSearch = normalizeSearchTerm(search);
 
   return reviews.filter((review) => {
     const matchesSearch =
@@ -58,7 +59,7 @@ export const filterReportedContent = (
   statusFilter: ReportedContentStatusFilter,
   typeFilter: ReportedContentTypeFilter,
 ): ReportedContent[] => {
-  const normalizedSearch = search.trim().toLowerCase();
+  const normalizedSearch = normalizeSearchTerm(search);
 
   return reports.filter((report) => {
     const matchesSearch =

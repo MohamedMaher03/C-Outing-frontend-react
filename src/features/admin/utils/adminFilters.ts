@@ -6,13 +6,14 @@ import type {
   AdminUser,
   AdminUserRoleFilter,
 } from "../types";
+import { normalizeSearchTerm } from "@/utils/textNormalization";
 
 export const filterUsers = (
   users: AdminUser[],
   search: string,
   roleFilter: AdminUserRoleFilter,
 ): AdminUser[] => {
-  const normalizedSearch = search.toLowerCase();
+  const normalizedSearch = normalizeSearchTerm(search);
 
   return users.filter((user) => {
     const matchesSearch =
@@ -29,7 +30,7 @@ export const filterPlaces = (
   search: string,
   statusFilter: AdminPlaceStatusFilter,
 ): AdminPlace[] => {
-  const normalizedSearch = search.toLowerCase();
+  const normalizedSearch = normalizeSearchTerm(search);
 
   return places.filter((place) => {
     const matchesSearch =
@@ -47,7 +48,7 @@ export const filterReviews = (
   search: string,
   statusFilter: AdminReviewStatusFilter,
 ): AdminReview[] => {
-  const normalizedSearch = search.toLowerCase();
+  const normalizedSearch = normalizeSearchTerm(search);
 
   return reviews.filter((review) => {
     const matchesSearch =

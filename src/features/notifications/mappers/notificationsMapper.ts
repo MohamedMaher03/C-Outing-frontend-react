@@ -1,5 +1,6 @@
 import type { PaginatedResponse } from "@/types";
 import type { Notification } from "../types";
+import { isNonEmptyString } from "@/utils/typeGuards";
 
 const DEFAULT_PAGE_INDEX = 1;
 const DEFAULT_PAGE_SIZE = 50;
@@ -21,9 +22,6 @@ const clampInt = (value: unknown, min: number, max: number): number => {
 
   return Math.min(max, Math.max(min, Math.floor(value)));
 };
-
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0;
 
 const normalizeDateIso = (value: unknown): string => {
   if (value instanceof Date && Number.isFinite(value.getTime())) {

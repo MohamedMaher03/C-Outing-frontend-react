@@ -1,12 +1,3 @@
-/**
- * API Configuration
- * Centralized API endpoints and configuration for backend integration.
- *
- * Every endpoint used by any feature is defined here so that URL strings
- * live in a single, auditable place.  Feature-level `*Api.ts` files
- * import from this module — they never hard-code paths.
- */
-
 export const API_ENDPOINTS = {
   // ── Auth ─────────────────────────────────────────────────────
   auth: {
@@ -26,8 +17,6 @@ export const API_ENDPOINTS = {
     updateProfile: (userId: string) => `/users/${userId}`,
     getPreferences: (userId: string) => `/users/${userId}/preferences`,
     updatePreferences: (userId: string) => `/users/${userId}/preferences`,
-    // Public-user endpoints (used by features/users)
-    // NOTE: public profile by userId is currently pending backend confirmation.
     getPublicProfile: (userId: string) => `/api/v1/User/${userId}/profile`,
     getReviews: (userId: string) => `/api/v1/Review/user/${userId}`,
   },
@@ -51,16 +40,8 @@ export const API_ENDPOINTS = {
 
   // ── Home / Venues ────────────────────────────────────────────
   home: {
-    // NOTE: curatedPlaces are personalized recommendations — userId is REQUIRED.
-    // There is no generic /venues/curated endpoint; the backend computes
-    // a ranked list from the user's preference vector.
-
     toggleSave: (placeId: string) => `/api/v1/Venue/${placeId}/save`,
-    // Returns places filtered by mood (e.g., "chill", "romantic").
-    // The backend applies its own mood-to-attribute mapping.
     moodPlaces: (moodId: string) => `/api/v1/Venue/mood/${moodId}`,
-
-    // Venue discovery endpoints (standard envelope: ApiResponse<HomePlace[]>)
     venuesByDistrict: (district: string) =>
       `/api/v1/Venue/district/${encodeURIComponent(district)}`,
     venuesByType: (type: string) =>
@@ -86,8 +67,6 @@ export const API_ENDPOINTS = {
   },
 
   // ── Onboarding (preferences submission) ──────────────────────
-  // Re-uses users.updatePreferences for the actual save.
-  // A dedicated key is provided so onboarding code reads naturally.
   onboarding: {
     submitPreferences: (userId: string) => `/users/${userId}/preferences`,
     updatePreferences: (userId: string) => `/users/${userId}/preferences`,

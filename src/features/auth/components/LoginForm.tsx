@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { InlineLoading } from "@/components/ui/LoadingSpinner";
@@ -17,6 +17,7 @@ import { useLogin } from "@/features/auth/hooks/useLogin";
 import { LOGIN_FORM_FIELDS } from "@/features/auth/mocks";
 import type { LoginField } from "../types";
 import { useI18n } from "@/components/i18n";
+import { normalizeEmail } from "@/utils/textNormalization";
 
 const LoginForm = () => {
   const { t } = useI18n();
@@ -35,15 +36,14 @@ const LoginForm = () => {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
-  const typedEmail = watch("email") ?? "";
-  const recoveryEmail =
-    pendingVerificationEmail ?? typedEmail.trim().toLowerCase();
+  const typedEmail = useWatch({ control, name: "email" }) ?? "";
+  const recoveryEmail = pendingVerificationEmail ?? normalizeEmail(typedEmail);
   const hasRecoveryEmail = recoveryEmail.length > 0;
 
   const onSubmit = async (data: LoginFormData) => {

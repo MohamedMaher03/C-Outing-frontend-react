@@ -1,26 +1,12 @@
 import type { FavoritesDataSource } from "../types/dataSource";
 import { favoritesApi } from "../api/favoritesApi";
 import { favoritesMock } from "../mocks";
+import { selectDataSource } from "@/utils/dataSourceResolver";
 
 export type { FavoritesDataSource } from "../types/dataSource";
 
-const parseBooleanEnv = (value: unknown): boolean => {
-  if (typeof value !== "string") return false;
-  const normalized = value.trim().toLowerCase();
-  return normalized === "true" || normalized === "1" || normalized === "yes";
-};
-
-const resolveFeatureMockFlag = (featureValue: unknown): boolean => {
-  if (typeof featureValue === "string") {
-    return parseBooleanEnv(featureValue);
-  }
-
-  return parseBooleanEnv(import.meta.env.VITE_USE_MOCKS);
-};
-
-const shouldUseMocks = resolveFeatureMockFlag(
+export const favoritesDataSource: FavoritesDataSource = selectDataSource(
   import.meta.env.VITE_FAVORITES_USE_MOCKS,
+  favoritesMock,
+  favoritesApi,
 );
-export const favoritesDataSource: FavoritesDataSource = shouldUseMocks
-  ? favoritesMock
-  : favoritesApi;

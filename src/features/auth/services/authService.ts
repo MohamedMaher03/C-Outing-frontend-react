@@ -14,25 +14,14 @@ import type {
 import type { User } from "@/types";
 import { buildUserFromAuthToken } from "./jwtClaims";
 import { AuthError } from "../errors";
+import { selectDataSource } from "@/utils/dataSourceResolver";
+import { normalizeEmail } from "@/utils/textNormalization";
 
-const parseBooleanEnv = (value: unknown): boolean => {
-  if (typeof value !== "string") return false;
-  const normalized = value.trim().toLowerCase();
-  return normalized === "true" || normalized === "1" || normalized === "yes";
-};
-
-const resolveFeatureMockFlag = (featureValue: unknown): boolean => {
-  if (typeof featureValue === "string") {
-    return parseBooleanEnv(featureValue);
-  }
-
-  return parseBooleanEnv(import.meta.env.VITE_USE_MOCKS);
-};
-
-const shouldUseAuthMocks = resolveFeatureMockFlag(
+const authDataSource = selectDataSource(
   import.meta.env.VITE_AUTH_USE_MOCKS,
+  authMock,
+  authApi,
 );
-const authDataSource = shouldUseAuthMocks ? authMock : authApi;
 
 const canUseStorage = (): boolean =>
   typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -67,8 +56,6 @@ const removeStorageItem = (key: string): void => {
     return;
   }
 };
-
-const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
 const REGISTER_TIMEOUT_MESSAGE_PATTERN =
   /(timeout|timed\s*out|exceeded|abort)/i;

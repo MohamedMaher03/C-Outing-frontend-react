@@ -8,6 +8,7 @@ import type {
   UserPreferences,
   UserProfile,
 } from "../types";
+import { isNonEmptyString } from "@/utils/typeGuards";
 
 const DEFAULT_NAME = "Guest User";
 const MAX_NAME_LENGTH = 100;
@@ -41,9 +42,6 @@ const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
 };
 
 const getTodayDateString = (): string => new Date().toISOString().slice(0, 10);
-
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0;
 
 const sanitizeName = (value: unknown): string => {
   if (!isNonEmptyString(value)) return DEFAULT_NAME;

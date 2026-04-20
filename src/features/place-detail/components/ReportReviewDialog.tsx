@@ -94,7 +94,7 @@ export function ReportReviewDialog({
         setReason("");
         setDescription("");
       }, 1800);
-    } catch (error) {
+    } catch (error: unknown) {
       setSubmitError(
         getErrorMessage(error, t("placeDetail.report.error.submit")),
       );

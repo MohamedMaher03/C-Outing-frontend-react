@@ -33,6 +33,8 @@
  *   catch (err) { toast.error(getErrorMessage(err)); }
  */
 
+import { isObjectRecord } from "./typeGuards";
+
 // ── Error Class ───────────────────────────────────────────────────────────
 
 export class ApiError extends Error {
@@ -90,9 +92,6 @@ const TRANSPORT_STATUS_MESSAGE_PATTERN =
   /^Request failed with status code \d+$/i;
 const LOAD_FAILURE_MESSAGE_PATTERN =
   /(network|timeout|timed out|failed to fetch|load failed|abort|network error|err_network|econnaborted)/i;
-
-const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
 
 const asValidationErrors = (value: unknown): ValidationErrors | undefined => {
   if (!isObjectRecord(value)) return undefined;

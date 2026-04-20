@@ -1,4 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 import { Home, Heart, User, LogOut, Map } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
@@ -28,12 +29,48 @@ const AppLayout = () => {
     await logoutUser();
   };
 
-  const navItems = [
-    { path: "/", label: t("nav.home"), icon: Home },
-    { path: "/map", label: t("nav.map", undefined, "Map"), icon: Map },
-    { path: "/favorites", label: t("nav.saved"), icon: Heart },
-    { path: "/profile", label: t("nav.profile"), icon: User },
-  ];
+  const navItems = useMemo(
+    () => [
+      { path: "/", label: t("nav.home"), icon: Home },
+      { path: "/map", label: t("nav.map", undefined, "Map"), icon: Map },
+      { path: "/favorites", label: t("nav.saved"), icon: Heart },
+      { path: "/profile", label: t("nav.profile"), icon: User },
+    ],
+    [t],
+  );
+
+  const logoutToneClassName =
+    "border border-red-300/80 bg-red-50/70 text-red-700 transition-colors hover:bg-red-100 disabled:cursor-wait disabled:opacity-75 dark:border-red-500/45 dark:bg-red-900/35 dark:text-red-100 dark:hover:bg-red-900/55";
+
+  const renderLogoutContent = (mobile: boolean) => {
+    if (isLoggingOut) {
+      return (
+        <>
+          <InlineLoading size="sm" className={mobile ? "h-5 w-5" : "h-4 w-4"} />
+          {mobile ? (
+            <span className="max-w-full truncate text-xs font-medium leading-tight">
+              {t("layout.loggingOut")}
+            </span>
+          ) : (
+            t("layout.loggingOut")
+          )}
+        </>
+      );
+    }
+
+    return (
+      <>
+        <LogOut className={mobile ? "h-5 w-5" : "h-4 w-4"} />
+        {mobile ? (
+          <span className="max-w-full truncate text-xs font-medium leading-tight">
+            {t("layout.logout")}
+          </span>
+        ) : (
+          t("layout.logout")
+        )}
+      </>
+    );
+  };
 
   return (
     <NotificationsCountProvider>
@@ -96,19 +133,12 @@ const AppLayout = () => {
               onClick={handleLogout}
               disabled={isLoggingOut}
               aria-busy={isLoggingOut}
-              className="ml-2 flex items-center gap-2 rounded-lg border border-red-300/80 bg-red-50/70 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 disabled:cursor-wait disabled:opacity-75 dark:border-red-500/45 dark:bg-red-900/35 dark:text-red-100 dark:hover:bg-red-900/55"
-            >
-              {isLoggingOut ? (
-                <>
-                  <InlineLoading size="sm" className="h-4 w-4" />
-                  {t("layout.loggingOut")}
-                </>
-              ) : (
-                <>
-                  <LogOut className="h-4 w-4" />
-                  {t("layout.logout")}
-                </>
+              className={cn(
+                "ml-2 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium",
+                logoutToneClassName,
               )}
+            >
+              {renderLogoutContent(false)}
             </button>
           </nav>
         </header>
@@ -139,12 +169,7 @@ const AppLayout = () => {
           className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 supports-[backdrop-filter]:bg-card/85 supports-[backdrop-filter]:backdrop-blur"
           aria-label={t("layout.bottomNavigation")}
         >
-          <div
-            className="grid items-stretch gap-1 px-1.5 py-2 pb-[calc(0.625rem+max(env(safe-area-inset-bottom),0px))]"
-            style={{
-              gridTemplateColumns: `repeat(${navItems.length + 2}, minmax(0, 1fr))`,
-            }}
-          >
+          <div className="grid grid-cols-6 items-stretch gap-1 px-1.5 py-2 pb-[calc(0.625rem+max(env(safe-area-inset-bottom),0px))]">
             {navItems.map((item) => {
               const active = location.pathname === item.path;
               return (
@@ -174,23 +199,12 @@ const AppLayout = () => {
               onClick={handleLogout}
               disabled={isLoggingOut}
               aria-busy={isLoggingOut}
-              className="flex h-full min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-red-300/80 bg-red-50/70 px-1.5 py-2 text-red-700 transition-colors hover:bg-red-100 disabled:cursor-wait disabled:opacity-75 dark:border-red-500/45 dark:bg-red-900/35 dark:text-red-100 dark:hover:bg-red-900/55"
-            >
-              {isLoggingOut ? (
-                <>
-                  <InlineLoading size="sm" className="h-5 w-5" />
-                  <span className="max-w-full truncate text-xs font-medium leading-tight">
-                    {t("layout.loggingOut")}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <LogOut className="h-5 w-5" />
-                  <span className="max-w-full truncate text-xs font-medium leading-tight">
-                    {t("layout.logout")}
-                  </span>
-                </>
+              className={cn(
+                "flex h-full min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1.5 py-2",
+                logoutToneClassName,
               )}
+            >
+              {renderLogoutContent(true)}
             </button>
           </div>
         </nav>

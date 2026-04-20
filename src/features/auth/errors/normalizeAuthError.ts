@@ -1,6 +1,7 @@
 import { AuthError } from "./AuthError";
 import { isApiError, getFirstValidationErrorMessage } from "@/utils/apiError";
 import { AUTH_ERROR_MESSAGES, type AuthErrorCode } from "../constants";
+import { isObjectRecord } from "@/utils/typeGuards";
 
 const HTTP_STATUS_TO_AUTH_CODE: Partial<Record<number, AuthErrorCode>> = {
   400: "INVALID_CREDENTIALS",
@@ -21,9 +22,6 @@ const AUTH_CODE_ALIASES: Record<string, AuthErrorCode> = {
 
 const EMAIL_NOT_VERIFIED_MESSAGE_PATTERN =
   /(email.*not\s*verif|verify\s*your\s*email|unverified\s*email|confirm\s*your\s*email|account\s*not\s*verified)/i;
-
-const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 const normalizeCodeToken = (value: string): string =>
   value

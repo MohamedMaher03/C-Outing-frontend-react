@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { normalizeSearchTerm } from "@/utils/textNormalization";
 import { useI18n } from "@/components/i18n";
 
 const SUPPORT_EMAIL = "farouqdiaaeldin@gmail.com";
@@ -130,7 +131,7 @@ const HelpSupportPage = () => {
     [t],
   );
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const normalizedQuery = normalizeSearchTerm(searchQuery);
 
   const filteredFaqs = useMemo(() => {
     if (!normalizedQuery) {

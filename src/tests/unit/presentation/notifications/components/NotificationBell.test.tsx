@@ -41,24 +41,22 @@ jest.mock("@/components/ui/LoadingSpinner", () => ({
 }));
 
 jest.mock("framer-motion", () => {
-  const React = require("react");
-  const MotionDiv = React.forwardRef(
-    (
-      {
-        initial: _initial,
-        animate: _animate,
-        exit: _exit,
-        transition: _transition,
-        ...rest
-      }: Record<string, unknown>,
-      ref: unknown,
-    ) => <div ref={ref} {...rest} />,
+  const mockReact = jest.requireActual("react") as typeof import("react");
+
+  const MotionDiv = mockReact.forwardRef(
+    (props: Record<string, unknown>, ref: unknown) => {
+      const { initial, animate, exit, transition, ...rest } = props;
+      void initial;
+      void animate;
+      void exit;
+      void transition;
+
+      return <div ref={ref as never} {...rest} />;
+    },
   );
 
   return {
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => (
-      <>{children}</>
-    ),
+    AnimatePresence: ({ children }: { children: unknown }) => <>{children}</>,
     motion: {
       div: MotionDiv,
     },
@@ -84,8 +82,8 @@ const createHookState = () => ({
   ],
   unreadCount: 2,
   loading: false,
-  error: null,
-  filterTab: "all" as const,
+  error: null as string | null,
+  filterTab: "all" as "all" | "unread",
   setFilterTab: jest.fn(),
   markAsRead: jest.fn().mockResolvedValue(undefined),
   markAllRead: jest.fn().mockResolvedValue(undefined),

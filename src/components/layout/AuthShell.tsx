@@ -27,9 +27,11 @@ export const AuthShell = ({
 }: AuthShellProps) => {
   return (
     <div className="relative flex min-h-[100svh] w-full items-start justify-center overflow-y-auto py-5 sm:items-center sm:py-10">
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${cairoBg})` }}
+      <img
+        src={cairoBg}
+        alt=""
+        aria-hidden
+        className="absolute inset-0 h-full w-full object-cover"
       />
       <div className="absolute inset-0 bg-[rgba(17,39,73,0.58)] dark:bg-[rgba(6,14,27,0.72)]" />
 

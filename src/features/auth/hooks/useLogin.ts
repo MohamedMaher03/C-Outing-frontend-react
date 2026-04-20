@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getAuthErrorMessage, isEmailNotVerifiedError } from "../errors";
 import type { LoginFormData } from "../validation/login.schema";
+import { normalizeEmail } from "@/utils/textNormalization";
 
 interface UseLoginReturn {
   loginUser: (data: LoginFormData) => Promise<boolean>;
@@ -53,7 +54,7 @@ export const useLogin = (): UseLoginReturn => {
   const resendVerificationEmail = async (email: string): Promise<boolean> => {
     if (resendInFlightRef.current) return false;
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail) return false;
 
     resendInFlightRef.current = true;

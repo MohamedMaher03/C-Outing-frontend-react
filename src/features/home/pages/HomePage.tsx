@@ -37,6 +37,7 @@ import {
 import type { VenuePriceRange } from "@/features/home/types";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
+import { normalizeSearchTerm } from "@/utils/textNormalization";
 
 const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const;
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
@@ -268,24 +269,36 @@ const HomePage = () => {
     [moodOptions, selectedMood],
   );
 
+  const similarSeedSearchIndex = useMemo(
+    () =>
+      similarSeedOptions.map((place) => ({
+        place,
+        name: normalizeSearchTerm(place.name),
+        address: normalizeSearchTerm(place.address),
+        category: normalizeSearchTerm(place.category),
+        tags: normalizeSearchTerm((place.atmosphereTags ?? []).join(" ")),
+      })),
+    [similarSeedOptions],
+  );
+
   const similarSearchResults = useMemo(() => {
-    const query = similarSearchInput.trim().toLowerCase();
+    const query = normalizeSearchTerm(similarSearchInput);
     if (!query) {
       return similarSeedOptions.slice(0, 8);
     }
 
-    return similarSeedOptions
-      .filter((place) => {
-        const tags = (place.atmosphereTags ?? []).join(" ").toLowerCase();
+    return similarSeedSearchIndex
+      .filter(({ name, address, category, tags }) => {
         return (
-          place.name.toLowerCase().includes(query) ||
-          place.address.toLowerCase().includes(query) ||
-          place.category.toLowerCase().includes(query) ||
+          name.includes(query) ||
+          address.includes(query) ||
+          category.includes(query) ||
           tags.includes(query)
         );
       })
+      .map(({ place }) => place)
       .slice(0, 8);
-  }, [similarSearchInput, similarSeedOptions]);
+  }, [similarSearchInput, similarSeedOptions, similarSeedSearchIndex]);
 
   const getMoodLabel = useCallback(
     (moodId: string, fallback: string) =>

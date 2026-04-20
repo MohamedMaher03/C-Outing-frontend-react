@@ -4,6 +4,7 @@ import { authService } from "../services/authService";
 import type { RegisterRequest } from "../types";
 import { AuthContext } from "./AuthContext";
 import type { AuthContextType } from "./AuthContext";
+import { normalizeEmail } from "@/utils/textNormalization";
 
 export interface AuthProviderProps {
   children: React.ReactNode;
@@ -46,7 +47,7 @@ export function AuthProvider({
 
   const register = useCallback(async (data: RegisterRequest): Promise<void> => {
     await authService.register(data);
-    setPendingVerificationEmailState(data.email.trim().toLowerCase());
+    setPendingVerificationEmailState(normalizeEmail(data.email));
   }, []);
 
   const verifyEmail = useCallback(
@@ -61,11 +62,11 @@ export function AuthProvider({
 
   const resendOtp = useCallback(async (email: string): Promise<void> => {
     await authService.resendOtp({ email });
-    setPendingVerificationEmailState(email.trim().toLowerCase());
+    setPendingVerificationEmailState(normalizeEmail(email));
   }, []);
 
   const setPendingVerificationEmail = useCallback((email: string): void => {
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
     authService.setPendingVerificationEmail(normalizedEmail);
     setPendingVerificationEmailState(normalizedEmail || null);
   }, []);

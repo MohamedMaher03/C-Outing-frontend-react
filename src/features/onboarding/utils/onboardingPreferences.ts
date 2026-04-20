@@ -3,13 +3,11 @@ import {
   type CanonicalPriceLevel,
 } from "@/utils/priceLevels";
 import type { OnboardingPreferences } from "../types";
+import { isNonEmptyString } from "@/utils/typeGuards";
 
 const MAX_INTERESTS = 12;
 const MAX_DISTRICTS = 12;
 const MAX_ITEM_LENGTH = 80;
-
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0;
 
 const normalizeStringList = (input: unknown, maxItems: number): string[] => {
   if (!Array.isArray(input)) {

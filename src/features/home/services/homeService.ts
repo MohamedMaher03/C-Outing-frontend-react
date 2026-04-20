@@ -10,25 +10,13 @@ import type {
   VenueByTypeParams,
   VenueTopRatedInAreaParams,
 } from "@/features/home/types";
+import { selectDataSource } from "@/utils/dataSourceResolver";
 
-const parseBooleanEnv = (value: unknown): boolean => {
-  if (typeof value !== "string") return false;
-  const normalized = value.trim().toLowerCase();
-  return normalized === "true" || normalized === "1" || normalized === "yes";
-};
-
-const resolveFeatureMockFlag = (featureValue: unknown): boolean => {
-  if (typeof featureValue === "string") {
-    return parseBooleanEnv(featureValue);
-  }
-
-  return parseBooleanEnv(import.meta.env.VITE_USE_MOCKS);
-};
-
-const shouldUseHomeMocks = resolveFeatureMockFlag(
+const homeDataSource = selectDataSource(
   import.meta.env.VITE_HOME_USE_MOCKS,
+  homeMock,
+  homeApi,
 );
-const homeDataSource = shouldUseHomeMocks ? homeMock : homeApi;
 
 const withServiceError = async <T>(
   operation: () => Promise<T>,

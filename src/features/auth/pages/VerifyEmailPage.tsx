@@ -20,6 +20,7 @@ import {
 } from "@/features/auth/components/layout/AuthShell";
 import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
 import { useI18n } from "@/components/i18n";
+import { normalizeEmail } from "@/utils/textNormalization";
 
 const OTP_LENGTH = AUTH_OTP_LENGTH;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -30,8 +31,6 @@ function maskEmail(email: string): string {
   if (!domain || local.length <= 2) return email;
   return `${local[0]}${"*".repeat(local.length - 2)}${local[local.length - 1]}@${domain}`;
 }
-
-const normalizeEmail = (value: string): string => value.trim().toLowerCase();
 
 const isValidEmail = (value: string): boolean =>
   SIMPLE_EMAIL_PATTERN.test(normalizeEmail(value));

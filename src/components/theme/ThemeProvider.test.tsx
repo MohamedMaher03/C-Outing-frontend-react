@@ -1,6 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { renderHook } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { ThemeProvider } from "./ThemeProvider";
 import { useTheme } from "./useTheme";
 import { THEME_STORAGE_KEY } from "./theme.context";
