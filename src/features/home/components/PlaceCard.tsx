@@ -6,6 +6,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import type { PlaceCardProps } from "@/features/home/types";
 import { getDistanceDisplayState } from "@/features/home/utils/distance";
+import { buildHomeImageCandidates } from "@/features/home/utils/imageUrl";
 import { PRICE_LEVEL_META } from "@/utils/priceLevels";
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -37,7 +38,13 @@ const PlaceCard = ({
 }: PlaceCardProps) => {
   const { t, formatNumber } = useI18n();
   const shouldReduceMotion = useReducedMotion();
-  const [isImageBroken, setIsImageBroken] = useState(false);
+  const [imageRetryState, setImageRetryState] = useState<{
+    sourceKey: string;
+    index: number;
+  }>({
+    sourceKey: "",
+    index: 0,
+  });
   const isHorizontal = variant === "horizontal";
   const rating = toSafeNumber(place.rating);
   const reviewCount = toSafeNumber(place.reviewCount);
@@ -68,6 +75,17 @@ const PlaceCard = ({
   const priceMeta = place.priceLevel
     ? PRICE_LEVEL_META[place.priceLevel]
     : null;
+  const imageCandidates = useMemo(
+    () => buildHomeImageCandidates(place.image),
+    [place.image],
+  );
+
+  const imageSourceKey = place.image;
+  const imageCandidateIndex =
+    imageRetryState.sourceKey === imageSourceKey ? imageRetryState.index : 0;
+
+  const activeImageSrc = imageCandidates[imageCandidateIndex];
+  const isImageUnavailable = !activeImageSrc;
 
   const distanceLabel = useMemo(() => {
     if (distanceState.kind === "distance") {
@@ -186,14 +204,28 @@ const PlaceCard = ({
           isHorizontal ? "h-40" : "h-48",
         )}
       >
-        <img
-          src={isImageBroken ? "" : place.image}
-          alt={safeName}
-          className="h-full w-full object-cover transition-transform duration-500 ease-out md:group-hover/place:scale-105"
-          loading="lazy"
-          onError={() => setIsImageBroken(true)}
-        />
-        {isImageBroken && (
+        {activeImageSrc && (
+          <img
+            src={activeImageSrc}
+            alt={safeName}
+            className="h-full w-full object-cover transition-transform duration-500 ease-out md:group-hover/place:scale-105"
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={() => {
+              setImageRetryState((prev) => {
+                const currentIndex =
+                  prev.sourceKey === imageSourceKey ? prev.index : 0;
+
+                return {
+                  sourceKey: imageSourceKey,
+                  index: Math.min(currentIndex + 1, imageCandidates.length),
+                };
+              });
+            }}
+          />
+        )}
+        {isImageUnavailable && (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/70 px-4 text-center">
             <span className="text-sm font-semibold text-muted-foreground break-words">
               {t("home.place.imageUnavailable")}
