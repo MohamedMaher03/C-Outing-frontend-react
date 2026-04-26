@@ -45,6 +45,14 @@ interface UseManagePlacesReturn {
   scrapeStartedMessage: string | null;
   placeActionNotice: PlaceActionNotice | null;
   toasts: AdminToast[];
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  goToPreviousPage: () => void;
+  goToNextPage: () => void;
   setSearch: (value: string) => void;
   setStatusFilter: (value: AdminPlaceStatusFilter) => void;
   setShowAddForm: (value: boolean | ((prev: boolean) => boolean)) => void;
@@ -85,6 +93,14 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
   const mountedRef = useRef(true);
   const inFlightRef = useRef(new Set<string>());
   const toastTimersRef = useRef<number[]>([]);
+  const PLACES_PAGE_SIZE = 10;
+
+  const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize, setPageSize] = useState(PLACES_PAGE_SIZE);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(false);
 
   const addPendingPlace = (placeId: string) => {
     setPendingPlaceIds((prev) =>
@@ -99,25 +115,45 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
   const getStatusLabel = (status: AdminPlace["status"]): string =>
     t(`admin.status.${status}`, undefined, status);
 
-  const loadPlaces = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadPlaces = useCallback(
+    async (explicitPage?: number) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const placesData = await adminService.getPlaces();
+      const targetPage = explicitPage ?? pageIndex;
 
-      if (!mountedRef.current) return;
+      try {
+        const placesData = await adminService.getPlaces({
+          page: targetPage,
+          count: PLACES_PAGE_SIZE,
+        });
 
-      setPlaces(placesData);
-    } catch (err) {
-      if (!mountedRef.current) return;
-      setError(getErrorMessage(err, t("admin.error.loadPlaces")));
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
+        if (!mountedRef.current) return;
+
+        const normalizedTotalPages = Math.max(1, placesData.totalPages);
+        const normalizedPage = Math.min(
+          Math.max(1, targetPage),
+          normalizedTotalPages,
+        );
+
+        setPlaces(placesData.items);
+        setPageIndex(normalizedPage);
+        setPageSize(Math.max(1, placesData.pageSize));
+        setTotalCount(Math.max(0, placesData.totalCount));
+        setTotalPages(normalizedTotalPages);
+        setHasPreviousPage(normalizedPage > 1);
+        setHasNextPage(normalizedPage < normalizedTotalPages);
+      } catch (err) {
+        if (!mountedRef.current) return;
+        setError(getErrorMessage(err, t("admin.error.loadPlaces")));
+      } finally {
+        if (mountedRef.current) {
+          setLoading(false);
+        }
       }
-    }
-  }, [t]);
+    },
+    [t],
+  );
 
   useEffect(() => {
     mountedRef.current = true;
@@ -273,10 +309,35 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     }
   };
 
-  const filteredPlaces = useMemo(
-    () => filterPlaces(places, deferredSearch, statusFilter),
-    [places, deferredSearch, statusFilter],
-  );
+  const filteredPlaces = useMemo(() => {
+    return filterPlaces(places, deferredSearch, statusFilter);
+  }, [places, deferredSearch, statusFilter]);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPageIndex(1);
+    void loadPlaces(1);
+  };
+
+  const handleStatusFilterChange = (value: AdminPlaceStatusFilter) => {
+    setStatusFilter(value);
+    setPageIndex(1);
+    void loadPlaces(1);
+  };
+
+  const goToPreviousPage = () => {
+    if (!hasPreviousPage || loading) return;
+    const nextPage = Math.max(1, pageIndex - 1);
+    setPageIndex(nextPage);
+    void loadPlaces(nextPage);
+  };
+
+  const goToNextPage = () => {
+    if (!hasNextPage || loading) return;
+    const nextPage = Math.min(totalPages, pageIndex + 1);
+    setPageIndex(nextPage);
+    void loadPlaces(nextPage);
+  };
 
   return {
     places,
@@ -293,8 +354,16 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     scrapeStartedMessage,
     placeActionNotice,
     toasts,
-    setSearch,
-    setStatusFilter,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPreviousPage,
+    goToNextPage,
+    setSearch: handleSearchChange,
+    setStatusFilter: handleStatusFilterChange,
     setShowAddForm,
     setForm,
     dismissScrapeStartedMessage,

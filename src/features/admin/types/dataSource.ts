@@ -1,3 +1,4 @@
+import type { PaginatedResponse, QueryParams } from "@/types";
 import type {
   AdminStats,
   AdminUserId,
@@ -20,7 +21,7 @@ export interface AdminDataSource {
     userId: AdminUserId,
     status: AdminUserStatus,
   ) => Promise<void>;
-  getPlaces: () => Promise<AdminPlace[]>;
+  getPlaces: (params?: QueryParams) => Promise<PaginatedResponse<AdminPlace>>;
   addPlace: (placeData: CreateAdminPlaceInput) => Promise<void>;
   updatePlaceStatus: (
     placeId: string,

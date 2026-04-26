@@ -24,6 +24,7 @@ import {
   toRecentActivity,
   toSystemSettings,
 } from "./adminApi.mapper";
+import type { PaginatedResponse } from "@/types";
 
 interface UsersParams extends AdminUsersQuery {
   isBanned?: boolean;
@@ -96,7 +97,9 @@ const getReportedVenueIds = async (): Promise<Set<string>> => {
   return mapReportedVenueIds(data);
 };
 
-const getPlaces = async (params: VenuesParams = {}): Promise<AdminPlace[]> => {
+const getPlaces = async (
+  params: VenuesParams = {},
+): Promise<PaginatedResponse<AdminPlace>> => {
   const [reportedVenueIds, venuesResponse] = await Promise.all([
     getReportedVenueIds(),
     axiosInstance.get(
@@ -175,8 +178,10 @@ export const adminApi = {
     throw new Error("Suspend status is not supported by current backend APIs");
   },
 
-  async getPlaces(): Promise<AdminPlace[]> {
-    return getPlaces({ page: 1, count: 10 });
+  async getPlaces(
+    params: VenuesParams = {},
+  ): Promise<PaginatedResponse<AdminPlace>> {
+    return getPlaces({ page: params.page ?? 1, count: params.count ?? 10 });
   },
 
   async addPlace(placeData: CreateAdminPlaceInput): Promise<void> {

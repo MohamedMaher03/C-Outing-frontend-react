@@ -1,3 +1,4 @@
+import type { PaginatedResponse, QueryParams } from "@/types";
 import type {
   AdminStats,
   AdminUserId,
@@ -46,9 +47,11 @@ export const adminService = {
     );
   },
 
-  async getPlaces(): Promise<AdminPlace[]> {
+  async getPlaces(
+    placesQueryParams?: QueryParams,
+  ): Promise<PaginatedResponse<AdminPlace>> {
     return withAdminServiceError(
-      () => adminDataSource.getPlaces(),
+      () => adminDataSource.getPlaces(placesQueryParams),
       "Failed to load places",
     );
   },

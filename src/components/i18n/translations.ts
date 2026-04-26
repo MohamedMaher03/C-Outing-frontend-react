@@ -879,6 +879,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.places.dialog.deleteTitle": "Delete Place",
     "admin.places.dialog.deleteDescription":
       'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
+    "admin.places.pagination.summary":
+      "Page {page} of {totalPages} · {totalCount} places total · {pageSize} per page",
+    "admin.places.pagination.previous": "Previous",
+    "admin.places.pagination.next": "Next",
+    "admin.places.pagination.page": "Page {page} / {totalPages}",
 
     "admin.reviews.loading": "Loading reviews...",
     "admin.reviews.header.title": "Manage Reviews",
@@ -2264,6 +2269,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.places.dialog.deleteTitle": "حذف المكان",
     "admin.places.dialog.deleteDescription":
       'هل أنت متأكد من حذف "{name}" نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.',
+    "admin.places.pagination.summary":
+      "الصفحة {page} من {totalPages} · إجمالي {totalCount} مكانًا · {pageSize} لكل صفحة",
+    "admin.places.pagination.page": "الصفحة {page} / {totalPages}",
+    "admin.places.pagination.previous": "السابق",
+    "admin.places.pagination.next": "التالي",
 
     "admin.reviews.loading": "جارٍ تحميل المراجعات...",
     "admin.reviews.header.title": "إدارة المراجعات",

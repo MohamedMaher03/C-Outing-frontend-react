@@ -1,3 +1,8 @@
+/**
+ * i need update this page to use pagination
+ *
+ */
+
 import { useEffect, useRef, type CSSProperties } from "react";
 import {
   Search,
@@ -78,6 +83,14 @@ const ManagePlacesPage = () => {
     scrapeStartedMessage,
     placeActionNotice,
     toasts,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    goToPreviousPage,
+    goToNextPage,
     setSearch,
     setStatusFilter,
     setShowAddForm,
@@ -167,7 +180,7 @@ const ManagePlacesPage = () => {
       <AdminPageHeader
         title={t("admin.places.header.title")}
         description={t("admin.places.header.description", {
-          total: formatNumber(places.length),
+          total: formatNumber(totalCount),
           flagged: formatNumber(flaggedPlacesCount),
         })}
         icon={MapPin}
@@ -668,6 +681,46 @@ const ManagePlacesPage = () => {
               </div>
             );
           })
+        )}
+        {totalPages > 1 && (
+          <div className="mt-2 flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-role-caption text-muted-foreground">
+              {t("admin.places.pagination.summary", {
+                page: formatNumber(pageIndex),
+                totalPages: formatNumber(totalPages),
+                totalCount: formatNumber(totalCount),
+                pageSize: formatNumber(pageSize),
+              })}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={!hasPreviousPage || loading}
+              >
+                {t("admin.places.pagination.previous")}
+              </Button>
+
+              <span className="inline-flex items-center rounded-lg border px-3">
+                {t("admin.places.pagination.page", {
+                  page: formatNumber(pageIndex),
+                  totalPages: formatNumber(totalPages),
+                })}
+                {/* {pageIndex} / {totalPages} */}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={!hasNextPage || loading}
+              >
+                {t("admin.places.pagination.next")}
+              </Button>
+            </div>
+          </div>
         )}
       </AdminSection>
     </AdminPageLayout>

@@ -346,14 +346,91 @@ export const mapAdminPlace = (
   priceLevel: mapPriceRange(dto.priceRange),
 });
 
+export const mapAdminPlacesPage = (
+  payload:
+    | ApiEnvelope<PaginatedDto<AdminVenueDto>>
+    | PaginatedDto<AdminVenueDto>,
+  reportedVenueIds: Set<string>,
+): PaginatedResponse<AdminPlace> => {
+  const page = unwrapEnvelope(payload);
+
+  const mappedItems = page.items.map((item) =>
+    mapAdminPlace(item, reportedVenueIds),
+  );
+
+  const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
+
+  const rawPageIndex = Math.trunc(toFiniteNumber(page.pageIndex, 0));
+
+  const pageIndex = rawPageIndex + 1; // backend zero-based
+
+  const totalCount = Math.max(
+    0,
+    Math.trunc(toFiniteNumber(page.totalCount, mappedItems.length)),
+  );
+
+  const fallbackTotalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const totalPages = Math.max(
+    1,
+    Math.trunc(toFiniteNumber(page.totalPages, fallbackTotalPages)),
+  );
+
+  return {
+    items: mappedItems,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage:
+      typeof page.hasPreviousPage === "boolean"
+        ? page.hasPreviousPage
+        : pageIndex > 1,
+
+    hasNextPage:
+      typeof page.hasNextPage === "boolean"
+        ? page.hasNextPage
+        : pageIndex < totalPages,
+  };
+};
+
 export const mapAdminVenuesPage = (
   payload:
     | ApiEnvelope<PaginatedDto<AdminVenueDto>>
     | PaginatedDto<AdminVenueDto>,
   reportedVenueIds: Set<string>,
-): AdminPlace[] => {
+): PaginatedResponse<AdminPlace> => {
   const page = unwrapEnvelope(payload);
-  return page.items.map((venue) => mapAdminPlace(venue, reportedVenueIds));
+
+  const mappedItems = page.items.map((venue) =>
+    mapAdminPlace(venue, reportedVenueIds),
+  );
+
+  const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
+
+  const pageIndex = Math.max(1, Math.trunc(toFiniteNumber(page.pageIndex, 1)));
+
+  const totalCount = Math.max(
+    0,
+    Math.trunc(toFiniteNumber(page.totalCount, mappedItems.length)),
+  );
+
+  const totalPages = Math.max(
+    1,
+    Math.trunc(
+      toFiniteNumber(page.totalPages, Math.ceil(totalCount / pageSize)),
+    ),
+  );
+
+  return {
+    items: mappedItems,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage: pageIndex > 1,
+    hasNextPage: pageIndex < totalPages,
+  };
 };
 
 export const mapReportedVenueIds = (

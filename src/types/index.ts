@@ -66,3 +66,8 @@ export interface PaginatedResponse<T> {
   hasPreviousPage: boolean;
   hasNextPage: boolean;
 }
+
+export interface QueryParams {
+  page?: number;
+  count?: number;
+}
