@@ -184,7 +184,7 @@ const ManageReviewsPage = () => {
                           decoding="async"
                         />
                       ) : (
-                        <User className="h-4 w-4 text-secondary" />
+                        <User className="h-4 w-4 text-secondary dark:text-primary" />
                       )}
                     </div>
                     <div className="min-w-0">
@@ -209,7 +209,7 @@ const ManageReviewsPage = () => {
                           className={cn(
                             "h-3.5 w-3.5",
                             i < review.rating
-                              ? "text-secondary fill-secondary"
+                              ? "text-secondary fill-secondary dark:text-primary dark:fill-primary"
                               : "text-muted-foreground/20",
                           )}
                         />

@@ -272,6 +272,13 @@ export const unwrapEnvelope = <T>(payload: ApiEnvelope<T> | T): T => {
   return payload as T;
 };
 
+const extractArray = <T>(data: T[] | { items: T[] }): T[] => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray((data as { items: T[] })?.items))
+    return (data as { items: T[] }).items;
+  return [];
+};
+
 export const mapAdminUser = (dto: AdminUserDto): AdminUser => ({
   userId: dto.id,
   name: dto.name,
@@ -352,7 +359,7 @@ export const mapAdminVenuesPage = (
 export const mapReportedVenueIds = (
   payload: ApiEnvelope<ReportedVenueDto[]> | ReportedVenueDto[],
 ): Set<string> => {
-  const venues = unwrapEnvelope(payload);
+  const venues = extractArray(unwrapEnvelope(payload));
   return new Set(venues.map((venue) => venue.id));
 };
 

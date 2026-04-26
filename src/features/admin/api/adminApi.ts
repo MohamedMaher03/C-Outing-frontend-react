@@ -102,7 +102,7 @@ const getPlaces = async (params: VenuesParams = {}): Promise<AdminPlace[]> => {
     axiosInstance.get(
       `${API_ENDPOINTS.admin.getVenues}?${toQueryParams({
         page: params.page ?? 1,
-        count: params.count ?? 100,
+        count: params.count ?? 10,
       }).toString()}`,
     ),
   ]);
@@ -115,7 +115,7 @@ const getReviews = async (
 ): Promise<AdminReview[]> => {
   const query = toQueryParams({
     page: params.page ?? 1,
-    count: params.count ?? 100,
+    count: params.count ?? 10,
     status: params.status,
     searchTerm: params.searchTerm,
   });
@@ -176,7 +176,7 @@ export const adminApi = {
   },
 
   async getPlaces(): Promise<AdminPlace[]> {
-    return getPlaces({ page: 1, count: 100 });
+    return getPlaces({ page: 1, count: 10 });
   },
 
   async addPlace(placeData: CreateAdminPlaceInput): Promise<void> {
@@ -199,7 +199,7 @@ export const adminApi = {
   },
 
   async getReviews(): Promise<AdminReview[]> {
-    return getReviews({ page: 1, count: 100 });
+    return getReviews({ page: 1, count: 10 });
   },
 
   async updateReviewStatus(
