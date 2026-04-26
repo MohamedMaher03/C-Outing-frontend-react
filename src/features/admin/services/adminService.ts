@@ -11,6 +11,7 @@ import type {
   SystemSettings,
   RecentActivity,
   CreateAdminPlaceInput,
+  AdminReviewQuery,
 } from "../types";
 import { adminDataSource } from "./adminDataSource";
 import { withAdminServiceError } from "./adminServiceError";
@@ -80,9 +81,11 @@ export const adminService = {
     );
   },
 
-  async getReviews(): Promise<AdminReview[]> {
+  async getReviews(
+    reviewsQueryParams?: AdminReviewQuery,
+  ): Promise<PaginatedResponse<AdminReview>> {
     return withAdminServiceError(
-      () => adminDataSource.getReviews(),
+      () => adminDataSource.getReviews(reviewsQueryParams),
       "Failed to load reviews",
     );
   },

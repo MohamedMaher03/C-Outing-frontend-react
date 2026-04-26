@@ -131,7 +131,7 @@ interface AdminCreatedVenueDto {
   website?: string | null;
 }
 
-type AdminReviewsPayload = PaginatedDto<AdminReviewDto> | AdminReviewDto[];
+// type AdminReviewsPayload = PaginatedDto<AdminReviewDto> | AdminReviewDto[];
 
 const asDate = (value: string | null | undefined): Date => {
   if (!value) {
@@ -487,12 +487,41 @@ const mapAdminReview = (dto: AdminReviewDto): AdminReview => ({
   createdAt: asDate(dto.createdAt),
 });
 
+//paginted
 export const mapAdminReviews = (
-  payload: ApiEnvelope<AdminReviewsPayload> | AdminReviewsPayload,
-): AdminReview[] => {
-  const unwrapped = unwrapEnvelope(payload);
-  const items = Array.isArray(unwrapped) ? unwrapped : unwrapped.items;
-  return items.map(mapAdminReview);
+  payload:
+    | ApiEnvelope<PaginatedDto<AdminReviewDto>>
+    | PaginatedDto<AdminReviewDto>,
+): PaginatedResponse<AdminReview> => {
+  const page = unwrapEnvelope(payload);
+
+  const mappedItems = page.items.map(mapAdminReview);
+
+  const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
+
+  const pageIndex = Math.max(1, Math.trunc(toFiniteNumber(page.pageIndex, 1)));
+
+  const totalCount = Math.max(
+    0,
+    Math.trunc(toFiniteNumber(page.totalCount, mappedItems.length)),
+  );
+
+  const totalPages = Math.max(
+    1,
+    Math.trunc(
+      toFiniteNumber(page.totalPages, Math.ceil(totalCount / pageSize)),
+    ),
+  );
+
+  return {
+    items: mappedItems,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage: pageIndex > 1,
+    hasNextPage: pageIndex < totalPages,
+  };
 };
 
 export const mapAdminCategories = (

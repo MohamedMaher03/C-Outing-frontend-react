@@ -43,6 +43,13 @@ export interface AdminUsersQuery {
   role?: AdminUserRoleFilter;
 }
 
+export interface AdminReviewQuery {
+  page?: number;
+  count?: number;
+  searchTerm?: string;
+  status?: AdminReviewStatusFilter;
+}
+
 export type AdminUsersPage = PaginatedResponse<AdminUser>;
 
 export interface AdminPlace {

@@ -13,6 +13,7 @@ import type {
   SystemSettings,
   RecentActivity,
   CreateAdminPlaceInput,
+  AdminReviewQuery,
 } from "../types";
 import {
   mapAdminCategories,
@@ -35,12 +36,12 @@ interface VenuesParams {
   count?: number;
 }
 
-interface ReviewsParams {
-  page?: number;
-  count?: number;
-  status?: AdminReview["status"];
-  searchTerm?: string;
-}
+// interface ReviewsParams {
+//   page?: number;
+//   count?: number;
+//   status?: AdminReview["status"];
+//   searchTerm?: string;
+// }
 
 const toQueryParams = (params: Record<string, unknown>): URLSearchParams => {
   const query = new URLSearchParams();
@@ -114,8 +115,8 @@ const getPlaces = async (
 };
 
 const getReviews = async (
-  params: ReviewsParams = {},
-): Promise<AdminReview[]> => {
+  params: AdminReviewQuery = {},
+): Promise<PaginatedResponse<AdminReview>> => {
   const query = toQueryParams({
     page: params.page ?? 1,
     count: params.count ?? 10,
@@ -203,8 +204,10 @@ export const adminApi = {
     await axiosInstance.delete(API_ENDPOINTS.admin.deleteVenue(placeId));
   },
 
-  async getReviews(): Promise<AdminReview[]> {
-    return getReviews({ page: 1, count: 10 });
+  async getReviews(
+    params: AdminReviewQuery = {},
+  ): Promise<PaginatedResponse<AdminReview>> {
+    return getReviews({ page: params.page ?? 1, count: params.count ?? 10 });
   },
 
   async updateReviewStatus(

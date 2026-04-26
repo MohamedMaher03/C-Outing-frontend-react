@@ -28,7 +28,9 @@ export interface AdminDataSource {
     status: AdminPlace["status"],
   ) => Promise<void>;
   deletePlace: (placeId: string) => Promise<void>;
-  getReviews: () => Promise<AdminReview[]>;
+  getReviews: (
+    reviewsQueryParams?: QueryParams,
+  ) => Promise<PaginatedResponse<AdminReview>>;
   updateReviewStatus: (
     reviewId: string,
     status: AdminReview["status"],

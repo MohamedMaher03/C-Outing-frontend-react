@@ -307,7 +307,7 @@ const ManagePlacesPage = () => {
           >
             <div className="rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 via-card to-background p-5 sm:p-6">
               <h2 className="flex items-center gap-2 text-role-body font-semibold text-foreground">
-                <Navigation className="h-4 w-4 text-secondary" />
+                <Navigation className="h-4 w-4 text-secondary dark:text-primary" />
                 {t(
                   "admin.places.form.scrapeTitle",
                   undefined,

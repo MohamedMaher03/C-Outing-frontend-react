@@ -49,6 +49,7 @@ export const filterReviews = (
   statusFilter: AdminReviewStatusFilter,
 ): AdminReview[] => {
   const normalizedSearch = normalizeSearchTerm(search);
+  console.log(reviews);
 
   return reviews.filter((review) => {
     const matchesSearch =
