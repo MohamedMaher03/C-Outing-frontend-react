@@ -188,9 +188,9 @@ const mapRole = (role: unknown): AdminUserRole => {
 };
 
 const mapPriceRange = (priceRange: number): AdminPlace["priceLevel"] => {
-  if (priceRange <= 1) return "price_cheapest";
+  if (priceRange <= 1) return "cheapest";
   if (priceRange === 2) return "cheap";
-  if (priceRange === 3) return "mid_range";
+  if (priceRange === 3) return "midrange";
   if (priceRange === 4) return "expensive";
   return "luxury";
 };
@@ -221,9 +221,9 @@ const mapPriceLevelValue = (
   const normalized = value.trim().toLowerCase();
 
   if (
-    normalized === "price_cheapest" ||
+    normalized === "cheapest" ||
     normalized === "cheap" ||
-    normalized === "mid_range" ||
+    normalized === "midrange" ||
     normalized === "expensive" ||
     normalized === "luxury"
   ) {

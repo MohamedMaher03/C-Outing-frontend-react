@@ -123,3 +123,28 @@ export function getInitials(name: string): string {
     .toUpperCase()
     .slice(0, 2);
 }
+
+/**
+ * Get translated text from translation keys
+ * Falls back to English text if translation key is not provided
+ * @param translationKey - The i18n key (e.g., "places.nile-felucca.name")
+ * @param fallbackText - The default English text
+ * @param t - The translation function from useI18n hook
+ * @returns The translated text or fallback text
+ */
+export function getTranslatedText(
+  translationKey: string | undefined,
+  fallbackText: string,
+  t:
+    | ((
+        key: string,
+        values?: Record<string, string | number>,
+        fallback?: string,
+      ) => string)
+    | null,
+): string {
+  if (!translationKey || !t) {
+    return fallbackText;
+  }
+  return t(translationKey, undefined, fallbackText);
+}

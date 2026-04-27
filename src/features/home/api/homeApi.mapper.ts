@@ -27,9 +27,9 @@ type HomeVenueDto = {
 };
 
 const PRICE_LEVEL_VALUES: CanonicalPriceLevel[] = [
-  "price_cheapest",
+  "cheapest",
   "cheap",
-  "mid_range",
+  "midrange",
   "expensive",
   "luxury",
 ];
@@ -151,9 +151,9 @@ const toCanonicalPriceFromNumber = (
     return undefined;
   }
 
-  if (value <= 1) return "price_cheapest";
+  if (value <= 1) return "cheapest";
   if (value <= 2) return "cheap";
-  if (value <= 3) return "mid_range";
+  if (value <= 3) return "midrange";
   if (value <= 4) return "expensive";
   return "luxury";
 };
@@ -185,7 +185,7 @@ const toCanonicalPriceFromString = (
     collapsed === "free" ||
     collapsed === "verycheap"
   ) {
-    return "price_cheapest";
+    return "cheapest";
   }
 
   if (
@@ -203,7 +203,7 @@ const toCanonicalPriceFromString = (
     collapsed === "moderate" ||
     collapsed === "standard"
   ) {
-    return "mid_range";
+    return "midrange";
   }
 
   if (

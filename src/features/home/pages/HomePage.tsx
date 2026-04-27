@@ -38,6 +38,7 @@ import type { VenuePriceRange } from "@/features/home/types";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
 import { normalizeSearchTerm } from "@/utils/textNormalization";
+import { getTranslatedText } from "@/utils/helpers";
 
 const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const;
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
@@ -239,11 +240,7 @@ const HomePage = () => {
     () =>
       categories.map((category) => ({
         id: category.id,
-        label: t(
-          `home.discovery.type.${category.id}`,
-          undefined,
-          category.label,
-        ),
+        label: getTranslatedText(category.nameKey, category.label, t),
       })),
     [categories, t],
   );
@@ -814,6 +811,11 @@ const HomePage = () => {
                   <div className="flex flex-wrap gap-2">
                     {popularDistricts.map((district) => {
                       const isActive = selectedDistrict === district.name;
+                      const translatedDistrictName = getTranslatedText(
+                        district.nameKey,
+                        district.name,
+                        t,
+                      );
                       return (
                         <button
                           type="button"
@@ -830,7 +832,7 @@ const HomePage = () => {
                               : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                           }`}
                         >
-                          {district.name}
+                          {translatedDistrictName}
                         </button>
                       );
                     })}
@@ -841,6 +843,7 @@ const HomePage = () => {
                   <div className="flex flex-wrap gap-2">
                     {typeDiscoveryOptions.map((option) => {
                       const isActive = selectedVenueType === option.id;
+
                       return (
                         <button
                           type="button"
@@ -909,6 +912,11 @@ const HomePage = () => {
                     <div className="flex flex-wrap gap-2">
                       {popularDistricts.map((district) => {
                         const isActive = selectedArea === district.name;
+                        const translatedDistrictName = getTranslatedText(
+                          district.nameKey,
+                          district.name,
+                          t,
+                        );
                         return (
                           <button
                             type="button"
@@ -923,7 +931,7 @@ const HomePage = () => {
                                 : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                             }`}
                           >
-                            {district.name}
+                            {translatedDistrictName}
                           </button>
                         );
                       })}

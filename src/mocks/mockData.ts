@@ -49,15 +49,13 @@ export interface Place {
 
   // App state
   isSaved?: boolean;
-  matchScore?: number; // AI recommendation match %
+  matchScore?: number;
 }
 
 export interface Category {
   id: string;
   label: string;
-  icon: string; // lucide icon name
-  count: number;
-  color: string; // tailwind bg class
+  nameKey?: string;
 }
 
 export interface MoodOption {
@@ -75,61 +73,35 @@ export interface TrendingTag {
 
 export const CATEGORIES: Category[] = [
   {
-    id: "food",
-    label: "Food & Drink",
-    icon: "UtensilsCrossed",
-    count: 124,
-    color: "bg-orange-100",
+    id: "arts-culture",
+    label: "Arts & Culture",
+    nameKey: "categories.arts-culture",
   },
+  { id: "Bakery", label: "Bakery", nameKey: "categories.bakery" },
+  { id: "Bar", label: "Bar", nameKey: "categories.bar" },
+  { id: "Cafe", label: "Cafe", nameKey: "categories.cafe" },
+  { id: "Cinema", label: "Cinema", nameKey: "categories.cinema" },
   {
-    id: "nightlife",
-    label: "Nightlife",
-    icon: "Moon",
-    count: 56,
-    color: "bg-purple-100",
+    id: "Community",
+    label: "Community & Public Spaces",
+    nameKey: "categories.community",
   },
+  { id: "Dessert", label: "Dessert", nameKey: "categories.dessert" },
   {
-    id: "culture",
-    label: "Culture & Art",
-    icon: "Palette",
-    count: 43,
-    color: "bg-pink-100",
+    id: "Entertainment",
+    label: "Entertainment",
+    nameKey: "categories.entertainment",
   },
-  {
-    id: "outdoor",
-    label: "Outdoors",
-    icon: "Trees",
-    count: 38,
-    color: "bg-green-100",
-  },
-  {
-    id: "shopping",
-    label: "Shopping",
-    icon: "ShoppingBag",
-    count: 67,
-    color: "bg-blue-100",
-  },
-  {
-    id: "wellness",
-    label: "Wellness",
-    icon: "Heart",
-    count: 29,
-    color: "bg-teal-100",
-  },
-  {
-    id: "activities",
-    label: "Activities",
-    icon: "Compass",
-    count: 45,
-    color: "bg-amber-100",
-  },
-  {
-    id: "coworking",
-    label: "Co-working",
-    icon: "Laptop",
-    count: 31,
-    color: "bg-slate-100",
-  },
+  { id: "Gaming", label: "Gaming", nameKey: "categories.gaming" },
+  { id: "Nightlife", label: "Nightlife", nameKey: "categories.nightlife" },
+  { id: "Office", label: "Office", nameKey: "categories.office" },
+  { id: "Outdoors", label: "Outdoors", nameKey: "categories.outdoors" },
+  { id: "Recreation", label: "Recreation", nameKey: "categories.recreation" },
+  { id: "Restaurant", label: "Restaurant", nameKey: "categories.restaurant" },
+  { id: "Retail", label: "Retail", nameKey: "categories.retail" },
+  { id: "Shopping", label: "Shopping", nameKey: "categories.shopping" },
+  { id: "Theater", label: "Theater", nameKey: "categories.theater" },
+  { id: "Workspace", label: "Workspace", nameKey: "categories.workspace" },
 ];
 
 export const MOOD_OPTIONS: MoodOption[] = [
@@ -182,44 +154,165 @@ export const TRENDING_TAGS: TrendingTag[] = [
   { id: "outdoor-seating", label: "Outdoor Seating", searchCount: 650 },
 ];
 
-export const POPULAR_DISTRICTS = [
+export interface District {
+  id: string;
+  name: string;
+  nameKey?: string; // translation key for name
+}
+
+export const POPULAR_DISTRICTS: District[] = [
+  // 🏙️ Central Cairo
+  { id: "downtown", name: "Downtown", nameKey: "onboarding.district.downtown" },
   {
-    id: "zamalek",
-    name: "Zamalek",
-    image:
-      "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=300&h=200&fit=crop",
-    placeCount: 48,
+    id: "qasr-el-nil",
+    name: "Qasr El Nil",
+    nameKey: "onboarding.district.qasr-el-nil",
   },
+  { id: "abdeen", name: "Abdeen", nameKey: "onboarding.district.abdeen" },
   {
-    id: "downtown",
-    name: "Downtown",
-    image:
-      "https://images.unsplash.com/photo-1553913861-c0fddf2619ee?w=300&h=200&fit=crop",
-    placeCount: 63,
+    id: "azbakeya",
+    name: "Al Azbakeya",
+    nameKey: "onboarding.district.azbakeya",
   },
+  { id: "zamalek", name: "Zamalek", nameKey: "onboarding.district.zamalek" },
+  { id: "daher", name: "Daher", nameKey: "onboarding.district.daher" },
+
+  // 🌉 West / Giza side
+  { id: "dokki", name: "Dokki", nameKey: "onboarding.district.dokki" },
+  { id: "agouza", name: "Agouza", nameKey: "onboarding.district.agouza" },
   {
-    id: "maadi",
-    name: "Maadi",
-    image:
-      "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=300&h=200&fit=crop",
-    placeCount: 35,
+    id: "omraniya",
+    name: "El Omraniya",
+    nameKey: "onboarding.district.omraniya",
   },
+  { id: "talbia", name: "El Talbia", nameKey: "onboarding.district.talbia" },
+  { id: "warak", name: "Al Warak", nameKey: "onboarding.district.warak" },
+  { id: "imaba", name: "Imbaba", nameKey: "onboarding.district.imaba" },
+  { id: "boulaq", name: "Bulaq", nameKey: "onboarding.district.boulaq" },
+  { id: "giza", name: "Al Giza", nameKey: "onboarding.district.giza" },
+
+  // 🌆 East Cairo
   {
     id: "heliopolis",
     name: "Heliopolis",
-    image:
-      "https://images.unsplash.com/photo-1497366216548-37526070297c?w=300&h=200&fit=crop",
-    placeCount: 41,
+    nameKey: "onboarding.district.heliopolis",
+  },
+  { id: "nozha", name: "El Nozha", nameKey: "onboarding.district.nozha" },
+  { id: "zeitoun", name: "Zeitoun", nameKey: "onboarding.district.zeitoun" },
+  {
+    id: "nasr-city",
+    name: "Nasr City",
+    nameKey: "onboarding.district.nasr-city",
+  },
+  { id: "weili", name: "El Weili", nameKey: "onboarding.district.weili" },
+  { id: "shubra", name: "Shubra", nameKey: "onboarding.district.shubra" },
+  {
+    id: "shubra-el-kheima-1",
+    name: "Shubra El Kheima 1",
+    nameKey: "onboarding.district.shubra-el-kheima-1",
   },
   {
-    id: "new-cairo",
-    name: "New Cairo",
-    image:
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300&h=200&fit=crop",
-    placeCount: 57,
+    id: "shubra-el-kheima-2",
+    name: "Shubra El Kheima 2",
+    nameKey: "onboarding.district.shubra-el-kheima-2",
   },
-];
+  {
+    id: "zawya-el-hamra",
+    name: "El Zawya El Hamra",
+    nameKey: "onboarding.district.zawya-el-hamra",
+  },
+  { id: "el-marg", name: "El Marg", nameKey: "onboarding.district.el-marg" },
+  {
+    id: "ain-shams",
+    name: "Ain Shams",
+    nameKey: "onboarding.district.ain-shams",
+  },
+  {
+    id: "el-sharabia",
+    name: "El Sharabia",
+    nameKey: "onboarding.district.el-sharabia",
+  },
+  { id: "el-sahel", name: "El Sahel", nameKey: "onboarding.district.el-sahel" },
+  {
+    id: "rod-el-farag",
+    name: "Rod El Farag",
+    nameKey: "onboarding.district.rod-el-farag",
+  },
+  {
+    id: "al-salam-first",
+    name: "Al Salam First",
+    nameKey: "onboarding.district.al-salam-first",
+  },
+  {
+    id: "hadayek-el-qobbah",
+    name: "Hada'iq El Qobbah",
+    nameKey: "onboarding.district.hadayek-el-qobbah",
+  },
 
+  // 🏗️ New Cairo
+  {
+    id: "new-cairo-1",
+    name: "New Cairo 1",
+    nameKey: "onboarding.district.new-cairo-1",
+  },
+  {
+    id: "new-cairo-3",
+    name: "New Cairo 3",
+    nameKey: "onboarding.district.new-cairo-3",
+  },
+  {
+    id: "second-new-cairo",
+    name: "Second New Cairo",
+    nameKey: "onboarding.district.second-new-cairo",
+  },
+
+  // 🏙️ Historic / Old Cairo
+  {
+    id: "bab-el-sharia",
+    name: "Bab El Sharia",
+    nameKey: "onboarding.district.bab-el-sharia",
+  },
+  {
+    id: "manshiyat-naser",
+    name: "Manshiyat Naser",
+    nameKey: "onboarding.district.manshiyat-naser",
+  },
+  {
+    id: "darb-el-ahmar",
+    name: "Al-Darb Al-Ahmar",
+    nameKey: "onboarding.district.darb-el-ahmar",
+  },
+  {
+    id: "sayeda-zeinab",
+    name: "El Sayeda Zeinab",
+    nameKey: "onboarding.district.sayeda-zeinab",
+  },
+  {
+    id: "el-gamaliya",
+    name: "El Gamaliya",
+    nameKey: "onboarding.district.el-gamaliya",
+  },
+  {
+    id: "el-khalifa",
+    name: "El Khalifa",
+    nameKey: "onboarding.district.el-khalifa",
+  },
+  {
+    id: "old-cairo",
+    name: "Old Cairo",
+    nameKey: "onboarding.district.old-cairo",
+  },
+
+  // 🌿 South Cairo
+  { id: "maadi", name: "Maadi", nameKey: "onboarding.district.maadi" },
+  {
+    id: "mokattam",
+    name: "El Mokattam",
+    nameKey: "onboarding.district.mokattam",
+  },
+  { id: "basatin", name: "El Basatin", nameKey: "onboarding.district.basatin" },
+  { id: "tura", name: "Tura", nameKey: "onboarding.district.tura" },
+];
 export const INTERESTS = [
   { id: "felucca", label: "Felucca Rides", icon: "Ship" },
   { id: "street-food", label: "Street Food", icon: "Utensils" },
@@ -350,7 +443,7 @@ export const PLACES: Place[] = [
     description:
       "Cairo's premier innovation hub and co-working space in a historic campus.",
     priceRange: "150–400 EGP/day",
-    priceLevel: "mid_range",
+    priceLevel: "midrange",
     hours: "Mon–Fri 8:00 AM – 11:00 PM",
     isOpen: true,
     atmosphereTags: ["Productive", "Trendy", "Community"],
@@ -378,7 +471,7 @@ export const PLACES: Place[] = [
     description:
       "Historic bazaar dating back to 1382. A labyrinth of shops selling everything from spices to souvenirs.",
     priceRange: "Variable",
-    priceLevel: "price_cheapest",
+    priceLevel: "cheapest",
     hours: "Daily 9:00 AM – 11:00 PM",
     isOpen: false,
     atmosphereTags: ["Historic", "Vibrant", "Bustling"],

@@ -99,7 +99,7 @@ const toPriceLevel = (raw: unknown): PlaceDetail["priceLevel"] => {
     const collapsed = normalized.replace(/[\s_-]+/g, "");
 
     if (collapsed === "pricecheapest" || collapsed === "cheapest") {
-      return "price_cheapest";
+      return "cheapest";
     }
 
     if (
@@ -115,7 +115,7 @@ const toPriceLevel = (raw: unknown): PlaceDetail["priceLevel"] => {
       collapsed === "medium" ||
       collapsed === "moderate"
     ) {
-      return "mid_range";
+      return "midrange";
     }
 
     if (
@@ -134,9 +134,9 @@ const toPriceLevel = (raw: unknown): PlaceDetail["priceLevel"] => {
   const numeric = asNumber(raw);
   if (numeric === undefined) return undefined;
 
-  if (numeric <= 1) return "price_cheapest";
+  if (numeric <= 1) return "cheapest";
   if (numeric <= 2) return "cheap";
-  if (numeric <= 3) return "mid_range";
+  if (numeric <= 3) return "midrange";
   if (numeric <= 4) return "expensive";
   return "luxury";
 };

@@ -1,7 +1,7 @@
 export const PRICE_LEVEL_VALUES = [
-  "price_cheapest",
+  "cheapest",
   "cheap",
-  "mid_range",
+  "midrange",
   "expensive",
   "luxury",
 ] as const; //here i define only aloowed values make it const to prevent modification and to get literal types
@@ -15,7 +15,7 @@ export interface PriceLevelMeta {
 }
 
 export const PRICE_LEVEL_META: Record<CanonicalPriceLevel, PriceLevelMeta> = {
-  price_cheapest: {
+  cheapest: {
     label: "Economy",
     caption: "Most affordable",
     symbol: "$",
@@ -25,7 +25,7 @@ export const PRICE_LEVEL_META: Record<CanonicalPriceLevel, PriceLevelMeta> = {
     caption: "Great value",
     symbol: "$$",
   },
-  mid_range: {
+  midrange: {
     label: "Standard",
     caption: "Balanced spend",
     symbol: "$$$",

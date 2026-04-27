@@ -271,7 +271,7 @@ Request body expected from frontend:
 
 `priceLevel` enum expected:
 
-- `price_cheapest | cheap | mid_range | expensive | luxury`
+- `cheapest | cheap | midrange | expensive | luxury`
 
 Success response `data` should include at least:
 
