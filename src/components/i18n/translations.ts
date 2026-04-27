@@ -591,7 +591,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "placeDetail.action.goBack": "Go back",
     "placeDetail.action.like": "Like this place",
     "placeDetail.action.unlike": "Unlike this place",
+    "placeDetail.action.share": "Share this place",
     "placeDetail.action.openMaps": "Open in Google Maps",
+    "placeDetail.share.text": "Check out {name} on C-Outing",
     "placeDetail.status.openNow": "Open Now",
     "placeDetail.badge.accessible": "Accessible",
     "placeDetail.about": "About",
@@ -652,9 +654,13 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "Your review has been submitted successfully.",
     "placeDetail.reviewForm.ratingLabel": "Your Rating",
     "placeDetail.reviewForm.commentLabel": "Your Review",
+    "placeDetail.reviewForm.commentOptional":
+      "Comment is optional. Submit just a rating if you want.",
     "placeDetail.reviewForm.placeholder":
       "Share your experience about this place...",
+    "placeDetail.reviewForm.submitRating": "Submit Rating",
     "placeDetail.reviewForm.submit": "Submit Review",
+    "placeDetail.reviewForm.saveRating": "Save Rating",
     "placeDetail.reviewForm.saveChanges": "Save Changes",
     "placeDetail.reviewForm.submitting": "Submitting...",
     "placeDetail.reviewForm.saving": "Saving...",
@@ -663,7 +669,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "placeDetail.reviewForm.cancel": "Cancel",
     "placeDetail.reviewForm.error.selectRating": "Please select a rating",
     "placeDetail.reviewForm.error.minLength":
-      "Review must be at least 10 characters",
+      "If you add a review, use at least 3 characters",
     "placeDetail.reviewForm.error.maxLength":
       "Review must be 2000 characters or less",
     "placeDetail.reviewForm.error.submitFailed":
@@ -1986,7 +1992,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "placeDetail.action.goBack": "العودة",
     "placeDetail.action.like": "الإعجاب بهذا المكان",
     "placeDetail.action.unlike": "إلغاء الإعجاب بهذا المكان",
+    "placeDetail.action.share": "مشاركة هذا المكان",
     "placeDetail.action.openMaps": "فتح في خرائط جوجل",
+    "placeDetail.share.text": "شاهد {name} على C-Outing",
     "placeDetail.status.openNow": "مفتوح الآن",
     "placeDetail.badge.accessible": "سهل الوصول",
     "placeDetail.about": "نبذة",
@@ -2046,8 +2054,12 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "placeDetail.reviewForm.submitted": "تم إرسال مراجعتك بنجاح.",
     "placeDetail.reviewForm.ratingLabel": "تقييمك",
     "placeDetail.reviewForm.commentLabel": "مراجعتك",
+    "placeDetail.reviewForm.commentOptional":
+      "التعليق اختياري. يمكنك إرسال التقييم فقط.",
     "placeDetail.reviewForm.placeholder": "شارك تجربتك عن هذا المكان...",
+    "placeDetail.reviewForm.submitRating": "إرسال التقييم",
     "placeDetail.reviewForm.submit": "إرسال المراجعة",
+    "placeDetail.reviewForm.saveRating": "حفظ التقييم",
     "placeDetail.reviewForm.saveChanges": "حفظ التعديلات",
     "placeDetail.reviewForm.submitting": "جارٍ الإرسال...",
     "placeDetail.reviewForm.saving": "جارٍ الحفظ...",
@@ -2056,7 +2068,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "placeDetail.reviewForm.cancel": "إلغاء",
     "placeDetail.reviewForm.error.selectRating": "يرجى اختيار تقييم",
     "placeDetail.reviewForm.error.minLength":
-      "يجب أن تكون المراجعة 10 أحرف على الأقل",
+      "إذا أضفت مراجعة، يجب ألا تقل عن 3 أحرف",
     "placeDetail.reviewForm.error.maxLength":
       "يجب ألا تتجاوز المراجعة 2000 حرف",
     "placeDetail.reviewForm.error.submitFailed":

@@ -168,6 +168,9 @@ export const placeDetailApi = {
   },
 
   async recordInteraction(payload: RecordInteractionRequest): Promise<void> {
-    await axiosInstance.post(API_ENDPOINTS.interactions.record, payload);
+    await axiosInstance.post(API_ENDPOINTS.interactions.record, {
+      venueId: payload.venueId,
+      actionType: payload.actionType,
+    });
   },
 };

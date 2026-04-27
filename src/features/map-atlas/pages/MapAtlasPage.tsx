@@ -32,6 +32,10 @@ import { cn } from "@/lib/utils";
 import MapAtlasCanvas from "@/features/map-atlas/components/MapAtlasCanvas";
 import { FILTER_OPTIONS } from "@/features/home/mocks";
 import { useMapAtlas } from "@/features/map-atlas/hooks/useMapAtlas";
+import {
+  INTERACTION_ACTION_TYPES,
+  trackVenueInteractionSafe,
+} from "@/features/interactions";
 import type { DiscoverySource, HomePlace } from "@/features/home/types";
 import type { MapAtlasSource } from "@/features/map-atlas/types";
 import {
@@ -316,6 +320,10 @@ export default function MapAtlasPage() {
     );
 
     window.open(mapsUrl, "_blank", "noopener,noreferrer");
+    void trackVenueInteractionSafe(
+      place.id,
+      INTERACTION_ACTION_TYPES.directions,
+    );
   };
 
   const discoveryModeLabel = t(

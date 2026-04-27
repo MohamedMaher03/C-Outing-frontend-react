@@ -106,7 +106,7 @@ export const API_ENDPOINTS = {
 
   // ── Interactions ─────────────────────────────────────────────
   interactions: {
-    record: "/interactions",
+    record: "/api/v1/Interaction",
   },
 
   // ── Admin ─────────────────────────────────────────────────────

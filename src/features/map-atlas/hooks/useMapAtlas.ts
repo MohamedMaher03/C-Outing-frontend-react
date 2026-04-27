@@ -17,6 +17,10 @@ import type {
   UserLocationState,
   VenuePriceRange,
 } from "@/features/home/types";
+import {
+  INTERACTION_ACTION_TYPES,
+  trackVenueInteractionSafe,
+} from "@/features/interactions";
 import { getErrorMessage, isApiError } from "@/utils/apiError";
 import { mapAtlasService } from "@/features/map-atlas/services/mapAtlasService";
 
@@ -775,6 +779,10 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
         setSimilarSeedPlaces((previous) => toggleLocalSave(previous));
         setGlobalTopRatedVenues((previous) => toggleLocalSave(previous));
         setTopRatedInAreaVenues((previous) => toggleLocalSave(previous));
+        void trackVenueInteractionSafe(
+          normalizedId,
+          INTERACTION_ACTION_TYPES.favorite,
+        );
       } catch (toggleError) {
         if (!mountedRef.current) {
           return;

@@ -24,6 +24,7 @@ import {
   Route,
   Timer,
   Mail,
+  Share2,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { usePlaceDetail } from "@/features/place-detail/hooks/usePlaceDetail";
+import { INTERACTION_ACTION_TYPES } from "@/features/interactions";
 import { PRICE_LEVEL_META } from "@/features/place-detail/utils/priceLevel";
 import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defaultImages";
 import { formatCountLabel } from "@/features/place-detail/utils/formatters";
@@ -203,7 +205,35 @@ const PlaceDetailPage = () => {
     : null;
 
   const trackExternalClick = () => {
-    void trackInteraction("Click");
+    void trackInteraction(INTERACTION_ACTION_TYPES.view);
+  };
+
+  const trackPhotoView = () => {
+    void trackInteraction(INTERACTION_ACTION_TYPES.viewPhotos);
+  };
+
+  const handleSharePlace = async () => {
+    const shareTitle = place.name;
+    const shareText = t("placeDetail.share.text", {
+      name: place.name,
+    });
+    const shareUrl = window.location.href;
+
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+      }
+
+      await trackInteraction(INTERACTION_ACTION_TYPES.share);
+    } catch {
+      // Ignore share cancellation/failures to keep the primary flow uninterrupted.
+    }
   };
 
   if (loading) {
@@ -340,6 +370,17 @@ const PlaceDetailPage = () => {
                     isLiked ? "text-accent fill-accent" : "text-foreground",
                   )}
                 />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => void handleSharePlace()}
+                aria-label={t("placeDetail.action.share")}
+                className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
+                title={t("placeDetail.action.share")}
+              >
+                <Share2 className="h-5 w-5" />
               </Button>
               <Button
                 type="button"
@@ -597,7 +638,7 @@ const PlaceDetailPage = () => {
                   <MenuImageGallery
                     images={menuImages}
                     placeName={place.name}
-                    onImageOpen={trackExternalClick}
+                    onImageOpen={trackPhotoView}
                   />
                 )}
 
@@ -617,7 +658,7 @@ const PlaceDetailPage = () => {
                         href={place.menuUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={trackExternalClick}
+                        onClick={trackPhotoView}
                       >
                         {t("placeDetail.menu.view")}
                         <ExternalLink className="h-3.5 w-3.5" />

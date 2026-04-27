@@ -60,6 +60,8 @@ export const AddReviewForm = ({
   const [formError, setFormError] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const effectiveError = formError || errorMessage || "";
+  const trimmedCommentLength = comment.trim().length;
+  const isCommentEmpty = trimmedCommentLength === 0;
 
   const handleSubmit = async () => {
     if (submitting) return; // guard against async double-fire before re-render
@@ -68,12 +70,12 @@ export const AddReviewForm = ({
       setFormError(t("placeDetail.reviewForm.error.selectRating"));
       return;
     }
-    if (comment.trim().length < 10) {
-      setFormError(t("placeDetail.reviewForm.error.minLength"));
-      return;
-    }
     if (comment.trim().length > 2000) {
       setFormError(t("placeDetail.reviewForm.error.maxLength"));
+      return;
+    }
+    if (comment.trim().length > 0 && comment.trim().length < 3) {
+      setFormError(t("placeDetail.reviewForm.error.minLength"));
       return;
     }
     try {
@@ -132,6 +134,9 @@ export const AddReviewForm = ({
         >
           {t("placeDetail.reviewForm.commentLabel")}
         </label>
+        <p className="pd-type-micro text-muted-foreground">
+          {t("placeDetail.reviewForm.commentOptional")}
+        </p>
         <textarea
           id={reviewFieldId}
           value={comment}
@@ -149,7 +154,7 @@ export const AddReviewForm = ({
           className="pd-type-micro pd-type-number text-muted-foreground text-right"
           dir="ltr"
         >
-          {formatInteger(comment.trim().length)}/{formatInteger(2000)}
+          {formatInteger(trimmedCommentLength)}/{formatInteger(2000)}
         </p>
       </div>
 
@@ -182,8 +187,12 @@ export const AddReviewForm = ({
             <>
               <Send className="h-4 w-4" />
               {mode === "edit"
-                ? t("placeDetail.reviewForm.saveChanges")
-                : t("placeDetail.reviewForm.submit")}
+                ? isCommentEmpty
+                  ? t("placeDetail.reviewForm.saveRating")
+                  : t("placeDetail.reviewForm.saveChanges")
+                : isCommentEmpty
+                  ? t("placeDetail.reviewForm.submitRating")
+                  : t("placeDetail.reviewForm.submit")}
             </>
           )}
         </Button>

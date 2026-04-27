@@ -1,14 +1,9 @@
 import type { PaginatedResponse } from "@/types";
+import type { InteractionActionType } from "@/features/interactions";
 import type { CanonicalPriceLevel } from "@/utils/priceLevels";
 
 export type PriceLevel = CanonicalPriceLevel;
-
-export type InteractionActionType =
-  | "Click"
-  | "ViewDetails"
-  | "Rate"
-  | "Favorite"
-  | "Share";
+export type { InteractionActionType };
 
 export const REPORT_REASONS = [
   "Spam Content",
@@ -159,10 +154,6 @@ export interface ReviewSummary {
 }
 
 export interface RecordInteractionRequest {
-  placeId: string;
+  venueId: string;
   actionType: InteractionActionType;
-  ratingValue?: number;
-  comment?: string;
-  sessionId: string;
-  positionInList?: number;
 }

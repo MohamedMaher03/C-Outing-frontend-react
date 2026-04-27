@@ -3,6 +3,10 @@ import {
   getFavorites,
   toggleFavorite as toggleFavoriteService,
 } from "@/features/favorites/services/favoritesService";
+import {
+  INTERACTION_ACTION_TYPES,
+  trackVenueInteractionSafe,
+} from "@/features/interactions";
 import type { FavoriteItem } from "@/features/favorites/types";
 import { normalizePageSize } from "@/features/favorites/utils/favoritesParams";
 import { getErrorMessage, isApiError } from "@/utils/apiError";
@@ -184,6 +188,10 @@ export const useFavorites = (): UseFavoritesReturn => {
         }
 
         await toggleFavoriteService(placeId, isFavorite);
+        void trackVenueInteractionSafe(
+          placeId,
+          INTERACTION_ACTION_TYPES.favorite,
+        );
 
         // Removing is optimistic; adding back refetches full venue payload.
         if (!isFavorite) {

@@ -13,6 +13,7 @@ import {
   toggleLike as toggleVenueLike,
   recordInteraction,
 } from "@/features/place-detail/services/placeDetailService";
+import { INTERACTION_ACTION_TYPES } from "@/features/interactions";
 import { favoriteAdapter } from "@/features/place-detail/services/favoriteAdapter";
 import type {
   InteractionActionType,
@@ -24,7 +25,6 @@ import type {
   SocialReviewListResponse,
 } from "@/features/place-detail/types";
 import { getReviewIdentity } from "@/features/place-detail/utils/reviewIdentity";
-import { getOrCreateSessionId } from "@/features/place-detail/utils/sessionManager";
 import { getCurrentAuthUserId } from "@/features/place-detail/utils/authUser";
 import { getErrorMessage, isApiError } from "@/utils/apiError";
 
@@ -174,6 +174,8 @@ export const usePlaceDetail = (
     null,
   );
   const isSubmittingReviewRef = useRef(false);
+  const longViewTimeoutRef = useRef<number | null>(null);
+  const trackedLongViewPlaceRef = useRef<string | null>(null);
 
   const isActivePlace = useCallback(
     (id: string): boolean => activePlaceIdRef.current === id,
@@ -215,6 +217,9 @@ export const usePlaceDetail = (
       }
       if (reviewSubmittedTimeoutRef.current) {
         window.clearTimeout(reviewSubmittedTimeoutRef.current);
+      }
+      if (longViewTimeoutRef.current) {
+        window.clearTimeout(longViewTimeoutRef.current);
       }
     };
   }, []);
@@ -427,11 +432,9 @@ export const usePlaceDetail = (
 
   const trackViewInteraction = useCallback(async (id: string) => {
     try {
-      const sessionId = getOrCreateSessionId();
       await recordInteraction({
-        placeId: id,
-        actionType: "ViewDetails",
-        sessionId,
+        venueId: id,
+        actionType: INTERACTION_ACTION_TYPES.view,
       });
     } catch {
       // Interaction tracking is non-blocking by design.
@@ -450,6 +453,33 @@ export const usePlaceDetail = (
     void refreshPlaceData();
     void trackViewInteraction(placeId);
   }, [placeId, refreshPlaceData, trackViewInteraction]);
+
+  useEffect(() => {
+    if (!placeId) return;
+
+    trackedLongViewPlaceRef.current = null;
+    if (longViewTimeoutRef.current) {
+      window.clearTimeout(longViewTimeoutRef.current);
+    }
+
+    longViewTimeoutRef.current = window.setTimeout(() => {
+      if (trackedLongViewPlaceRef.current === placeId) {
+        return;
+      }
+
+      trackedLongViewPlaceRef.current = placeId;
+      void recordInteraction({
+        venueId: placeId,
+        actionType: INTERACTION_ACTION_TYPES.longView,
+      });
+    }, 25000);
+
+    return () => {
+      if (longViewTimeoutRef.current) {
+        window.clearTimeout(longViewTimeoutRef.current);
+      }
+    };
+  }, [placeId]);
 
   const retryReviewsLoad = useCallback(async () => {
     if (!placeId) return;
@@ -508,11 +538,9 @@ export const usePlaceDetail = (
       if (!place) return;
 
       try {
-        const sessionId = getOrCreateSessionId();
         await recordInteraction({
-          placeId: place.id,
+          venueId: place.id,
           actionType,
-          sessionId,
         });
       } catch {
         // Non-blocking action tracking.
@@ -532,7 +560,7 @@ export const usePlaceDetail = (
 
       await favoriteAdapter.toggle(place.id, isFavorite);
       showNotification("favorite", newFavoriteState ? "added" : "removed");
-      await trackInteraction("Favorite");
+      await trackInteraction(INTERACTION_ACTION_TYPES.favorite);
     } catch {
       setIsFavorite(!isFavorite);
     } finally {
@@ -571,6 +599,7 @@ export const usePlaceDetail = (
             }
           : prev,
       );
+      await trackInteraction(INTERACTION_ACTION_TYPES.like);
       showNotification("like", resolvedLikeState ? "added" : "removed");
     } catch {
       setIsLiked(previousState);
@@ -592,6 +621,7 @@ export const usePlaceDetail = (
       if (!place || !placeId) return;
       if (isSubmittingReviewRef.current) return;
       isSubmittingReviewRef.current = true;
+      const trimmedComment = comment.trim();
 
       try {
         setSubmittingReview(true);
@@ -612,9 +642,9 @@ export const usePlaceDetail = (
         const newReview = canonicalMyReview
           ? await updateReview(editableReviewId as string, {
               rating,
-              comment,
+              comment: trimmedComment,
             })
-          : await submitReview(placeId, rating, comment);
+          : await submitReview(placeId, rating, trimmedComment);
 
         setMyReview(newReview);
         setReviews((prev) => {
@@ -641,7 +671,10 @@ export const usePlaceDetail = (
           setReviewSubmitted(false);
         }, 3000);
 
-        await trackInteraction("Rate");
+        await trackInteraction(INTERACTION_ACTION_TYPES.rate);
+        if (trimmedComment.length > 0) {
+          await trackInteraction(INTERACTION_ACTION_TYPES.review);
+        }
         await Promise.all([
           refreshAverageRating(placeId),
           syncReviewsAfterMutation(placeId),
@@ -749,7 +782,7 @@ export const usePlaceDetail = (
       "_blank",
     );
 
-    void trackInteraction("Click");
+    void trackInteraction(INTERACTION_ACTION_TYPES.directions);
   };
 
   const goBack = () => {

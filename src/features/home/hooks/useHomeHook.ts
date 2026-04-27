@@ -14,6 +14,10 @@ import type {
   VenuePriceRange,
 } from "@/features/home/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import {
+  INTERACTION_ACTION_TYPES,
+  trackVenueInteractionSafe,
+} from "@/features/interactions";
 import { getErrorMessage } from "@/utils/apiError";
 import { useUserLocation } from "@/features/home/hooks/useUserLocation";
 import { calculateDistanceKm } from "@/features/home/utils/distance";
@@ -449,6 +453,7 @@ export const useHome = (): UseHomeReturn => {
         setMoodPlaces((prev) => toggle(prev));
         setSimilarSeedPlaces((prev) => toggle(prev));
         setSimilarPlaces((prev) => toggle(prev));
+        void trackVenueInteractionSafe(id, INTERACTION_ACTION_TYPES.favorite);
       } catch (toggleError) {
         setSaveError(
           getErrorMessage(toggleError, "Could not update favorites right now."),

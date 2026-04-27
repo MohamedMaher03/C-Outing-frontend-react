@@ -41,11 +41,15 @@ export const WEATHER_CONDITIONS = ["sunny", "cloudy", "rainy", "hot"] as const;
 
 // Action Types for Interactions
 export const INTERACTION_ACTIONS = [
-  "Click",
-  "ViewDetails",
-  "Rate",
-  "Favorite",
-  "Share",
+  "favorite",
+  "review",
+  "rate",
+  "like",
+  "share",
+  "directions",
+  "long_view",
+  "view_photos",
+  "view",
 ] as const;
 
 // Default Pagination

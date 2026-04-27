@@ -70,9 +70,8 @@ describe("placeDetailService", () => {
 
     await expect(
       placeDetailService.recordInteraction({
-        placeId: "venue-1",
-        actionType: "ViewDetails",
-        sessionId: "s1",
+        venueId: "venue-1",
+        actionType: "view",
       }),
     ).resolves.toBeUndefined();
   });
