@@ -1,6 +1,7 @@
 import { placeDetailService } from "@/features/place-detail/services/placeDetailService";
 import { placeDetailDataSource } from "@/features/place-detail/services/placeDetailDataSource";
 import { getCurrentAuthUserProfile } from "@/features/place-detail/utils/authUser";
+import { trackVenueInteractionSafe } from "@/features/interactions";
 
 jest.mock("@/features/place-detail/services/placeDetailDataSource", () => ({
   placeDetailDataSource: {
@@ -24,12 +25,20 @@ jest.mock("@/features/place-detail/utils/authUser", () => ({
   getCurrentAuthUserProfile: jest.fn(),
 }));
 
+jest.mock("@/features/interactions", () => ({
+  trackVenueInteractionSafe: jest.fn().mockResolvedValue(undefined),
+}));
+
 const mockedDataSource = placeDetailDataSource as jest.Mocked<
   typeof placeDetailDataSource
 >;
 const mockedGetCurrentAuthUserProfile =
   getCurrentAuthUserProfile as jest.MockedFunction<
     typeof getCurrentAuthUserProfile
+  >;
+const mockedTrackVenueInteractionSafe =
+  trackVenueInteractionSafe as jest.MockedFunction<
+    typeof trackVenueInteractionSafe
   >;
 
 describe("placeDetailService", () => {
@@ -66,7 +75,7 @@ describe("placeDetailService", () => {
   });
 
   it("keeps interaction tracking non-blocking on datasource failures", async () => {
-    mockedDataSource.recordInteraction.mockRejectedValueOnce(new Error("down"));
+    mockedTrackVenueInteractionSafe.mockRejectedValueOnce(new Error("down"));
 
     await expect(
       placeDetailService.recordInteraction({
@@ -74,5 +83,10 @@ describe("placeDetailService", () => {
         actionType: "view",
       }),
     ).resolves.toBeUndefined();
+
+    expect(mockedTrackVenueInteractionSafe).toHaveBeenCalledWith(
+      "venue-1",
+      "view",
+    );
   });
 });

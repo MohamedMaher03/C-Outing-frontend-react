@@ -1,5 +1,6 @@
 import { placeDetailDataSource } from "./placeDetailDataSource";
 import { getCurrentAuthUserProfile } from "../utils/authUser";
+import { trackVenueInteractionSafe } from "@/features/interactions";
 import type {
   PlaceDetail,
   Review,
@@ -143,9 +144,9 @@ export const placeDetailService = {
 
   async recordInteraction(data: RecordInteractionRequest): Promise<void> {
     try {
-      await placeDetailDataSource.recordInteraction(data);
+      await trackVenueInteractionSafe(data.venueId, data.actionType);
     } catch {
-      // Non-critical — swallow so the UI is not affected
+      // i think no need
     }
   },
 };

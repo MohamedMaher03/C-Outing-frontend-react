@@ -1,4 +1,11 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -40,7 +47,6 @@ import { PRICE_LEVEL_META } from "@/features/place-detail/utils/priceLevel";
 import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defaultImages";
 import { formatCountLabel } from "@/features/place-detail/utils/formatters";
 import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleton";
-import { MenuImageGallery } from "@/features/place-detail/components/MenuImageGallery";
 import "@/features/place-detail/placeDetailTypography.css";
 
 const ReviewCardLazy = lazy(() =>
@@ -61,6 +67,14 @@ const AddReviewFormLazy = lazy(() =>
   import("@/features/place-detail/components/AddReviewForm").then((module) => ({
     default: module.AddReviewForm,
   })),
+);
+
+const MenuImageGalleryLazy = lazy(() =>
+  import("@/features/place-detail/components/MenuImageGallery").then(
+    (module) => ({
+      default: module.MenuImageGallery,
+    }),
+  ),
 );
 
 const PlaceDetailPage = () => {
@@ -158,12 +172,15 @@ const PlaceDetailPage = () => {
         })
       : t("common.loading");
 
-  const onDeleteMyReview = async () => {
+  const onDeleteMyReview = useCallback(async () => {
     await handleDeleteMyReview();
-  };
+  }, [handleDeleteMyReview]);
 
-  const onLikeClick = async () => toggleLike();
-  const onFavoriteClick = async () => toggleFavorite();
+  const onLikeClick = useCallback(async () => toggleLike(), [toggleLike]);
+  const onFavoriteClick = useCallback(
+    async () => toggleFavorite(),
+    [toggleFavorite],
+  );
 
   const venueCategoryType = `${place?.category ?? ""} ${place?.type ?? ""}`
     .trim()
@@ -178,7 +195,7 @@ const PlaceDetailPage = () => {
   );
   const menuImages = useMemo(
     () => Array.from(new Set((place?.menuImagesUrls ?? []).filter(Boolean))),
-    [place?.menuImagesUrls],
+    [place],
   );
   const hasMenuData = Boolean(place?.menuUrl) || menuImagesCount > 0;
   const shouldShowMenuCard = hasMenuData || isFoodOrDrinkVenue;
@@ -187,7 +204,7 @@ const PlaceDetailPage = () => {
       [...(place?.metroStations ?? [])]
         .sort((a, b) => a.rank - b.rank)
         .slice(0, 3),
-    [place?.metroStations],
+    [place],
   );
   const averageRatingValue = place?.averageRating ?? place?.rating;
   const safeAverageRating =
@@ -204,15 +221,17 @@ const PlaceDetailPage = () => {
     ? PRICE_LEVEL_META[place.priceLevel]
     : null;
 
-  const trackExternalClick = () => {
+  const trackExternalClick = useCallback(() => {
     void trackInteraction(INTERACTION_ACTION_TYPES.view);
-  };
+  }, [trackInteraction]);
 
-  const trackPhotoView = () => {
+  const trackPhotoView = useCallback(() => {
     void trackInteraction(INTERACTION_ACTION_TYPES.viewPhotos);
-  };
+  }, [trackInteraction]);
 
-  const handleSharePlace = async () => {
+  const handleSharePlace = useCallback(async () => {
+    if (!place) return;
+
     const shareTitle = place.name;
     const shareText = t("placeDetail.share.text", {
       name: place.name,
@@ -234,7 +253,7 @@ const PlaceDetailPage = () => {
     } catch {
       // Ignore share cancellation/failures to keep the primary flow uninterrupted.
     }
-  };
+  }, [place, t, trackInteraction]);
 
   if (loading) {
     return (
@@ -635,11 +654,17 @@ const PlaceDetailPage = () => {
                 </div>
 
                 {menuImages.length > 0 && (
-                  <MenuImageGallery
-                    images={menuImages}
-                    placeName={place.name}
-                    onImageOpen={trackPhotoView}
-                  />
+                  <Suspense
+                    fallback={
+                      <div className="h-28 rounded-xl bg-muted/50 animate-pulse" />
+                    }
+                  >
+                    <MenuImageGalleryLazy
+                      images={menuImages}
+                      placeName={place.name}
+                      onImageOpen={trackPhotoView}
+                    />
+                  </Suspense>
                 )}
 
                 {!hasMenuData && (
