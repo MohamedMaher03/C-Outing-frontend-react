@@ -49,12 +49,11 @@ export const filterReviews = (
   statusFilter: AdminReviewStatusFilter,
 ): AdminReview[] => {
   const normalizedSearch = normalizeSearchTerm(search);
-  console.log(reviews);
 
   return reviews.filter((review) => {
     const matchesSearch =
       review.userName.toLowerCase().includes(normalizedSearch) ||
-      review.placeName.toLowerCase().includes(normalizedSearch) ||
+      review.venueName.toLowerCase().includes(normalizedSearch) ||
       review.comment.toLowerCase().includes(normalizedSearch);
     const matchesStatus =
       statusFilter === "all" || review.status === statusFilter;

@@ -202,7 +202,7 @@ const ManageReviewsPage = () => {
                       <p className="text-role-caption text-muted-foreground">
                         {t("admin.reviews.meta.on")}{" "}
                         <span className="font-medium text-foreground">
-                          {review.placeName}
+                          {review.venueName}
                         </span>
                         {" · "}
                         {monthDayFormatter.format(new Date(review.createdAt))}

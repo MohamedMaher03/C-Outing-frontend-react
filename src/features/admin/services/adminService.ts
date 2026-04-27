@@ -1,4 +1,4 @@
-import type { PaginatedResponse, QueryParams } from "@/types";
+import type { PaginatedResponse } from "@/types";
 import type {
   AdminStats,
   AdminUserId,
@@ -12,6 +12,7 @@ import type {
   RecentActivity,
   CreateAdminPlaceInput,
   AdminReviewQuery,
+  AdminPlaceQuery,
 } from "../types";
 import { adminDataSource } from "./adminDataSource";
 import { withAdminServiceError } from "./adminServiceError";
@@ -49,7 +50,7 @@ export const adminService = {
   },
 
   async getPlaces(
-    placesQueryParams?: QueryParams,
+    placesQueryParams?: AdminPlaceQuery,
   ): Promise<PaginatedResponse<AdminPlace>> {
     return withAdminServiceError(
       () => adminDataSource.getPlaces(placesQueryParams),

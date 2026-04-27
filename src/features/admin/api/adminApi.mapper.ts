@@ -99,8 +99,8 @@ interface AdminReviewDto {
   userId: string;
   userName: string;
   userAvatar?: string | null;
-  placeId: string;
-  placeName: string;
+  venueId: string;
+  venueName: string;
   rating: number;
   comment: string;
   status: string;
@@ -478,8 +478,8 @@ const mapAdminReview = (dto: AdminReviewDto): AdminReview => ({
   userId: dto.userId,
   userName: dto.userName,
   userAvatar: dto.userAvatar ?? undefined,
-  placeId: dto.placeId,
-  placeName: dto.placeName,
+  venueId: dto.venueId,
+  venueName: dto.venueName,
   rating: Math.max(0, Math.min(5, Math.round(toFiniteNumber(dto.rating, 0)))),
   comment: dto.comment,
   status: mapAdminReviewStatus(dto.status),

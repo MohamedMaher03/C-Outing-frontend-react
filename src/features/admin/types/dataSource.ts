@@ -1,4 +1,4 @@
-import type { PaginatedResponse, QueryParams } from "@/types";
+import type { PaginatedResponse } from "@/types";
 import type {
   AdminStats,
   AdminUserId,
@@ -11,6 +11,8 @@ import type {
   SystemSettings,
   RecentActivity,
   CreateAdminPlaceInput,
+  AdminPlaceQuery,
+  AdminReviewQuery,
 } from "./index";
 
 export interface AdminDataSource {
@@ -21,7 +23,9 @@ export interface AdminDataSource {
     userId: AdminUserId,
     status: AdminUserStatus,
   ) => Promise<void>;
-  getPlaces: (params?: QueryParams) => Promise<PaginatedResponse<AdminPlace>>;
+  getPlaces: (
+    params?: AdminPlaceQuery,
+  ) => Promise<PaginatedResponse<AdminPlace>>;
   addPlace: (placeData: CreateAdminPlaceInput) => Promise<void>;
   updatePlaceStatus: (
     placeId: string,
@@ -29,7 +33,7 @@ export interface AdminDataSource {
   ) => Promise<void>;
   deletePlace: (placeId: string) => Promise<void>;
   getReviews: (
-    reviewsQueryParams?: QueryParams,
+    reviewsQueryParams?: AdminReviewQuery,
   ) => Promise<PaginatedResponse<AdminReview>>;
   updateReviewStatus: (
     reviewId: string,
