@@ -7,7 +7,7 @@ import type {
 const normalizeVenueId = (venueId: string): string => venueId.trim();
 
 const FAILED_STORAGE_KEY = "c-outing-interactions-failed-v1";
-const FLUSH_INTERVAL_MS = 4000;
+const FLUSH_INTERVAL_MS = 5 * 60000; // note for me to remember :here i save the interactions for 5 min and then flush them to the server, this is to avoid sending too many requests to the server in a short period of time, and also to handle the case when the user is offline for a while and then comes back online, we don't want to lose those interactions, so we save them in localStorage and then flush them when the user comes back online or when the flush interval is reached.
 const MAX_BATCH_SIZE = 25;
 
 const DEDUPE_WINDOW_BY_ACTION: Partial<Record<InteractionActionType, number>> =
@@ -208,6 +208,10 @@ const ensureInitialized = (): void => {
 };
 
 export const interactionsService = {
+  /**
+   * Direct single-interaction call — bypasses the queue entirely.
+   * Use when you need an immediate, awaitable result (e.g. optimistic UI).
+   */
   async recordInteraction(payload: RecordInteractionRequest): Promise<void> {
     const venueId = normalizeVenueId(payload.venueId);
     if (!venueId) {
@@ -245,6 +249,18 @@ export const interactionsService = {
     enqueueWithDebounce(normalizedPayload);
   },
 
+  /**
+   * Flushes up to MAX_BATCH_SIZE items from the queue in a single
+   * POST /api/v1/Interaction/batch request.
+   *
+   * The backend returns per-item accept/reject/duplicate info.
+   * Only items that the backend explicitly rejects with a server-side
+   * error (i.e. not just "duplicate") are persisted for retry, because
+   * duplicates are expected and not worth retrying.
+   *
+   * If the entire HTTP call fails (network down, 5xx, etc.) the whole
+   * batch is persisted so nothing is silently dropped.
+   */
   async flushQueue(): Promise<void> {
     ensureInitialized();
 
@@ -256,15 +272,30 @@ export const interactionsService = {
 
     try {
       const batch = interactionQueue.splice(0, MAX_BATCH_SIZE);
-      const results = await Promise.allSettled(
-        batch.map((item) => interactionsApi.recordInteraction(item)),
-      );
 
-      const failed: RecordInteractionRequest[] = [];
-      for (let index = 0; index < results.length; index += 1) {
-        if (results[index]?.status === "rejected") {
-          failed.push(batch[index]);
+      let failed: RecordInteractionRequest[] = [];
+
+      try {
+        const result = await interactionsApi.recordInteractionBatch(batch);
+
+        // Map rejected items back to their original payloads for retry.
+        // We intentionally skip duplicates — they are not errors worth retrying.
+        if (result.errors.length > 0) {
+          failed = result.errors
+            .filter((err) => {
+              // "duplicate" reasons come from the server-side dedupe layer;
+              // retrying them would always produce the same outcome.
+              return !err.reason.toLowerCase().includes("duplicate");
+            })
+            .map((err) => batch[err.index])
+            .filter(
+              (item): item is RecordInteractionRequest => item !== undefined,
+            );
         }
+      } catch {
+        // Entire HTTP call failed (network error, 5xx, etc.) — keep the
+        // whole batch so nothing is silently dropped.
+        failed = batch;
       }
 
       if (failed.length > 0) {
@@ -273,6 +304,7 @@ export const interactionsService = {
     } finally {
       isFlushing = false;
 
+      // Keep draining if more items arrived while we were flushing.
       if (interactionQueue.length > 0) {
         void interactionsService.flushQueue();
       }

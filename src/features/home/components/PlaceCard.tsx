@@ -176,7 +176,7 @@ const PlaceCard = ({
         "transition-all duration-250 ease-out",
         "md:hover:shadow-lg md:hover:shadow-primary/5 md:hover:border-secondary/20",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2",
-        "shadow-sm",
+        "shadow-sm flex flex-col h-full",
         isHorizontal
           ? "w-[clamp(15.5rem,78vw,20rem)] sm:w-[18.25rem] flex-shrink-0"
           : "w-full",
@@ -316,7 +316,7 @@ const PlaceCard = ({
       </div>
 
       {/* Content */}
-      <div className="space-y-2 p-4 sm:p-5">
+      <div className="flex flex-col flex-1 space-y-2 p-4 sm:p-5">
         <h3
           className="text-sm font-semibold leading-tight text-foreground transition-colors line-clamp-2 break-words"
           title={safeName}
@@ -353,7 +353,7 @@ const PlaceCard = ({
         </div>
 
         {/* Tags & price */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5 mt-auto">
           <div className="flex gap-1.5 overflow-hidden flex-1 min-w-0">
             {safeTagList.map((tag) => (
               <span

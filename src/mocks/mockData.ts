@@ -73,7 +73,7 @@ export interface TrendingTag {
 
 export const CATEGORIES: Category[] = [
   {
-    id: "arts-culture",
+    id: "arts",
     label: "Arts & Culture",
     nameKey: "categories.arts-culture",
   },
@@ -87,11 +87,11 @@ export const CATEGORIES: Category[] = [
     nameKey: "categories.community",
   },
   { id: "Dessert", label: "Dessert", nameKey: "categories.dessert" },
-  {
-    id: "Entertainment",
-    label: "Entertainment",
-    nameKey: "categories.entertainment",
-  },
+  // {
+  //   id: "Entertainment",
+  //   label: "Entertainment",
+  //   nameKey: "categories.entertainment",
+  // },
   { id: "Gaming", label: "Gaming", nameKey: "categories.gaming" },
   { id: "Nightlife", label: "Nightlife", nameKey: "categories.nightlife" },
   { id: "Office", label: "Office", nameKey: "categories.office" },
@@ -100,7 +100,7 @@ export const CATEGORIES: Category[] = [
   { id: "Restaurant", label: "Restaurant", nameKey: "categories.restaurant" },
   { id: "Retail", label: "Retail", nameKey: "categories.retail" },
   { id: "Shopping", label: "Shopping", nameKey: "categories.shopping" },
-  { id: "Theater", label: "Theater", nameKey: "categories.theater" },
+  // { id: "Theater", label: "Theater", nameKey: "categories.theater" },
   { id: "Workspace", label: "Workspace", nameKey: "categories.workspace" },
 ];
 

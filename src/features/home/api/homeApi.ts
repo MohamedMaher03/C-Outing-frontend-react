@@ -124,7 +124,7 @@ export const homeApi = {
     const response = await axiosInstance.get<unknown>(
       API_ENDPOINTS.home.venueTopRatedInArea,
       {
-        params: { area: params.area },
+        params: { district: params.area },
       },
     );
     return mapHomePlacesPayload(response.data);

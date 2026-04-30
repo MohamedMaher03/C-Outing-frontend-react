@@ -107,9 +107,7 @@ export const useHome = (): UseHomeReturn => {
   );
   const [selectedPriceRange, setSelectedPriceRange] =
     useState<VenuePriceRange | null>(null);
-  const [selectedArea, setSelectedArea] = useState<string>(
-    POPULAR_DISTRICTS[0]?.name ?? "Cairo",
-  );
+  const [selectedArea, setSelectedArea] = useState<string>("");
   const [activeDiscoverySource, setActiveDiscoverySource] =
     useState<DiscoverySource>("top-rated");
   const [discoveryPlaces, setDiscoveryPlaces] = useState<HomePlace[]>([]);

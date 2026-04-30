@@ -26,3 +26,18 @@ export const isInteractionActionType = (
   value: string,
 ): value is InteractionActionType =>
   INTERACTION_ACTION_VALUES.includes(value as InteractionActionType);
+
+export interface BatchInteractionItemError {
+  index: number;
+  venueId: string;
+  actionType: string;
+  reason: string;
+}
+
+export interface BatchInteractionResponse {
+  accepted: number;
+  rejected: number;
+  duplicates: number;
+  acceptedIds: string[];
+  errors: BatchInteractionItemError[];
+}

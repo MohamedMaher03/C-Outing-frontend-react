@@ -107,6 +107,7 @@ export const API_ENDPOINTS = {
   // ── Interactions ─────────────────────────────────────────────
   interactions: {
     record: "/api/v1/Interaction",
+    recordBatch: "/api/v1/Interaction/batch",
   },
 
   // ── Admin ─────────────────────────────────────────────────────
