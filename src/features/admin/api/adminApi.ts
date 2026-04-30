@@ -13,6 +13,7 @@ import type {
   SystemSettings,
   RecentActivity,
   CreateAdminPlaceInput,
+  AdminPlaceQuery,
   AdminReviewQuery,
 } from "../types";
 import {
@@ -30,18 +31,6 @@ import type { PaginatedResponse } from "@/types";
 interface UsersParams extends AdminUsersQuery {
   isBanned?: boolean;
 }
-
-interface VenuesParams {
-  page?: number;
-  count?: number;
-}
-
-// interface ReviewsParams {
-//   page?: number;
-//   count?: number;
-//   status?: AdminReview["status"];
-//   searchTerm?: string;
-// }
 
 const toQueryParams = (params: Record<string, unknown>): URLSearchParams => {
   const query = new URLSearchParams();
@@ -99,7 +88,7 @@ const getReportedVenueIds = async (): Promise<Set<string>> => {
 };
 
 const getPlaces = async (
-  params: VenuesParams = {},
+  params: AdminPlaceQuery = {},
 ): Promise<PaginatedResponse<AdminPlace>> => {
   const [reportedVenueIds, venuesResponse] = await Promise.all([
     getReportedVenueIds(),
@@ -107,6 +96,8 @@ const getPlaces = async (
       `${API_ENDPOINTS.admin.getVenues}?${toQueryParams({
         page: params.page ?? 1,
         count: params.count ?? 10,
+        searchTerm: params.searchTerm,
+        status: params.status !== "all" ? params.status : undefined,
       }).toString()}`,
     ),
   ]);
@@ -120,7 +111,7 @@ const getReviews = async (
   const query = toQueryParams({
     page: params.page ?? 1,
     count: params.count ?? 10,
-    status: params.status,
+    status: params.status !== "all" ? params.status : undefined,
     searchTerm: params.searchTerm,
   });
 
@@ -180,9 +171,9 @@ export const adminApi = {
   },
 
   async getPlaces(
-    params: VenuesParams = {},
+    params: AdminPlaceQuery = {},
   ): Promise<PaginatedResponse<AdminPlace>> {
-    return getPlaces({ page: params.page ?? 1, count: params.count ?? 10 });
+    return getPlaces(params);
   },
 
   async addPlace(placeData: CreateAdminPlaceInput): Promise<void> {
@@ -207,7 +198,7 @@ export const adminApi = {
   async getReviews(
     params: AdminReviewQuery = {},
   ): Promise<PaginatedResponse<AdminReview>> {
-    return getReviews({ page: params.page ?? 1, count: params.count ?? 10 });
+    return getReviews(params);
   },
 
   async updateReviewStatus(

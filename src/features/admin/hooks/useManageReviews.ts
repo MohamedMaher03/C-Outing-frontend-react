@@ -51,6 +51,10 @@ export const useManageReviews = (): UseManageReviewsReturn => {
   const [statusFilter, setStatusFilter] =
     useState<AdminReviewStatusFilter>("all");
   const deferredSearch = useDeferredValue(search);
+  const searchRef = useRef(deferredSearch);
+  searchRef.current = deferredSearch;
+  const statusFilterRef = useRef(statusFilter);
+  statusFilterRef.current = statusFilter;
   const mountedRef = useRef(true);
   const inFlightRef = useRef(new Set<string>());
   const REVIEWS_PAGE_SIZE = 10;
@@ -81,8 +85,8 @@ export const useManageReviews = (): UseManageReviewsReturn => {
         const data = await adminService.getReviews({
           page: targetPage,
           count: pageSize,
-          status: statusFilter !== "all" ? statusFilter : undefined,
-          searchTerm: deferredSearch || undefined,
+          status: statusFilterRef.current,
+          searchTerm: searchRef.current || undefined,
         });
         if (!mountedRef.current) return;
         const normalizedTotalPages = Math.max(1, data.totalPages);
@@ -110,14 +114,22 @@ export const useManageReviews = (): UseManageReviewsReturn => {
     [t],
   );
 
+  const initialLoadDone = useRef(false);
+
   useEffect(() => {
     mountedRef.current = true;
     void loadReviews();
+    initialLoadDone.current = true;
 
     return () => {
       mountedRef.current = false;
     };
   }, [loadReviews]);
+
+  useEffect(() => {
+    if (!initialLoadDone.current) return;
+    void loadReviews(1);
+  }, [deferredSearch, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStatusChange = async (
     reviewId: string,
@@ -181,13 +193,11 @@ export const useManageReviews = (): UseManageReviewsReturn => {
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setPageIndex(1);
-    void loadReviews(1);
   };
 
   const handleStatusFilterChange = (value: AdminReviewStatusFilter) => {
     setStatusFilter(value);
     setPageIndex(1);
-    void loadReviews(1);
   };
 
   const goToPreviousPage = () => {

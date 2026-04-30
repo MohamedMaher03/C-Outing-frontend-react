@@ -408,18 +408,18 @@ export const mapAdminVenuesPage = (
 
   const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
 
-  const pageIndex = Math.max(1, Math.trunc(toFiniteNumber(page.pageIndex, 1)));
+  const rawPageIndex = Math.trunc(toFiniteNumber(page.pageIndex, 0));
+  const pageIndex = rawPageIndex + 1;
 
   const totalCount = Math.max(
     0,
     Math.trunc(toFiniteNumber(page.totalCount, mappedItems.length)),
   );
 
+  const fallbackTotalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const totalPages = Math.max(
     1,
-    Math.trunc(
-      toFiniteNumber(page.totalPages, Math.ceil(totalCount / pageSize)),
-    ),
+    Math.trunc(toFiniteNumber(page.totalPages, fallbackTotalPages)),
   );
 
   return {
@@ -428,8 +428,14 @@ export const mapAdminVenuesPage = (
     pageSize,
     totalCount,
     totalPages,
-    hasPreviousPage: pageIndex > 1,
-    hasNextPage: pageIndex < totalPages,
+    hasPreviousPage:
+      typeof page.hasPreviousPage === "boolean"
+        ? page.hasPreviousPage
+        : pageIndex > 1,
+    hasNextPage:
+      typeof page.hasNextPage === "boolean"
+        ? page.hasNextPage
+        : pageIndex < totalPages,
   };
 };
 
@@ -499,18 +505,18 @@ export const mapAdminReviews = (
 
   const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
 
-  const pageIndex = Math.max(1, Math.trunc(toFiniteNumber(page.pageIndex, 1)));
+  const rawPageIndex = Math.trunc(toFiniteNumber(page.pageIndex, 0));
+  const pageIndex = rawPageIndex + 1;
 
   const totalCount = Math.max(
     0,
     Math.trunc(toFiniteNumber(page.totalCount, mappedItems.length)),
   );
 
+  const fallbackTotalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const totalPages = Math.max(
     1,
-    Math.trunc(
-      toFiniteNumber(page.totalPages, Math.ceil(totalCount / pageSize)),
-    ),
+    Math.trunc(toFiniteNumber(page.totalPages, fallbackTotalPages)),
   );
 
   return {
@@ -519,8 +525,14 @@ export const mapAdminReviews = (
     pageSize,
     totalCount,
     totalPages,
-    hasPreviousPage: pageIndex > 1,
-    hasNextPage: pageIndex < totalPages,
+    hasPreviousPage:
+      typeof page.hasPreviousPage === "boolean"
+        ? page.hasPreviousPage
+        : pageIndex > 1,
+    hasNextPage:
+      typeof page.hasNextPage === "boolean"
+        ? page.hasNextPage
+        : pageIndex < totalPages,
   };
 };
 

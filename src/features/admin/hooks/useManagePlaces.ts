@@ -93,6 +93,10 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
   const mountedRef = useRef(true);
   const inFlightRef = useRef(new Set<string>());
   const toastTimersRef = useRef<number[]>([]);
+  const searchRef = useRef(deferredSearch);
+  searchRef.current = deferredSearch;
+  const statusFilterRef = useRef(statusFilter);
+  statusFilterRef.current = statusFilter;
   const PLACES_PAGE_SIZE = 10;
 
   const [pageIndex, setPageIndex] = useState(1);
@@ -126,6 +130,8 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
         const placesData = await adminService.getPlaces({
           page: targetPage,
           count: PLACES_PAGE_SIZE,
+          searchTerm: searchRef.current || undefined,
+          status: statusFilterRef.current,
         });
 
         if (!mountedRef.current) return;
@@ -155,9 +161,12 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     [t],
   );
 
+  const initialLoadDone = useRef(false);
+
   useEffect(() => {
     mountedRef.current = true;
     void loadPlaces();
+    initialLoadDone.current = true;
 
     return () => {
       mountedRef.current = false;
@@ -165,6 +174,11 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
       toastTimersRef.current = [];
     };
   }, [loadPlaces]);
+
+  useEffect(() => {
+    if (!initialLoadDone.current) return;
+    void loadPlaces(1);
+  }, [deferredSearch, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showToast = (
     message: string,
@@ -316,13 +330,11 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
   const handleSearchChange = (value: string) => {
     setSearch(value);
     setPageIndex(1);
-    void loadPlaces(1);
   };
 
   const handleStatusFilterChange = (value: AdminPlaceStatusFilter) => {
     setStatusFilter(value);
     setPageIndex(1);
-    void loadPlaces(1);
   };
 
   const goToPreviousPage = () => {
