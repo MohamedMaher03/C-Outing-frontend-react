@@ -366,7 +366,7 @@ const PlaceCard = ({
             ))}
           </div>
           {/* Price Level */}
-          {priceMeta && (
+          {priceMeta ? (
             <span
               className="ml-auto inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-secondary/20 bg-secondary/10 px-2.5 py-1 text-[11px] font-medium text-foreground"
               aria-label={t("home.place.budgetLevel", {
@@ -378,6 +378,14 @@ const PlaceCard = ({
               <span className="text-[11px] font-semibold text-secondary/80 dark:text-primary">
                 {priceMeta.symbol}
               </span>
+            </span>
+          ) : (
+            <span
+              className="ml-auto inline-flex flex-shrink-0 items-center gap-1 rounded-full 
+  border border-dashed border-secondary/20 bg-secondary/10 px-2.5 py-1 
+  text-[11px] font-medium text-foreground opacity-60"
+            >
+              <span>{t("home.place.priceUnknown")}</span>
             </span>
           )}
         </div>

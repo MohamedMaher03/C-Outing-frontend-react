@@ -489,6 +489,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.place.open": "Open",
     "home.place.closed": "Closed",
     "home.place.budgetLevel": "Budget level: {label}",
+    "home.place.priceUnknown": "Price unknown",
 
     "home.distance.unavailable": "Distance unavailable",
     "home.distance.metersAway": "{distance} m away",
@@ -1952,6 +1953,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.place.open": "مفتوح",
     "home.place.closed": "مغلق",
     "home.place.budgetLevel": "مستوى الميزانية: {label}",
+    "home.place.priceUnknown": "سعر غير معروف",
 
     "home.distance.unavailable": "المسافة غير متاحة",
     "home.distance.metersAway": "يبعد {distance} متر",
