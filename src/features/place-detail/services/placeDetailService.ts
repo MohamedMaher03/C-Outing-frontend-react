@@ -127,10 +127,6 @@ export const placeDetailService = {
     return placeDetailDataSource.getUserReviews(userId, params);
   },
 
-  async getMyReview(venueId: string): Promise<Review | null> {
-    return placeDetailDataSource.getMyReview(venueId);
-  },
-
   async getAverageRating(venueId: string): Promise<VenueAverageRating> {
     return placeDetailDataSource.getAverageRating(venueId);
   },
@@ -160,7 +156,6 @@ export const updateReview = placeDetailService.updateReview;
 export const deleteReview = placeDetailService.deleteReview;
 export const getReviewById = placeDetailService.getReviewById;
 export const getUserReviews = placeDetailService.getUserReviews;
-export const getMyReview = placeDetailService.getMyReview;
 export const getAverageRating = placeDetailService.getAverageRating;
 export const reportReview = placeDetailService.reportReview;
 export const recordInteraction = placeDetailService.recordInteraction;

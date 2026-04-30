@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type {
   AdminPlace,
@@ -79,7 +72,24 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<AdminPlaceStatusFilter>("all");
-  const deferredSearch = useDeferredValue(search);
+
+  // Real debounce — wait 400 ms after the user stops typing before firing a request
+  const [deferredSearch, setDeferredSearch] = useState(search);
+  const debounceTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = window.setTimeout(() => {
+      setDeferredSearch(search);
+      debounceTimerRef.current = null;
+    }, 400);
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [search]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState<PlaceFormData>(EMPTY_PLACE_FORM);
   const [formErrors, setFormErrors] = useState<PlaceFormErrors>({});
@@ -100,6 +110,8 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
   const PLACES_PAGE_SIZE = 10;
 
   const [pageIndex, setPageIndex] = useState(1);
+  const pageIndexRef = useRef(pageIndex);
+  pageIndexRef.current = pageIndex;
   const [pageSize, setPageSize] = useState(PLACES_PAGE_SIZE);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -221,9 +233,11 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
       await adminService.updatePlaceStatus(placeId, status);
       if (!mountedRef.current) return;
 
-      setPlaces((prev) =>
-        prev.map((p) => (p.id === placeId ? { ...p, status } : p)),
-      );
+      // Reload from the server so totalCount, pagination, and the filtered list
+      // are all consistent — especially important when status changes cause the
+      // item to leave the current filter view (e.g. "active" → "removed").
+      void loadPlaces(pageIndexRef.current);
+
       const statusUpdatedMessage = t("admin.places.toast.statusUpdated", {
         status: getStatusLabel(status),
       });

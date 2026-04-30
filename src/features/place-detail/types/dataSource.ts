@@ -36,7 +36,6 @@ export interface PlaceDetailDataSource {
     userId: string,
     params?: ReviewListParams,
   ) => Promise<ReviewListResponse>;
-  getMyReview: (venueId: string) => Promise<Review | null>;
   getAverageRating: (venueId: string) => Promise<VenueAverageRating>;
   reportReview: (
     reviewId: string,

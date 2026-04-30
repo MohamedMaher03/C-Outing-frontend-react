@@ -26,7 +26,6 @@ export {
   deleteReview,
   getReviewById,
   getUserReviews,
-  getMyReview,
   getAverageRating,
   reportReview,
 } from "./services/placeDetailService";

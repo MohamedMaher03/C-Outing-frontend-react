@@ -2,7 +2,6 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { usePlaceDetail } from "@/features/place-detail/hooks/usePlaceDetail";
 import {
   getAverageRating,
-  getMyReview,
   getPlaceById,
   getPlaceReviews,
   getSocialMediaReviews,
@@ -26,7 +25,6 @@ jest.mock("@/features/place-detail/services/placeDetailService", () => ({
   updateReview: jest.fn(),
   deleteReview: jest.fn(),
   reportReview: jest.fn(),
-  getMyReview: jest.fn(),
   getAverageRating: jest.fn(),
   toggleLike: jest.fn(),
   recordInteraction: jest.fn(),
@@ -55,9 +53,6 @@ const mockedGetPlaceReviews = getPlaceReviews as jest.MockedFunction<
 >;
 const mockedGetSocialMediaReviews =
   getSocialMediaReviews as jest.MockedFunction<typeof getSocialMediaReviews>;
-const mockedGetMyReview = getMyReview as jest.MockedFunction<
-  typeof getMyReview
->;
 const mockedGetAverageRating = getAverageRating as jest.MockedFunction<
   typeof getAverageRating
 >;
@@ -108,7 +103,6 @@ describe("usePlaceDetail", () => {
       hasNextPage: false,
     });
 
-    mockedGetMyReview.mockResolvedValue(null);
     mockedGetAverageRating.mockResolvedValue({
       venueId: "p1",
       averageRating: 4.5,

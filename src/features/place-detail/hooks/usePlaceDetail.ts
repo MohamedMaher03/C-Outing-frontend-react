@@ -8,7 +8,6 @@ import {
   updateReview,
   deleteReview,
   reportReview,
-  getMyReview,
   getAverageRating,
   toggleLike as toggleVenueLike,
   recordInteraction,
@@ -26,7 +25,7 @@ import type {
 } from "@/features/place-detail/types";
 import { getReviewIdentity } from "@/features/place-detail/utils/reviewIdentity";
 import { getCurrentAuthUserId } from "@/features/place-detail/utils/authUser";
-import { getErrorMessage, isApiError } from "@/utils/apiError";
+import { getErrorMessage } from "@/utils/apiError";
 
 interface ReviewsPaginationState {
   pageIndex: number;
@@ -66,8 +65,13 @@ const mergeUniqueSocialById = (
   );
 };
 
-const isNotFoundApiError = (error: unknown): boolean =>
-  isApiError(error) && error.statusCode === 404;
+const resolveMyReview = (
+  items: Review[],
+  currentUserId: string | null,
+): Review | null => {
+  if (!currentUserId) return null;
+  return items.find((review) => review.userId === currentUserId) ?? null;
+};
 
 export interface UsePlaceDetailReturn {
   place: PlaceDetail | null;
@@ -255,16 +259,19 @@ export const usePlaceDetail = (
         } else {
           setReviewsLoading(true);
           setReviewsError(null);
+          setMyReviewLoading(true);
         }
 
         const data = await getPlaceReviews(id, { pageIndex, pageSize: 10 });
         if (!isActivePlace(id)) return;
 
-        if (append) {
-          setReviews((prev) => mergeUniqueById(prev, data.items));
-        } else {
-          setReviews(data.items);
-        }
+        setReviews((prev) => {
+          const nextReviews = append
+            ? mergeUniqueById(prev, data.items)
+            : data.items;
+          setMyReview(resolveMyReview(nextReviews, getCurrentAuthUserId()));
+          return nextReviews;
+        });
         applyReviewPagination(data);
       } catch (err) {
         if (!append && isActivePlace(id)) {
@@ -276,6 +283,7 @@ export const usePlaceDetail = (
             setLoadingMoreReviews(false);
           } else {
             setReviewsLoading(false);
+            setMyReviewLoading(false);
           }
         }
       }
@@ -360,31 +368,6 @@ export const usePlaceDetail = (
     [applySocialReviewPagination, isActivePlace],
   );
 
-  const fetchMyReview = useCallback(
-    async (id: string) => {
-      try {
-        setMyReviewLoading(true);
-        const review = await getMyReview(id);
-        if (!isActivePlace(id)) return;
-        setMyReview(review);
-      } catch (err) {
-        if (!isActivePlace(id)) return;
-        if (isNotFoundApiError(err)) {
-          setMyReview(null);
-          return;
-        }
-        setReviewActionError(
-          getErrorMessage(err, "Failed to load your existing review"),
-        );
-      } finally {
-        if (isActivePlace(id)) {
-          setMyReviewLoading(false);
-        }
-      }
-    },
-    [isActivePlace],
-  );
-
   const refreshAverageRating = useCallback(
     async (id: string) => {
       try {
@@ -409,22 +392,21 @@ export const usePlaceDetail = (
 
   const syncReviewsAfterMutation = useCallback(
     async (id: string) => {
-      const [myReviewResult, reviewsPageResult] = await Promise.all([
-        getMyReview(id).catch((error) => {
-          if (isNotFoundApiError(error)) return null;
-          throw error;
-        }),
-        getPlaceReviews(id, { pageIndex: 0, pageSize: 10 }).catch(() => null),
-      ]);
+      const reviewsPageResult = await getPlaceReviews(id, {
+        pageIndex: 0,
+        pageSize: 10,
+      }).catch(() => null);
 
       if (!isActivePlace(id)) return;
-
-      setMyReview(myReviewResult);
 
       if (reviewsPageResult) {
         setReviews(reviewsPageResult.items);
         applyReviewPagination(reviewsPageResult);
         setReviewsError(null);
+        setMyReview(
+          resolveMyReview(reviewsPageResult.items, getCurrentAuthUserId()),
+        );
+        setMyReviewLoading(false);
       }
     },
     [applyReviewPagination, isActivePlace],
@@ -444,8 +426,8 @@ export const usePlaceDetail = (
   const refreshPlaceData = useCallback(async () => {
     if (!placeId) return;
 
-    await Promise.all([fetchPlaceDetails(placeId), fetchMyReview(placeId)]);
-  }, [fetchMyReview, fetchPlaceDetails, placeId]);
+    await fetchPlaceDetails(placeId);
+  }, [fetchPlaceDetails, placeId]);
 
   useEffect(() => {
     if (!placeId) return;
@@ -627,12 +609,13 @@ export const usePlaceDetail = (
         setSubmittingReview(true);
         setReviewActionError(null);
 
-        const canonicalMyReview = myReview
-          ? await getMyReview(placeId).catch((fetchError) => {
-              if (isNotFoundApiError(fetchError)) return myReview;
-              throw fetchError;
-            })
-          : null;
+        const currentUserId = getCurrentAuthUserId();
+        const canonicalMyReview =
+          myReview ??
+          (currentUserId
+            ? (reviews.find((review) => review.userId === currentUserId) ??
+              null)
+            : null);
 
         if (canonicalMyReview && !canonicalMyReview.id) {
           throw new Error("Cannot edit review because id is missing");
@@ -692,6 +675,7 @@ export const usePlaceDetail = (
       place,
       placeId,
       refreshAverageRating,
+      reviews,
       syncReviewsAfterMutation,
       trackInteraction,
     ],

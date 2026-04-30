@@ -102,7 +102,11 @@ const getPlaces = async (
     ),
   ]);
 
-  return mapAdminVenuesPage(venuesResponse.data, reportedVenueIds);
+  return mapAdminVenuesPage(
+    venuesResponse.data,
+    reportedVenueIds,
+    params.status,
+  );
 };
 
 const getReviews = async (

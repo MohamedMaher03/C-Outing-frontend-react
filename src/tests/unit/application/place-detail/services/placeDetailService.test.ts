@@ -14,7 +14,6 @@ jest.mock("@/features/place-detail/services/placeDetailDataSource", () => ({
     deleteReview: jest.fn(),
     getReviewById: jest.fn(),
     getUserReviews: jest.fn(),
-    getMyReview: jest.fn(),
     getAverageRating: jest.fn(),
     reportReview: jest.fn(),
     recordInteraction: jest.fn(),

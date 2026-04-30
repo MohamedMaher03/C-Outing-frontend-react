@@ -86,8 +86,6 @@ export const API_ENDPOINTS = {
     deleteReview: (reviewId: string) => `/api/v1/Review/${reviewId}`,
     reportReview: (reviewId: string) => `/api/v1/Review/${reviewId}/report`,
     getUserReviews: (userId: string) => `/api/v1/Review/user/${userId}`,
-    getMyReview: (venueId: string) =>
-      `/api/v1/Review/venue/${venueId}/my-review`,
     getAverageRating: (venueId: string) =>
       `/api/v1/Review/venue/${venueId}/average-rating`,
   },

@@ -139,15 +139,6 @@ export const placeDetailApi = {
     return normalizePaginatedReviews(data);
   },
 
-  async getMyReview(venueId: string): Promise<Review | null> {
-    const { data } = await axiosInstance.get<unknown>(
-      API_ENDPOINTS.places.getMyReview(venueId),
-    );
-
-    if (data === null || data === undefined) return null;
-    return normalizeReview(data);
-  },
-
   async getAverageRating(venueId: string): Promise<VenueAverageRating> {
     const { data } = await axiosInstance.get<unknown>(
       API_ENDPOINTS.places.getAverageRating(venueId),

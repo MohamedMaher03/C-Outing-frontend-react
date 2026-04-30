@@ -1,6 +1,7 @@
 import type {
   AdminCategory,
   AdminPlace,
+  AdminPlaceStatusFilter,
   AdminReview,
   AdminStats,
   AdminUser,
@@ -329,6 +330,7 @@ export const mapAdminUsersPage = (
 export const mapAdminPlace = (
   dto: AdminVenueDto,
   reportedVenueIds: Set<string>,
+  statusFallback?: AdminPlaceStatusFilter,
 ): AdminPlace => ({
   id: dto.id,
   name: dto.name,
@@ -338,9 +340,14 @@ export const mapAdminPlace = (
   reviewCount: dto.reviewCount,
   status: reportedVenueIds.has(dto.id)
     ? "flagged"
-    : mapAdminPlaceStatus(dto.status),
+    : mapAdminPlaceStatus(
+        dto.status ??
+          (statusFallback && statusFallback !== "all"
+            ? statusFallback
+            : undefined),
+      ),
   createdAt: asDate(dto.createdAt),
-  image: dto.thumbnailUrl ?? dto.displayImageUrl ?? "",
+  image: dto.displayImageUrl ?? dto.thumbnailUrl ?? "",
   tags: dto.atmosphereTags,
   description: dto.location,
   priceLevel: mapPriceRange(dto.priceRange),
@@ -351,11 +358,12 @@ export const mapAdminPlacesPage = (
     | ApiEnvelope<PaginatedDto<AdminVenueDto>>
     | PaginatedDto<AdminVenueDto>,
   reportedVenueIds: Set<string>,
+  statusFallback?: AdminPlaceStatusFilter,
 ): PaginatedResponse<AdminPlace> => {
   const page = unwrapEnvelope(payload);
 
   const mappedItems = page.items.map((item) =>
-    mapAdminPlace(item, reportedVenueIds),
+    mapAdminPlace(item, reportedVenueIds, statusFallback),
   );
 
   const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
@@ -399,11 +407,12 @@ export const mapAdminVenuesPage = (
     | ApiEnvelope<PaginatedDto<AdminVenueDto>>
     | PaginatedDto<AdminVenueDto>,
   reportedVenueIds: Set<string>,
+  statusFallback?: AdminPlaceStatusFilter,
 ): PaginatedResponse<AdminPlace> => {
   const page = unwrapEnvelope(payload);
 
   const mappedItems = page.items.map((venue) =>
-    mapAdminPlace(venue, reportedVenueIds),
+    mapAdminPlace(venue, reportedVenueIds, statusFallback),
   );
 
   const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));

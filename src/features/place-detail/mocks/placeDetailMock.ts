@@ -326,17 +326,6 @@ export const placeDetailMock: PlaceDetailDataSource = {
     return paginateReviews(userReviews, params);
   },
 
-  async getMyReview(venueId: string): Promise<Review | null> {
-    await delay(160);
-
-    const authUser = parseAuthUser();
-    const review = getReviewsForVenue(venueId).find(
-      (item) => item.userId === authUser.userId,
-    );
-
-    return review ? cloneReview(review) : null;
-  },
-
   async getAverageRating(venueId: string): Promise<VenueAverageRating> {
     await delay(140);
     updateVenueRatingMetadata(venueId);
