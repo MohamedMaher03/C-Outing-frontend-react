@@ -73,7 +73,7 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
   const [statusFilter, setStatusFilter] =
     useState<AdminPlaceStatusFilter>("all");
 
-  // Real debounce — wait 400 ms after the user stops typing before firing a request
+  // here i use  debounce — i wait 650 ms after the user stops typing before firing a request
   const [deferredSearch, setDeferredSearch] = useState(search);
   const debounceTimerRef = useRef<number | null>(null);
   useEffect(() => {
@@ -83,7 +83,7 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     debounceTimerRef.current = window.setTimeout(() => {
       setDeferredSearch(search);
       debounceTimerRef.current = null;
-    }, 400);
+    }, 650);
     return () => {
       if (debounceTimerRef.current !== null) {
         window.clearTimeout(debounceTimerRef.current);

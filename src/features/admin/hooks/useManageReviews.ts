@@ -1,6 +1,6 @@
 import {
   useCallback,
-  useDeferredValue,
+  // useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -50,9 +50,9 @@ export const useManageReviews = (): UseManageReviewsReturn => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<AdminReviewStatusFilter>("all");
-  const deferredSearch = useDeferredValue(search);
-  const searchRef = useRef(deferredSearch);
-  searchRef.current = deferredSearch;
+  // const deferredSearch = useDeferredValue(search);
+  // const searchRef = useRef(deferredSearch);
+  // searchRef.current = deferredSearch;
   const statusFilterRef = useRef(statusFilter);
   statusFilterRef.current = statusFilter;
   const mountedRef = useRef(true);
@@ -64,6 +64,26 @@ export const useManageReviews = (): UseManageReviewsReturn => {
   const [totalPages, setTotalPages] = useState(1);
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
+
+  const [deferredSearch, setDeferredSearch] = useState(search);
+  const debounceTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = window.setTimeout(() => {
+      setDeferredSearch(search);
+      debounceTimerRef.current = null;
+    }, 650);
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [search]);
+
+  const pageIndexRef = useRef(pageIndex);
+  pageIndexRef.current = pageIndex;
 
   const addProcessingId = (id: string) => {
     setProcessingReviewIds((prev) =>
@@ -86,7 +106,7 @@ export const useManageReviews = (): UseManageReviewsReturn => {
           page: targetPage,
           count: pageSize,
           status: statusFilterRef.current,
-          searchTerm: searchRef.current || undefined,
+          searchTerm: deferredSearch || undefined,
         });
         if (!mountedRef.current) return;
         const normalizedTotalPages = Math.max(1, data.totalPages);

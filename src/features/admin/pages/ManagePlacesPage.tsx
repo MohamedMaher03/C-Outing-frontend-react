@@ -64,8 +64,8 @@ const ADMIN_LIST_ROW_STYLE: CSSProperties = {
 };
 
 // Inline SVG placeholder shown when a venue image URL is missing or fails to load
-const PLACE_IMAGE_PLACEHOLDER =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Crect width='56' height='56' fill='%23f1f5f9' rx='12'/%3E%3Cpath d='M28 18a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 14c6.627 0 12 2.686 12 6v2H16v-2c0-3.314 5.373-6 12-6z' fill='%23cbd5e1'/%3E%3C/svg%3E";
+// const PLACE_IMAGE_PLACEHOLDER =
+//   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Crect width='56' height='56' fill='%23f1f5f9' rx='12'/%3E%3Cpath d='M28 18a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 14c6.627 0 12 2.686 12 6v2H16v-2c0-3.314 5.373-6 12-6z' fill='%23cbd5e1'/%3E%3C/svg%3E";
 
 const ManagePlacesPage = () => {
   const navigate = useNavigate();
@@ -541,18 +541,12 @@ const ManagePlacesPage = () => {
                 style={ADMIN_LIST_ROW_STYLE}
               >
                 <img
-                  src={place.image || PLACE_IMAGE_PLACEHOLDER}
+                  src={place.image}
                   alt={place.name}
                   className="h-14 w-14 rounded-xl object-cover flex-shrink-0 bg-muted"
                   loading="lazy"
                   decoding="async"
                   referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    if (img.src !== PLACE_IMAGE_PLACEHOLDER) {
-                      img.src = PLACE_IMAGE_PLACEHOLDER;
-                    }
-                  }}
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
