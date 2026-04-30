@@ -15,6 +15,7 @@ dist
 dist-ssr
 *.local
 .agents
+.impeccable.md
 
 # Editor directories and files
 .vscode/*
