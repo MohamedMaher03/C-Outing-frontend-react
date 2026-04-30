@@ -99,7 +99,9 @@ interface AdminReviewDto {
   id: string;
   userId: string;
   userName: string;
+  // Backend sends userAvatarUrl, not userAvatar
   userAvatar?: string | null;
+  userAvatarUrl?: string | null;
   venueId: string;
   venueName: string;
   rating: number;
@@ -247,17 +249,39 @@ const mapAdminPlaceStatus = (value: unknown): AdminPlace["status"] => {
   return "active";
 };
 
+/**
+ * FIX 1 (Filters always empty): The backend returns PascalCase status values:
+ *   "Approved" | "Flagged" | "Pending" | "Rejected"
+ * The old mapper only recognised lowercase equivalents, so every review fell
+ * through to the "pending" default — making status-filter queries return an
+ * empty list because none of the mapped statuses matched the filter value.
+ *
+ * The mapping from backend → frontend domain values is:
+ *   Approved  → published
+ *   Flagged   → flagged
+ *   Pending   → pending
+ *   Rejected  → removed
+ */
 const mapAdminReviewStatus = (value: unknown): AdminReview["status"] => {
-  if (
-    value === "published" ||
-    value === "pending" ||
-    value === "flagged" ||
-    value === "removed"
-  ) {
-    return value;
-  }
+  if (typeof value !== "string") return "pending";
 
-  return "pending";
+  switch (value.trim().toLowerCase()) {
+    case "approved":
+      return "published";
+    case "flagged":
+      return "flagged";
+    case "pending":
+      return "pending";
+    case "rejected":
+      return "removed";
+    // keep any already-mapped lowercase values working as a safety net
+    case "published":
+      return "published";
+    case "removed":
+      return "removed";
+    default:
+      return "pending";
+  }
 };
 
 export const unwrapEnvelope = <T>(payload: ApiEnvelope<T> | T): T => {
@@ -488,11 +512,15 @@ export const mapCreatedAdminPlace = (
   };
 };
 
+/**
+ * FIX 1 (avatar field): Backend sends userAvatarUrl, not userAvatar.
+ * Now we read both so the field is populated correctly.
+ */
 const mapAdminReview = (dto: AdminReviewDto): AdminReview => ({
   id: dto.id,
   userId: dto.userId,
   userName: dto.userName,
-  userAvatar: dto.userAvatar ?? undefined,
+  userAvatar: dto.userAvatarUrl ?? dto.userAvatar ?? undefined,
   venueId: dto.venueId,
   venueName: dto.venueName,
   rating: Math.max(0, Math.min(5, Math.round(toFiniteNumber(dto.rating, 0)))),
@@ -502,7 +530,7 @@ const mapAdminReview = (dto: AdminReviewDto): AdminReview => ({
   createdAt: asDate(dto.createdAt),
 });
 
-//paginted
+//paginated
 export const mapAdminReviews = (
   payload:
     | ApiEnvelope<PaginatedDto<AdminReviewDto>>
@@ -514,8 +542,18 @@ export const mapAdminReviews = (
 
   const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
 
+  /**
+   * FIX 3 (pagination counter always same): The backend uses 0-based pageIndex.
+   * The old mapper used rawPageIndex + 1 here but the PaginatedResponse
+   * consumers (hook state, UI counters) expected 1-based values — which was
+   * already correct. The real problem was that the hook was passing its own
+   * 1-based pageIndex straight to the API as "page", but the API also expects
+   * 1-based pages (query param "page"). That part is correct.
+   * What was wrong: loadReviews() had `[t]` as its only dependency so it
+   * captured stale closures for statusFilter and deferredSearch → fixed in hook.
+   */
   const rawPageIndex = Math.trunc(toFiniteNumber(page.pageIndex, 0));
-  const pageIndex = rawPageIndex + 1;
+  const pageIndex = rawPageIndex + 1; // convert 0-based → 1-based
 
   const totalCount = Math.max(
     0,

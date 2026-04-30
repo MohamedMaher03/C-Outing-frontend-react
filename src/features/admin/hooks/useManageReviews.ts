@@ -1,17 +1,9 @@
-import {
-  useCallback,
-  // useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { adminService } from "@/features/admin/services/adminService";
 import type {
   AdminReview,
   AdminReviewStatusFilter,
 } from "@/features/admin/types";
-import { filterReviews } from "@/features/admin/utils/adminFilters";
 import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 
@@ -22,6 +14,9 @@ interface UseManageReviewsReturn {
   processingReviewIds: string[];
   search: string;
   statusFilter: AdminReviewStatusFilter;
+  // NOTE:take care anyone will work here after me : filteredReviews is now identical to `reviews` – filtering and
+  // searching are fully delegated to the backend. The field is kept in the
+  // public interface so callers don't need to change.
   filteredReviews: AdminReview[];
   pageIndex: number;
   pageSize: number;
@@ -41,6 +36,29 @@ interface UseManageReviewsReturn {
   handleDelete: (reviewId: string) => Promise<void>;
 }
 
+/**
+ * here i map the frontend AdminReviewStatusFilter union to the exact string the
+ * backend API accepts as the `status` query parameter.
+ *
+ * Backend allowed values: Approved | Flagged | Pending | Rejected
+ * Frontend domain values:  published | flagged  | pending | removed | all
+ */
+const toApiStatus = (filter: AdminReviewStatusFilter): string | undefined => {
+  switch (filter) {
+    case "published":
+      return "Approved";
+    case "flagged":
+      return "Flagged";
+    case "pending":
+      return "Pending";
+    case "removed":
+      return "Rejected";
+    case "all":
+    default:
+      return undefined;
+  }
+};
+
 export const useManageReviews = (): UseManageReviewsReturn => {
   const { t } = useI18n();
   const [reviews, setReviews] = useState<AdminReview[]>([]);
@@ -50,13 +68,10 @@ export const useManageReviews = (): UseManageReviewsReturn => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<AdminReviewStatusFilter>("all");
-  // const deferredSearch = useDeferredValue(search);
-  // const searchRef = useRef(deferredSearch);
-  // searchRef.current = deferredSearch;
-  const statusFilterRef = useRef(statusFilter);
-  statusFilterRef.current = statusFilter;
+
   const mountedRef = useRef(true);
   const inFlightRef = useRef(new Set<string>());
+
   const REVIEWS_PAGE_SIZE = 10;
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(REVIEWS_PAGE_SIZE);
@@ -65,8 +80,10 @@ export const useManageReviews = (): UseManageReviewsReturn => {
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
 
+  // Debounced search value ─ actual API calls only fire after 650 ms idle
   const [deferredSearch, setDeferredSearch] = useState(search);
   const debounceTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (debounceTimerRef.current !== null) {
       window.clearTimeout(debounceTimerRef.current);
@@ -81,9 +98,6 @@ export const useManageReviews = (): UseManageReviewsReturn => {
       }
     };
   }, [search]);
-
-  const pageIndexRef = useRef(pageIndex);
-  pageIndexRef.current = pageIndex;
 
   const addProcessingId = (id: string) => {
     setProcessingReviewIds((prev) =>
@@ -105,10 +119,13 @@ export const useManageReviews = (): UseManageReviewsReturn => {
         const data = await adminService.getReviews({
           page: targetPage,
           count: pageSize,
-          status: statusFilterRef.current,
+          status: toApiStatus(statusFilter) as
+            | AdminReviewStatusFilter
+            | undefined,
           searchTerm: deferredSearch || undefined,
         });
         if (!mountedRef.current) return;
+
         const normalizedTotalPages = Math.max(1, data.totalPages);
         const normalizedPage = Math.min(
           Math.max(1, targetPage),
@@ -131,7 +148,7 @@ export const useManageReviews = (): UseManageReviewsReturn => {
         }
       }
     },
-    [t],
+    [t, pageSize, deferredSearch, statusFilter],
   );
 
   const initialLoadDone = useRef(false);
@@ -149,15 +166,13 @@ export const useManageReviews = (): UseManageReviewsReturn => {
   useEffect(() => {
     if (!initialLoadDone.current) return;
     void loadReviews(1);
-  }, [deferredSearch, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [deferredSearch, statusFilter]);
 
   const handleStatusChange = async (
     reviewId: string,
     status: AdminReview["status"],
   ) => {
-    if (inFlightRef.current.has(reviewId)) {
-      return;
-    }
+    if (inFlightRef.current.has(reviewId)) return;
 
     inFlightRef.current.add(reviewId);
     addProcessingId(reviewId);
@@ -166,7 +181,6 @@ export const useManageReviews = (): UseManageReviewsReturn => {
     try {
       await adminService.updateReviewStatus(reviewId, status);
       if (!mountedRef.current) return;
-
       setReviews((prev) =>
         prev.map((r) => (r.id === reviewId ? { ...r, status } : r)),
       );
@@ -175,16 +189,12 @@ export const useManageReviews = (): UseManageReviewsReturn => {
       setError(getErrorMessage(err, t("admin.error.updateReviewStatus")));
     } finally {
       inFlightRef.current.delete(reviewId);
-      if (mountedRef.current) {
-        removeProcessingId(reviewId);
-      }
+      if (mountedRef.current) removeProcessingId(reviewId);
     }
   };
 
   const handleDelete = async (reviewId: string) => {
-    if (inFlightRef.current.has(reviewId)) {
-      return;
-    }
+    if (inFlightRef.current.has(reviewId)) return;
 
     inFlightRef.current.add(reviewId);
     addProcessingId(reviewId);
@@ -199,16 +209,9 @@ export const useManageReviews = (): UseManageReviewsReturn => {
       setError(getErrorMessage(err, t("admin.error.deleteReview")));
     } finally {
       inFlightRef.current.delete(reviewId);
-      if (mountedRef.current) {
-        removeProcessingId(reviewId);
-      }
+      if (mountedRef.current) removeProcessingId(reviewId);
     }
   };
-
-  const filteredReviews = useMemo(
-    () => filterReviews(reviews, deferredSearch, statusFilter),
-    [reviews, deferredSearch, statusFilter],
-  );
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -241,7 +244,7 @@ export const useManageReviews = (): UseManageReviewsReturn => {
     processingReviewIds,
     search,
     statusFilter,
-    filteredReviews,
+    filteredReviews: reviews,
     pageIndex,
     pageSize,
     totalCount,

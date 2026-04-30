@@ -332,7 +332,7 @@ const ManageReviewsPage = () => {
         {totalPages > 1 && (
           <div className="mt-2 flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-role-caption text-muted-foreground">
-              {t("admin.places.pagination.summary", {
+              {t("admin.reviews.pagination.summary", {
                 page: formatNumber(pageIndex),
                 totalPages: formatNumber(totalPages),
                 totalCount: formatNumber(totalCount),
@@ -347,11 +347,11 @@ const ManageReviewsPage = () => {
                 onClick={goToPreviousPage}
                 disabled={!hasPreviousPage || loading}
               >
-                {t("admin.places.pagination.previous")}
+                {t("admin.reviews.pagination.previous")}
               </Button>
 
               <span className="inline-flex items-center rounded-lg border px-3">
-                {t("admin.places.pagination.page", {
+                {t("admin.reviews.pagination.page", {
                   page: formatNumber(pageIndex),
                   totalPages: formatNumber(totalPages),
                 })}
@@ -364,7 +364,7 @@ const ManageReviewsPage = () => {
                 onClick={goToNextPage}
                 disabled={!hasNextPage || loading}
               >
-                {t("admin.places.pagination.next")}
+                {t("admin.reviews.pagination.next")}
               </Button>
             </div>
           </div>

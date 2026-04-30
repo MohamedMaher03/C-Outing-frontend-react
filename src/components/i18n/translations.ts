@@ -929,6 +929,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.places.pagination.previous": "Previous",
     "admin.places.pagination.next": "Next",
     "admin.places.pagination.page": "Page {page} / {totalPages}",
+    "admin.reviews.pagination.summary":
+      "Page {page} of {totalPages} · {totalCount} reviews total · {pageSize} per page",
+    "admin.reviews.pagination.previous": "Previous",
+    "admin.reviews.pagination.next": "Next",
+    "admin.reviews.pagination.page": "Page {page} / {totalPages}",
 
     "admin.reviews.loading": "Loading reviews...",
     "admin.reviews.header.title": "Manage Reviews",
@@ -2383,6 +2388,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.places.pagination.page": "الصفحة {page} / {totalPages}",
     "admin.places.pagination.previous": "السابق",
     "admin.places.pagination.next": "التالي",
+    "admin.reviews.pagination.summary":
+      "الصفحة {page} من {totalPages} · إجمالي {totalCount} مراجعة · {pageSize} لكل صفحة",
+    "admin.reviews.pagination.page": "الصفحة {page} / {totalPages}",
+    "admin.reviews.pagination.previous": "السابق",
+    "admin.reviews.pagination.next": "التالي",
 
     "admin.reviews.loading": "جارٍ تحميل المراجعات...",
     "admin.reviews.header.title": "إدارة المراجعات",
