@@ -24,7 +24,9 @@ const AdminPageHeader = ({
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0" style={HEADER_STACK_STYLE}>
         <h1 className="flex min-w-0 items-center gap-2 text-role-subheading text-foreground">
-          {Icon && <Icon className="h-5 w-5 flex-shrink-0 text-secondary" />}
+          {Icon && (
+            <Icon className="h-5 w-5 flex-shrink-0 text-secondary dark:text-primary " />
+          )}
           <span className="truncate">{title}</span>
         </h1>
         {description ? (

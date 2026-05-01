@@ -3,10 +3,7 @@ import {
   MapPin,
   MessageSquare,
   AlertTriangle,
-  TrendingUp,
   UserPlus,
-  Clock,
-  CheckCircle,
   Activity,
 } from "lucide-react";
 import { type CSSProperties, useMemo } from "react";
@@ -104,30 +101,30 @@ const AdminDashboardPage = () => {
       icon: AlertTriangle,
       color: "bg-destructive/10 text-destructive",
     },
-    {
-      label: t("admin.dashboard.stat.activeToday"),
-      value: stats.activeUsersToday,
-      icon: TrendingUp,
-      color: "bg-primary/10 text-primary",
-    },
-    {
-      label: t("admin.dashboard.stat.newThisWeek"),
-      value: stats.newUsersThisWeek,
-      icon: UserPlus,
-      color: "bg-secondary/18 text-foreground",
-    },
-    {
-      label: t("admin.dashboard.stat.pendingReviews"),
-      value: stats.pendingReviews,
-      icon: Clock,
-      color: "bg-secondary/25 text-foreground",
-    },
-    {
-      label: t("admin.dashboard.stat.resolvedReports"),
-      value: stats.resolvedReportsThisWeek,
-      icon: CheckCircle,
-      color: "bg-primary/15 text-primary",
-    },
+    // {
+    //   label: t("admin.dashboard.stat.activeToday"),
+    //   value: stats.activeUsersToday,
+    //   icon: TrendingUp,
+    //   color: "bg-primary/10 text-primary",
+    // },
+    // {
+    //   label: t("admin.dashboard.stat.newThisWeek"),
+    //   value: stats.newUsersThisWeek,
+    //   icon: UserPlus,
+    //   color: "bg-secondary/18 text-foreground",
+    // },
+    // {
+    //   label: t("admin.dashboard.stat.pendingReviews"),
+    //   value: stats.pendingReviews,
+    //   icon: Clock,
+    //   color: "bg-secondary/25 text-foreground",
+    // },
+    // {
+    //   label: t("admin.dashboard.stat.resolvedReports"),
+    //   value: stats.resolvedReportsThisWeek,
+    //   icon: CheckCircle,
+    //   color: "bg-primary/15 text-primary",
+    // },
   ];
 
   const normalizedSystemStatus = (

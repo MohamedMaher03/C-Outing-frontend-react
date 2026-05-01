@@ -1,13 +1,8 @@
 /**
  * Dashboard Layout
  *
- * Shared sidebar-based layout used by both Admin and Moderator roles.
+ * here i use shared sidebar-based layout used by both Admin and Moderator roles.
  * Nav items are passed as props so each role gets its own navigation.
- *
- * Matches the project's design system:
- *   – bg-background, bg-card, text-foreground, border-border
- *   – Secondary (gold) accent for active states
- *   – Plus Jakarta Sans font (inherited)
  */
 
 import { Outlet, useLocation, useNavigate } from "react-router-dom";

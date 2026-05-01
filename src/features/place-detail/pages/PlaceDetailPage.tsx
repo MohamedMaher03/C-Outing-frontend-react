@@ -48,6 +48,7 @@ import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defau
 import { formatCountLabel } from "@/features/place-detail/utils/formatters";
 import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleton";
 import "@/features/place-detail/placeDetailTypography.css";
+import { useAuth } from "@/features/auth";
 
 const ReviewCardLazy = lazy(() =>
   import("@/features/place-detail/components/ReviewCard").then((module) => ({
@@ -147,6 +148,10 @@ const PlaceDetailPage = () => {
       window.clearTimeout(timer);
     };
   }, [ensureSocialReviewsLoaded, socialReviewsLoaded]);
+
+  const { user } = useAuth();
+  const userRole = user?.role ?? "user";
+  const isPrivilegedUser = userRole === "admin" || userRole === "moderator";
 
   const websiteTotalCount = Math.max(
     reviewsPagination.totalCount,
@@ -363,71 +368,75 @@ const PlaceDetailPage = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
 
-            <div className="absolute right-4 top-4 flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={onLikeClick}
-                disabled={savingLike}
-                aria-label={
-                  isLiked
-                    ? t("placeDetail.action.unlike")
-                    : t("placeDetail.action.like")
-                }
-                aria-pressed={isLiked}
-                className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
-                title={
-                  isLiked
-                    ? t("placeDetail.action.unlike")
-                    : t("placeDetail.action.like")
-                }
-              >
-                <ThumbsUp
-                  className={cn(
-                    "h-5 w-5 transition-colors",
-                    isLiked ? "text-accent fill-accent" : "text-foreground",
-                  )}
-                />
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => void handleSharePlace()}
-                aria-label={t("placeDetail.action.share")}
-                className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
-                title={t("placeDetail.action.share")}
-              >
-                <Share2 className="h-5 w-5" />
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={onFavoriteClick}
-                disabled={savingFavorite}
-                aria-label={
-                  isFavorite
-                    ? t("home.place.removeFavorite")
-                    : t("home.place.addFavorite")
-                }
-                aria-pressed={isFavorite}
-                className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
-                title={
-                  isFavorite
-                    ? t("home.place.removeFavorite")
-                    : t("home.place.addFavorite")
-                }
-              >
-                <Heart
-                  className={cn(
-                    "h-5 w-5 transition-colors",
-                    isFavorite ? "text-accent fill-accent" : "text-foreground",
-                  )}
-                />
-              </Button>
-            </div>
+            {!isPrivilegedUser && (
+              <div className="absolute right-4 top-4 flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={onLikeClick}
+                  disabled={savingLike}
+                  aria-label={
+                    isLiked
+                      ? t("placeDetail.action.unlike")
+                      : t("placeDetail.action.like")
+                  }
+                  aria-pressed={isLiked}
+                  className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
+                  title={
+                    isLiked
+                      ? t("placeDetail.action.unlike")
+                      : t("placeDetail.action.like")
+                  }
+                >
+                  <ThumbsUp
+                    className={cn(
+                      "h-5 w-5 transition-colors",
+                      isLiked ? "text-accent fill-accent" : "text-foreground",
+                    )}
+                  />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => void handleSharePlace()}
+                  aria-label={t("placeDetail.action.share")}
+                  className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
+                  title={t("placeDetail.action.share")}
+                >
+                  <Share2 className="h-5 w-5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={onFavoriteClick}
+                  disabled={savingFavorite}
+                  aria-label={
+                    isFavorite
+                      ? t("home.place.removeFavorite")
+                      : t("home.place.addFavorite")
+                  }
+                  aria-pressed={isFavorite}
+                  className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
+                  title={
+                    isFavorite
+                      ? t("home.place.removeFavorite")
+                      : t("home.place.addFavorite")
+                  }
+                >
+                  <Heart
+                    className={cn(
+                      "h-5 w-5 transition-colors",
+                      isFavorite
+                        ? "text-accent fill-accent"
+                        : "text-foreground",
+                    )}
+                  />
+                </Button>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -868,18 +877,20 @@ const PlaceDetailPage = () => {
                     </Card>
                   }
                 >
-                  <AddReviewFormLazy
-                    key={`${myReview?.id ?? "create"}-${myReview?.createdAt ?? "none"}-${myReview ? "edit" : "create"}`}
-                    onSubmit={handleSubmitReview}
-                    submitting={submittingReview}
-                    submitted={reviewSubmitted}
-                    mode={myReview ? "edit" : "create"}
-                    initialRating={myReview?.rating ?? 0}
-                    initialComment={myReview?.comment ?? ""}
-                    onDelete={myReview ? onDeleteMyReview : undefined}
-                    deleting={deletingReview || reportingReview}
-                    errorMessage={reviewActionError}
-                  />
+                  {!isPrivilegedUser && (
+                    <AddReviewFormLazy
+                      key={`${myReview?.id ?? "create"}-${myReview?.createdAt ?? "none"}-${myReview ? "edit" : "create"}`}
+                      onSubmit={handleSubmitReview}
+                      submitting={submittingReview}
+                      submitted={reviewSubmitted}
+                      mode={myReview ? "edit" : "create"}
+                      initialRating={myReview?.rating ?? 0}
+                      initialComment={myReview?.comment ?? ""}
+                      onDelete={myReview ? onDeleteMyReview : undefined}
+                      deleting={deletingReview || reportingReview}
+                      errorMessage={reviewActionError}
+                    />
+                  )}
                 </Suspense>
 
                 {reviewsLoading ? (

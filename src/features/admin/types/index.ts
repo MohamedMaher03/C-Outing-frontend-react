@@ -108,7 +108,15 @@ export interface AdminReview {
   createdAt: Date;
 }
 
-export type AdminReviewStatus = "published" | "pending" | "flagged" | "removed";
+export type AdminReviewStatus =
+  | "published"
+  | "pending"
+  | "flagged"
+  | "removed"
+  | "Approved"
+  | "Rejected"
+  | "Flagged"
+  | "Pending";
 export type AdminReviewStatusFilter = AdminFilterValue<AdminReviewStatus>;
 
 export interface AdminCategory {

@@ -168,6 +168,21 @@ export const useManageReviews = (): UseManageReviewsReturn => {
     void loadReviews(1);
   }, [deferredSearch, statusFilter]);
 
+  const mapReviewStatusToApi = (status: AdminReview["status"]) => {
+    switch (status) {
+      case "published":
+        return "Approved";
+      case "flagged":
+        return "Flagged";
+      case "pending":
+        return "Pending";
+      case "removed":
+        return "Rejected";
+      default:
+        return status;
+    }
+  };
+
   const handleStatusChange = async (
     reviewId: string,
     status: AdminReview["status"],
@@ -179,8 +194,13 @@ export const useManageReviews = (): UseManageReviewsReturn => {
     setError(null);
 
     try {
-      await adminService.updateReviewStatus(reviewId, status);
+      await adminService.updateReviewStatus(
+        reviewId,
+        mapReviewStatusToApi(status),
+      );
+
       if (!mountedRef.current) return;
+
       setReviews((prev) =>
         prev.map((r) => (r.id === reviewId ? { ...r, status } : r)),
       );

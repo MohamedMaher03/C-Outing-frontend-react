@@ -620,7 +620,7 @@ const ManagePlacesPage = () => {
                         onClick={() =>
                           void handleStatusChange(place.id, "active")
                         }
-                        className="min-h-11 gap-1 text-role-secondary text-primary hover:text-primary sm:h-8"
+                        className="min-h-11 gap-1 text-role-secondary text-primary hover:text-primary sm:h-8 dark:hover:text-secondary"
                         disabled={isPendingAction}
                       >
                         <CheckCircle className="h-3.5 w-3.5" />

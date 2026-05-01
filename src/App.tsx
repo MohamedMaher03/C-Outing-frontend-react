@@ -25,7 +25,6 @@ import {
   Users,
   MapPin,
   MessageSquare,
-  Tags,
   Settings,
   ShieldAlert,
 } from "lucide-react";
@@ -124,7 +123,7 @@ function App() {
         label: t("nav.manageReviews"),
         icon: MessageSquare,
       },
-      { path: "/admin/categories", label: t("nav.categories"), icon: Tags },
+      // { path: "/admin/categories", label: t("nav.categories"), icon: Tags },
       { path: "/admin/settings", label: t("nav.settings"), icon: Settings },
     ],
     [t],

@@ -84,7 +84,7 @@ export const reviewStatusConfig: Record<
   },
   removed: {
     label: "Removed",
-    class: "bg-muted text-muted-foreground border-border",
+    class: "bg-destructive/10 text-destructive border-destructive/30",
     icon: XCircle,
   },
 };
@@ -94,6 +94,10 @@ export const reviewRowStateClass: Record<AdminReviewStatus, string> = {
   pending: "border-secondary/30 bg-secondary/10",
   flagged: "border-destructive/25 bg-destructive/5",
   removed: "border-border bg-muted/30",
+  Approved: "border-border bg-card",
+  Rejected: "border-destructive/25 bg-destructive/10",
+  Flagged: "border-destructive/25 bg-destructive/10",
+  Pending: "border-secondary/30 bg-secondary/10",
 };
 
 export const adminToastClasses: Record<AdminToast["variant"], string> = {

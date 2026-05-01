@@ -17,7 +17,7 @@ const AdminEmptyState = ({
   return (
     <div className="rounded-2xl border border-border bg-card/70 px-6 py-10 text-center">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-        <Icon className="h-6 w-6 text-muted-foreground" />
+        <Icon className="h-6 w-6 text-muted-foreground dark:text-primary" />
       </div>
       <h3 className="mt-4 text-role-body font-semibold text-foreground">
         {title}
