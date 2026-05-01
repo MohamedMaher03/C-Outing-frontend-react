@@ -131,6 +131,13 @@ const AdminDashboardPage = () => {
     stats.systemStatus ?? "healthy"
   ).toLowerCase();
   const isHealthy = normalizedSystemStatus === "healthy";
+  const healthTimestamp = stats.healthTimestamp
+    ? new Date(stats.healthTimestamp)
+    : null;
+  const healthTimestampLabel =
+    healthTimestamp && !Number.isNaN(healthTimestamp.getTime())
+      ? activityDateTimeFormatter.format(healthTimestamp)
+      : t("admin.status.unknown");
   const systemStatusLabel =
     normalizedSystemStatus === "healthy"
       ? t("admin.status.healthy")
@@ -297,7 +304,7 @@ const AdminDashboardPage = () => {
               {t("admin.dashboard.operational.apiResponse")}
             </p>
             <p className="mt-1 text-role-secondary text-numeric-tabular font-semibold text-foreground">
-              {t("admin.dashboard.operational.apiResponseValue")}
+              {healthTimestampLabel}
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card px-4 py-3">

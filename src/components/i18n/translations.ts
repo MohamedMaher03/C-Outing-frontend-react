@@ -807,8 +807,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.dashboard.section.operational.description":
       "Health and queue indicators for this reporting window",
     "admin.dashboard.operational.serverStatus": "Server Status",
-    "admin.dashboard.operational.apiResponse": "API Response Time",
-    "admin.dashboard.operational.apiResponseValue": "142 ms",
+    "admin.dashboard.operational.apiResponse": "Health Check",
+    "admin.dashboard.operational.apiResponseValue": "Last check",
     "admin.dashboard.operational.flaggedContent": "Flagged Content",
 
     "admin.users.loading": "Loading users...",
@@ -2269,8 +2269,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.dashboard.section.operational.description":
       "مؤشرات الصحة والطوابير ضمن نافذة التقرير الحالية",
     "admin.dashboard.operational.serverStatus": "حالة الخادم",
-    "admin.dashboard.operational.apiResponse": "زمن استجابة API",
-    "admin.dashboard.operational.apiResponseValue": "142 مللي ثانية",
+    "admin.dashboard.operational.apiResponse": "فحص الصحة",
+    "admin.dashboard.operational.apiResponseValue": "آخر فحص",
     "admin.dashboard.operational.flaggedContent": "المحتوى المعلّم",
 
     "admin.users.loading": "جارٍ تحميل المستخدمين...",
