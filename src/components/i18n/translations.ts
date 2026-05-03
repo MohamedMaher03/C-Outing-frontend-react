@@ -1114,6 +1114,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "moderator.reviews.actions.approve": "Approve",
     "moderator.reviews.actions.flag": "Flag",
     "moderator.reviews.actions.reject": "Reject",
+    "moderator.reviews.pagination.summary":
+      "Page {page} of {totalPages} · {totalCount} reviews total · {pageSize} per page",
+    "moderator.reviews.pagination.previous": "Previous",
+    "moderator.reviews.pagination.next": "Next",
+    "moderator.reviews.pagination.page": "Page {page} / {totalPages}",
 
     "moderator.places.loading": "Loading place queue...",
     "moderator.places.error.updateTitle":
@@ -1145,6 +1150,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "No places match your current search and status filters.",
     "moderator.places.empty.default":
       "No places match the current moderation segment.",
+    "moderator.places.pagination.summary":
+      "Page {page} of {totalPages} · {totalCount} places total · {pageSize} per page",
+    "moderator.places.pagination.previous": "Previous",
+    "moderator.places.pagination.next": "Next",
+    "moderator.places.pagination.page": "Page {page} / {totalPages}",
     "moderator.places.meta.reviews": "{count} reviews",
     "moderator.places.note.label": "Note:",
     "moderator.places.note.body":
@@ -2567,6 +2577,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "moderator.reviews.actions.approve": "اعتماد",
     "moderator.reviews.actions.flag": "وضع علامة",
     "moderator.reviews.actions.reject": "رفض",
+    "moderator.reviews.pagination.summary":
+      "الصفحة {page} من {totalPages} · إجمالي {totalCount} مراجعة · {pageSize} لكل صفحة",
+    "moderator.reviews.pagination.page": "الصفحة {page} / {totalPages}",
+    "moderator.reviews.pagination.previous": "السابق",
+    "moderator.reviews.pagination.next": "التالي",
 
     "moderator.places.loading": "جارٍ تحميل طابور الأماكن...",
     "moderator.places.error.updateTitle": "تعذر تحميل طابور إشراف الأماكن",
@@ -2595,6 +2610,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "moderator.places.empty.withSearch":
       "لا توجد أماكن تطابق البحث الحالي والفلاتر.",
     "moderator.places.empty.default": "لا توجد أماكن في هذا القسم حاليًا.",
+    "moderator.places.pagination.summary":
+      "الصفحة {page} من {totalPages} · إجمالي {totalCount} مكانًا · {pageSize} لكل صفحة",
+    "moderator.places.pagination.page": "الصفحة {page} / {totalPages}",
+    "moderator.places.pagination.previous": "السابق",
+    "moderator.places.pagination.next": "التالي",
     "moderator.places.meta.reviews": "{count} مراجعة",
     "moderator.places.note.label": "ملاحظة:",
     "moderator.places.note.body":

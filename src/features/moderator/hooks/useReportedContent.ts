@@ -11,7 +11,6 @@ import type {
   ReportedContent,
   ModeratorToast,
   ReportedContentStatusFilter,
-  ReportedContentTypeFilter,
 } from "@/features/moderator/types";
 import { filterReportedContent } from "@/features/moderator/utils/moderatorFilters";
 import { getErrorMessage } from "@/utils/apiError";
@@ -25,7 +24,6 @@ interface UseReportedContentReturn {
   pendingReportIdSet: ReadonlySet<string>;
   search: string;
   statusFilter: ReportedContentStatusFilter;
-  typeFilter: ReportedContentTypeFilter;
   expandedId: string | null;
   actionLoading: string | null;
   toasts: ModeratorToast[];
@@ -33,7 +31,6 @@ interface UseReportedContentReturn {
 
   setSearch: (value: string) => void;
   setStatusFilter: (value: ReportedContentStatusFilter) => void;
-  setTypeFilter: (value: ReportedContentTypeFilter) => void;
   setExpandedId: (id: string | null) => void;
 
   retry: () => Promise<void>;
@@ -55,8 +52,6 @@ export const useReportedContent = (): UseReportedContentReturn => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<ReportedContentStatusFilter>("all");
-  const [typeFilter, setTypeFilter] =
-    useState<ReportedContentTypeFilter>("all");
   const deferredSearch = useDeferredValue(search);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -311,8 +306,8 @@ export const useReportedContent = (): UseReportedContentReturn => {
 
   const filteredReports = useMemo(
     () =>
-      filterReportedContent(reports, deferredSearch, statusFilter, typeFilter),
-    [reports, deferredSearch, statusFilter, typeFilter],
+      filterReportedContent(reports, deferredSearch, statusFilter, "review"),
+    [reports, deferredSearch, statusFilter],
   );
 
   return {
@@ -323,14 +318,12 @@ export const useReportedContent = (): UseReportedContentReturn => {
     pendingReportIdSet,
     search,
     statusFilter,
-    typeFilter,
     expandedId,
     actionLoading,
     toasts,
     filteredReports,
     setSearch,
     setStatusFilter,
-    setTypeFilter,
     setExpandedId,
     retry: loadReportedContent,
     handleStatusChange,

@@ -54,8 +54,16 @@ const ModerateReviewsPage = () => {
     search,
     statusFilter,
     filteredReviews: filtered,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
     setSearch,
     setStatusFilter,
+    goToPreviousPage,
+    goToNextPage,
     retry,
     handleApprove,
     handleReject,
@@ -196,7 +204,7 @@ const ModerateReviewsPage = () => {
                           }}
                         />
                       ) : (
-                        <User className="h-4 w-4 text-secondary" />
+                        <User className="h-4 w-4 text-secondary dark:text-primary" />
                       )}
                     </div>
                     <div className="min-w-0">
@@ -206,7 +214,7 @@ const ModerateReviewsPage = () => {
                       <p className="text-role-caption text-muted-foreground">
                         {t("moderator.reviews.meta.on")}{" "}
                         <span className="font-medium text-foreground">
-                          {review.placeName}
+                          {review.venueName}
                         </span>
                         {" · "}
                         {formatShortDate(review.createdAt, locale)}
@@ -221,7 +229,7 @@ const ModerateReviewsPage = () => {
                           className={cn(
                             "h-3.5 w-3.5",
                             i < review.rating
-                              ? "text-secondary fill-secondary"
+                              ? "text-secondary fill-secondary dark:text-primary dark:fill-primary"
                               : "text-muted-foreground/20",
                           )}
                         />
@@ -308,6 +316,45 @@ const ModerateReviewsPage = () => {
               </div>
             );
           })
+        )}
+        {totalPages > 1 && (
+          <div className="mt-2 flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-role-caption text-muted-foreground">
+              {t("moderator.reviews.pagination.summary", {
+                page: formatCount(pageIndex, locale),
+                totalPages: formatCount(totalPages, locale),
+                totalCount: formatCount(totalCount, locale),
+                pageSize: formatCount(pageSize, locale),
+              })}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={!hasPreviousPage || loading}
+              >
+                {t("moderator.reviews.pagination.previous")}
+              </Button>
+
+              <span className="inline-flex items-center rounded-lg border px-3">
+                {t("moderator.reviews.pagination.page", {
+                  page: formatCount(pageIndex, locale),
+                  totalPages: formatCount(totalPages, locale),
+                })}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={!hasNextPage || loading}
+              >
+                {t("moderator.reviews.pagination.next")}
+              </Button>
+            </div>
+          </div>
         )}
       </ModeratorSection>
     </ModeratorPageLayout>

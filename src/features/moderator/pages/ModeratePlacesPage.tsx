@@ -11,7 +11,6 @@ import {
   Link2,
   Navigation,
   CircleAlert,
-  Trash2,
   Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -19,17 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useModeratePlaces } from "@/features/moderator/hooks/useModeratePlaces";
@@ -78,6 +66,14 @@ const ModeratePlacesPage = () => {
     search,
     statusFilter,
     filteredPlaces: filtered,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    pendingCount,
+    flaggedCount,
     showAddForm,
     form,
     formErrors,
@@ -85,12 +81,13 @@ const ModeratePlacesPage = () => {
     toasts,
     setSearch,
     setStatusFilter,
+    goToPreviousPage,
+    goToNextPage,
     setShowAddForm,
     setForm,
     retry,
     handleApprove,
     handleFlag,
-    handleDeletePlace,
     handleAddPlace,
   } = useModeratePlaces();
 
@@ -128,20 +125,8 @@ const ModeratePlacesPage = () => {
   }, [showAddForm]);
 
   const placeSummary = useMemo(
-    () =>
-      places.reduce(
-        (summary, place) => {
-          if (place.status === "pending") {
-            summary.pending += 1;
-          }
-          if (place.status === "flagged") {
-            summary.flagged += 1;
-          }
-          return summary;
-        },
-        { pending: 0, flagged: 0 },
-      ),
-    [places],
+    () => ({ pending: pendingCount, flagged: flaggedCount }),
+    [pendingCount, flaggedCount],
   );
 
   const normalizedVenueUrl = form.venueUrl.trim();
@@ -511,11 +496,12 @@ const ModeratePlacesPage = () => {
               >
                 <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
                   <img
-                    src={place.image}
+                    src={place.image || PLACE_PLACEHOLDER_IMAGE}
                     alt={place.name}
                     className="h-14 w-14 rounded-xl object-cover flex-shrink-0"
                     loading="lazy"
                     decoding="async"
+                    referrerPolicy="no-referrer"
                     onError={(event) => {
                       (event.currentTarget as HTMLImageElement).src =
                         PLACE_PLACEHOLDER_IMAGE;
@@ -608,59 +594,49 @@ const ModeratePlacesPage = () => {
                       {t("moderator.places.actions.flag")}
                     </Button>
                   ) : null}
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={isPending}
-                        className="text-role-secondary gap-1 min-h-11 sm:h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        aria-label={t("admin.places.actions.deleteAria", {
-                          name: place.name,
-                        })}
-                        title={t("admin.places.actions.deleteAria", {
-                          name: place.name,
-                        })}
-                      >
-                        {isPending ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
-                        )}
-                        {t("admin.places.actions.delete")}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          {t("admin.places.dialog.deleteTitle")}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t("admin.places.dialog.deleteDescription", {
-                            name: place.name,
-                          })}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>
-                          {t("admin.places.actions.cancel")}
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() =>
-                            handleDeletePlace(place.id, place.name)
-                          }
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          {t("admin.places.actions.delete")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
                 </div>
               </div>
             );
           })
+        )}
+        {totalPages > 1 && (
+          <div className="mt-2 flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-role-caption text-muted-foreground">
+              {t("moderator.places.pagination.summary", {
+                page: formatCount(pageIndex, locale),
+                totalPages: formatCount(totalPages, locale),
+                totalCount: formatCount(totalCount, locale),
+                pageSize: formatCount(pageSize, locale),
+              })}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={!hasPreviousPage || loading}
+              >
+                {t("moderator.places.pagination.previous")}
+              </Button>
+
+              <span className="inline-flex items-center rounded-lg border px-3">
+                {t("moderator.places.pagination.page", {
+                  page: formatCount(pageIndex, locale),
+                  totalPages: formatCount(totalPages, locale),
+                })}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={!hasNextPage || loading}
+              >
+                {t("moderator.places.pagination.next")}
+              </Button>
+            </div>
+          </div>
         )}
       </ModeratorSection>
 

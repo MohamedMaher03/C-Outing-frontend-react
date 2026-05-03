@@ -7,8 +7,6 @@ import {
   Eye,
   ArrowUpRight,
   MessageSquareWarning,
-  MapPin,
-  User,
   FileText,
   Trash2,
   Bell,
@@ -34,12 +32,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import type { ReportedContent } from "../types";
 import { useReportedContent } from "@/features/moderator/hooks/useReportedContent";
-import {
-  MODERATOR_REPORT_STATUS_FILTER_OPTIONS,
-  MODERATOR_REPORT_TYPE_FILTER_OPTIONS,
-} from "@/features/moderator/constants/filterOptions";
+import { MODERATOR_REPORT_STATUS_FILTER_OPTIONS } from "@/features/moderator/constants/filterOptions";
 import {
   getReportedRowStateClass,
   moderatorToastClasses,
@@ -61,12 +55,6 @@ import {
 } from "@/features/moderator/utils/formatters";
 import { useI18n } from "@/components/i18n";
 
-const typeIcon: Record<ReportedContent["type"], typeof MessageSquareWarning> = {
-  review: MessageSquareWarning,
-  place: MapPin,
-  user: User,
-};
-
 const MODERATOR_REPORT_ROW_STYLE: CSSProperties = {
   contentVisibility: "auto",
   containIntrinsicSize: "250px",
@@ -82,14 +70,12 @@ const ReportedContentPage = () => {
     pendingReportIdSet,
     search,
     statusFilter,
-    typeFilter,
     expandedId,
     actionLoading,
     toasts,
     filteredReports: filtered,
     setSearch,
     setStatusFilter,
-    setTypeFilter,
     setExpandedId,
     retry,
     handleStatusChange,
@@ -106,18 +92,6 @@ const ReportedContentPage = () => {
           option.value === "all"
             ? t("admin.filter.all")
             : t(`moderator.report.status.${option.value}`),
-      })),
-    [t],
-  );
-
-  const typeFilterOptions = useMemo(
-    () =>
-      MODERATOR_REPORT_TYPE_FILTER_OPTIONS.map((option) => ({
-        ...option,
-        label:
-          option.value === "all"
-            ? t("moderator.report.type.all")
-            : t(`moderator.report.type.${option.value}`),
       })),
     [t],
   );
@@ -219,15 +193,6 @@ const ReportedContentPage = () => {
             />
           </div>
         </div>
-
-        <div className="lg:max-w-[18rem]">
-          <ModeratorFilterChips
-            label={t("moderator.reports.filters.typeLabel")}
-            options={typeFilterOptions}
-            value={typeFilter}
-            onChange={setTypeFilter}
-          />
-        </div>
       </ModeratorSection>
 
       <ModeratorSection
@@ -251,7 +216,7 @@ const ReportedContentPage = () => {
           filtered.map((report) => {
             const config = reportedStatusConfig[report.status];
             const StatusIcon = config.icon;
-            const TypeIcon = typeIcon[report.type];
+            const TypeIcon = MessageSquareWarning;
             const priority = reportedPriorityConfig[report.priority];
             const isExpanded = expandedId === report.id;
             const isPending = pendingReportIdSet.has(report.id);

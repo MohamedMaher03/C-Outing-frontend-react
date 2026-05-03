@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AdminPlace, AdminPlaceStatus } from "@/features/admin/types";
 import { moderatorService } from "@/features/moderator/services/moderatorService";
 import type {
@@ -15,7 +8,6 @@ import type {
   ModeratePlaceToast,
 } from "@/features/moderator/types";
 import { isGoogleMapsVenueUrl } from "@/features/admin/utils/placeForm";
-import { filterModerationPlaces } from "@/features/moderator/utils/moderatorFilters";
 import {
   getErrorMessage,
   resolveApiUiErrorState,
@@ -38,6 +30,14 @@ interface UseModeratePlacesReturn {
   search: string;
   statusFilter: ModeratorPlaceStatusFilter;
   filteredPlaces: AdminPlace[];
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  pendingCount: number;
+  flaggedCount: number;
 
   showAddForm: boolean;
   form: ModeratePlaceFormData;
@@ -48,6 +48,8 @@ interface UseModeratePlacesReturn {
 
   setSearch: (value: string) => void;
   setStatusFilter: (value: ModeratorPlaceStatusFilter) => void;
+  goToPreviousPage: () => void;
+  goToNextPage: () => void;
   setShowAddForm: (value: boolean | ((prev: boolean) => boolean)) => void;
   setForm: (
     value:
@@ -58,7 +60,6 @@ interface UseModeratePlacesReturn {
   retry: () => Promise<void>;
   handleApprove: (placeId: string) => Promise<void>;
   handleFlag: (placeId: string) => Promise<void>;
-  handleDeletePlace: (placeId: string, placeName: string) => Promise<void>;
   handleAddPlace: () => Promise<void>;
 }
 
@@ -73,7 +74,6 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState<ModeratorPlaceStatusFilter>("all");
-  const deferredSearch = useDeferredValue(search);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState<ModeratePlaceFormData>(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<ModeratePlaceFormErrors>({});
@@ -82,45 +82,132 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
   const mountedRef = useRef(true);
   const inFlightRef = useRef(new Set<string>());
   const toastTimersRef = useRef<number[]>([]);
+  const searchRef = useRef("");
+  const statusFilterRef = useRef(statusFilter);
   const pendingPlaceIdSet = useMemo(
     () => new Set(pendingPlaceIds),
     [pendingPlaceIds],
   );
 
-  const loadPlaces = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setQueueErrorState(null);
+  const PLACES_PAGE_SIZE = 10;
+  const [pageIndex, setPageIndex] = useState(1);
+  const pageIndexRef = useRef(pageIndex);
+  pageIndexRef.current = pageIndex;
+  const [pageSize, setPageSize] = useState(PLACES_PAGE_SIZE);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [flaggedCount, setFlaggedCount] = useState(0);
 
-    try {
-      const placesData = await moderatorService.getPlaces();
+  const [deferredSearch, setDeferredSearch] = useState(search);
+  const debounceTimerRef = useRef<number | null>(null);
 
-      if (!mountedRef.current) return;
-
-      setPlaces(placesData);
-      setQueueErrorState(null);
-    } catch (err) {
-      if (!mountedRef.current) return;
-
-      const resolvedError = resolveApiUiErrorState(err, {
-        forbiddenMessage: t("moderator.places.error.forbiddenMessage"),
-        loadFailureMessage: t("moderator.places.error.loadFailureMessage"),
-        genericMessage: t("moderator.error.loadPlaces"),
-      });
-
-      setQueueErrorState(resolvedError);
-      setError(resolvedError.message);
-      setPlaces([]);
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-      }
+  useEffect(() => {
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current);
     }
-  }, [t]);
+    debounceTimerRef.current = window.setTimeout(() => {
+      setDeferredSearch(search);
+      debounceTimerRef.current = null;
+    }, 650);
+
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [search]);
+
+  searchRef.current = deferredSearch;
+  statusFilterRef.current = statusFilter;
+
+  const loadPlaces = useCallback(
+    async (explicitPage?: number) => {
+      setLoading(true);
+      setError(null);
+      setQueueErrorState(null);
+      const targetPage = explicitPage ?? pageIndexRef.current;
+
+      try {
+        const placesData = await moderatorService.getPlaces({
+          page: targetPage,
+          count: PLACES_PAGE_SIZE,
+          searchTerm: searchRef.current || undefined,
+          status: statusFilterRef.current,
+        });
+
+        const [pendingResult, flaggedResult] = await Promise.allSettled([
+          moderatorService.getPlaces({
+            page: 1,
+            count: 1,
+            searchTerm: searchRef.current || undefined,
+            status: "pending",
+          }),
+          moderatorService.getPlaces({
+            page: 1,
+            count: 1,
+            searchTerm: searchRef.current || undefined,
+            status: "flagged",
+          }),
+        ]);
+
+        if (!mountedRef.current) return;
+
+        const normalizedTotalPages = Math.max(1, placesData.totalPages);
+        const normalizedPage = Math.min(
+          Math.max(1, targetPage),
+          normalizedTotalPages,
+        );
+
+        setPlaces(placesData.items);
+        setPageIndex(normalizedPage);
+        setPageSize(Math.max(1, placesData.pageSize));
+        setTotalCount(Math.max(0, placesData.totalCount));
+        setTotalPages(normalizedTotalPages);
+        setHasPreviousPage(normalizedPage > 1);
+        setHasNextPage(normalizedPage < normalizedTotalPages);
+        if (pendingResult.status === "fulfilled") {
+          setPendingCount(Math.max(0, pendingResult.value.totalCount));
+        }
+        if (flaggedResult.status === "fulfilled") {
+          setFlaggedCount(Math.max(0, flaggedResult.value.totalCount));
+        }
+        setQueueErrorState(null);
+      } catch (err) {
+        if (!mountedRef.current) return;
+
+        const resolvedError = resolveApiUiErrorState(err, {
+          forbiddenMessage: t("moderator.places.error.forbiddenMessage"),
+          loadFailureMessage: t("moderator.places.error.loadFailureMessage"),
+          genericMessage: t("moderator.error.loadPlaces"),
+        });
+
+        setQueueErrorState(resolvedError);
+        setError(resolvedError.message);
+        setPlaces([]);
+        setTotalCount(0);
+        setTotalPages(1);
+        setHasPreviousPage(false);
+        setHasNextPage(false);
+        setPendingCount(0);
+        setFlaggedCount(0);
+      } finally {
+        if (mountedRef.current) {
+          setLoading(false);
+        }
+      }
+    },
+    [t],
+  );
+
+  const initialLoadDone = useRef(false);
 
   useEffect(() => {
     mountedRef.current = true;
     void loadPlaces();
+    initialLoadDone.current = true;
 
     return () => {
       mountedRef.current = false;
@@ -128,6 +215,11 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
       toastTimersRef.current = [];
     };
   }, [loadPlaces]);
+
+  useEffect(() => {
+    if (!initialLoadDone.current) return;
+    void loadPlaces(1);
+  }, [deferredSearch, statusFilter, loadPlaces]);
 
   const addPendingPlace = useCallback((placeId: string) => {
     setPendingPlaceIds((prev) =>
@@ -174,11 +266,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
         await moderatorService.updatePlaceStatus(placeId, status);
         if (!mountedRef.current) return;
 
-        setPlaces((prev) =>
-          prev.map((place) =>
-            place.id === placeId ? { ...place, status } : place,
-          ),
-        );
+        void loadPlaces(pageIndexRef.current);
 
         showToast(successMessage, status === "flagged" ? "warning" : "success");
       } catch (err) {
@@ -254,51 +342,6 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     [handleStatusChange, t],
   );
 
-  const handleDeletePlace = useCallback(
-    async (placeId: string, placeName: string) => {
-      if (inFlightRef.current.has(placeId)) {
-        return;
-      }
-
-      inFlightRef.current.add(placeId);
-      addPendingPlace(placeId);
-      setError(null);
-
-      try {
-        await moderatorService.deletePlace(placeId);
-        if (!mountedRef.current) return;
-
-        setPlaces((prev) => prev.filter((place) => place.id !== placeId));
-        showToast(
-          t("moderator.places.toast.deleted", { name: placeName }),
-          "warning",
-        );
-      } catch (err) {
-        if (!mountedRef.current) return;
-
-        const resolvedError = resolveApiUiErrorState(err, {
-          forbiddenMessage: t("moderator.places.error.forbiddenMessage"),
-          loadFailureMessage: t("moderator.places.error.loadFailureMessage"),
-          genericMessage: t("moderator.error.deletePlace"),
-        });
-
-        if (resolvedError.kind === "forbidden") {
-          setQueueErrorState(resolvedError);
-        }
-
-        const message = getErrorMessage(err, t("moderator.error.deletePlace"));
-        setError(message);
-        showToast(message, "error");
-      } finally {
-        inFlightRef.current.delete(placeId);
-        if (mountedRef.current) {
-          removePendingPlace(placeId);
-        }
-      }
-    },
-    [addPendingPlace, removePendingPlace, t],
-  );
-
   const handleAddPlace = async () => {
     if (submittingForm) {
       return;
@@ -319,7 +362,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
 
       if (!mountedRef.current) return;
 
-      void loadPlaces();
+      void loadPlaces(pageIndexRef.current);
       setForm(EMPTY_FORM);
       setFormErrors({});
       setShowAddForm(false);
@@ -353,10 +396,31 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     }
   };
 
-  const filteredPlaces = useMemo(
-    () => filterModerationPlaces(places, deferredSearch, statusFilter),
-    [places, deferredSearch, statusFilter],
-  );
+  const filteredPlaces = useMemo(() => places, [places]);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPageIndex(1);
+  };
+
+  const handleStatusFilterChange = (value: ModeratorPlaceStatusFilter) => {
+    setStatusFilter(value);
+    setPageIndex(1);
+  };
+
+  const goToPreviousPage = () => {
+    if (!hasPreviousPage || loading) return;
+    const nextPage = Math.max(1, pageIndex - 1);
+    setPageIndex(nextPage);
+    void loadPlaces(nextPage);
+  };
+
+  const goToNextPage = () => {
+    if (!hasNextPage || loading) return;
+    const nextPage = Math.min(totalPages, pageIndex + 1);
+    setPageIndex(nextPage);
+    void loadPlaces(nextPage);
+  };
 
   return {
     places,
@@ -368,19 +432,28 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     search,
     statusFilter,
     filteredPlaces,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+    pendingCount,
+    flaggedCount,
     showAddForm,
     form,
     formErrors,
     submittingForm,
     toasts,
-    setSearch,
-    setStatusFilter,
+    setSearch: handleSearchChange,
+    setStatusFilter: handleStatusFilterChange,
+    goToPreviousPage,
+    goToNextPage,
     setShowAddForm,
     setForm,
     retry: loadPlaces,
     handleApprove,
     handleFlag,
-    handleDeletePlace,
     handleAddPlace,
   };
 };

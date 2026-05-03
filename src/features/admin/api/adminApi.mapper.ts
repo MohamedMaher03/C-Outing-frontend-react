@@ -237,16 +237,23 @@ const mapPriceLevelValue = (
 };
 
 const mapAdminPlaceStatus = (value: unknown): AdminPlace["status"] => {
-  if (
-    value === "active" ||
-    value === "pending" ||
-    value === "flagged" ||
-    value === "removed"
-  ) {
-    return value;
+  if (typeof value !== "string") {
+    return "active";
   }
 
-  return "active";
+  switch (value.trim().toLowerCase()) {
+    case "active":
+      return "active";
+    case "pending":
+      return "pending";
+    case "flagged":
+      return "flagged";
+    case "removed":
+    case "rejected":
+      return "removed";
+    default:
+      return "active";
+  }
 };
 
 /**
