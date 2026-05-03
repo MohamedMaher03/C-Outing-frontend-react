@@ -17,10 +17,10 @@ import { withModeratorServiceError } from "./moderatorServiceError";
 
 export const moderatorService = {
   async getPlaces(): Promise<AdminPlace[]> {
-    return withModeratorServiceError(
-      () => adminService.getPlaces(),
-      "Failed to load places",
-    );
+    return withModeratorServiceError(async () => {
+      const data = await adminService.getPlaces();
+      return Array.isArray(data) ? data : data.items;
+    }, "Failed to load places");
   },
 
   async getCategories(): Promise<AdminCategory[]> {
@@ -55,10 +55,10 @@ export const moderatorService = {
   },
 
   async getReviews(): Promise<AdminReview[]> {
-    return withModeratorServiceError(
-      () => adminService.getReviews(),
-      "Failed to load reviews",
-    );
+    return withModeratorServiceError(async () => {
+      const data = await adminService.getReviews();
+      return Array.isArray(data) ? data : data.items;
+    }, "Failed to load reviews");
   },
 
   async updateReviewStatus(

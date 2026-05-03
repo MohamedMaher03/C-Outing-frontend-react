@@ -87,20 +87,20 @@ const AppLayout = () => {
         <LogoutProgressOverlay isVisible={isLoggingOut} />
 
         {/* Desktop Top Nav */}
-        <header className="hidden md:flex items-center justify-between px-8 py-3 bg-card border-b border-border sticky top-0 z-50">
+        <header className="sticky top-0 z-50 hidden items-center justify-between border-b border-border bg-card px-8 py-3 md:flex max-[1250px]:px-4">
           <button
             type="button"
-            className="flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+            className="flex shrink-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             onClick={() => navigate("/")}
             aria-label={t("layout.goHome")}
           >
             <img src={logo} alt="C-Outing" className="h-9 w-auto rounded-lg" />
-            <span className="text-xl font-bold text-foreground tracking-tight">
+            <span className="text-xl font-bold tracking-tight text-foreground max-[1250px]:text-lg">
               C-OUTING
             </span>
           </button>
           <nav
-            className="flex items-center gap-1"
+            className="ml-4 flex min-w-0 flex-1 items-center justify-end gap-1"
             aria-label={t("layout.primaryNavigation")}
           >
             {navItems.map((item) => {
@@ -112,7 +112,7 @@ const AppLayout = () => {
                   onClick={() => navigate(item.path)}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex min-w-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+                    "flex min-w-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors max-[1250px]:px-3",
                     active
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -125,8 +125,16 @@ const AppLayout = () => {
             })}
             {/* Notification bell with unread badge */}
             <NotificationBell />
-            <LanguageToggle className="ml-2" />
-            <ThemeToggle className="ml-2" />
+            <LanguageToggle className="ml-2 max-[1250px]:hidden" />
+            <LanguageToggle
+              mode="compact"
+              className="ml-1 hidden max-[1250px]:inline-flex"
+            />
+            <ThemeToggle className="ml-2 max-[1250px]:hidden" />
+            <ThemeToggle
+              mode="compact"
+              className="ml-1 hidden max-[1250px]:inline-flex"
+            />
             {/* Logout Button */}
             <button
               type="button"
