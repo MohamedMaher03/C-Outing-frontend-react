@@ -77,7 +77,7 @@ describe("useOnboarding", () => {
       result.current.goToNextStep();
       result.current.toggleDistrict("Maadi");
       result.current.goToNextStep();
-      result.current.setBudget("mid_range");
+      result.current.setBudget("midrange");
     });
 
     await act(async () => {
@@ -88,7 +88,7 @@ describe("useOnboarding", () => {
       interests: ["cafes", "nightlife"],
       vibe: 50,
       districts: ["Maadi"],
-      budget: "mid_range",
+      budget: "midrange",
     });
     expect(updateUserMock).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith("/");

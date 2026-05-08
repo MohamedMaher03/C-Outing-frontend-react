@@ -45,7 +45,7 @@ export const useProfile = (): UseProfileReturn => {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [vibe, setVibe] = useState<number[]>([50]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
-  const [selectedBudget, setSelectedBudget] = useState<PriceLevel>("mid_range");
+  const [selectedBudget, setSelectedBudget] = useState<PriceLevel>("midrange");
 
   const clearError = () => setError(null);
 
@@ -71,7 +71,7 @@ export const useProfile = (): UseProfileReturn => {
       setSelectedInterests(preferencesData.interests || []);
       setVibe([preferencesData.vibe || 50]);
       setSelectedDistricts(preferencesData.districts || []);
-      setSelectedBudget(preferencesData.budget || "mid_range");
+      setSelectedBudget(preferencesData.budget || "midrange");
     } catch (err) {
       if (runId !== latestLoadRunRef.current) {
         return;

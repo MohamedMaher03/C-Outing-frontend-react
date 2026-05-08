@@ -58,7 +58,6 @@ const ModeratePlacesPage = () => {
   const { t, locale } = useI18n();
 
   const {
-    places,
     loading,
     error,
     queueErrorState,

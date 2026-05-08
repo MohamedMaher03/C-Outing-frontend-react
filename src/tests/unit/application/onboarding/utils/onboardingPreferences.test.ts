@@ -31,14 +31,14 @@ describe("onboarding preference normalization", () => {
       interests: [" cafes ", "Cafes", "Nightlife"],
       vibe: 61.8,
       districts: ["Maadi", "maadi", "Downtown"],
-      budget: "mid_range",
+      budget: "midrange",
     });
 
     expect(normalized).toEqual({
       interests: ["cafes", "Nightlife"],
       vibe: 62,
       districts: ["Maadi", "Downtown"],
-      budget: "mid_range",
+      budget: "midrange",
     });
   });
 
@@ -48,7 +48,7 @@ describe("onboarding preference normalization", () => {
         interests: ["OnlyOne"],
         vibe: 50,
         districts: ["Maadi"],
-        budget: "mid_range",
+        budget: "midrange",
       }),
     ).toThrow("at least two interests");
 
@@ -57,7 +57,7 @@ describe("onboarding preference normalization", () => {
         interests: ["A", "B"],
         vibe: 50,
         districts: [],
-        budget: "mid_range",
+        budget: "midrange",
       }),
     ).toThrow("at least one district");
 

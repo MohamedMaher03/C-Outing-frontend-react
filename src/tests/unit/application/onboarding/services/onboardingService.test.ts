@@ -24,14 +24,14 @@ describe("onboarding service", () => {
       interests: ["Cafes", "Nightlife"],
       vibe: 61.4,
       districts: ["Maadi"],
-      budget: "mid_range",
+      budget: "midrange",
     });
 
     expect(mockedDataSource.submitPreferences).toHaveBeenCalledWith("user-1", {
       interests: ["Cafes", "Nightlife"],
       vibe: 61,
       districts: ["Maadi"],
-      budget: "mid_range",
+      budget: "midrange",
     });
   });
 

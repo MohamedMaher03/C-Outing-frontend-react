@@ -67,6 +67,26 @@ export const moderatorReviewStatusConfig: Record<
     class: "bg-muted text-muted-foreground border-border",
     icon: XCircle,
   },
+  Approved: {
+    label: "Published",
+    class: "bg-primary/10 text-primary border-primary/25",
+    icon: CheckCircle,
+  },
+  Pending: {
+    label: "Pending",
+    class: "bg-secondary/18 text-foreground border-secondary/30",
+    icon: Clock,
+  },
+  Flagged: {
+    label: "Flagged",
+    class: "bg-destructive/10 text-destructive border-destructive/30",
+    icon: AlertTriangle,
+  },
+  Rejected: {
+    label: "Removed",
+    class: "bg-muted text-muted-foreground border-border",
+    icon: XCircle,
+  },
 };
 
 export const moderatorPlaceRowStateClass: Record<AdminPlaceStatus, string> = {
@@ -81,6 +101,10 @@ export const moderatorReviewRowStateClass: Record<AdminReviewStatus, string> = {
   pending: "border-secondary/35 bg-secondary/12",
   flagged: "border-destructive/30 bg-destructive/5",
   removed: "border-border bg-muted/30",
+  Approved: "border-border bg-card",
+  Pending: "border-secondary/35 bg-secondary/12",
+  Flagged: "border-destructive/30 bg-destructive/5",
+  Rejected: "border-border bg-muted/30",
 };
 
 export const reportedStatusConfig: Record<

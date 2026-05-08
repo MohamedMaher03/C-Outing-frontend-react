@@ -43,7 +43,7 @@ export const filterModerationReviews = (
     const matchesSearch =
       normalizedSearch.length === 0 ||
       review.userName.toLowerCase().includes(normalizedSearch) ||
-      review.placeName.toLowerCase().includes(normalizedSearch) ||
+      review.venueName.toLowerCase().includes(normalizedSearch) ||
       review.comment.toLowerCase().includes(normalizedSearch);
 
     const matchesStatus =

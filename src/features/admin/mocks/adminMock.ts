@@ -7,12 +7,16 @@ import type {
   AdminUserRole,
   AdminUserStatus,
   AdminPlace,
+  AdminPlaceQuery,
   AdminReview,
+  AdminReviewQuery,
   AdminCategory,
   SystemSettings,
   RecentActivity,
   CreateAdminPlaceInput,
 } from "../types";
+import type { PaginatedResponse } from "@/types";
+import { normalizeSearchTerm } from "@/utils/textNormalization";
 
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -200,8 +204,8 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
     userId: "1",
     userName: "Ahmed Khalil",
     userAvatar: "https://i.pravatar.cc/150?img=3",
-    placeId: "1",
-    placeName: "Nile Felucca Experience",
+    venueId: "1",
+    venueName: "Nile Felucca Experience",
     rating: 5,
     comment:
       "Absolutely magical experience! The sunset from the felucca was breathtaking. Highly recommend for couples.",
@@ -214,8 +218,8 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
     userId: "4",
     userName: "Fatima Ali",
     userAvatar: "https://i.pravatar.cc/150?img=9",
-    placeId: "2",
-    placeName: "Zooba",
+    venueId: "2",
+    venueName: "Zooba",
     rating: 4,
     comment:
       "Great food but the wait times can be long on weekends. The hawawshi is a must-try!",
@@ -227,8 +231,8 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
     id: "r3",
     userId: "5",
     userName: "Mohamed Nasser",
-    placeId: "6",
-    placeName: "Cairo Jazz Club",
+    venueId: "6",
+    venueName: "Cairo Jazz Club",
     rating: 1,
     comment:
       "This place is terrible. Contains inappropriate content... [flagged for review]",
@@ -241,8 +245,8 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
     userId: "6",
     userName: "Layla Ibrahim",
     userAvatar: "https://i.pravatar.cc/150?img=16",
-    placeId: "3",
-    placeName: "The Townhouse Gallery",
+    venueId: "3",
+    venueName: "The Townhouse Gallery",
     rating: 5,
     comment:
       "Hidden gem in downtown! The current exhibition is mind-blowing. Free entry too!",
@@ -255,8 +259,8 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
     userId: "8",
     userName: "Nour Samir",
     userAvatar: "https://i.pravatar.cc/150?img=20",
-    placeId: "1",
-    placeName: "Nile Felucca Experience",
+    venueId: "1",
+    venueName: "Nile Felucca Experience",
     rating: 2,
     comment: "Spam review with links to external sites...",
     status: "pending",
@@ -268,8 +272,8 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
     userId: "7",
     userName: "Youssef Adel",
     userAvatar: "https://i.pravatar.cc/150?img=11",
-    placeId: "7",
-    placeName: "Al-Azhar Park",
+    venueId: "7",
+    venueName: "Al-Azhar Park",
     rating: 4,
     comment:
       "Beautiful park with amazing views. Great for families. The Lakeside Café is wonderful.",
@@ -278,6 +282,29 @@ export const MOCK_ADMIN_REVIEWS: AdminReview[] = [
     createdAt: new Date("2026-02-25"),
   },
 ];
+
+const buildPage = <T>(
+  items: T[],
+  params: { page?: number; count?: number } = {},
+): PaginatedResponse<T> => {
+  const pageSize = Math.max(1, Math.trunc(params.count ?? 10));
+  const totalCount = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const requestedPage = Math.max(1, Math.trunc(params.page ?? 1));
+  const pageIndex = Math.min(requestedPage, totalPages);
+  const start = (pageIndex - 1) * pageSize;
+  const end = start + pageSize;
+
+  return {
+    items: items.slice(start, end),
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage: pageIndex > 1,
+    hasNextPage: pageIndex < totalPages,
+  };
+};
 
 export const MOCK_ADMIN_CATEGORIES: AdminCategory[] = [
   {
@@ -458,9 +485,27 @@ export const adminMock = {
     if (user) user.status = status;
   },
 
-  async getPlaces(): Promise<AdminPlace[]> {
+  async getPlaces(
+    params: AdminPlaceQuery = {},
+  ): Promise<PaginatedResponse<AdminPlace>> {
     await delay(600);
-    return [...MOCK_ADMIN_PLACES];
+    const normalizedSearch = normalizeSearchTerm(params.searchTerm ?? "");
+    const statusFiltered =
+      params.status && params.status !== "all"
+        ? MOCK_ADMIN_PLACES.filter((place) => place.status === params.status)
+        : MOCK_ADMIN_PLACES;
+
+    const matchedPlaces =
+      normalizedSearch.length > 0
+        ? statusFiltered.filter(
+            (place) =>
+              place.name.toLowerCase().includes(normalizedSearch) ||
+              place.category.toLowerCase().includes(normalizedSearch) ||
+              place.district.toLowerCase().includes(normalizedSearch),
+          )
+        : statusFiltered;
+
+    return buildPage(matchedPlaces, params);
   },
 
   async updatePlaceStatus(
@@ -505,9 +550,27 @@ export const adminMock = {
     MOCK_ADMIN_PLACES.push(newPlace);
   },
 
-  async getReviews(): Promise<AdminReview[]> {
+  async getReviews(
+    params: AdminReviewQuery = {},
+  ): Promise<PaginatedResponse<AdminReview>> {
     await delay(600);
-    return [...MOCK_ADMIN_REVIEWS];
+    const normalizedSearch = normalizeSearchTerm(params.searchTerm ?? "");
+    const statusFiltered =
+      params.status && params.status !== "all"
+        ? MOCK_ADMIN_REVIEWS.filter((review) => review.status === params.status)
+        : MOCK_ADMIN_REVIEWS;
+
+    const matchedReviews =
+      normalizedSearch.length > 0
+        ? statusFiltered.filter(
+            (review) =>
+              review.userName.toLowerCase().includes(normalizedSearch) ||
+              review.venueName.toLowerCase().includes(normalizedSearch) ||
+              review.comment.toLowerCase().includes(normalizedSearch),
+          )
+        : statusFiltered;
+
+    return buildPage(matchedReviews, params);
   },
 
   async updateReviewStatus(

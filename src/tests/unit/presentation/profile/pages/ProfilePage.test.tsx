@@ -54,7 +54,7 @@ const baseHookState = {
   selectedInterests: ["cafes"],
   vibe: [50],
   selectedDistricts: ["Maadi"],
-  selectedBudget: "mid_range",
+  selectedBudget: "midrange",
   toggleInterest: jest.fn(),
   setVibe: jest.fn(),
   toggleDistrict: jest.fn(),

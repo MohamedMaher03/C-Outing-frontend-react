@@ -88,7 +88,7 @@ const normalizeBudget = (value: unknown): UserPreferences["budget"] => {
     return value.trim() as UserPreferences["budget"];
   }
 
-  return "mid_range";
+  return "midrange";
 };
 
 export const normalizeBirthDateForInput = (birthDate?: string): string => {

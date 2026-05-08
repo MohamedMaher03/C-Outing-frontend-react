@@ -54,7 +54,7 @@ describe("profileService", () => {
       interests: ["Cafes", "Music"],
       vibe: 70,
       districts: ["Maadi"],
-      budget: "mid_range",
+      budget: "midrange",
     } as never);
   });
 
@@ -76,7 +76,7 @@ describe("profileService", () => {
       interests: [],
       vibe: 50,
       districts: [],
-      budget: "mid_range",
+      budget: "midrange",
     });
   });
 

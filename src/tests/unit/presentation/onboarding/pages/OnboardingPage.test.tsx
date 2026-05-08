@@ -38,7 +38,7 @@ const baseHookState = {
   selectedInterests: ["cafes", "nightlife"],
   vibe: [50],
   selectedDistricts: ["Maadi"],
-  budget: "mid_range",
+  budget: "midrange",
   isSubmitting: false,
   error: null,
   canGoNext: true,

@@ -42,7 +42,7 @@ export const MOCK_PREFERENCES: UserPreferences = {
   interests: ["cafes", "street-food", "rooftops"],
   vibe: 65,
   districts: ["Zamalek", "Downtown", "Maadi"],
-  budget: "mid_range",
+  budget: "midrange",
 };
 
 export const MOCK_EDIT_PROFILE: EditProfileData = {

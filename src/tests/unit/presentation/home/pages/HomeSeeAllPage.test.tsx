@@ -69,7 +69,7 @@ const baseHookState = {
       rating: 4.5,
       reviewCount: 10,
       image: "img.png",
-      priceLevel: "mid_range",
+      priceLevel: "midrange",
       isOpen: true,
       atmosphereTags: [],
       hasWifi: true,

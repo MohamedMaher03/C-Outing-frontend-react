@@ -70,7 +70,7 @@ describe("place-detail utilities and mapper", () => {
     expect(formatShortDate("invalid")).toBe("-");
     expect(formatCountLabel(1, "review")).toContain("review");
     expect(formatCountLabel(2, "review")).toContain("reviews");
-    expect(PRICE_LEVEL_META.mid_range.label).toBe("Standard");
+    expect(PRICE_LEVEL_META.midrange.label).toBe("Standard");
   });
 
   it("builds review identity and normalizes place detail payload", () => {

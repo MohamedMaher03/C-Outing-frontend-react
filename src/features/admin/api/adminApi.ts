@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from "@/config/api";
 import type {
   AdminStats,
   AdminUserId,
+  AdminUserRole,
   AdminUserRoleFilter,
   AdminUsersPage,
   AdminUsersQuery,
@@ -172,6 +173,17 @@ export const adminApi = {
     }
 
     throw new Error("Suspend status is not supported by current backend APIs");
+  },
+
+  async updateUserRole(
+    userId: AdminUserId,
+    role: AdminUserRole,
+  ): Promise<void> {
+    void userId;
+    void role;
+    throw new Error(
+      "User role updates are not supported by current backend APIs",
+    );
   },
 
   async getPlaces(

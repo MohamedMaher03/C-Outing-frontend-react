@@ -63,7 +63,7 @@ describe("useProfile", () => {
       interests: ["Cafes", "Music"],
       vibe: 70,
       districts: ["Maadi"],
-      budget: "mid_range",
+      budget: "midrange",
     } as never);
 
     mockedSignOut.mockResolvedValue(undefined);
@@ -90,7 +90,7 @@ describe("useProfile", () => {
 
     act(() => {
       result.current.toggleInterest("Music");
-      result.current.setSelectedBudget("mid_range");
+      result.current.setSelectedBudget("midrange");
     });
 
     await act(async () => {
@@ -101,7 +101,7 @@ describe("useProfile", () => {
       interests: ["Cafes", "Music"],
       vibe: 60,
       districts: ["Maadi"],
-      budget: "mid_range",
+      budget: "midrange",
     });
   });
 
