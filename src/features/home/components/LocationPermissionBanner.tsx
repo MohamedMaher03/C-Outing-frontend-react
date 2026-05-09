@@ -21,7 +21,7 @@ const CONTENT_BY_STATUS = {
     titleKey: "home.location.denied.title",
     descriptionKey: "home.location.denied.description",
     toneClassName:
-      "border-amber-300/80 bg-amber-50/90 text-amber-900 dark:border-amber-300/35 dark:bg-amber-500/12 dark:text-amber-100",
+      "border-amber-300/80 bg-amber-50/90 text-amber-900 dark:border-amber-300/35 dark:bg-amber-500/12 dark:text-secondary-50",
     actionLabelKey: "home.location.denied.action",
   },
   unsupported: {
@@ -29,7 +29,7 @@ const CONTENT_BY_STATUS = {
     titleKey: "home.location.unsupported.title",
     descriptionKey: "home.location.unsupported.description",
     toneClassName:
-      "border-slate-300/80 bg-slate-50/90 text-slate-800 dark:border-slate-300/30 dark:bg-slate-400/10 dark:text-slate-200",
+      "border-slate-300/80 bg-slate-50/90 text-slate-800 dark:border-slate-300/35 dark:bg-slate-400/10 dark:text-secondary-50",
     actionLabelKey: "home.location.unsupported.action",
   },
   unavailable: {
@@ -37,7 +37,7 @@ const CONTENT_BY_STATUS = {
     titleKey: "home.location.unavailable.title",
     descriptionKey: "home.location.unavailable.description",
     toneClassName:
-      "border-orange-300/80 bg-orange-50/90 text-orange-900 dark:border-orange-300/35 dark:bg-orange-500/12 dark:text-orange-100",
+      "border-orange-300/80 bg-orange-50/90 text-orange-900 dark:border-orange-300/35 dark:bg-orange-500/12 dark:text-secondary-50",
     actionLabelKey: "home.location.unavailable.action",
   },
   error: {
@@ -45,7 +45,7 @@ const CONTENT_BY_STATUS = {
     titleKey: "home.location.error.title",
     descriptionKey: "home.location.error.description",
     toneClassName:
-      "border-rose-300/80 bg-rose-50/90 text-rose-900 dark:border-rose-300/35 dark:bg-rose-500/12 dark:text-rose-100",
+      "border-rose-300/80 bg-rose-50/90 text-rose-900 dark:border-rose-300/35 dark:bg-rose-500/12 dark:text-secondary-50",
     actionLabelKey: "home.location.error.action",
   },
 } as const;
@@ -85,7 +85,7 @@ const LocationPermissionBanner = ({
       aria-label={`${title}. ${description}`}
     >
       <div className="flex items-start gap-3">
-        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-current/20 bg-background/75">
+        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-current/20 bg-background/200">
           <Icon className="h-4.5 w-4.5" />
         </span>
 
@@ -98,7 +98,7 @@ const LocationPermissionBanner = ({
           </p>
         </div>
 
-        <span className="inline-flex min-h-9 items-center gap-1 rounded-full border border-current/30 bg-background/80 px-3 py-1.5 text-xs font-bold">
+        <span className="inline-flex min-h-9 items-center gap-1 rounded-full border border-current/30 bg-background/200 px-3 py-1.5 text-xs font-bold">
           <LocateFixed className="h-3 w-3" />
           {actionLabel}
         </span>
