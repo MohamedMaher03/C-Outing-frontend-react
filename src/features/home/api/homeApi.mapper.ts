@@ -1,4 +1,5 @@
 import type { CanonicalPriceLevel } from "@/utils/priceLevels";
+import type { PaginatedResponse } from "@/types";
 import type { HomePlace } from "../types";
 
 type HomeVenueDto = {
@@ -315,4 +316,52 @@ export const mapHomePlacesPayload = (raw: unknown): HomePlace[] => {
   }
 
   return mapped;
+};
+
+export const mapHomePaginatedPlacesPayload = (
+  raw: unknown,
+): PaginatedResponse<HomePlace> => {
+  const payload = unwrapDataPayload(raw);
+  const items = mapHomePlacesPayload(payload);
+
+  if (!isRecord(payload)) {
+    return {
+      items,
+      pageIndex: 1,
+      pageSize: items.length,
+      totalCount: items.length,
+      totalPages: 1,
+      hasPreviousPage: false,
+      hasNextPage: false,
+    };
+  }
+
+  const pageIndex = Math.max(
+    1,
+    Math.trunc(toFiniteNumber(payload.pageIndex) ?? 1),
+  );
+  const pageSize = Math.max(
+    1,
+    Math.trunc(toFiniteNumber(payload.pageSize) ?? (items.length || 1)),
+  );
+  const totalCount = Math.max(
+    0,
+    Math.trunc(toFiniteNumber(payload.totalCount) ?? items.length),
+  );
+  const totalPages = Math.max(
+    1,
+    Math.trunc(toFiniteNumber(payload.totalPages) ?? 1),
+  );
+  const hasPreviousPage = toBoolean(payload.hasPreviousPage) ?? pageIndex > 1;
+  const hasNextPage = toBoolean(payload.hasNextPage) ?? pageIndex < totalPages;
+
+  return {
+    items,
+    pageIndex,
+    pageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+  };
 };

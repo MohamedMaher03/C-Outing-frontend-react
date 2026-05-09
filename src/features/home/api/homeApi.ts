@@ -1,16 +1,21 @@
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
-import { mapHomePlacesPayload } from "./homeApi.mapper";
+import {
+  mapHomePaginatedPlacesPayload,
+  mapHomePlacesPayload,
+} from "./homeApi.mapper";
 import type {
   HomePageData,
   HomePlace,
   HomeRecommendationsQuery,
+  HomeSearchQuery,
   SimilarRecommendationsParams,
   VenueByDistrictParams,
   VenueByPriceRangeParams,
   VenueByTypeParams,
   VenueTopRatedInAreaParams,
 } from "../types";
+import type { PaginatedResponse } from "@/types";
 
 export const homeApi = {
   async fetchHomePageData(
@@ -109,6 +114,31 @@ export const homeApi = {
       API_ENDPOINTS.home.venuesByPriceRange(params.priceRange),
     );
     return mapHomePlacesPayload(response.data);
+  },
+
+  async searchVenues(
+    params: HomeSearchQuery,
+  ): Promise<PaginatedResponse<HomePlace>> {
+    const response = await axiosInstance.get<unknown>(
+      API_ENDPOINTS.home.search,
+      {
+        params: {
+          SearchTerm: params.searchTerm,
+          District: params.district,
+          Type: params.type,
+          Category: params.category,
+          PriceRange: params.priceRange,
+          MinRating: params.minRating,
+          Latitude: params.latitude,
+          Longitude: params.longitude,
+          RadiusKm: params.radiusKm,
+          Page: params.page,
+          PageSize: params.pageSize,
+        },
+      },
+    );
+
+    return mapHomePaginatedPlacesPayload(response.data);
   },
 
   async fetchVenueTopRated(): Promise<HomePlace[]> {

@@ -66,6 +66,20 @@ export interface HomeRecommendationsQuery {
   count?: number;
 }
 
+export interface HomeSearchQuery {
+  searchTerm?: string;
+  district?: string;
+  type?: string;
+  category?: string;
+  priceRange?: number;
+  minRating?: number;
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface SimilarRecommendationsParams extends HomeRecommendationsQuery {
   venueId: string;
 }

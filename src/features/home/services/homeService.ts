@@ -4,12 +4,14 @@ import type {
   HomePageData,
   HomePlace,
   HomeRecommendationsQuery,
+  HomeSearchQuery,
   SimilarRecommendationsParams,
   VenueByDistrictParams,
   VenueByPriceRangeParams,
   VenueByTypeParams,
   VenueTopRatedInAreaParams,
 } from "@/features/home/types";
+import type { PaginatedResponse } from "@/types";
 import { selectDataSource } from "@/utils/dataSourceResolver";
 
 const homeDataSource = selectDataSource(
@@ -102,6 +104,15 @@ export const homeService = {
     return withServiceError(
       () => homeDataSource.fetchVenuesByPriceRange(params),
       "Failed to fetch venues by price range",
+    );
+  },
+
+  async searchVenues(
+    params: HomeSearchQuery,
+  ): Promise<PaginatedResponse<HomePlace>> {
+    return withServiceError(
+      () => homeDataSource.searchVenues(params),
+      "Failed to search venues",
     );
   },
 

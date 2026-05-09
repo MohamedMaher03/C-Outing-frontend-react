@@ -48,6 +48,7 @@ export const API_ENDPOINTS = {
       `/api/v1/Venue/type/${encodeURIComponent(type)}`,
     venuesByPriceRange: (priceRange: string) =>
       `/api/v1/Venue/price-range/${encodeURIComponent(priceRange)}`,
+    search: "/api/v1/Venue/search",
     venueTopRated: "/api/v1/Venue/top-rated",
     venueTopRatedInArea: "/api/v1/Venue/top-rated-in-area",
   },

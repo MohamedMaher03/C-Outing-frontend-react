@@ -368,6 +368,15 @@ const HomePage = () => {
     setActiveDiscoverySource("price-range");
   };
 
+  const handleSearchNavigate = useCallback(() => {
+    const trimmed = search.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    navigate(`/home/search?q=${encodeURIComponent(trimmed)}`);
+  }, [navigate, search]);
+
   const scrollMoodSectionIntoView = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -556,9 +565,22 @@ const HomePage = () => {
               placeholder={t("home.hero.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  handleSearchNavigate();
+                }
+              }}
               aria-label={t("home.hero.searchAria")}
-              className="h-12 rounded-2xl border border-white/20 bg-black/25 pl-12 pr-14 text-base text-white shadow-lg transition-colors placeholder:text-white/65 focus:border-secondary/70 focus:bg-black/30 focus:ring-secondary/20 backdrop-blur-md sm:h-14"
+              className="h-12 rounded-2xl border border-white/20 bg-black/25 pl-12 pr-24 text-base text-white shadow-lg transition-colors placeholder:text-white/65 focus:border-secondary/70 focus:bg-black/30 focus:ring-secondary/20 backdrop-blur-md sm:h-14"
             />
+            <button
+              type="button"
+              onClick={handleSearchNavigate}
+              className="absolute right-2 top-1/2 z-10 h-9 -translate-y-1/2 rounded-full bg-secondary/90 px-4 text-xs font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:h-10"
+              aria-label={t("home.hero.searchAction", undefined, "Search")}
+            >
+              {t("home.hero.searchAction", undefined, "Search")}
+            </button>
           </motion.div>
 
           {/* Filter Pills */}

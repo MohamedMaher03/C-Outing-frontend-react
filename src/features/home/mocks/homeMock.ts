@@ -3,12 +3,15 @@ import type {
   HomePageData,
   HomePlace,
   HomeRecommendationsQuery,
+  HomeSearchQuery,
   SimilarRecommendationsParams,
   VenueByDistrictParams,
   VenueByPriceRangeParams,
   VenueByTypeParams,
   VenueTopRatedInAreaParams,
 } from "../types";
+import type { PaginatedResponse } from "@/types";
+import { normalizeSearchTerm } from "@/utils/textNormalization";
 
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -42,6 +45,32 @@ const withCount = (
   count: number | undefined,
   fallback: number,
 ) => list.slice(0, count ?? fallback);
+
+const buildPaginatedResponse = (
+  items: HomePlace[],
+  pageIndex: number,
+  pageSize: number,
+): PaginatedResponse<HomePlace> => {
+  const totalCount = items.length;
+  const normalizedPageSize = Math.max(1, Math.trunc(pageSize));
+  const totalPages = Math.max(1, Math.ceil(totalCount / normalizedPageSize));
+  const normalizedPageIndex = Math.min(
+    Math.max(1, Math.trunc(pageIndex)),
+    totalPages,
+  );
+  const start = (normalizedPageIndex - 1) * normalizedPageSize;
+  const end = start + normalizedPageSize;
+
+  return {
+    items: items.slice(start, end),
+    pageIndex: normalizedPageIndex,
+    pageSize: normalizedPageSize,
+    totalCount,
+    totalPages,
+    hasPreviousPage: normalizedPageIndex > 1,
+    hasNextPage: normalizedPageIndex < totalPages,
+  };
+};
 
 const MOOD_FILTER_MAP: Record<string, (p: HomePlace) => boolean> = {
   chill: (p) =>
@@ -172,6 +201,28 @@ export const homeMock = {
   ): Promise<HomePlace[]> {
     await delay(700);
     return sortByTopRated(byPriceRange(params.priceRange));
+  },
+
+  async searchVenues(
+    params: HomeSearchQuery,
+  ): Promise<PaginatedResponse<HomePlace>> {
+    await delay(650);
+
+    const normalizedSearch = normalizeSearchTerm(params.searchTerm ?? "");
+    const filtered = normalizedSearch
+      ? normalizedPlaces().filter((place) => {
+          const haystack = normalizeSearchTerm(
+            `${place.name} ${place.address} ${place.category} ${(place.atmosphereTags ?? []).join(" ")}`,
+          );
+          return haystack.includes(normalizedSearch);
+        })
+      : normalizedPlaces();
+
+    return buildPaginatedResponse(
+      filtered,
+      params.page ?? 1,
+      params.pageSize ?? 20,
+    );
   },
 
   async fetchVenueTopRated(): Promise<HomePlace[]> {

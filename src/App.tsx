@@ -50,6 +50,9 @@ const MapAtlasPage = lazy(
 const HomeSeeAllPage = lazy(
   () => import("@/features/home/pages/HomeSeeAllPage"),
 );
+const HomeSearchPage = lazy(
+  () => import("@/features/home/pages/HomeSearchPage"),
+);
 const FavoritesPage = lazy(
   () => import("@/features/favorites/pages/FavoritesPage"),
 );
@@ -215,6 +218,7 @@ function App() {
               path="/home/see-all/:collection"
               element={<HomeSeeAllPage />}
             />
+            <Route path="/home/search" element={<HomeSearchPage />} />
             <Route path="/map" element={<MapAtlasPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/edit" element={<EditProfilePage />} />

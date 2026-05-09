@@ -2,6 +2,7 @@ export { default as PlaceCard } from "./components/PlaceCard";
 export { useHome } from "./hooks/useHomeHook";
 export { useUserLocation } from "./hooks/useUserLocation";
 export { useHomeSeeAll } from "./hooks/useHomeSeeAll";
+export { useHomeSearch } from "./hooks/useHomeSearch";
 export type {
   DiscoverySource,
   FilterType,
@@ -9,6 +10,7 @@ export type {
   HomePlace,
   HomeRecommendationCollection,
   HomeRecommendationsQuery,
+  HomeSearchQuery,
   PlaceCardProps,
   SimilarRecommendationsParams,
   UserLocationCoordinates,
