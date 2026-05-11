@@ -65,6 +65,18 @@ const mapRoleFilterToApiRole = (
   return "User";
 };
 
+const mapRoleToApiValue = (role: AdminUserRole): number => {
+  if (role === "moderator") {
+    return 1;
+  }
+
+  if (role === "admin") {
+    return 2;
+  }
+
+  return 0;
+};
+
 const getUsers = async (params: UsersParams = {}): Promise<AdminUsersPage> => {
   const query = toQueryParams({
     SearchTerm: params.searchTerm,
@@ -179,10 +191,11 @@ export const adminApi = {
     userId: AdminUserId,
     role: AdminUserRole,
   ): Promise<void> {
-    void userId;
-    void role;
-    throw new Error(
-      "User role updates are not supported by current backend APIs",
+    await axiosInstance.patch(
+      API_ENDPOINTS.admin.updateUserRole(String(userId)),
+      {
+        role: mapRoleToApiValue(role),
+      },
     );
   },
 

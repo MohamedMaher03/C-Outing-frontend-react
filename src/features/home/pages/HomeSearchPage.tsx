@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { useI18n } from "@/components/i18n";
 import PlaceCard from "@/features/home/components/PlaceCard";
+import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
 import { useHomeSearch } from "@/features/home/hooks/useHomeSearch";
+import { useUserLocation } from "@/features/home/hooks/useUserLocation";
 import { normalizeSearchTerm } from "@/utils/textNormalization";
 import { POPULAR_DISTRICTS, CATEGORIES } from "@/mocks/mockData";
 import { VENUE_PRICE_RANGE_OPTIONS } from "@/features/home/mocks";
@@ -18,6 +20,7 @@ const PAGE_SIZE_OPTIONS = [12, 24, 36];
 const HomeSearchPage = () => {
   const { t, formatNumber } = useI18n();
   const navigate = useNavigate();
+  const userLocation = useUserLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchParam = searchParams.get("q") ?? "";
   const districtParam = searchParams.get("district") ?? "";
@@ -123,12 +126,16 @@ const HomeSearchPage = () => {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const nextQuery = searchInput.trim();
-    const nextDistrict = districtInput.trim();
-    const nextType = typeInput.trim();
-    const nextCategory = categoryInput.trim();
-    const nextPriceRange = priceRangeInput.trim();
-    const nextMinRating = minRatingInput.trim();
+    applyFilters();
+  };
+
+  const applyFilters = (overrides?: Partial<Record<string, string>>) => {
+    const nextQuery = (overrides?.q ?? searchInput).trim();
+    const nextDistrict = (overrides?.district ?? districtInput).trim();
+    const nextType = (overrides?.type ?? typeInput).trim();
+    const nextCategory = (overrides?.category ?? categoryInput).trim();
+    const nextPriceRange = (overrides?.priceRange ?? priceRangeInput).trim();
+    const nextMinRating = (overrides?.minRating ?? minRatingInput).trim();
 
     const nextParams = new URLSearchParams();
     if (nextQuery) nextParams.set("q", nextQuery);
@@ -213,6 +220,11 @@ const HomeSearchPage = () => {
           </div>
         </div>
 
+        <LocationPermissionBanner
+          userLocation={userLocation}
+          onEnableLocation={userLocation.requestLocation}
+        />
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[240px]">
@@ -240,7 +252,11 @@ const HomeSearchPage = () => {
               </span>
               <select
                 value={districtInput}
-                onChange={(event) => setDistrictInput(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setDistrictInput(nextValue);
+                  applyFilters({ district: nextValue });
+                }}
                 className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
               >
                 <option value="">
@@ -260,7 +276,11 @@ const HomeSearchPage = () => {
               </span>
               <select
                 value={typeInput}
-                onChange={(event) => setTypeInput(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setTypeInput(nextValue);
+                  applyFilters({ type: nextValue });
+                }}
                 className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
               >
                 <option value="">
@@ -280,7 +300,11 @@ const HomeSearchPage = () => {
               </span>
               <select
                 value={categoryInput}
-                onChange={(event) => setCategoryInput(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setCategoryInput(nextValue);
+                  applyFilters({ category: nextValue });
+                }}
                 className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
               >
                 <option value="">
@@ -304,7 +328,11 @@ const HomeSearchPage = () => {
               </span>
               <select
                 value={priceRangeInput}
-                onChange={(event) => setPriceRangeInput(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setPriceRangeInput(nextValue);
+                  applyFilters({ priceRange: nextValue });
+                }}
                 className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
               >
                 <option value="">
@@ -328,7 +356,11 @@ const HomeSearchPage = () => {
               </span>
               <select
                 value={minRatingInput}
-                onChange={(event) => setMinRatingInput(event.target.value)}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setMinRatingInput(nextValue);
+                  applyFilters({ minRating: nextValue });
+                }}
                 className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
               >
                 {minRatingOptions.map((option) => (
@@ -409,6 +441,7 @@ const HomeSearchPage = () => {
                   key={place.id}
                   place={place}
                   variant="grid"
+                  userLocation={userLocation}
                   onClick={(id) => navigate(`/venue/${id}`)}
                 />
               ))}

@@ -89,6 +89,7 @@ export function MenuImageGallery({
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                 loading="lazy"
                 decoding="async"
+                referrerPolicy="no-referrer"
               />
               <span className="pointer-events-none absolute inset-x-0 bottom-0 inline-flex items-center justify-between gap-1 bg-background/80 px-2 py-1 pd-type-micro pd-type-number text-foreground backdrop-blur-sm">
                 <span>

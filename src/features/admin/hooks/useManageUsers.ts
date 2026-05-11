@@ -9,6 +9,7 @@ import { adminService } from "@/features/admin/services/adminService";
 import type {
   AdminUser,
   AdminUserId,
+  AdminUserRole,
   AdminUserRoleFilter,
   AdminUserStatus,
 } from "@/features/admin/types";
@@ -40,6 +41,7 @@ interface UseManageUsersReturn {
     userId: AdminUserId,
     status: Extract<AdminUserStatus, "active" | "banned">,
   ) => Promise<void>;
+  handleRoleChange: (userId: AdminUserId, role: AdminUserRole) => Promise<void>;
 }
 
 const USERS_PAGE_SIZE = 10;
@@ -187,6 +189,42 @@ export const useManageUsers = (): UseManageUsersReturn => {
     }
   };
 
+  const handleRoleChange = async (userId: AdminUserId, role: AdminUserRole) => {
+    if (inFlightRef.current.has(userId)) {
+      return;
+    }
+
+    inFlightRef.current.add(userId);
+    setUpdatingUserId(userId);
+    setError(null);
+
+    try {
+      await adminService.updateUserRole(userId, role);
+      if (!mountedRef.current) return;
+
+      setUsers((prev) =>
+        prev.map((u) => (u.userId === userId ? { ...u, role } : u)),
+      );
+      setActionMenu(null);
+
+      if (roleFilter !== "all" && roleFilter !== role) {
+        await loadUsers({
+          targetPage: pageIndex,
+          targetRoleFilter: roleFilter,
+          targetSearch: deferredSearch,
+        });
+      }
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setError(getErrorMessage(err, t("admin.error.updateUserRole")));
+    } finally {
+      inFlightRef.current.delete(userId);
+      if (mountedRef.current) {
+        setUpdatingUserId((prev) => (prev === userId ? null : prev));
+      }
+    }
+  };
+
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearch(value);
@@ -300,5 +338,6 @@ export const useManageUsers = (): UseManageUsersReturn => {
     goToNextPage,
     goToPage,
     handleStatusChange,
+    handleRoleChange,
   };
 };

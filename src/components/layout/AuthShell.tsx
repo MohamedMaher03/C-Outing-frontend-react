@@ -9,6 +9,7 @@ type AuthShellProps = {
   children: ReactNode;
   maxWidth?: "lg" | "2xl" | "4xl";
   logoSrc?: string;
+  topLeftSlot?: ReactNode;
 };
 
 const MAX_WIDTH_CLASS: Record<
@@ -24,6 +25,7 @@ export const AuthShell = ({
   children,
   maxWidth = "lg",
   logoSrc = logo,
+  topLeftSlot,
 }: AuthShellProps) => {
   return (
     <div className="relative flex min-h-[100svh] w-full items-start justify-center overflow-y-auto py-5 sm:items-center sm:py-10">
@@ -34,6 +36,12 @@ export const AuthShell = ({
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div className="absolute inset-0 bg-[rgba(17,39,73,0.58)] dark:bg-[rgba(6,14,27,0.72)]" />
+
+      {topLeftSlot ? (
+        <div className="absolute left-4 top-4 z-20 flex items-center gap-2 sm:left-6 sm:top-6">
+          {topLeftSlot}
+        </div>
+      ) : null}
 
       <div
         dir="ltr"

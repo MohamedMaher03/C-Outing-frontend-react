@@ -8,6 +8,7 @@ jest.mock("@/features/admin/services/adminService", () => ({
   adminService: {
     getUsers: jest.fn(),
     updateUserStatus: jest.fn(),
+    updateUserRole: jest.fn(),
   },
 }));
 
@@ -46,6 +47,7 @@ describe("useManageUsers", () => {
 
     mockedAdminService.getUsers.mockResolvedValue(usersPageFixture as never);
     mockedAdminService.updateUserStatus.mockResolvedValue(undefined);
+    mockedAdminService.updateUserRole.mockResolvedValue(undefined);
   });
 
   it("loads users and pagination metadata", async () => {
@@ -82,6 +84,24 @@ describe("useManageUsers", () => {
       "banned",
     );
     expect(result.current.users[0]?.status).toBe("banned");
+  });
+
+  it("updates user role through service and local state", async () => {
+    const { result } = renderHook(() => useManageUsers());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    await act(async () => {
+      await result.current.handleRoleChange("u1", "moderator");
+    });
+
+    expect(mockedAdminService.updateUserRole).toHaveBeenCalledWith(
+      "u1",
+      "moderator",
+    );
+    expect(result.current.users[0]?.role).toBe("moderator");
   });
 
   it("moves to next page and triggers a new load", async () => {

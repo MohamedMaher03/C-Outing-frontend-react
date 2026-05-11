@@ -4,6 +4,7 @@ import type {
   AdminUserId,
   AdminUsersPage,
   AdminUsersQuery,
+  AdminUserRole,
   AdminUserStatus,
   AdminPlace,
   AdminReview,
@@ -46,6 +47,16 @@ export const adminService = {
     return withAdminServiceError(
       () => adminDataSource.updateUserStatus(userId, status),
       "Failed to update user status",
+    );
+  },
+
+  async updateUserRole(
+    userId: AdminUserId,
+    role: AdminUserRole,
+  ): Promise<void> {
+    return withAdminServiceError(
+      () => adminDataSource.updateUserRole(userId, role),
+      "Failed to update user role",
     );
   },
 

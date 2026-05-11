@@ -117,6 +117,7 @@ export const API_ENDPOINTS = {
     deleteUser: (userId: string) => `/api/v1/Admin/users/${userId}`,
     banUser: (userId: string) => `/api/v1/Admin/users/${userId}/ban`,
     unbanUser: (userId: string) => `/api/v1/Admin/users/${userId}/unban`,
+    updateUserRole: (userId: string) => `/api/v1/Admin/users/${userId}/role`,
     getVenues: "/api/v1/Admin/venues",
     deleteVenue: (venueId: string) => `/api/v1/Admin/venues/${venueId}`,
     updateVenueStatus: (venueId: string) =>

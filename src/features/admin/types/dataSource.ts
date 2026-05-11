@@ -4,6 +4,7 @@ import type {
   AdminUserId,
   AdminUsersPage,
   AdminUsersQuery,
+  AdminUserRole,
   AdminUserStatus,
   AdminPlace,
   AdminReview,
@@ -23,6 +24,7 @@ export interface AdminDataSource {
     userId: AdminUserId,
     status: AdminUserStatus,
   ) => Promise<void>;
+  updateUserRole: (userId: AdminUserId, role: AdminUserRole) => Promise<void>;
   getPlaces: (
     params?: AdminPlaceQuery,
   ) => Promise<PaginatedResponse<AdminPlace>>;

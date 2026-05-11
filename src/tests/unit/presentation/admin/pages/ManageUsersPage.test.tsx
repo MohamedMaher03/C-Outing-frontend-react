@@ -13,7 +13,8 @@ jest.mock("@/components/ui/LoadingSpinner", () => ({
 
 jest.mock("@/components/i18n", () => ({
   useI18n: () => ({
-    t: (key: string) => key,
+    t: (key: string, values?: Record<string, string>) =>
+      values?.role ? `${key} ${values.role}` : key,
     locale: "en-US",
     formatNumber: (value: number) => String(value),
   }),
@@ -66,7 +67,9 @@ const baseHookState = {
   retry: jest.fn().mockResolvedValue(undefined),
   goToPreviousPage: jest.fn(),
   goToNextPage: jest.fn(),
+  goToPage: jest.fn(),
   handleStatusChange: jest.fn().mockResolvedValue(undefined),
+  handleRoleChange: jest.fn().mockResolvedValue(undefined),
 };
 
 describe("ManageUsersPage", () => {
@@ -97,9 +100,29 @@ describe("ManageUsersPage", () => {
       },
     );
 
-    fireEvent.click(screen.getByRole("menuitem", { name: "admin.users.actions.ban" }));
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "admin.users.actions.ban" }),
+    );
 
     expect(baseHookState.setSearch).toHaveBeenCalledWith("ali");
-    expect(baseHookState.handleStatusChange).toHaveBeenCalledWith("u1", "banned");
+    expect(baseHookState.handleStatusChange).toHaveBeenCalledWith(
+      "u1",
+      "banned",
+    );
+  });
+
+  it("allows changing user role from action menu", () => {
+    render(<ManageUsersPage />);
+
+    fireEvent.click(
+      screen.getByRole("menuitem", {
+        name: "admin.users.actions.setRole admin.role.moderator",
+      }),
+    );
+
+    expect(baseHookState.handleRoleChange).toHaveBeenCalledWith(
+      "u1",
+      "moderator",
+    );
   });
 });

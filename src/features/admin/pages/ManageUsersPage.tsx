@@ -25,7 +25,10 @@ import {
   AdminPageHeader,
   AdminSection,
 } from "@/features/admin/components";
-import { USER_ROLE_FILTER_OPTIONS } from "@/features/admin/constants/filterOptions";
+import {
+  MANAGEABLE_USER_ROLES,
+  USER_ROLE_FILTER_OPTIONS,
+} from "@/features/admin/constants/filterOptions";
 import {
   userRoleBadge,
   userStatusBadge,
@@ -56,6 +59,7 @@ const ManageUsersPage = () => {
     goToNextPage,
     goToPage,
     handleStatusChange,
+    handleRoleChange,
   } = useManageUsers();
 
   const monthYearFormatter = useMemo(
@@ -328,6 +332,29 @@ const ManageUsersPage = () => {
                           {t("admin.users.actions.ban")}
                         </button>
                       )}
+                      <p className="px-3 py-1 text-role-caption uppercase text-muted-foreground">
+                        {t("admin.users.actions.roleTitle", undefined, "Role")}
+                      </p>
+                      {MANAGEABLE_USER_ROLES.filter(
+                        (roleOption) => roleOption !== user.role,
+                      ).map((roleOption) => (
+                        <button
+                          key={roleOption}
+                          type="button"
+                          role="menuitem"
+                          onClick={() =>
+                            void handleRoleChange(user.userId, roleOption)
+                          }
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-role-secondary text-foreground transition-colors motion-reduce:transition-none hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          disabled={updatingUserId === user.userId}
+                          aria-disabled={updatingUserId === user.userId}
+                        >
+                          <User className="h-3.5 w-3.5" />
+                          {t("admin.users.actions.setRole", {
+                            role: getRoleLabel(roleOption),
+                          })}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>

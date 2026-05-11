@@ -10,6 +10,7 @@ import {
   Compass,
   Sparkles,
   Check,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -19,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { INTERESTS, DISTRICTS } from "@/mocks/mockData";
 import { useOnboarding } from "@/features/onboarding/hooks/useOnboarding";
+import { useLogout } from "@/features/auth/hooks/useLogout";
 import {
   ONBOARDING_STEPS,
   BUDGET_OPTIONS,
@@ -45,6 +47,7 @@ const OnboardingPage = () => {
   const budgetLegendId = useId();
   const budgetHintId = useId();
   const progressDescriptionId = useId();
+  const { logoutUser, isLoading: isLoggingOut } = useLogout();
 
   const {
     step,
@@ -91,6 +94,10 @@ const OnboardingPage = () => {
     }
 
     await handleComplete();
+  };
+
+  const handleLogout = async () => {
+    await logoutUser();
   };
 
   const currentStepLabel = localizedStepLabels[step] ?? localizedStepLabels[0];
@@ -167,7 +174,32 @@ const OnboardingPage = () => {
         : t("onboarding.vibe.summary.energetic.description");
 
   return (
-    <AuthShell maxWidth="4xl">
+    <AuthShell
+      maxWidth="4xl"
+      topLeftSlot={
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => void handleLogout()}
+          disabled={isLoggingOut}
+          aria-busy={isLoggingOut}
+          className="min-h-10 gap-2 border-white/30 bg-black/35 text-white backdrop-blur-sm hover:bg-black/50"
+        >
+          {isLoggingOut ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t("layout.loggingOut")}
+            </>
+          ) : (
+            <>
+              <LogOut className="h-4 w-4" />
+              {t("layout.logout")}
+            </>
+          )}
+        </Button>
+      }
+    >
       <AuthSurface className="space-y-6 border-border/45 bg-card/90 shadow-lg backdrop-blur-sm sm:space-y-7 lg:space-y-0">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] lg:gap-7">
           <aside

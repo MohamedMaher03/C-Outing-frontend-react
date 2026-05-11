@@ -795,6 +795,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.error.loadDashboardData": "Failed to load dashboard data",
     "admin.error.loadUsers": "Failed to load users",
     "admin.error.updateUserStatus": "Failed to update user status",
+    "admin.error.updateUserRole": "Failed to update user role",
     "admin.error.loadPlaces": "Failed to load places",
     "admin.error.updatePlaceStatus": "Failed to update place status",
     "admin.error.deletePlace": "Failed to delete place",
@@ -860,6 +861,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.users.actions.menu": "Actions",
     "admin.users.actions.activate": "Activate",
     "admin.users.actions.ban": "Ban User",
+    "admin.users.actions.roleTitle": "Role",
+    "admin.users.actions.setRole": "Set role to {role}",
     "admin.users.pagination.summary":
       "Page {page} of {totalPages} · {totalCount} users total · {pageSize} per page",
     "admin.users.pagination.page": "Page {page} / {totalPages}",
@@ -2301,6 +2304,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.error.loadDashboardData": "فشل تحميل بيانات لوحة التحكم",
     "admin.error.loadUsers": "فشل تحميل المستخدمين",
     "admin.error.updateUserStatus": "فشل تحديث حالة المستخدم",
+    "admin.error.updateUserRole": "فشل تحديث دور المستخدم",
     "admin.error.loadPlaces": "فشل تحميل الأماكن",
     "admin.error.updatePlaceStatus": "فشل تحديث حالة المكان",
     "admin.error.deletePlace": "فشل حذف المكان",
@@ -2366,6 +2370,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.users.actions.menu": "الإجراءات",
     "admin.users.actions.activate": "تفعيل",
     "admin.users.actions.ban": "حظر المستخدم",
+    "admin.users.actions.roleTitle": "الدور",
+    "admin.users.actions.setRole": "تعيين الدور إلى {role}",
     "admin.users.pagination.summary":
       "الصفحة {page} من {totalPages} · إجمالي {totalCount} مستخدمًا · {pageSize} لكل صفحة",
     "admin.users.pagination.page": "الصفحة {page} / {totalPages}",

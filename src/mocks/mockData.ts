@@ -160,159 +160,164 @@ export interface District {
   nameKey?: string; // translation key for name
 }
 
-export const POPULAR_DISTRICTS: District[] = [
+export const POPULAR_DISTRICTS: District[] =
   // 🏙️ Central Cairo
-  { id: "downtown", name: "Downtown", nameKey: "onboarding.district.downtown" },
-  {
-    id: "qasr-el-nil",
-    name: "Qasr El Nil",
-    nameKey: "onboarding.district.qasr-el-nil",
-  },
-  { id: "abdeen", name: "Abdeen", nameKey: "onboarding.district.abdeen" },
-  {
-    id: "azbakeya",
-    name: "Al Azbakeya",
-    nameKey: "onboarding.district.azbakeya",
-  },
-  { id: "zamalek", name: "Zamalek", nameKey: "onboarding.district.zamalek" },
-  { id: "daher", name: "Daher", nameKey: "onboarding.district.daher" },
+  [
+    { id: "abdeen", name: "Abdeen", nameKey: "onboarding.district.abdeen" },
+    { id: "agouza", name: "Agouza", nameKey: "onboarding.district.agouza" },
+    {
+      id: "ain-shams",
+      name: "Ain Shams",
+      nameKey: "onboarding.district.ain-shams",
+    },
+    {
+      id: "al-salam-first",
+      name: "Al Salam First",
+      nameKey: "onboarding.district.al-salam-first",
+    },
+    {
+      id: "azbakeya",
+      name: "Al Azbakeya",
+      nameKey: "onboarding.district.azbakeya",
+    },
+    { id: "giza", name: "Al Giza", nameKey: "onboarding.district.giza" },
+    { id: "warak", name: "Al Warak", nameKey: "onboarding.district.warak" },
+    {
+      id: "darb-el-ahmar",
+      name: "Al-Darb Al-Ahmar",
+      nameKey: "onboarding.district.darb-el-ahmar",
+    },
+    {
+      id: "bab-el-sharia",
+      name: "Bab El Sharia",
+      nameKey: "onboarding.district.bab-el-sharia",
+    },
+    {
+      id: "basatin",
+      name: "El Basatin",
+      nameKey: "onboarding.district.basatin",
+    },
+    { id: "boulaq", name: "Bulaq", nameKey: "onboarding.district.boulaq" },
 
-  // 🌉 West / Giza side
-  { id: "dokki", name: "Dokki", nameKey: "onboarding.district.dokki" },
-  { id: "agouza", name: "Agouza", nameKey: "onboarding.district.agouza" },
-  {
-    id: "omraniya",
-    name: "El Omraniya",
-    nameKey: "onboarding.district.omraniya",
-  },
-  { id: "talbia", name: "El Talbia", nameKey: "onboarding.district.talbia" },
-  { id: "warak", name: "Al Warak", nameKey: "onboarding.district.warak" },
-  { id: "imaba", name: "Imbaba", nameKey: "onboarding.district.imaba" },
-  { id: "boulaq", name: "Bulaq", nameKey: "onboarding.district.boulaq" },
-  { id: "giza", name: "Al Giza", nameKey: "onboarding.district.giza" },
+    { id: "daher", name: "Daher", nameKey: "onboarding.district.daher" },
+    {
+      id: "downtown",
+      name: "Downtown",
+      nameKey: "onboarding.district.downtown",
+    },
+    { id: "dokki", name: "Dokki", nameKey: "onboarding.district.dokki" },
 
-  // 🌆 East Cairo
-  {
-    id: "heliopolis",
-    name: "Heliopolis",
-    nameKey: "onboarding.district.heliopolis",
-  },
-  { id: "nozha", name: "El Nozha", nameKey: "onboarding.district.nozha" },
-  { id: "zeitoun", name: "Zeitoun", nameKey: "onboarding.district.zeitoun" },
-  {
-    id: "nasr-city",
-    name: "Nasr City",
-    nameKey: "onboarding.district.nasr-city",
-  },
-  { id: "weili", name: "El Weili", nameKey: "onboarding.district.weili" },
-  { id: "shubra", name: "Shubra", nameKey: "onboarding.district.shubra" },
-  {
-    id: "shubra-el-kheima-1",
-    name: "Shubra El Kheima 1",
-    nameKey: "onboarding.district.shubra-el-kheima-1",
-  },
-  {
-    id: "shubra-el-kheima-2",
-    name: "Shubra El Kheima 2",
-    nameKey: "onboarding.district.shubra-el-kheima-2",
-  },
-  {
-    id: "zawya-el-hamra",
-    name: "El Zawya El Hamra",
-    nameKey: "onboarding.district.zawya-el-hamra",
-  },
-  { id: "el-marg", name: "El Marg", nameKey: "onboarding.district.el-marg" },
-  {
-    id: "ain-shams",
-    name: "Ain Shams",
-    nameKey: "onboarding.district.ain-shams",
-  },
-  {
-    id: "el-sharabia",
-    name: "El Sharabia",
-    nameKey: "onboarding.district.el-sharabia",
-  },
-  { id: "el-sahel", name: "El Sahel", nameKey: "onboarding.district.el-sahel" },
-  {
-    id: "rod-el-farag",
-    name: "Rod El Farag",
-    nameKey: "onboarding.district.rod-el-farag",
-  },
-  {
-    id: "al-salam-first",
-    name: "Al Salam First",
-    nameKey: "onboarding.district.al-salam-first",
-  },
-  {
-    id: "hadayek-el-qobbah",
-    name: "Hada'iq El Qobbah",
-    nameKey: "onboarding.district.hadayek-el-qobbah",
-  },
-
-  // 🏗️ New Cairo
-  {
-    id: "new-cairo-1",
-    name: "New Cairo 1",
-    nameKey: "onboarding.district.new-cairo-1",
-  },
-  {
-    id: "new-cairo-3",
-    name: "New Cairo 3",
-    nameKey: "onboarding.district.new-cairo-3",
-  },
-  {
-    id: "second-new-cairo",
-    name: "Second New Cairo",
-    nameKey: "onboarding.district.second-new-cairo",
-  },
-
-  // 🏙️ Historic / Old Cairo
-  {
-    id: "bab-el-sharia",
-    name: "Bab El Sharia",
-    nameKey: "onboarding.district.bab-el-sharia",
-  },
-  {
-    id: "manshiyat-naser",
-    name: "Manshiyat Naser",
-    nameKey: "onboarding.district.manshiyat-naser",
-  },
-  {
-    id: "darb-el-ahmar",
-    name: "Al-Darb Al-Ahmar",
-    nameKey: "onboarding.district.darb-el-ahmar",
-  },
-  {
-    id: "sayeda-zeinab",
-    name: "El Sayeda Zeinab",
-    nameKey: "onboarding.district.sayeda-zeinab",
-  },
-  {
-    id: "el-gamaliya",
-    name: "El Gamaliya",
-    nameKey: "onboarding.district.el-gamaliya",
-  },
-  {
-    id: "el-khalifa",
-    name: "El Khalifa",
-    nameKey: "onboarding.district.el-khalifa",
-  },
-  {
-    id: "old-cairo",
-    name: "Old Cairo",
-    nameKey: "onboarding.district.old-cairo",
-  },
-
-  // 🌿 South Cairo
-  { id: "maadi", name: "Maadi", nameKey: "onboarding.district.maadi" },
-  {
-    id: "mokattam",
-    name: "El Mokattam",
-    nameKey: "onboarding.district.mokattam",
-  },
-  { id: "basatin", name: "El Basatin", nameKey: "onboarding.district.basatin" },
-  { id: "tura", name: "Tura", nameKey: "onboarding.district.tura" },
-];
+    {
+      id: "el-khalifa",
+      name: "El Khalifa",
+      nameKey: "onboarding.district.el-khalifa",
+    },
+    { id: "el-marg", name: "El Marg", nameKey: "onboarding.district.el-marg" },
+    {
+      id: "mokattam",
+      name: "El Mokattam",
+      nameKey: "onboarding.district.mokattam",
+    },
+    { id: "nozha", name: "El Nozha", nameKey: "onboarding.district.nozha" },
+    {
+      id: "omraniya",
+      name: "El Omraniya",
+      nameKey: "onboarding.district.omraniya",
+    },
+    {
+      id: "el-sahel",
+      name: "El Sahel",
+      nameKey: "onboarding.district.el-sahel",
+    },
+    {
+      id: "el-sharabia",
+      name: "El Sharabia",
+      nameKey: "onboarding.district.el-sharabia",
+    },
+    {
+      id: "sayeda-zeinab",
+      name: "El Sayeda Zeinab",
+      nameKey: "onboarding.district.sayeda-zeinab",
+    },
+    { id: "talbia", name: "El Talbia", nameKey: "onboarding.district.talbia" },
+    { id: "weili", name: "El Weili", nameKey: "onboarding.district.weili" },
+    {
+      id: "zawya-el-hamra",
+      name: "El Zawya El Hamra",
+      nameKey: "onboarding.district.zawya-el-hamra",
+    },
+    {
+      id: "gamaliya",
+      name: "El Gamaliya",
+      nameKey: "onboarding.district.el-gamaliya",
+    },
+    {
+      id: "hadayek-el-qobbah",
+      name: "Hada'iq El Qobbah",
+      nameKey: "onboarding.district.hadayek-el-qobbah",
+    },
+    {
+      id: "heliopolis",
+      name: "Heliopolis",
+      nameKey: "onboarding.district.heliopolis",
+    },
+    { id: "imaba", name: "Imbaba", nameKey: "onboarding.district.imaba" },
+    { id: "maadi", name: "Maadi", nameKey: "onboarding.district.maadi" },
+    {
+      id: "manshiyat-naser",
+      name: "Manshiyat Naser",
+      nameKey: "onboarding.district.manshiyat-naser",
+    },
+    {
+      id: "nasr-city",
+      name: "Nasr City",
+      nameKey: "onboarding.district.nasr-city",
+    },
+    {
+      id: "new-cairo-1",
+      name: "New Cairo 1",
+      nameKey: "onboarding.district.new-cairo-1",
+    },
+    {
+      id: "new-cairo-3",
+      name: "New Cairo 3",
+      nameKey: "onboarding.district.new-cairo-3",
+    },
+    {
+      id: "second-new-cairo",
+      name: "Second New Cairo",
+      nameKey: "onboarding.district.second-new-cairo",
+    },
+    {
+      id: "old-cairo",
+      name: "Old Cairo",
+      nameKey: "onboarding.district.old-cairo",
+    },
+    {
+      id: "qasr-el-nil",
+      name: "Qasr El Nil",
+      nameKey: "onboarding.district.qasr-el-nil",
+    },
+    {
+      id: "rod-el-farag",
+      name: "Rod El Farag",
+      nameKey: "onboarding.district.rod-el-farag",
+    },
+    { id: "shubra", name: "Shubra", nameKey: "onboarding.district.shubra" },
+    {
+      id: "shubra-el-kheima-1",
+      name: "Shubra El Kheima 1",
+      nameKey: "onboarding.district.shubra-el-kheima-1",
+    },
+    {
+      id: "shubra-el-kheima-2",
+      name: "Shubra El Kheima 2",
+      nameKey: "onboarding.district.shubra-el-kheima-2",
+    },
+    { id: "tura", name: "Tura", nameKey: "onboarding.district.tura" },
+    { id: "zamalek", name: "Zamalek", nameKey: "onboarding.district.zamalek" },
+    { id: "zeitoun", name: "Zeitoun", nameKey: "onboarding.district.zeitoun" },
+  ];
 export const INTERESTS = [
   { id: "felucca", label: "Felucca Rides", icon: "Ship" },
   { id: "street-food", label: "Street Food", icon: "Utensils" },

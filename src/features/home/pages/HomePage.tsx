@@ -830,7 +830,14 @@ const HomePage = () => {
                 </div>
 
                 {activeDiscoverySource === "district" && (
-                  <div className="flex flex-wrap gap-2">
+                  <HorizontalScroller
+                    ariaLabel={t(
+                      "home.discovery.districtsAria",
+                      undefined,
+                      "Popular districts",
+                    )}
+                    className="-mx-2 px-2"
+                  >
                     {popularDistricts.map((district) => {
                       const isActive = selectedDistrict === district.name;
                       const translatedDistrictName = getTranslatedText(
@@ -848,7 +855,7 @@ const HomePage = () => {
                             );
                             setActiveDiscoverySource("district");
                           }}
-                          className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                          className={`flex-shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             isActive
                               ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
                               : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
@@ -858,7 +865,7 @@ const HomePage = () => {
                         </button>
                       );
                     })}
-                  </div>
+                  </HorizontalScroller>
                 )}
 
                 {activeDiscoverySource === "type" && (
@@ -931,7 +938,14 @@ const HomePage = () => {
                     <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       {t("home.discovery.selectArea")}
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <HorizontalScroller
+                      ariaLabel={t(
+                        "home.discovery.areasAria",
+                        undefined,
+                        "Popular areas",
+                      )}
+                      className="-mx-2 px-2"
+                    >
                       {popularDistricts.map((district) => {
                         const isActive = selectedArea === district.name;
                         const translatedDistrictName = getTranslatedText(
@@ -947,7 +961,7 @@ const HomePage = () => {
                               setSelectedArea(district.name);
                               setActiveDiscoverySource("top-rated-area");
                             }}
-                            className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                            className={`flex-shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                               isActive
                                 ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
                                 : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
@@ -957,7 +971,7 @@ const HomePage = () => {
                           </button>
                         );
                       })}
-                    </div>
+                    </HorizontalScroller>
                   </div>
                 )}
 
