@@ -26,6 +26,7 @@ interface UseManageReviewsReturn {
   hasNextPage: boolean;
   goToPreviousPage: () => void;
   goToNextPage: () => void;
+  goToPage: (page: number) => void;
   setSearch: (value: string) => void;
   setStatusFilter: (value: AdminReviewStatusFilter) => void;
   retry: () => Promise<void>;
@@ -257,6 +258,16 @@ export const useManageReviews = (): UseManageReviewsReturn => {
     void loadReviews(nextPage);
   };
 
+  const goToPage = (page: number) => {
+    if (loading) return;
+    const targetPage = Math.min(totalPages, Math.max(1, Math.floor(page)));
+
+    if (targetPage === pageIndex) return;
+
+    setPageIndex(targetPage);
+    void loadReviews(targetPage);
+  };
+
   return {
     reviews,
     loading,
@@ -273,6 +284,7 @@ export const useManageReviews = (): UseManageReviewsReturn => {
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    goToPage,
     setSearch: handleSearchChange,
     setStatusFilter: handleStatusFilterChange,
     retry: loadReviews,

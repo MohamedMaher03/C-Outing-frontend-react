@@ -3,7 +3,7 @@
  *
  */
 
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   Search,
   MapPin,
@@ -95,6 +95,7 @@ const ManagePlacesPage = () => {
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    goToPage,
     setSearch,
     setStatusFilter,
     setShowAddForm,
@@ -117,6 +118,23 @@ const ManagePlacesPage = () => {
 
   const getStatusLabel = (status: string): string =>
     t(`admin.status.${status}`, undefined, status);
+
+  const [pageJump, setPageJump] = useState(() => String(pageIndex));
+
+  useEffect(() => {
+    setPageJump(String(pageIndex));
+  }, [pageIndex]);
+
+  const commitPageJump = () => {
+    const nextPage = Number(pageJump);
+
+    if (!Number.isFinite(nextPage)) {
+      setPageJump(String(pageIndex));
+      return;
+    }
+
+    goToPage(nextPage);
+  };
 
   // Scroll to form when opened (DOM-specific side effect stays in the component)
   useEffect(() => {
@@ -707,6 +725,33 @@ const ManagePlacesPage = () => {
               >
                 {t("admin.places.pagination.previous")}
               </Button>
+
+              <div className="flex items-center gap-2">
+                <span className="text-role-caption text-muted-foreground">
+                  {t("admin.pagination.goTo", undefined, "Go to page")}
+                </span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={pageJump}
+                  onChange={(event) => setPageJump(event.target.value)}
+                  onBlur={commitPageJump}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      commitPageJump();
+                    }
+                  }}
+                  className="h-8 w-20 text-center"
+                  aria-label={t(
+                    "admin.pagination.goToAria",
+                    undefined,
+                    "Go to page",
+                  )}
+                  disabled={loading}
+                />
+              </div>
 
               <span className="inline-flex items-center rounded-lg border px-3">
                 {t("admin.places.pagination.page", {

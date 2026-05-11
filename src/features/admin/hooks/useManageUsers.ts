@@ -35,6 +35,7 @@ interface UseManageUsersReturn {
   retry: () => Promise<void>;
   goToPreviousPage: () => void;
   goToNextPage: () => void;
+  goToPage: (page: number) => void;
   handleStatusChange: (
     userId: AdminUserId,
     status: Extract<AdminUserStatus, "active" | "banned">,
@@ -255,6 +256,28 @@ export const useManageUsers = (): UseManageUsersReturn => {
     });
   }, [hasNextPage, loading, roleFilter, totalPages]);
 
+  const goToPage = useCallback(
+    (page: number) => {
+      if (loading) {
+        return;
+      }
+
+      const targetPage = Math.min(totalPages, Math.max(1, Math.floor(page)));
+
+      setPageIndexByRoleFilter((prev) => {
+        if (prev[roleFilter] === targetPage) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [roleFilter]: targetPage,
+        };
+      });
+    },
+    [loading, roleFilter, totalPages],
+  );
+
   return {
     users,
     loading,
@@ -275,6 +298,7 @@ export const useManageUsers = (): UseManageUsersReturn => {
     retry,
     goToPreviousPage,
     goToNextPage,
+    goToPage,
     handleStatusChange,
   };
 };

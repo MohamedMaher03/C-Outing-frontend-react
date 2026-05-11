@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   Search,
@@ -54,6 +54,7 @@ const ManageUsersPage = () => {
     retry,
     goToPreviousPage,
     goToNextPage,
+    goToPage,
     handleStatusChange,
   } = useManageUsers();
 
@@ -79,6 +80,23 @@ const ManageUsersPage = () => {
 
   const getRoleLabel = (role: keyof typeof userRoleBadge): string =>
     t(`admin.role.${role}`);
+
+  const [pageJump, setPageJump] = useState(() => String(pageIndex));
+
+  useEffect(() => {
+    setPageJump(String(pageIndex));
+  }, [pageIndex]);
+
+  const commitPageJump = () => {
+    const nextPage = Number(pageJump);
+
+    if (!Number.isFinite(nextPage)) {
+      setPageJump(String(pageIndex));
+      return;
+    }
+
+    goToPage(nextPage);
+  };
 
   useEffect(() => {
     if (!actionMenu) return;
@@ -341,6 +359,33 @@ const ManageUsersPage = () => {
                 <ChevronLeft className="h-4 w-4" />
                 {t("admin.users.pagination.previous")}
               </Button>
+
+              <div className="flex items-center gap-2">
+                <span className="text-role-caption text-muted-foreground">
+                  {t("admin.pagination.goTo", undefined, "Go to page")}
+                </span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={pageJump}
+                  onChange={(event) => setPageJump(event.target.value)}
+                  onBlur={commitPageJump}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      commitPageJump();
+                    }
+                  }}
+                  className="min-h-11 w-20 text-center"
+                  aria-label={t(
+                    "admin.pagination.goToAria",
+                    undefined,
+                    "Go to page",
+                  )}
+                  disabled={loading}
+                />
+              </div>
 
               <span className="inline-flex min-h-11 items-center rounded-lg border border-border bg-card px-3 text-role-caption font-medium text-foreground">
                 {t("admin.users.pagination.page", {

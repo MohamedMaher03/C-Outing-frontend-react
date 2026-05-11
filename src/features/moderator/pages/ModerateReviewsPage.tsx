@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   Search,
   MessageSquare,
@@ -64,6 +64,7 @@ const ModerateReviewsPage = () => {
     setStatusFilter,
     goToPreviousPage,
     goToNextPage,
+    goToPage,
     retry,
     handleApprove,
     handleReject,
@@ -98,6 +99,23 @@ const ModerateReviewsPage = () => {
       ),
     [reviews],
   );
+
+  const [pageJump, setPageJump] = useState(() => String(pageIndex));
+
+  useEffect(() => {
+    setPageJump(String(pageIndex));
+  }, [pageIndex]);
+
+  const commitPageJump = () => {
+    const nextPage = Number(pageJump);
+
+    if (!Number.isFinite(nextPage)) {
+      setPageJump(String(pageIndex));
+      return;
+    }
+
+    goToPage(nextPage);
+  };
 
   if (loading) {
     return (
@@ -337,6 +355,33 @@ const ModerateReviewsPage = () => {
               >
                 {t("moderator.reviews.pagination.previous")}
               </Button>
+
+              <div className="flex items-center gap-2">
+                <span className="text-role-caption text-muted-foreground">
+                  {t("moderator.pagination.goTo", undefined, "Go to page")}
+                </span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={pageJump}
+                  onChange={(event) => setPageJump(event.target.value)}
+                  onBlur={commitPageJump}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      commitPageJump();
+                    }
+                  }}
+                  className="h-8 w-20 text-center"
+                  aria-label={t(
+                    "moderator.pagination.goToAria",
+                    undefined,
+                    "Go to page",
+                  )}
+                  disabled={loading}
+                />
+              </div>
 
               <span className="inline-flex items-center rounded-lg border px-3">
                 {t("moderator.reviews.pagination.page", {

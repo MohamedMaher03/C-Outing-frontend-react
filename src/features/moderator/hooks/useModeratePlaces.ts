@@ -50,6 +50,7 @@ interface UseModeratePlacesReturn {
   setStatusFilter: (value: ModeratorPlaceStatusFilter) => void;
   goToPreviousPage: () => void;
   goToNextPage: () => void;
+  goToPage: (page: number) => void;
   setShowAddForm: (value: boolean | ((prev: boolean) => boolean)) => void;
   setForm: (
     value:
@@ -422,6 +423,16 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     void loadPlaces(nextPage);
   };
 
+  const goToPage = (page: number) => {
+    if (loading) return;
+    const targetPage = Math.min(totalPages, Math.max(1, Math.floor(page)));
+
+    if (targetPage === pageIndex) return;
+
+    setPageIndex(targetPage);
+    void loadPlaces(targetPage);
+  };
+
   return {
     places,
     loading,
@@ -449,6 +460,7 @@ export const useModeratePlaces = (): UseModeratePlacesReturn => {
     setStatusFilter: handleStatusFilterChange,
     goToPreviousPage,
     goToNextPage,
+    goToPage,
     setShowAddForm,
     setForm,
     retry: loadPlaces,

@@ -46,6 +46,7 @@ interface UseManagePlacesReturn {
   hasNextPage: boolean;
   goToPreviousPage: () => void;
   goToNextPage: () => void;
+  goToPage: (page: number) => void;
   setSearch: (value: string) => void;
   setStatusFilter: (value: AdminPlaceStatusFilter) => void;
   setShowAddForm: (value: boolean | ((prev: boolean) => boolean)) => void;
@@ -365,6 +366,16 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     void loadPlaces(nextPage);
   };
 
+  const goToPage = (page: number) => {
+    if (loading) return;
+    const targetPage = Math.min(totalPages, Math.max(1, Math.floor(page)));
+
+    if (targetPage === pageIndex) return;
+
+    setPageIndex(targetPage);
+    void loadPlaces(targetPage);
+  };
+
   return {
     places,
     loading,
@@ -388,6 +399,7 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    goToPage,
     setSearch: handleSearchChange,
     setStatusFilter: handleStatusFilterChange,
     setShowAddForm,

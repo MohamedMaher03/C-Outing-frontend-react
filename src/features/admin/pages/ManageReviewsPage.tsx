@@ -9,7 +9,7 @@ import {
   User,
   Loader2,
 } from "lucide-react";
-import { useMemo, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +66,7 @@ const ManageReviewsPage = () => {
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
+    goToPage,
     setSearch,
     setStatusFilter,
     retry,
@@ -92,6 +93,23 @@ const ManageReviewsPage = () => {
 
   const getStatusLabel = (status: keyof typeof reviewStatusConfig): string =>
     t(`admin.status.${status}`);
+
+  const [pageJump, setPageJump] = useState(() => String(pageIndex));
+
+  useEffect(() => {
+    setPageJump(String(pageIndex));
+  }, [pageIndex]);
+
+  const commitPageJump = () => {
+    const nextPage = Number(pageJump);
+
+    if (!Number.isFinite(nextPage)) {
+      setPageJump(String(pageIndex));
+      return;
+    }
+
+    goToPage(nextPage);
+  };
 
   const flaggedReviewsCount = reviews.filter(
     (review) => review.status === "flagged",
@@ -349,6 +367,33 @@ const ManageReviewsPage = () => {
               >
                 {t("admin.reviews.pagination.previous")}
               </Button>
+
+              <div className="flex items-center gap-2">
+                <span className="text-role-caption text-muted-foreground">
+                  {t("admin.pagination.goTo", undefined, "Go to page")}
+                </span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={pageJump}
+                  onChange={(event) => setPageJump(event.target.value)}
+                  onBlur={commitPageJump}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      commitPageJump();
+                    }
+                  }}
+                  className="h-8 w-20 text-center"
+                  aria-label={t(
+                    "admin.pagination.goToAria",
+                    undefined,
+                    "Go to page",
+                  )}
+                  disabled={loading}
+                />
+              </div>
 
               <span className="inline-flex items-center rounded-lg border px-3">
                 {t("admin.reviews.pagination.page", {

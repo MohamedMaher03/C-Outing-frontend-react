@@ -25,6 +25,7 @@ interface UseModerateReviewsReturn {
   setStatusFilter: (value: ModeratorReviewStatusFilter) => void;
   goToPreviousPage: () => void;
   goToNextPage: () => void;
+  goToPage: (page: number) => void;
 
   retry: () => Promise<void>;
   handleApprove: (reviewId: string) => Promise<void>;
@@ -262,6 +263,16 @@ export const useModerateReviews = (): UseModerateReviewsReturn => {
     void loadReviews(nextPage);
   };
 
+  const goToPage = (page: number) => {
+    if (loading) return;
+    const targetPage = Math.min(totalPages, Math.max(1, Math.floor(page)));
+
+    if (targetPage === pageIndex) return;
+
+    setPageIndex(targetPage);
+    void loadReviews(targetPage);
+  };
+
   return {
     reviews,
     loading,
@@ -281,6 +292,7 @@ export const useModerateReviews = (): UseModerateReviewsReturn => {
     setStatusFilter: handleStatusFilterChange,
     goToPreviousPage,
     goToNextPage,
+    goToPage,
     retry: loadReviews,
     handleApprove,
     handleReject,

@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import {
   Search,
   MapPin,
@@ -6,8 +12,6 @@ import {
   CheckCircle,
   Eye,
   Flag,
-  Plus,
-  X,
   Link2,
   Navigation,
   CircleAlert,
@@ -82,6 +86,7 @@ const ModeratePlacesPage = () => {
     setStatusFilter,
     goToPreviousPage,
     goToNextPage,
+    goToPage,
     setShowAddForm,
     setForm,
     retry,
@@ -127,6 +132,23 @@ const ModeratePlacesPage = () => {
     () => ({ pending: pendingCount, flagged: flaggedCount }),
     [pendingCount, flaggedCount],
   );
+
+  const [pageJump, setPageJump] = useState(() => String(pageIndex));
+
+  useEffect(() => {
+    setPageJump(String(pageIndex));
+  }, [pageIndex]);
+
+  const commitPageJump = () => {
+    const nextPage = Number(pageJump);
+
+    if (!Number.isFinite(nextPage)) {
+      setPageJump(String(pageIndex));
+      return;
+    }
+
+    goToPage(nextPage);
+  };
 
   const normalizedVenueUrl = form.venueUrl.trim();
   const hasTypedVenueUrl = normalizedVenueUrl.length > 0;
@@ -219,24 +241,24 @@ const ModeratePlacesPage = () => {
           flagged: formatCount(placeSummary.flagged, locale),
         })}
         icon={MapPin}
-        actions={
-          <Button
-            onClick={() => setShowAddForm((value) => !value)}
-            className="gap-2 flex-shrink-0 w-full sm:w-auto"
-            variant={showAddForm ? "outline" : "default"}
-            aria-expanded={showAddForm}
-            aria-controls="moderator-add-place-form"
-          >
-            {showAddForm ? (
-              <X className="h-4 w-4" />
-            ) : (
-              <Plus className="h-4 w-4" />
-            )}
-            {showAddForm
-              ? t("admin.places.actions.cancel")
-              : t("admin.places.actions.addPlace")}
-          </Button>
-        }
+        // actions={
+        //   <Button
+        //     onClick={() => setShowAddForm((value) => !value)}
+        //     className="gap-2 flex-shrink-0 w-full sm:w-auto"
+        //     variant={showAddForm ? "outline" : "default"}
+        //     aria-expanded={showAddForm}
+        //     aria-controls="moderator-add-place-form"
+        //   >
+        //     {showAddForm ? (
+        //       <X className="h-4 w-4" />
+        //     ) : (
+        //       <Plus className="h-4 w-4" />
+        //     )}
+        //     {showAddForm
+        //       ? t("admin.places.actions.cancel")
+        //       : t("admin.places.actions.addPlace")}
+        //   </Button>
+        // }
       />
 
       {showAddForm ? (
@@ -618,6 +640,33 @@ const ModeratePlacesPage = () => {
               >
                 {t("moderator.places.pagination.previous")}
               </Button>
+
+              <div className="flex items-center gap-2">
+                <span className="text-role-caption text-muted-foreground">
+                  {t("moderator.pagination.goTo", undefined, "Go to page")}
+                </span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={pageJump}
+                  onChange={(event) => setPageJump(event.target.value)}
+                  onBlur={commitPageJump}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      commitPageJump();
+                    }
+                  }}
+                  className="h-8 w-20 text-center"
+                  aria-label={t(
+                    "moderator.pagination.goToAria",
+                    undefined,
+                    "Go to page",
+                  )}
+                  disabled={loading}
+                />
+              </div>
 
               <span className="inline-flex items-center rounded-lg border px-3">
                 {t("moderator.places.pagination.page", {

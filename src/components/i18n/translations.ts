@@ -954,6 +954,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.places.dialog.deleteTitle": "Delete Place",
     "admin.places.dialog.deleteDescription":
       'Are you sure you want to permanently delete "{name}"? This action cannot be undone.',
+    "admin.pagination.goTo": "Go to page",
+    "admin.pagination.goToAria": "Go to page",
     "admin.places.pagination.summary":
       "Page {page} of {totalPages} · {totalCount} places total · {pageSize} per page",
     "admin.places.pagination.previous": "Previous",
@@ -1180,6 +1182,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "No places match your current search and status filters.",
     "moderator.places.empty.default":
       "No places match the current moderation segment.",
+    "moderator.pagination.goTo": "Go to page",
+    "moderator.pagination.goToAria": "Go to page",
     "moderator.places.pagination.summary":
       "Page {page} of {totalPages} · {totalCount} places total · {pageSize} per page",
     "moderator.places.pagination.previous": "Previous",
@@ -2452,6 +2456,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "admin.places.dialog.deleteTitle": "حذف المكان",
     "admin.places.dialog.deleteDescription":
       'هل أنت متأكد من حذف "{name}" نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.',
+    "admin.pagination.goTo": "اذهب إلى صفحة",
+    "admin.pagination.goToAria": "اذهب إلى صفحة",
     "admin.places.pagination.summary":
       "الصفحة {page} من {totalPages} · إجمالي {totalCount} مكانًا · {pageSize} لكل صفحة",
     "admin.places.pagination.page": "الصفحة {page} / {totalPages}",
@@ -2636,6 +2642,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "moderator.reviews.actions.approve": "اعتماد",
     "moderator.reviews.actions.flag": "وضع علامة",
     "moderator.reviews.actions.reject": "رفض",
+    "moderator.pagination.goTo": "اذهب إلى صفحة",
+    "moderator.pagination.goToAria": "اذهب إلى صفحة",
     "moderator.reviews.pagination.summary":
       "الصفحة {page} من {totalPages} · إجمالي {totalCount} مراجعة · {pageSize} لكل صفحة",
     "moderator.reviews.pagination.page": "الصفحة {page} / {totalPages}",
