@@ -4,6 +4,8 @@ export interface OnboardingPreferences {
   vibe: number;
   districts: string[];
   budget: PriceLevel | null;
+  favoriteActivities: string[];
+  companionTypes: string[];
 }
 
 export type { OnboardingDataSource } from "./dataSource";

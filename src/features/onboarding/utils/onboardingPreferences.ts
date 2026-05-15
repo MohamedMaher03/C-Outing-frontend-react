@@ -7,6 +7,8 @@ import { isNonEmptyString } from "@/utils/typeGuards";
 
 const MAX_INTERESTS = 12;
 const MAX_DISTRICTS = 12;
+const MAX_ACTIVITIES = 12;
+const MAX_COMPANIONS = 6;
 const MAX_ITEM_LENGTH = 80;
 
 const normalizeStringList = (input: unknown, maxItems: number): string[] => {
@@ -79,6 +81,14 @@ export const normalizeOnboardingPreferences = (
     vibe: normalizeVibe(preferences.vibe),
     districts: normalizeStringList(preferences.districts, MAX_DISTRICTS),
     budget: normalizeBudget(preferences.budget),
+    favoriteActivities: normalizeStringList(
+      preferences.favoriteActivities,
+      MAX_ACTIVITIES,
+    ),
+    companionTypes: normalizeStringList(
+      preferences.companionTypes,
+      MAX_COMPANIONS,
+    ),
   };
 
   if (normalized.interests.length < 2) {
@@ -91,6 +101,14 @@ export const normalizeOnboardingPreferences = (
 
   if (!normalized.budget) {
     throw new Error("Please choose a budget range.");
+  }
+
+  if (normalized.favoriteActivities.length < 1) {
+    throw new Error("Please choose at least one favorite activity.");
+  }
+
+  if (normalized.companionTypes.length < 1) {
+    throw new Error("Please choose at least one companion type.");
   }
 
   return normalized;
@@ -121,6 +139,20 @@ export const normalizePartialOnboardingPreferences = (
 
   if (preferences.budget !== undefined) {
     normalized.budget = normalizeBudget(preferences.budget);
+  }
+
+  if (preferences.favoriteActivities !== undefined) {
+    normalized.favoriteActivities = normalizeStringList(
+      preferences.favoriteActivities,
+      MAX_ACTIVITIES,
+    );
+  }
+
+  if (preferences.companionTypes !== undefined) {
+    normalized.companionTypes = normalizeStringList(
+      preferences.companionTypes,
+      MAX_COMPANIONS,
+    );
   }
 
   return normalized;

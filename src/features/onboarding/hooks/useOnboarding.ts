@@ -14,6 +14,8 @@ interface UseOnboardingReturn {
   vibe: number[];
   selectedDistricts: string[];
   budget: PriceLevel | null;
+  selectedActivities: string[];
+  selectedCompanionTypes: string[];
   isSubmitting: boolean;
   error: string | null;
   canGoNext: boolean;
@@ -21,6 +23,8 @@ interface UseOnboardingReturn {
   setVibe: (value: number[]) => void;
   toggleDistrict: (district: string) => void;
   setBudget: (budget: PriceLevel) => void;
+  toggleActivity: (activityId: string) => void;
+  toggleCompanionType: (companionId: string) => void;
   goToNextStep: () => void;
   goToPreviousStep: () => void;
   handleComplete: () => Promise<void>;
@@ -37,6 +41,10 @@ export const useOnboarding = (): UseOnboardingReturn => {
   const [vibe, setVibeState] = useState([50]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [budget, setBudgetState] = useState<PriceLevel | null>(null);
+  const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
+  const [selectedCompanionTypes, setSelectedCompanionTypes] = useState<
+    string[]
+  >([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,14 +79,34 @@ export const useOnboarding = (): UseOnboardingReturn => {
     setBudgetState(nextBudget);
   };
 
+  const toggleActivity = (activityId: string) => {
+    clearError();
+    setSelectedActivities((prev) =>
+      prev.includes(activityId)
+        ? prev.filter((id) => id !== activityId)
+        : [...prev, activityId],
+    );
+  };
+
+  const toggleCompanionType = (companionId: string) => {
+    clearError();
+    setSelectedCompanionTypes((prev) =>
+      prev.includes(companionId)
+        ? prev.filter((id) => id !== companionId)
+        : [...prev, companionId],
+    );
+  };
+
   const canGoNext =
     (step === 0 && selectedInterests.length >= 2) ||
     step === 1 ||
     (step === 2 && selectedDistricts.length >= 1) ||
-    (step === 3 && budget !== null);
+    (step === 3 && budget !== null) ||
+    (step === 4 && selectedActivities.length >= 1) ||
+    (step === 5 && selectedCompanionTypes.length >= 1);
 
   const goToNextStep = () => {
-    if (step < 3 && canGoNext) {
+    if (step < 5 && canGoNext) {
       clearError();
       setStep((prev) => prev + 1);
     }
@@ -117,6 +145,8 @@ export const useOnboarding = (): UseOnboardingReturn => {
         vibe: vibe[0],
         districts: selectedDistricts,
         budget,
+        favoriteActivities: selectedActivities,
+        companionTypes: selectedCompanionTypes,
       };
 
       await submitOnboardingPreferences(user.userId, preferences);
@@ -138,6 +168,8 @@ export const useOnboarding = (): UseOnboardingReturn => {
     vibe,
     selectedDistricts,
     budget,
+    selectedActivities,
+    selectedCompanionTypes,
     isSubmitting,
     error,
     canGoNext,
@@ -145,6 +177,8 @@ export const useOnboarding = (): UseOnboardingReturn => {
     setVibe,
     toggleDistrict,
     setBudget,
+    toggleActivity,
+    toggleCompanionType,
     goToNextStep,
     goToPreviousStep,
     handleComplete,

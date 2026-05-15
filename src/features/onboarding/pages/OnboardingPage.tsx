@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, useMemo, useState, useCallback } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
@@ -17,14 +17,17 @@ import { Slider } from "@/components/ui/slider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { INTERESTS, DISTRICTS } from "@/mocks/mockData";
+import { INTERESTS, POPULAR_DISTRICTS, type District } from "@/mocks/mockData";
 import { useOnboarding } from "@/features/onboarding/hooks/useOnboarding";
 import { useLogout } from "@/features/auth/hooks/useLogout";
 import {
   ONBOARDING_STEPS,
   BUDGET_OPTIONS,
   INTEREST_ICON_MAP,
+  FAVORITE_ACTIVITIES,
+  COMPANION_TYPES,
 } from "@/features/onboarding/mocks";
 import { AuthShell, AuthSurface } from "@/components/layout/AuthShell";
 import { OnboardingOptionButton } from "../components/OnboardingOptionButton";
@@ -46,8 +49,14 @@ const OnboardingPage = () => {
   const districtsHintId = useId();
   const budgetLegendId = useId();
   const budgetHintId = useId();
+  const activitiesLegendId = useId();
+  const activitiesHintId = useId();
+  const companionsLegendId = useId();
+  const companionsHintId = useId();
   const progressDescriptionId = useId();
   const { logoutUser, isLoading: isLoggingOut } = useLogout();
+  const [districtSearch, setDistrictSearch] = useState("");
+  const [districtPage, setDistrictPage] = useState(1);
 
   const {
     step,
@@ -55,6 +64,8 @@ const OnboardingPage = () => {
     vibe,
     selectedDistricts,
     budget,
+    selectedActivities,
+    selectedCompanionTypes,
     isSubmitting,
     error,
     canGoNext,
@@ -62,6 +73,8 @@ const OnboardingPage = () => {
     setVibe,
     toggleDistrict,
     setBudget,
+    toggleActivity,
+    toggleCompanionType,
     goToNextStep,
     goToPreviousStep,
     handleComplete,
@@ -72,23 +85,37 @@ const OnboardingPage = () => {
     t("onboarding.step.vibe"),
     t("onboarding.step.areas"),
     t("onboarding.step.budget"),
+    t("onboarding.step.activities"),
+    t("onboarding.step.companions"),
   ];
 
   const getInterestLabel = (interestId: string, fallback: string): string =>
     t(`onboarding.interest.${interestId}`, undefined, fallback);
 
-  const getDistrictLabel = (district: string): string =>
-    t(
-      `onboarding.district.${district.toLowerCase().replace(/\s+/g, "-")}`,
-      undefined,
-      district,
-    );
+  const getDistrictLabel = useCallback(
+    (district: District): string =>
+      t(
+        district.nameKey ??
+          `onboarding.district.${district.name
+            .toLowerCase()
+            .replace(/\s+/g, "-")}`,
+        undefined,
+        district.name,
+      ),
+    [t],
+  );
+
+  const getActivityLabel = (activityId: string, fallback: string): string =>
+    t(`onboarding.activity.${activityId}`, undefined, fallback);
+
+  const getCompanionLabel = (companionId: string, fallback: string): string =>
+    t(`onboarding.companion.${companionId}`, undefined, fallback);
 
   const getBudgetLabel = (value: string): string =>
     t(`budget.${value}`, undefined, value);
 
   const handleNext = async () => {
-    if (step < 3) {
+    if (step < 5) {
       goToNextStep();
       return;
     }
@@ -110,6 +137,8 @@ const OnboardingPage = () => {
 
   const selectedInterestsSet = new Set(selectedInterests);
   const selectedDistrictsSet = new Set(selectedDistricts);
+  const selectedActivitiesSet = new Set(selectedActivities);
+  const selectedCompanionsSet = new Set(selectedCompanionTypes);
   const vibeValue = vibe[0];
   const vibeBand =
     vibeValue < 30 ? "calm" : vibeValue < 70 ? "balanced" : "energetic";
@@ -121,6 +150,43 @@ const OnboardingPage = () => {
         : t("onboarding.vibe.energetic");
   const interestsRemaining = Math.max(0, 2 - selectedInterests.length);
   const districtsRemaining = Math.max(0, 1 - selectedDistricts.length);
+  const activitiesRemaining = Math.max(0, 1 - selectedActivities.length);
+  const companionsRemaining = Math.max(0, 1 - selectedCompanionTypes.length);
+
+  const districtLookup = useMemo(
+    () =>
+      new Map(POPULAR_DISTRICTS.map((district) => [district.name, district])),
+    [],
+  );
+
+  const filteredDistricts = useMemo(() => {
+    const query = districtSearch.trim().toLocaleLowerCase();
+    if (!query) {
+      return POPULAR_DISTRICTS;
+    }
+
+    return POPULAR_DISTRICTS.filter((district) => {
+      const label = getDistrictLabel(district).toLocaleLowerCase();
+      return (
+        label.includes(query) ||
+        district.name.toLocaleLowerCase().includes(query)
+      );
+    });
+  }, [districtSearch, getDistrictLabel]);
+
+  const districtPageSize = 12;
+  const districtTotalPages = Math.max(
+    1,
+    Math.ceil(filteredDistricts.length / districtPageSize),
+  );
+  const safeDistrictPage = Math.min(
+    Math.max(districtPage, 1),
+    districtTotalPages,
+  );
+  const displayedDistricts = useMemo(() => {
+    const startIndex = (safeDistrictPage - 1) * districtPageSize;
+    return filteredDistricts.slice(startIndex, startIndex + districtPageSize);
+  }, [filteredDistricts, safeDistrictPage]);
 
   const selectedInterestLabels = selectedInterests
     .map((interestId) =>
@@ -132,7 +198,32 @@ const OnboardingPage = () => {
     .join(", ");
 
   const selectedDistrictLabels = selectedDistricts
-    .map((district) => getDistrictLabel(district))
+    .map((districtName) =>
+      getDistrictLabel(
+        districtLookup.get(districtName) ??
+          ({ name: districtName } as District),
+      ),
+    )
+    .join(", ");
+
+  const selectedActivityLabels = selectedActivities
+    .map((activityId) =>
+      getActivityLabel(
+        activityId,
+        FAVORITE_ACTIVITIES.find((activity) => activity.id === activityId)
+          ?.label ?? activityId,
+      ),
+    )
+    .join(", ");
+
+  const selectedCompanionLabels = selectedCompanionTypes
+    .map((companionId) =>
+      getCompanionLabel(
+        companionId,
+        COMPANION_TYPES.find((companion) => companion.id === companionId)
+          ?.label ?? companionId,
+      ),
+    )
     .join(", ");
 
   const trackerSelections = [
@@ -157,6 +248,20 @@ const OnboardingPage = () => {
     {
       label: t("onboarding.selection.budget"),
       value: selectedBudgetLabel ?? t("onboarding.selection.pending"),
+    },
+    {
+      label: t("onboarding.selection.activities"),
+      value:
+        selectedActivityLabels.length > 0
+          ? selectedActivityLabels
+          : t("onboarding.selection.noneActivities"),
+    },
+    {
+      label: t("onboarding.selection.companions"),
+      value:
+        selectedCompanionLabels.length > 0
+          ? selectedCompanionLabels
+          : t("onboarding.selection.noneCompanions"),
     },
   ];
 
@@ -200,10 +305,14 @@ const OnboardingPage = () => {
         </Button>
       }
     >
-      <AuthSurface className="space-y-6 border-border/45 bg-card/90 shadow-lg backdrop-blur-sm sm:space-y-7 lg:space-y-0">
+      {/* FIX: removed top-level space-y (was causing height jumps between steps).
+           The inner grid now owns all vertical rhythm. */}
+      <AuthSurface className="border-border/45 bg-card/90 shadow-lg backdrop-blur-sm">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] lg:gap-7">
+          {/* FIX: self-start keeps the sidebar card from stretching to fill the full
+               grid row and fighting the right column's height */}
           <aside
-            className="hidden lg:flex lg:items-center"
+            className="hidden lg:flex lg:items-start lg:self-start lg:sticky lg:top-6"
             aria-label={t("onboarding.context")}
           >
             <Card className="w-full rounded-xl border-border/50 bg-card/60 p-4 shadow-none">
@@ -265,7 +374,9 @@ const OnboardingPage = () => {
             </Card>
           </aside>
 
-          <div className="space-y-6 sm:space-y-7">
+          {/* FIX: flex-col + gap instead of space-y so the sticky nav can sit at
+               the bottom without being pushed by height-changing animated content */}
+          <div className="flex flex-col gap-5 sm:gap-6 py-6 sm:py-7 lg:py-0">
             <header className="space-y-2 text-center">
               <Badge
                 variant="secondary"
@@ -318,8 +429,10 @@ const OnboardingPage = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 lg:hidden">
-              <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none">
+            {/* FIX: each card gets min-h so the row height stays stable when
+                 budget/district text wraps to a second line */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:hidden">
+              <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none min-h-[3.5rem]">
                 <p className="text-role-caption text-foreground/70">
                   {t("onboarding.selection.interests")}
                 </p>
@@ -327,7 +440,7 @@ const OnboardingPage = () => {
                   {formatNumber(selectedInterests.length)}
                 </p>
               </Card>
-              <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none">
+              <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none min-h-[3.5rem]">
                 <p className="text-role-caption text-foreground/70">
                   {t("onboarding.selection.districts")}
                 </p>
@@ -335,7 +448,7 @@ const OnboardingPage = () => {
                   {formatNumber(selectedDistricts.length)}
                 </p>
               </Card>
-              <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none">
+              <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none min-h-[3.5rem]">
                 <p className="text-role-caption text-foreground/70">
                   {t("onboarding.selection.budget")}
                 </p>
@@ -343,363 +456,613 @@ const OnboardingPage = () => {
                   {selectedBudgetLabel ?? t("onboarding.selection.pending")}
                 </p>
               </Card>
+              <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none min-h-[3.5rem]">
+                <p className="text-role-caption text-foreground/70">
+                  {t("onboarding.selection.activities")}
+                </p>
+                <p className="text-role-secondary font-medium text-foreground/90">
+                  {formatNumber(selectedActivities.length)}
+                </p>
+              </Card>
+              <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none min-h-[3.5rem]">
+                <p className="text-role-caption text-foreground/70">
+                  {t("onboarding.selection.companions")}
+                </p>
+                <p className="text-role-secondary font-medium text-foreground/90">
+                  {formatNumber(selectedCompanionTypes.length)}
+                </p>
+              </Card>
             </div>
 
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.section
-                key={step}
-                initial={
-                  shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 18 }
-                }
-                animate={
-                  shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }
-                }
-                exit={
-                  shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -18 }
-                }
-                transition={{
-                  duration: shouldReduceMotion ? 0.14 : 0.18,
-                  ease: [0.25, 1, 0.5, 1],
-                }}
-                className="space-y-5"
-              >
-                {step === 0 && (
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <h3 className="text-role-subheading text-foreground">
-                        {t("onboarding.interests.title")}
-                      </h3>
-                      <p
-                        id={interestsHintId}
-                        className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[48ch]"
-                      >
-                        {t("onboarding.interests.hint")}
-                      </p>
-                    </div>
-
-                    <fieldset aria-describedby={interestsHintId}>
-                      <legend id={interestsLegendId} className="sr-only">
-                        {t("onboarding.interests.legend")}
-                      </legend>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-                        {INTERESTS.map((item) => {
-                          const selected = selectedInterestsSet.has(item.id);
-                          const InterestIcon =
-                            INTEREST_ICON_MAP[item.icon] ?? Palette;
-
-                          return (
-                            <OnboardingOptionButton
-                              key={item.id}
-                              selected={selected}
-                              onClick={() => toggleInterest(item.id)}
-                              className="justify-center px-3 py-2"
-                              icon={<InterestIcon className="h-4 w-4" />}
-                            >
-                              {getInterestLabel(item.id, item.label)}
-                            </OnboardingOptionButton>
-                          );
-                        })}
-                      </div>
-                      <p
-                        className="mt-3 text-center text-role-caption text-foreground/70"
-                        aria-live="polite"
-                      >
-                        {interestsRemaining === 0
-                          ? t("onboarding.interests.selected", {
-                              count: formatNumber(selectedInterests.length),
-                            })
-                          : t("onboarding.interests.remaining", {
-                              count: formatNumber(interestsRemaining),
-                              label:
-                                interestsRemaining > 1
-                                  ? t("onboarding.interests.unit.plural")
-                                  : t("onboarding.interests.unit.singular"),
-                            })}
-                      </p>
-                    </fieldset>
-                  </div>
-                )}
-
-                {step === 1 && (
-                  <div className="space-y-6 px-1 sm:px-3">
-                    <div className="text-center">
-                      <h3
-                        id={vibeHeadingId}
-                        className="text-role-subheading text-foreground"
-                      >
-                        {t("onboarding.vibe.title")}
-                      </h3>
-                      <p
-                        id={vibeHintId}
-                        className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[44ch]"
-                      >
-                        {t("onboarding.vibe.hint")}
-                      </p>
-                    </div>
-
-                    <Card className="space-y-4 rounded-xl border-border/50 bg-card/60 p-4 shadow-none sm:p-5">
-                      <div className="grid grid-cols-3 gap-2">
-                        <div
-                          className={cn(
-                            "relative rounded-lg border px-2 py-2 text-center transition-colors",
-                            vibeBand === "calm"
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border/50 bg-background/60",
-                          )}
+            {/*
+              DEFINITIVE FIX:
+              - Outer wrapper has a fixed height (tall enough for the tallest step).
+              - BOTH entering and exiting sections are position:absolute so neither
+                one ever contributes to document flow or changes the wrapper height.
+              - overflow-hidden stops horizontal jitter from the x slide.
+              - overflow-y-auto lets tall steps (e.g. districts with search) scroll
+                inside the box rather than bursting out of it.
+            */}
+            <div className="relative h-[440px] sm:h-[420px] overflow-hidden">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.section
+                  key={step}
+                  initial={
+                    shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 28 }
+                  }
+                  animate={
+                    shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }
+                  }
+                  exit={
+                    shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -28 }
+                  }
+                  transition={{
+                    duration: shouldReduceMotion ? 0.12 : 0.2,
+                    ease: [0.32, 0.72, 0, 1],
+                  }}
+                  style={{ position: "absolute", inset: 0, overflowY: "auto" }}
+                  className="space-y-5 p-0.5"
+                >
+                  {step === 0 && (
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <h3 className="text-role-subheading text-foreground">
+                          {t("onboarding.interests.title")}
+                        </h3>
+                        <p
+                          id={interestsHintId}
+                          className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[48ch]"
                         >
-                          {vibeBand === "calm" ? (
-                            <span
-                              aria-hidden="true"
-                              className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-primary-foreground/40 bg-primary-foreground/15 text-primary-foreground"
-                            >
-                              <Check className="h-2.5 w-2.5" />
-                            </span>
-                          ) : null}
-                          <Moon
-                            className={cn(
-                              "mx-auto h-4 w-4",
-                              vibeBand === "calm"
-                                ? "text-primary-foreground"
-                                : "text-primary/80",
-                            )}
-                          />
-                          <p
-                            className={cn(
-                              "mt-1 text-role-caption",
-                              vibeBand === "calm"
-                                ? "text-primary-foreground"
-                                : "text-foreground/80",
-                            )}
-                          >
-                            {t("onboarding.vibe.calm")}
-                          </p>
-                        </div>
-                        <div
-                          className={cn(
-                            "relative rounded-lg border px-2 py-2 text-center transition-colors",
-                            vibeBand === "balanced"
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border/50 bg-background/60",
-                          )}
-                        >
-                          {vibeBand === "balanced" ? (
-                            <span
-                              aria-hidden="true"
-                              className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-primary-foreground/40 bg-primary-foreground/15 text-primary-foreground"
-                            >
-                              <Check className="h-2.5 w-2.5" />
-                            </span>
-                          ) : null}
-                          <Compass
-                            className={cn(
-                              "mx-auto h-4 w-4",
-                              vibeBand === "balanced"
-                                ? "text-primary-foreground"
-                                : "text-primary/80",
-                            )}
-                          />
-                          <p
-                            className={cn(
-                              "mt-1 text-role-caption",
-                              vibeBand === "balanced"
-                                ? "text-primary-foreground"
-                                : "text-foreground/80",
-                            )}
-                          >
-                            {t("onboarding.vibe.balanced")}
-                          </p>
-                        </div>
-                        <div
-                          className={cn(
-                            "relative rounded-lg border px-2 py-2 text-center transition-colors",
-                            vibeBand === "energetic"
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border/50 bg-background/60",
-                          )}
-                        >
-                          {vibeBand === "energetic" ? (
-                            <span
-                              aria-hidden="true"
-                              className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-primary-foreground/40 bg-primary-foreground/15 text-primary-foreground"
-                            >
-                              <Check className="h-2.5 w-2.5" />
-                            </span>
-                          ) : null}
-                          <Sparkles
-                            className={cn(
-                              "mx-auto h-4 w-4",
-                              vibeBand === "energetic"
-                                ? "text-primary-foreground"
-                                : "text-primary/80",
-                            )}
-                          />
-                          <p
-                            className={cn(
-                              "mt-1 text-role-caption",
-                              vibeBand === "energetic"
-                                ? "text-primary-foreground"
-                                : "text-foreground/80",
-                            )}
-                          >
-                            {t("onboarding.vibe.energetic")}
-                          </p>
-                        </div>
+                          {t("onboarding.interests.hint")}
+                        </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-role-caption text-foreground/70">
-                          <span>{t("onboarding.vibe.rangeLow")}</span>
-                          <span className="text-right">
-                            {t("onboarding.vibe.rangeHigh")}
-                          </span>
-                        </div>
-                        <Slider
-                          value={vibe}
-                          onValueChange={setVibe}
-                          aria-labelledby={vibeHeadingId}
-                          aria-describedby={`${vibeHintId} ${vibeValueId}`}
-                          max={100}
-                          step={1}
-                        />
-                        <div className="flex items-center justify-between gap-3">
-                          <Badge
-                            variant="outline"
-                            className="rounded-full border-border/60 bg-background/70 px-2.5 py-0.5 text-role-caption text-foreground/80"
-                          >
-                            {t("onboarding.vibe.score", {
-                              score: formatNumber(vibeValue),
-                            })}
-                          </Badge>
-                          <p
-                            id={vibeValueId}
-                            className="text-role-secondary text-right font-medium text-foreground"
-                            aria-live="polite"
-                          >
-                            {vibeSummaryTitle}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <div className="rounded-xl border border-border/55 bg-background/55 px-4 py-3">
-                      <p className="text-role-caption uppercase tracking-wide text-foreground/60">
-                        {t("onboarding.vibe.current")}
-                      </p>
-                      <p className="mt-1 text-role-secondary font-medium text-foreground">
-                        {vibeSummaryTitle}
-                      </p>
-                      <p
-                        className="mt-1 text-role-secondary text-foreground/80"
-                        aria-live="polite"
-                      >
-                        {vibeSummaryDescription}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {step === 2 && (
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <h3 className="text-role-subheading text-foreground">
-                        {t("onboarding.districts.title")}
-                      </h3>
-                      <p
-                        id={districtsHintId}
-                        className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[44ch]"
-                      >
-                        {t("onboarding.districts.hint")}
-                      </p>
-                    </div>
-
-                    <fieldset aria-describedby={districtsHintId}>
-                      <legend id={districtsLegendId} className="sr-only">
-                        {t("onboarding.districts.legend")}
-                      </legend>
-                      <div className="max-h-[38vh] overflow-y-auto rounded-xl border border-border/45 p-2 sm:max-h-none sm:overflow-visible sm:border-0 sm:p-0">
-                        <div className="flex flex-wrap justify-center gap-2">
-                          {DISTRICTS.map((district) => {
-                            const selected = selectedDistrictsSet.has(district);
+                      <fieldset aria-describedby={interestsHintId}>
+                        <legend id={interestsLegendId} className="sr-only">
+                          {t("onboarding.interests.legend")}
+                        </legend>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                          {INTERESTS.map((item) => {
+                            const selected = selectedInterestsSet.has(item.id);
+                            const InterestIcon =
+                              INTEREST_ICON_MAP[item.icon] ?? Palette;
 
                             return (
                               <OnboardingOptionButton
-                                key={district}
+                                key={item.id}
                                 selected={selected}
-                                onClick={() => toggleDistrict(district)}
-                                shape="pill"
-                                className="px-4 py-2"
+                                onClick={() => toggleInterest(item.id)}
+                                className="justify-center px-3 py-2"
+                                icon={<InterestIcon className="h-4 w-4" />}
                               >
-                                {getDistrictLabel(district)}
+                                {getInterestLabel(item.id, item.label)}
                               </OnboardingOptionButton>
                             );
                           })}
                         </div>
-                      </div>
-                      <p
-                        className="mt-3 text-center text-role-caption text-foreground/70"
-                        aria-live="polite"
-                      >
-                        {districtsRemaining === 0
-                          ? t("onboarding.districts.selected", {
-                              count: formatNumber(selectedDistricts.length),
-                              label:
-                                selectedDistricts.length > 1
-                                  ? t("onboarding.districts.unit.plural")
-                                  : t("onboarding.districts.unit.singular"),
-                            })
-                          : t("onboarding.districts.remaining", {
-                              count: formatNumber(districtsRemaining),
-                            })}
-                      </p>
-                    </fieldset>
-                  </div>
-                )}
-
-                {step === 3 && (
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <h3 className="text-role-subheading text-foreground">
-                        {t("onboarding.budget.title")}
-                      </h3>
-                      <p
-                        id={budgetHintId}
-                        className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[42ch]"
-                      >
-                        {t("onboarding.budget.hint")}
-                      </p>
+                        <p
+                          className="mt-3 text-center text-role-caption text-foreground/70"
+                          aria-live="polite"
+                        >
+                          {interestsRemaining === 0
+                            ? t("onboarding.interests.selected", {
+                                count: formatNumber(selectedInterests.length),
+                              })
+                            : t("onboarding.interests.remaining", {
+                                count: formatNumber(interestsRemaining),
+                                label:
+                                  interestsRemaining > 1
+                                    ? t("onboarding.interests.unit.plural")
+                                    : t("onboarding.interests.unit.singular"),
+                              })}
+                        </p>
+                      </fieldset>
                     </div>
+                  )}
 
-                    <fieldset aria-describedby={budgetHintId}>
-                      <legend id={budgetLegendId} className="sr-only">
-                        {t("onboarding.budget.legend")}
-                      </legend>
-                      <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
-                        {BUDGET_OPTIONS.map((option) => (
-                          <OnboardingOptionButton
-                            key={option.value}
-                            selected={budget === option.value}
-                            onClick={() => setBudget(option.value)}
-                            className="justify-center px-4 py-2.5"
-                          >
-                            {getBudgetLabel(option.value)}
-                          </OnboardingOptionButton>
-                        ))}
+                  {step === 1 && (
+                    <div className="space-y-6 px-1 sm:px-3">
+                      <div className="text-center">
+                        <h3
+                          id={vibeHeadingId}
+                          className="text-role-subheading text-foreground"
+                        >
+                          {t("onboarding.vibe.title")}
+                        </h3>
+                        <p
+                          id={vibeHintId}
+                          className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[44ch]"
+                        >
+                          {t("onboarding.vibe.hint")}
+                        </p>
                       </div>
-                      <p
-                        className="mt-3 text-center text-role-caption text-foreground/70"
-                        aria-live="polite"
-                      >
-                        {selectedBudgetLabel
-                          ? t("onboarding.budget.selected", {
-                              budget: selectedBudgetLabel,
-                            })
-                          : t("onboarding.budget.empty")}
-                      </p>
-                    </fieldset>
-                  </div>
-                )}
-              </motion.section>
-            </AnimatePresence>
+
+                      <Card className="space-y-4 rounded-xl border-border/50 bg-card/60 p-4 shadow-none sm:p-5">
+                        <div className="grid grid-cols-3 gap-2">
+                          <div
+                            className={cn(
+                              "relative rounded-lg border px-2 py-2 text-center transition-colors",
+                              vibeBand === "calm"
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border/50 bg-background/60",
+                            )}
+                          >
+                            {vibeBand === "calm" ? (
+                              <span
+                                aria-hidden="true"
+                                className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-primary-foreground/40 bg-primary-foreground/15 text-primary-foreground"
+                              >
+                                <Check className="h-2.5 w-2.5" />
+                              </span>
+                            ) : null}
+                            <Moon
+                              className={cn(
+                                "mx-auto h-4 w-4",
+                                vibeBand === "calm"
+                                  ? "text-primary-foreground"
+                                  : "text-primary/80",
+                              )}
+                            />
+                            <p
+                              className={cn(
+                                "mt-1 text-role-caption",
+                                vibeBand === "calm"
+                                  ? "text-primary-foreground"
+                                  : "text-foreground/80",
+                              )}
+                            >
+                              {t("onboarding.vibe.calm")}
+                            </p>
+                          </div>
+                          <div
+                            className={cn(
+                              "relative rounded-lg border px-2 py-2 text-center transition-colors",
+                              vibeBand === "balanced"
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border/50 bg-background/60",
+                            )}
+                          >
+                            {vibeBand === "balanced" ? (
+                              <span
+                                aria-hidden="true"
+                                className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-primary-foreground/40 bg-primary-foreground/15 text-primary-foreground"
+                              >
+                                <Check className="h-2.5 w-2.5" />
+                              </span>
+                            ) : null}
+                            <Compass
+                              className={cn(
+                                "mx-auto h-4 w-4",
+                                vibeBand === "balanced"
+                                  ? "text-primary-foreground"
+                                  : "text-primary/80",
+                              )}
+                            />
+                            <p
+                              className={cn(
+                                "mt-1 text-role-caption",
+                                vibeBand === "balanced"
+                                  ? "text-primary-foreground"
+                                  : "text-foreground/80",
+                              )}
+                            >
+                              {t("onboarding.vibe.balanced")}
+                            </p>
+                          </div>
+                          <div
+                            className={cn(
+                              "relative rounded-lg border px-2 py-2 text-center transition-colors",
+                              vibeBand === "energetic"
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border/50 bg-background/60",
+                            )}
+                          >
+                            {vibeBand === "energetic" ? (
+                              <span
+                                aria-hidden="true"
+                                className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-primary-foreground/40 bg-primary-foreground/15 text-primary-foreground"
+                              >
+                                <Check className="h-2.5 w-2.5" />
+                              </span>
+                            ) : null}
+                            <Sparkles
+                              className={cn(
+                                "mx-auto h-4 w-4",
+                                vibeBand === "energetic"
+                                  ? "text-primary-foreground"
+                                  : "text-primary/80",
+                              )}
+                            />
+                            <p
+                              className={cn(
+                                "mt-1 text-role-caption",
+                                vibeBand === "energetic"
+                                  ? "text-primary-foreground"
+                                  : "text-foreground/80",
+                              )}
+                            >
+                              {t("onboarding.vibe.energetic")}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-role-caption text-foreground/70">
+                            <span>{t("onboarding.vibe.rangeLow")}</span>
+                            <span className="text-right">
+                              {t("onboarding.vibe.rangeHigh")}
+                            </span>
+                          </div>
+                          <Slider
+                            value={vibe}
+                            onValueChange={setVibe}
+                            aria-labelledby={vibeHeadingId}
+                            aria-describedby={`${vibeHintId} ${vibeValueId}`}
+                            max={100}
+                            step={1}
+                          />
+                          <div className="flex items-center justify-between gap-3">
+                            <Badge
+                              variant="outline"
+                              className="rounded-full border-border/60 bg-background/70 px-2.5 py-0.5 text-role-caption text-foreground/80"
+                            >
+                              {t("onboarding.vibe.score", {
+                                score: formatNumber(vibeValue),
+                              })}
+                            </Badge>
+                            <p
+                              id={vibeValueId}
+                              className="text-role-secondary text-right font-medium text-foreground"
+                              aria-live="polite"
+                            >
+                              {vibeSummaryTitle}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+
+                      <div className="rounded-xl border border-border/55 bg-background/55 px-4 py-3">
+                        <p className="text-role-caption uppercase tracking-wide text-foreground/60">
+                          {t("onboarding.vibe.current")}
+                        </p>
+                        <p className="mt-1 text-role-secondary font-medium text-foreground">
+                          {vibeSummaryTitle}
+                        </p>
+                        <p
+                          className="mt-1 text-role-secondary text-foreground/80"
+                          aria-live="polite"
+                        >
+                          {vibeSummaryDescription}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {step === 2 && (
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <h3 className="text-role-subheading text-foreground">
+                          {t("onboarding.districts.title")}
+                        </h3>
+                        <p
+                          id={districtsHintId}
+                          className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[44ch]"
+                        >
+                          {t("onboarding.districts.hint")}
+                        </p>
+                      </div>
+
+                      <fieldset aria-describedby={districtsHintId}>
+                        <legend id={districtsLegendId} className="sr-only">
+                          {t("onboarding.districts.legend")}
+                        </legend>
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Input
+                              value={districtSearch}
+                              onChange={(event) => {
+                                setDistrictSearch(event.target.value);
+                                setDistrictPage(1);
+                              }}
+                              placeholder={t(
+                                "onboarding.districts.searchPlaceholder",
+                              )}
+                              className="h-11 rounded-xl border-border/60 bg-background/70"
+                              aria-label={t("onboarding.districts.searchLabel")}
+                            />
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-role-caption text-foreground/60">
+                              <span>
+                                {t("onboarding.districts.resultsSummary", {
+                                  shown: formatNumber(
+                                    displayedDistricts.length,
+                                  ),
+                                  total: formatNumber(filteredDistricts.length),
+                                })}
+                              </span>
+                              {districtTotalPages > 1 ? (
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={safeDistrictPage <= 1}
+                                    onClick={() =>
+                                      setDistrictPage(
+                                        Math.max(1, safeDistrictPage - 1),
+                                      )
+                                    }
+                                    className="h-8 rounded-full border-border/60 bg-background/60 px-3 text-[11px] font-semibold"
+                                  >
+                                    {t("onboarding.districts.paginationPrev")}
+                                  </Button>
+                                  <span className="text-[11px] font-semibold text-foreground/70">
+                                    {t("onboarding.districts.pageLabel", {
+                                      current: formatNumber(safeDistrictPage),
+                                      total: formatNumber(districtTotalPages),
+                                    })}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={
+                                      safeDistrictPage >= districtTotalPages
+                                    }
+                                    onClick={() =>
+                                      setDistrictPage(
+                                        Math.min(
+                                          districtTotalPages,
+                                          safeDistrictPage + 1,
+                                        ),
+                                      )
+                                    }
+                                    className="h-8 rounded-full border-border/60 bg-background/60 px-3 text-[11px] font-semibold"
+                                  >
+                                    {t("onboarding.districts.paginationNext")}
+                                  </Button>
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          {selectedDistricts.length > 0 ? (
+                            <div className="rounded-xl border border-border/50 bg-card/60 p-3">
+                              <p className="text-role-caption uppercase tracking-wide text-foreground/60">
+                                {t("onboarding.districts.selectedTitle")}
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {selectedDistricts.map((districtName) => {
+                                  const selectedDistrict =
+                                    districtLookup.get(districtName) ??
+                                    ({ name: districtName } as District);
+                                  return (
+                                    <OnboardingOptionButton
+                                      key={`selected-${districtName}`}
+                                      selected
+                                      onClick={() =>
+                                        toggleDistrict(districtName)
+                                      }
+                                      shape="pill"
+                                      className="px-3 py-1.5"
+                                    >
+                                      {getDistrictLabel(selectedDistrict)}
+                                    </OnboardingOptionButton>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : null}
+
+                          <div className="rounded-xl border border-border/45 p-2 sm:border-0 sm:p-0">
+                            {displayedDistricts.length === 0 ? (
+                              <div className="rounded-xl border border-dashed border-border/60 bg-muted/40 px-4 py-6 text-center">
+                                <p className="text-role-secondary text-foreground/80">
+                                  {t("onboarding.districts.empty")}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                {displayedDistricts.map((district) => {
+                                  const selected = selectedDistrictsSet.has(
+                                    district.name,
+                                  );
+
+                                  return (
+                                    <OnboardingOptionButton
+                                      key={district.id}
+                                      selected={selected}
+                                      onClick={() =>
+                                        toggleDistrict(district.name)
+                                      }
+                                      shape="pill"
+                                      className="px-4 py-2"
+                                    >
+                                      {getDistrictLabel(district)}
+                                    </OnboardingOptionButton>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <p
+                          className="mt-3 text-center text-role-caption text-foreground/70"
+                          aria-live="polite"
+                        >
+                          {districtsRemaining === 0
+                            ? t("onboarding.districts.selected", {
+                                count: formatNumber(selectedDistricts.length),
+                                label:
+                                  selectedDistricts.length > 1
+                                    ? t("onboarding.districts.unit.plural")
+                                    : t("onboarding.districts.unit.singular"),
+                              })
+                            : t("onboarding.districts.remaining", {
+                                count: formatNumber(districtsRemaining),
+                              })}
+                        </p>
+                      </fieldset>
+                    </div>
+                  )}
+
+                  {step === 3 && (
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <h3 className="text-role-subheading text-foreground">
+                          {t("onboarding.budget.title")}
+                        </h3>
+                        <p
+                          id={budgetHintId}
+                          className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[42ch]"
+                        >
+                          {t("onboarding.budget.hint")}
+                        </p>
+                      </div>
+
+                      <fieldset aria-describedby={budgetHintId}>
+                        <legend id={budgetLegendId} className="sr-only">
+                          {t("onboarding.budget.legend")}
+                        </legend>
+                        <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
+                          {BUDGET_OPTIONS.map((option) => (
+                            <OnboardingOptionButton
+                              key={option.value}
+                              selected={budget === option.value}
+                              onClick={() => setBudget(option.value)}
+                              className="justify-center px-4 py-2.5"
+                            >
+                              {getBudgetLabel(option.value)}
+                            </OnboardingOptionButton>
+                          ))}
+                        </div>
+                        <p
+                          className="mt-3 text-center text-role-caption text-foreground/70"
+                          aria-live="polite"
+                        >
+                          {selectedBudgetLabel
+                            ? t("onboarding.budget.selected", {
+                                budget: selectedBudgetLabel,
+                              })
+                            : t("onboarding.budget.empty")}
+                        </p>
+                      </fieldset>
+                    </div>
+                  )}
+
+                  {step === 4 && (
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <h3 className="text-role-subheading text-foreground">
+                          {t("onboarding.activities.title")}
+                        </h3>
+                        <p
+                          id={activitiesHintId}
+                          className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[44ch]"
+                        >
+                          {t("onboarding.activities.hint")}
+                        </p>
+                      </div>
+
+                      <fieldset aria-describedby={activitiesHintId}>
+                        <legend id={activitiesLegendId} className="sr-only">
+                          {t("onboarding.activities.legend")}
+                        </legend>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {FAVORITE_ACTIVITIES.map((activity) => {
+                            const selected = selectedActivitiesSet.has(
+                              activity.id,
+                            );
+
+                            return (
+                              <OnboardingOptionButton
+                                key={activity.id}
+                                selected={selected}
+                                onClick={() => toggleActivity(activity.id)}
+                                className="justify-center px-3 py-2"
+                              >
+                                {getActivityLabel(activity.id, activity.label)}
+                              </OnboardingOptionButton>
+                            );
+                          })}
+                        </div>
+                        <p
+                          className="mt-3 text-center text-role-caption text-foreground/70"
+                          aria-live="polite"
+                        >
+                          {activitiesRemaining === 0
+                            ? t("onboarding.activities.selected", {
+                                count: formatNumber(selectedActivities.length),
+                              })
+                            : t("onboarding.activities.remaining", {
+                                count: formatNumber(activitiesRemaining),
+                              })}
+                        </p>
+                      </fieldset>
+                    </div>
+                  )}
+
+                  {step === 5 && (
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <h3 className="text-role-subheading text-foreground">
+                          {t("onboarding.companions.title")}
+                        </h3>
+                        <p
+                          id={companionsHintId}
+                          className="mx-auto text-role-secondary text-foreground/80 sm:max-w-[44ch]"
+                        >
+                          {t("onboarding.companions.hint")}
+                        </p>
+                      </div>
+
+                      <fieldset aria-describedby={companionsHintId}>
+                        <legend id={companionsLegendId} className="sr-only">
+                          {t("onboarding.companions.legend")}
+                        </legend>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {COMPANION_TYPES.map((companion) => {
+                            const selected = selectedCompanionsSet.has(
+                              companion.id,
+                            );
+
+                            return (
+                              <OnboardingOptionButton
+                                key={companion.id}
+                                selected={selected}
+                                onClick={() =>
+                                  toggleCompanionType(companion.id)
+                                }
+                                className="justify-center px-3 py-2"
+                              >
+                                {getCompanionLabel(
+                                  companion.id,
+                                  companion.label,
+                                )}
+                              </OnboardingOptionButton>
+                            );
+                          })}
+                        </div>
+                        <p
+                          className="mt-3 text-center text-role-caption text-foreground/70"
+                          aria-live="polite"
+                        >
+                          {companionsRemaining === 0
+                            ? t("onboarding.companions.selected", {
+                                count: formatNumber(
+                                  selectedCompanionTypes.length,
+                                ),
+                              })
+                            : t("onboarding.companions.remaining", {
+                                count: formatNumber(companionsRemaining),
+                              })}
+                        </p>
+                      </fieldset>
+                    </div>
+                  )}
+                </motion.section>
+              </AnimatePresence>
+            </div>
+            {/* end overflow-hidden step wrapper */}
 
             {error && (
               <Alert
@@ -711,7 +1074,7 @@ const OnboardingPage = () => {
                   <span className="min-w-0 flex-1 break-words" dir="auto">
                     {error}
                   </span>
-                  {step === 3 && (
+                  {step === ONBOARDING_STEPS.length - 1 && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -727,7 +1090,10 @@ const OnboardingPage = () => {
               </Alert>
             )}
 
-            <div className="sticky bottom-0 -mx-5 px-5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:static sm:mx-0 sm:px-0 sm:pb-0 sm:pt-0">
+            {/* FIX: mt-auto pushes nav to the bottom of the flex-col without
+                 sticky positioning, which was the primary cause of the "vibration"
+                 when content height changed during step transitions. */}
+            <div className="mt-auto pt-3 border-t border-border/30">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Button
                   type="button"
@@ -750,7 +1116,7 @@ const OnboardingPage = () => {
                       <Loader2 className="h-4 w-4 animate-spin" />
                       {t("onboarding.action.saving")}
                     </>
-                  ) : step === 3 ? (
+                  ) : step === ONBOARDING_STEPS.length - 1 ? (
                     <>
                       {t("onboarding.action.finish")}
                       <ArrowRight className="rtl-mirror h-4 w-4" />

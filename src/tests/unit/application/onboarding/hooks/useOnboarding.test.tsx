@@ -78,6 +78,10 @@ describe("useOnboarding", () => {
       result.current.toggleDistrict("Maadi");
       result.current.goToNextStep();
       result.current.setBudget("midrange");
+      result.current.goToNextStep();
+      result.current.toggleActivity("cafe");
+      result.current.goToNextStep();
+      result.current.toggleCompanionType("solo");
     });
 
     await act(async () => {
@@ -89,6 +93,8 @@ describe("useOnboarding", () => {
       vibe: 50,
       districts: ["Maadi"],
       budget: "midrange",
+      favoriteActivities: ["cafe"],
+      companionTypes: ["solo"],
     });
     expect(updateUserMock).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith("/");

@@ -8,6 +8,8 @@ interface OnboardingPayload {
   vibe: number;
   preferredDistricts: string[];
   budgetRange: string | null;
+  favorite_activities: string[];
+  companion_type: string[];
 }
 
 export const onboardingApi: OnboardingDataSource = {
@@ -20,6 +22,8 @@ export const onboardingApi: OnboardingDataSource = {
       vibe: preferences.vibe,
       preferredDistricts: preferences.districts,
       budgetRange: preferences.budget ?? null,
+      favorite_activities: preferences.favoriteActivities,
+      companion_type: preferences.companionTypes,
     };
     await axiosInstance.post(
       API_ENDPOINTS.onboarding.submitPreferences(userId),
@@ -39,6 +43,10 @@ export const onboardingApi: OnboardingDataSource = {
       payload.preferredDistricts = preferences.districts;
     if (preferences.budget !== undefined)
       payload.budgetRange = preferences.budget ?? null;
+    if (preferences.favoriteActivities !== undefined)
+      payload.favorite_activities = preferences.favoriteActivities;
+    if (preferences.companionTypes !== undefined)
+      payload.companion_type = preferences.companionTypes;
     await axiosInstance.patch(
       API_ENDPOINTS.onboarding.updatePreferences(userId),
       payload,

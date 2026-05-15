@@ -32,6 +32,8 @@ describe("onboarding preference normalization", () => {
       vibe: 61.8,
       districts: ["Maadi", "maadi", "Downtown"],
       budget: "midrange",
+      favoriteActivities: [" Cafe ", "Cafe", "Restaurant"],
+      companionTypes: ["solo", "Solo", "Couple"],
     });
 
     expect(normalized).toEqual({
@@ -39,6 +41,8 @@ describe("onboarding preference normalization", () => {
       vibe: 62,
       districts: ["Maadi", "Downtown"],
       budget: "midrange",
+      favoriteActivities: ["Cafe", "Restaurant"],
+      companionTypes: ["solo", "Couple"],
     });
   });
 
@@ -49,6 +53,8 @@ describe("onboarding preference normalization", () => {
         vibe: 50,
         districts: ["Maadi"],
         budget: "midrange",
+        favoriteActivities: ["Cafe"],
+        companionTypes: ["solo"],
       }),
     ).toThrow("at least two interests");
 
@@ -58,6 +64,8 @@ describe("onboarding preference normalization", () => {
         vibe: 50,
         districts: [],
         budget: "midrange",
+        favoriteActivities: ["Cafe"],
+        companionTypes: ["solo"],
       }),
     ).toThrow("at least one district");
 
@@ -67,8 +75,32 @@ describe("onboarding preference normalization", () => {
         vibe: 50,
         districts: ["Maadi"],
         budget: null,
+        favoriteActivities: ["Cafe"],
+        companionTypes: ["solo"],
       }),
     ).toThrow("budget range");
+
+    expect(() =>
+      normalizeOnboardingPreferences({
+        interests: ["A", "B"],
+        vibe: 50,
+        districts: ["Maadi"],
+        budget: "midrange",
+        favoriteActivities: [],
+        companionTypes: ["solo"],
+      }),
+    ).toThrow("favorite activity");
+
+    expect(() =>
+      normalizeOnboardingPreferences({
+        interests: ["A", "B"],
+        vibe: 50,
+        districts: ["Maadi"],
+        budget: "midrange",
+        favoriteActivities: ["Cafe"],
+        companionTypes: [],
+      }),
+    ).toThrow("companion type");
   });
 
   it("normalizes partial preference updates and mapper wrappers", () => {
@@ -76,12 +108,14 @@ describe("onboarding preference normalization", () => {
       interests: [" Art ", "art", "Music"],
       vibe: 43.2,
       budget: "luxury",
+      favoriteActivities: ["Cafe", "Cafe", "Bar"],
     });
 
     expect(partial).toEqual({
       interests: ["Art", "Music"],
       vibe: 43,
       budget: "luxury",
+      favoriteActivities: ["Cafe", "Bar"],
     });
 
     expect(
@@ -90,12 +124,16 @@ describe("onboarding preference normalization", () => {
         vibe: 75,
         districts: ["Maadi"],
         budget: "cheap",
+        favoriteActivities: ["Cafe"],
+        companionTypes: ["solo"],
       }),
     ).toEqual({
       interests: ["Cafes", "Nightlife"],
       vibe: 75,
       districts: ["Maadi"],
       budget: "cheap",
+      favoriteActivities: ["Cafe"],
+      companionTypes: ["solo"],
     });
 
     expect(mapUpdatePreferences({ vibe: 101 })).toEqual({ vibe: 100 });
