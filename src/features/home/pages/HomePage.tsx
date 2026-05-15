@@ -25,8 +25,10 @@ import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Input } from "@/components/ui/input";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
+import { GuidedTour } from "@/features/home/components/GuidedTour";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useHome } from "@/features/home/hooks/useHomeHook";
+import { useGuidedTour } from "@/features/home/hooks/useGuidedTour";
 import { cn } from "@/lib/utils";
 import {
   FILTER_OPTIONS,
@@ -145,6 +147,8 @@ const HomePage = () => {
   const { t, formatNumber, locale } = useI18n();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { tourActive, currentStep, totalSteps, next, skip, finish } =
+    useGuidedTour();
 
   const {
     search,
@@ -522,6 +526,17 @@ const HomePage = () => {
         ease: EASE_OUT_QUART,
       }}
     >
+      <AnimatePresence>
+        {tourActive && (
+          <GuidedTour
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            onNext={next}
+            onSkip={skip}
+            onFinish={finish}
+          />
+        )}
+      </AnimatePresence>
       {/* ====== HERO SECTION ====== */}
       <div className="relative h-[340px] overflow-hidden sm:h-[390px] lg:h-[420px]">
         <motion.div
@@ -559,6 +574,8 @@ const HomePage = () => {
           <motion.div
             className="relative w-full max-w-2xl"
             variants={heroItemVariants}
+            data-tour="tour-search"
+            id="tour-search"
           >
             <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-white/95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
             <Input
@@ -588,6 +605,8 @@ const HomePage = () => {
             className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide"
             aria-label={t("home.hero.filterAria")}
             variants={heroItemVariants}
+            data-tour="tour-filters"
+            id="tour-filters"
           >
             {localizedFilters.map((filter, index) => {
               const Icon = filter.icon;
@@ -689,7 +708,11 @@ const HomePage = () => {
           {/* ── LEFT: Main Feed ── */}
           <div className="flex-1 min-w-0 space-y-12">
             {/* ── QUICK CONTROLS (MOBILE/TABLET) ── */}
-            <section className="space-y-4 lg:hidden">
+            <section
+              className="space-y-4 lg:hidden"
+              data-tour="tour-mood"
+              id="tour-mood"
+            >
               <div className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="text-base font-semibold text-foreground">
@@ -756,7 +779,11 @@ const HomePage = () => {
             </section>
 
             {/* ── Venue Discovery Studio (New Endpoints) ── */}
-            <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-5 sm:p-6 shadow-sm">
+            <section
+              className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-5 sm:p-6 shadow-sm"
+              data-tour="tour-discovery"
+              id="tour-discovery"
+            >
               <div className="relative z-10 space-y-5">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
@@ -1218,7 +1245,7 @@ const HomePage = () => {
             </AnimatePresence>
 
             {/* ── Curated For You ── */}
-            <section className="space-y-4">
+            <section className="space-y-4" data-tour="tour-curated" id="tour-curated">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
@@ -1543,7 +1570,11 @@ const HomePage = () => {
           {/* ── RIGHT SIDEBAR ── */}
           <aside className="sticky top-6 hidden w-[280px] flex-shrink-0 flex-col gap-6 lg:flex">
             {/* Mood Selector Card */}
-            <div className="bg-card rounded-3xl border border-border/50 shadow-sm p-5 space-y-4">
+            <div
+              className="bg-card rounded-3xl border border-border/50 shadow-sm p-5 space-y-4"
+              data-tour="tour-mood"
+              id="tour-mood"
+            >
               <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
                 <span className="text-xl">✨</span>
                 {t("home.sidebar.moodTitle")}

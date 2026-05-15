@@ -188,8 +188,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.fields.email": "Email",
     "auth.fields.phone": "Phone Number",
     "auth.fields.dateOfBirth": "Date of Birth",
-    "auth.placeholders.fullName": "John Doe",
-    "auth.placeholders.email": "you@example.com",
+    "auth.placeholders.fullName": "Mohamed Ali",
+    "auth.placeholders.email": "mohamed@example.com",
     "auth.placeholders.phone": "+20 123 456 7890",
 
     "auth.validation.emailMax": "Email must be less than 100 characters",
@@ -239,6 +239,12 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "onboarding.step.vibe": "Vibe",
     "onboarding.step.areas": "Areas",
     "onboarding.step.budget": "Budget",
+
+    "tour.skip": "Skip tour",
+    "tour.next": "Next",
+    "tour.done": "Let's explore! 🚀",
+    "tour.stepCounter": "{current} / {total}",
+    "tour.ariaLabel": "Guided tour — step {current} of {total}",
 
     "onboarding.interests.title": "What do you love?",
     "onboarding.interests.hint":
@@ -1710,8 +1716,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.fields.email": "البريد الإلكتروني",
     "auth.fields.phone": "رقم الهاتف",
     "auth.fields.dateOfBirth": "تاريخ الميلاد",
-    "auth.placeholders.fullName": "محمد علي",
-    "auth.placeholders.email": "you@example.com",
+    "auth.placeholders.fullName": "Mohamed Ali",
+    "auth.placeholders.email": "mohamed@example.com",
     "auth.placeholders.phone": "+20 123 456 7890",
 
     "auth.validation.emailMax": "يجب ألا يزيد البريد الإلكتروني عن 100 حرف",
@@ -1762,6 +1768,12 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "onboarding.step.vibe": "الأجواء",
     "onboarding.step.areas": "المناطق",
     "onboarding.step.budget": "الميزانية",
+
+    "tour.skip": "تخطي الجولة",
+    "tour.next": "التالي",
+    "tour.done": "هيّا نكتشف! 🚀",
+    "tour.stepCounter": "{current} من {total}",
+    "tour.ariaLabel": "جولة إرشادية — خطوة {current} من {total}",
 
     "onboarding.interests.title": "ما الذي تحبه؟",
     "onboarding.interests.hint": "اختر اهتمامين على الأقل لتخصيص ترشيحاتك.",

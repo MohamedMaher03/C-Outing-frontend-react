@@ -111,11 +111,14 @@ const AppLayout = () => {
                   key={item.path}
                   onClick={() => navigate(item.path)}
                   aria-current={active ? "page" : undefined}
+                  {...(item.path === "/map"
+                    ? { id: "tour-map-nav", "data-tour": "tour-map-nav" }
+                    : {})}
                   className={cn(
                     "flex min-w-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors max-[1250px]:px-3",
                     active
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground ",
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -186,9 +189,14 @@ const AppLayout = () => {
                   key={item.path}
                   onClick={() => navigate(item.path)}
                   aria-current={active ? "page" : undefined}
+                  {...(item.path === "/map"
+                    ? { id: "tour-map-nav", "data-tour": "tour-map-nav" }
+                    : {})}
                   className={cn(
                     "flex h-full min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1.5 py-2 transition-colors",
-                    active ? "text-secondary" : "text-muted-foreground",
+                    active
+                      ? "text-secondary dark:text-primary"
+                      : "text-muted-foreground",
                   )}
                 >
                   <item.icon

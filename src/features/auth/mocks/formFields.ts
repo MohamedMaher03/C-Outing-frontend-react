@@ -5,7 +5,7 @@ export const LOGIN_FORM_FIELDS: LoginField[] = [
   {
     id: "email",
     label: "Email",
-    placeholder: "you@example.com",
+    placeholder: "mohamed@example.com",
     type: "email",
   },
 ];
@@ -14,14 +14,14 @@ export const SIGN_UP_FORM_FIELDS: SignUpFieldConfig[] = [
   {
     id: "fullName",
     label: "Full Name",
-    placeholder: "John Doe",
+    placeholder: "Mohamed Ali",
     type: "text",
     Icon: User,
   },
   {
     id: "email",
     label: "Email",
-    placeholder: "you@example.com",
+    placeholder: "mohamed@example.com",
     type: "email",
     Icon: Mail,
   },

@@ -5,8 +5,8 @@ describe("auth register payload", () => {
     const avatar = new File(["avatar"], "avatar.png", { type: "image/png" });
 
     const payload = buildRegisterPayload({
-      name: "John Doe",
-      email: "john@example.com",
+      name: "Mohamed Ali",
+      email: "mohamed@example.com",
       password: "Pass1234",
       phoneNumber: "+201234567890",
       dateOfBirth: "2000-01-01",
@@ -14,16 +14,16 @@ describe("auth register payload", () => {
     });
 
     expect(payload.params.DateOfBirth).toBe("2000-01-01T00:00:00Z");
-    expect(payload.formData.get("Name")).toBe("John Doe");
-    expect(payload.formData.get("Email")).toBe("john@example.com");
+    expect(payload.formData.get("Name")).toBe("Mohamed Ali");
+    expect(payload.formData.get("Email")).toBe("mohamed@example.com");
     expect(payload.formData.get("PhoneNumber")).toBe("+201234567890");
     expect(payload.formData.get("Avatar")).toBe(avatar);
   });
 
   it("normalizes non-YYYY-MM-DD dates through Date ISO conversion", () => {
     const payload = buildRegisterPayload({
-      name: "Jane Doe",
-      email: "jane@example.com",
+      name: "Mohamed Ali",
+      email: "mohamed@example.com",
       password: "Pass1234",
       phoneNumber: "+201234567890",
       dateOfBirth: "2001-03-04T10:30:00.000Z",
