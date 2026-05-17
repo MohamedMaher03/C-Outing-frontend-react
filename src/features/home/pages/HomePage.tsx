@@ -199,7 +199,6 @@ const HomePage = () => {
     reloadPlaces,
     categories,
     moodOptions,
-    trendingTags,
     popularDistricts,
   } = useHome();
 
@@ -749,33 +748,6 @@ const HomePage = () => {
                   })}
                 </div>
               </div>
-
-              <div className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
-                <h2 className="text-base font-semibold text-foreground">
-                  {t("home.mobile.trendingTags")}
-                </h2>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {trendingTags.map((tag) => (
-                    <button
-                      type="button"
-                      key={`mobile-tag-${tag.id}`}
-                      onClick={() => setSearch(tag.label)}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-full border border-border/60 bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors duration-200 hover:border-primary/55 hover:bg-primary/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                    >
-                      <span className="text-muted-foreground">#</span>
-                      <span
-                        className="max-w-[120px] truncate"
-                        title={tag.label}
-                      >
-                        {tag.label}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground tabular-nums">
-                        {compactNumberFormatter.format(tag.searchCount)}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
             </section>
 
             {/* ── Venue Discovery Studio (New Endpoints) ── */}
@@ -1245,7 +1217,11 @@ const HomePage = () => {
             </AnimatePresence>
 
             {/* ── Curated For You ── */}
-            <section className="space-y-4" data-tour="tour-curated" id="tour-curated">
+            <section
+              className="space-y-4"
+              data-tour="tour-curated"
+              id="tour-curated"
+            >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
@@ -1625,32 +1601,6 @@ const HomePage = () => {
                     </button>
                   );
                 })}
-              </div>
-            </div>
-
-            {/* Trending Tags Card */}
-            <div className="bg-card rounded-3xl border border-border/50 shadow-sm p-5 space-y-4">
-              <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                <Flame className="h-4 w-4 text-secondary dark:text-primary" />
-                {t("home.sidebar.trendingTitle")}
-              </h2>
-              <div className="flex gap-2 flex-wrap">
-                {trendingTags.map((tag) => (
-                  <button
-                    type="button"
-                    key={tag.id}
-                    onClick={() => setSearch(tag.label)}
-                    className="inline-flex min-h-11 items-center gap-1 rounded-full border border-border/50 bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors duration-200 hover:border-primary/55 hover:bg-primary/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  >
-                    <span className="text-muted-foreground">#</span>
-                    <span className="max-w-[110px] truncate" title={tag.label}>
-                      {tag.label}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground tabular-nums">
-                      {compactNumberFormatter.format(tag.searchCount)}
-                    </span>
-                  </button>
-                ))}
               </div>
             </div>
           </aside>

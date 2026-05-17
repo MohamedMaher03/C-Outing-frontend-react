@@ -138,8 +138,8 @@ export const useHome = (): UseHomeReturn => {
       const [homeData, personalizedSeedPool, trendingSeedPool] =
         await Promise.all([
           homeService.fetchHomePageData({ count: 10 }),
-          homeService.fetchPersonalizedRecommendations({ count: 50 }),
-          homeService.fetchTrendingRecommendations({ count: 50 }),
+          homeService.fetchPersonalizedRecommendations({ count: 20 }),
+          homeService.fetchTrendingRecommendations({ count: 20 }),
         ]);
       const { curatedPlaces, trendingPlaces } = homeData;
       setRawCurated(curatedPlaces);
