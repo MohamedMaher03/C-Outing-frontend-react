@@ -74,6 +74,9 @@ const PublicProfilePage = lazy(
   () => import("@/features/users/pages/PublicProfilePage"),
 );
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const SessionPage = lazy(
+  () => import("@/features/session/pages/SessionPage"),
+);
 
 const AdminDashboardPage = lazy(
   () => import("@/features/admin/pages/AdminDashboardPage"),
@@ -229,6 +232,8 @@ function App() {
             <Route path="/profile/privacy" element={<PrivacyPage />} />
             <Route path="/profile/help" element={<HelpSupportPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/session/:code" element={<SessionPage />} />
+            <Route path="/session" element={<SessionPage />} />
             <Route
               path="/notifications"
               element={<Navigate to="/" replace />}

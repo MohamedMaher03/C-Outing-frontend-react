@@ -41,6 +41,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
 import { normalizeSearchTerm } from "@/utils/textNormalization";
 import { getTranslatedText } from "@/utils/helpers";
+import { GroupSessionWidget } from "@/features/session/components/GroupSessionWidget";
 
 const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const;
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
@@ -706,6 +707,11 @@ const HomePage = () => {
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           {/* ── LEFT: Main Feed ── */}
           <div className="flex-1 min-w-0 space-y-12">
+            {/* Group Session Banner (mobile / tablet) */}
+            <section className="lg:hidden" aria-label="Group Outing Session">
+              <GroupSessionWidget variant="banner" />
+            </section>
+
             {/* ── QUICK CONTROLS (MOBILE/TABLET) ── */}
             <section
               className="space-y-4 lg:hidden"
@@ -1545,6 +1551,9 @@ const HomePage = () => {
 
           {/* ── RIGHT SIDEBAR ── */}
           <aside className="sticky top-6 hidden w-[280px] flex-shrink-0 flex-col gap-6 lg:flex">
+            {/* Group Session Card */}
+            <GroupSessionWidget variant="sidebar" />
+
             {/* Mood Selector Card */}
             <div
               className="bg-card rounded-3xl border border-border/50 shadow-sm p-5 space-y-4"

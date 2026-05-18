@@ -131,6 +131,15 @@ export const API_ENDPOINTS = {
     getSystemHealth: "/api/v1/Admin/system/health",
   },
 
+  // ── Sessions (Group Recommendations) ─────────────────────────
+  session: {
+    create: "/api/v1/Session",
+    join: (code: string) => `/api/v1/Session/${code}/join`,
+    leave: (code: string) => `/api/v1/Session/${code}/leave`,
+    get: (code: string) => `/api/v1/Session/${code}`,
+    recommend: (code: string) => `/api/v1/Session/${code}/recommend`,
+  },
+
   // ── Moderator ────────────────────────────────────────────────
   moderator: {
     getStats: "/api/v1/Moderator/stats",
