@@ -708,7 +708,10 @@ const HomePage = () => {
           {/* ── LEFT: Main Feed ── */}
           <div className="flex-1 min-w-0 space-y-12">
             {/* Group Session Banner (mobile / tablet) */}
-            <section className="lg:hidden" aria-label="Group Outing Session">
+            <section
+              className="lg:hidden"
+              aria-label={t("session.widget.ariaLabel")}
+            >
               <GroupSessionWidget variant="banner" />
             </section>
 

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Users, Plus, Hash, ArrowRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/components/i18n/useI18n";
 import { cn } from "@/lib/utils";
 
 interface GroupSessionWidgetProps {
@@ -18,6 +19,7 @@ export function GroupSessionWidget({
   className,
 }: GroupSessionWidgetProps) {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const [mode, setMode] = useState<"idle" | "join">("idle");
   const [codeInput, setCodeInput] = useState("");
@@ -33,7 +35,7 @@ export function GroupSessionWidget({
   const goJoin = () => {
     const code = codeInput.trim().toUpperCase();
     if (code.length !== 6) {
-      setLocalError("Please enter the full 6-character code.");
+      setLocalError(t("session.widget.join.error"));
       return;
     }
     navigate(`/session?action=join&code=${code}`);
@@ -56,7 +58,7 @@ export function GroupSessionWidget({
           className,
         )}
         id="group-session-banner"
-        aria-label="Group Outing Session"
+        aria-label={t("session.widget.ariaLabel")}
       >
         {/* Decorative blobs */}
         <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[hsl(38,42%,58%)]/15 blur-2xl" />
@@ -69,12 +71,13 @@ export function GroupSessionWidget({
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[hsl(38,42%,78%)]">
-                New
+                {t("session.widget.badgeNew")}
               </p>
-              <h2 className="text-base font-bold text-white">Group Outing</h2>
+              <h2 className="text-base font-bold text-white">
+                {t("session.widget.title")}
+              </h2>
               <p className="mt-0.5 text-xs leading-relaxed text-white/70">
-                Create a session, share a 6-digit code, and get recommendations
-                tailored to your whole group.
+                {t("session.widget.banner.description")}
               </p>
             </div>
           </div>
@@ -86,7 +89,7 @@ export function GroupSessionWidget({
               id="session-create-btn-banner"
             >
               <Plus className="h-3.5 w-3.5" />
-              Create Session
+              {t("session.widget.create")}
             </Button>
             <Button
               variant="outline"
@@ -95,7 +98,7 @@ export function GroupSessionWidget({
               id="session-join-btn-banner"
             >
               <Hash className="h-3.5 w-3.5" />
-              Join Session
+              {t("session.widget.join")}
             </Button>
           </div>
         </div>
@@ -119,10 +122,10 @@ export function GroupSessionWidget({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") goJoin();
                   }}
-                  placeholder="ENTER CODE"
+                  placeholder={t("session.widget.join.placeholderBanner")}
                   maxLength={6}
                   className="h-10 flex-1 rounded-xl border-white/25 bg-white/10 text-center font-mono text-base font-bold uppercase tracking-[0.3em] text-white placeholder:text-white/40 focus:border-[hsl(38,42%,58%)]/80 focus:ring-[hsl(38,42%,58%)]/30"
-                  aria-label="Session code input"
+                  aria-label={t("session.widget.join.inputAriaBanner")}
                   id="session-code-input-banner"
                   autoFocus
                 />
@@ -130,7 +133,7 @@ export function GroupSessionWidget({
                   onClick={goJoin}
                   disabled={codeInput.length !== 6}
                   className="h-10 w-10 rounded-xl bg-[hsl(38,42%,58%)] p-0 text-[hsl(216,50%,16%)] hover:bg-[hsl(38,42%,66%)]"
-                  aria-label="Join session"
+                  aria-label={t("session.widget.join.actionAria")}
                 >
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -142,7 +145,7 @@ export function GroupSessionWidget({
                     setLocalError(null);
                   }}
                   className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-white/20 text-white/70 transition-colors hover:bg-white/10"
-                  aria-label="Cancel"
+                  aria-label={t("common.cancel")}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -165,7 +168,7 @@ export function GroupSessionWidget({
         className,
       )}
       id="group-session-sidebar"
-      aria-label="Group Outing Session"
+      aria-label={t("session.widget.ariaLabel")}
     >
       {/* Decorative blobs */}
       <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-[hsl(38,42%,58%)]/20 blur-2xl" />
@@ -179,17 +182,16 @@ export function GroupSessionWidget({
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[hsl(38,42%,78%)]">
-              Plan With Your Friends
+              {t("session.widget.sidebar.eyebrow")}
             </p>
             <h2 className="text-sm font-bold text-white leading-tight">
-              Group Outing
+              {t("session.widget.title")}
             </h2>
           </div>
         </div>
 
         <p className="text-xs leading-relaxed text-white/70">
-          Plan an outing with friends. Create a session, share your 6-digit
-          code, and get recommendations that match everyone.
+          {t("session.widget.sidebar.description")}
         </p>
 
         {/* Create button */}
@@ -199,7 +201,7 @@ export function GroupSessionWidget({
           id="session-create-btn-sidebar"
         >
           <Plus className="h-3.5 w-3.5" />
-          Create Session
+          {t("session.widget.create")}
         </Button>
 
         {/* Join toggle */}
@@ -215,7 +217,7 @@ export function GroupSessionWidget({
               className="w-full text-center text-xs font-semibold text-white/60 transition-colors hover:text-white/90 focus-visible:outline-none"
               id="session-join-toggle-sidebar"
             >
-              Have a code? Join →
+              {t("session.widget.join.toggle")}
             </motion.button>
           ) : (
             <motion.div
@@ -236,10 +238,10 @@ export function GroupSessionWidget({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") goJoin();
                   }}
-                  placeholder="XXXXXX"
+                  placeholder={t("session.widget.join.placeholderSidebar")}
                   maxLength={6}
                   className="h-10 flex-1 rounded-xl border-white/25 bg-white/10 text-center font-mono text-sm font-bold uppercase tracking-[0.28em] text-white placeholder:text-white/35 focus:border-[hsl(38,42%,58%)]/80 focus:ring-[hsl(38,42%,58%)]/30"
-                  aria-label="Enter session code"
+                  aria-label={t("session.widget.join.inputAria")}
                   id="session-code-input-sidebar"
                   autoFocus
                 />
@@ -251,7 +253,7 @@ export function GroupSessionWidget({
                     setLocalError(null);
                   }}
                   className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-white/20 text-white/60 transition-colors hover:bg-white/10"
-                  aria-label="Cancel join"
+                  aria-label={t("session.widget.join.cancelAria")}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -263,7 +265,7 @@ export function GroupSessionWidget({
                 id="session-join-submit-sidebar"
               >
                 <ArrowRight className="h-3.5 w-3.5" />
-                Join Session
+                {t("session.widget.join")}
               </Button>
               {localError && (
                 <p className="text-xs text-red-300">{localError}</p>

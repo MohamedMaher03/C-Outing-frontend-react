@@ -20,8 +20,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "../hooks/useSession";
-import type { SessionMember, SessionRecommendation } from "../types/session.types";
+import type {
+  SessionMember,
+  SessionRecommendation,
+} from "../types/session.types";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useI18n } from "@/components/i18n/useI18n";
 import { cn } from "@/lib/utils";
 
 // ── Easing helpers ────────────────────────────────────────────
@@ -39,7 +43,8 @@ const AVATAR_COLORS = [
 
 function getAvatarColor(id: string) {
   let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < id.length; i++)
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
@@ -70,7 +75,10 @@ function MemberAvatar({
         <img
           src={member.avatarUrl}
           alt={member.name}
-          className={cn("rounded-full object-cover ring-2 ring-border/60", sizeClasses[size])}
+          className={cn(
+            "rounded-full object-cover ring-2 ring-border/60",
+            sizeClasses[size],
+          )}
         />
       ) : (
         <div
@@ -94,6 +102,7 @@ function MemberAvatar({
 
 // ── Code digit display ────────────────────────────────────────
 function SessionCode({ code }: { code: string }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -110,8 +119,8 @@ function SessionCode({ code }: { code: string }) {
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({
-          title: "Join my C-Outing session!",
-          text: `Use code ${code} to join my group recommendation session on C-Outing.`,
+          title: t("session.share.title"),
+          text: t("session.share.text", { code }),
         });
       } catch {
         // user cancelled share
@@ -119,12 +128,12 @@ function SessionCode({ code }: { code: string }) {
     } else {
       await handleCopy();
     }
-  }, [code, handleCopy]);
+  }, [code, handleCopy, t]);
 
   return (
     <div className="space-y-3">
       <p className="text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-        Session Code
+        {t("session.code.label")}
       </p>
       <div className="flex items-center justify-center gap-2">
         {code.split("").map((digit, i) => (
@@ -132,7 +141,11 @@ function SessionCode({ code }: { code: string }) {
             key={i}
             initial={{ opacity: 0, y: -12, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: i * 0.07, duration: 0.32, ease: EASE_OUT_QUART }}
+            transition={{
+              delay: i * 0.07,
+              duration: 0.32,
+              ease: EASE_OUT_QUART,
+            }}
             className="flex h-12 w-10 items-center justify-center rounded-xl border-2 border-[hsl(38,42%,58%)]/60 bg-[hsl(38,42%,58%)]/8 text-xl font-bold tracking-widest text-foreground shadow-sm dark:border-[hsl(38,42%,58%)]/40 dark:bg-[hsl(38,42%,58%)]/12 sm:h-14 sm:w-12 sm:text-2xl"
           >
             {digit}
@@ -150,7 +163,7 @@ function SessionCode({ code }: { code: string }) {
           ) : (
             <Copy className="h-3.5 w-3.5" />
           )}
-          {copied ? "Copied!" : "Copy Code"}
+          {copied ? t("session.code.copied") : t("session.code.copy")}
         </button>
         <button
           type="button"
@@ -158,7 +171,7 @@ function SessionCode({ code }: { code: string }) {
           className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[hsl(38,42%,58%)]/50 bg-[hsl(38,42%,58%)]/10 px-4 text-xs font-semibold text-[hsl(38,42%,40%)] transition-colors hover:bg-[hsl(38,42%,58%)]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-[hsl(38,42%,72%)]"
         >
           <Share2 className="h-3.5 w-3.5" />
-          Share
+          {t("session.code.share")}
         </button>
       </div>
     </div>
@@ -167,13 +180,16 @@ function SessionCode({ code }: { code: string }) {
 
 // ── Standalone copy button (used inside share panel) ─────────
 function SessionCopyButton({ code }: { code: string }) {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
   return (
     <button
@@ -181,24 +197,35 @@ function SessionCopyButton({ code }: { code: string }) {
       onClick={handleCopy}
       className="flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-4 text-xs font-semibold text-white transition-colors hover:bg-white/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
     >
-      {copied ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
-      {copied ? "Copied!" : "Copy Code"}
+      {copied ? (
+        <Check className="h-3.5 w-3.5 text-green-400" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" />
+      )}
+      {copied ? t("session.code.copied") : t("session.code.copy")}
     </button>
   );
 }
 
 // ── Standalone share button (used inside share panel) ─────────
 function SessionShareButton({ code }: { code: string }) {
+  const { t } = useI18n();
   const handleShare = async () => {
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({
-          title: "Join my C-Outing Group Session!",
-          text: `Use code ${code} to join my group recommendation session on C-Outing.`,
+          title: t("session.share.title"),
+          text: t("session.share.text", { code }),
         });
-      } catch { /* cancelled */ }
+      } catch {
+        /* cancelled */
+      }
     } else {
-      try { await navigator.clipboard.writeText(code); } catch { /* ignore */ }
+      try {
+        await navigator.clipboard.writeText(code);
+      } catch {
+        /* ignore */
+      }
     }
   };
   return (
@@ -208,11 +235,10 @@ function SessionShareButton({ code }: { code: string }) {
       className="flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-[hsl(38,42%,58%)] px-4 text-xs font-bold text-[hsl(216,50%,14%)] transition-colors hover:bg-[hsl(38,42%,66%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(38,42%,58%)]/60"
     >
       <Share2 className="h-3.5 w-3.5" />
-      Share
+      {t("session.code.share")}
     </button>
   );
 }
-
 
 function RecommendationCard({
   rec,
@@ -223,6 +249,7 @@ function RecommendationCard({
   index: number;
   onClick: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <motion.article
       initial={{ opacity: 0, y: 20 }}
@@ -233,7 +260,7 @@ function RecommendationCard({
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && onClick()}
-      aria-label={`View ${rec.name}`}
+      aria-label={t("session.page.recs.cardAria", { name: rec.name })}
     >
       {/* Image */}
       <div className="relative h-36 overflow-hidden bg-muted sm:h-44">
@@ -257,7 +284,9 @@ function RecommendationCard({
       </div>
 
       <div className="p-4 space-y-2">
-        <h3 className="font-semibold text-foreground leading-snug">{rec.name}</h3>
+        <h3 className="font-semibold text-foreground leading-snug">
+          {rec.name}
+        </h3>
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
           <span className="truncate">{rec.address}</span>
@@ -304,6 +333,7 @@ export default function SessionPage() {
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
   const { user } = useAuth();
+  const { t } = useI18n();
 
   const {
     status,
@@ -347,7 +377,7 @@ export default function SessionPage() {
       actionHandled.current = true;
       void restoreSession(code);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
   const handleLeave = useCallback(async () => {
@@ -374,12 +404,12 @@ export default function SessionPage() {
           <Users className="h-7 w-7 text-white" />
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Group Outing Session
+          {t("session.page.title")}
         </h1>
         <p className="text-sm text-muted-foreground">
           {isHost
-            ? "You created this session. Share the code with up to 10 friends."
-            : "You've joined! Waiting for the host to get recommendations…"}
+            ? t("session.page.subtitle.host")
+            : t("session.page.subtitle.member")}
         </p>
       </div>
 
@@ -387,7 +417,7 @@ export default function SessionPage() {
       {status === "creating" && (
         <div className="flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin text-[hsl(38,42%,58%)]" />
-          Setting up your session…
+          {t("session.page.creating")}
         </div>
       )}
 
@@ -402,7 +432,7 @@ export default function SessionPage() {
                 <div className="flex items-center gap-2">
                   <Share2 className="h-4 w-4 text-[hsl(38,42%,72%)]" />
                   <p className="text-xs font-bold uppercase tracking-[0.12em] text-[hsl(38,42%,72%)]">
-                    Share with friends · max {MAX_MEMBERS} people
+                    {t("session.page.share.title", { max: MAX_MEMBERS })}
                   </p>
                 </div>
                 {/* Code digits */}
@@ -412,7 +442,11 @@ export default function SessionPage() {
                       key={i}
                       initial={{ opacity: 0, y: -10, scale: 0.8 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ delay: i * 0.06, duration: 0.28, ease: EASE_OUT_QUART }}
+                      transition={{
+                        delay: i * 0.06,
+                        duration: 0.28,
+                        ease: EASE_OUT_QUART,
+                      }}
                       className="flex h-12 w-10 items-center justify-center rounded-xl border-2 border-[hsl(38,42%,58%)]/50 bg-white/8 text-xl font-bold tracking-widest text-white sm:h-14 sm:w-12 sm:text-2xl"
                     >
                       {digit}
@@ -420,7 +454,7 @@ export default function SessionPage() {
                   ))}
                 </div>
                 <p className="text-center text-xs text-white/60">
-                  Friends: open C-Outing → Group Outing → "Have a code? Join →"
+                  {t("session.page.share.hint")}
                 </p>
                 <div className="flex gap-2">
                   <SessionCopyButton code={session.code} />
@@ -433,16 +467,28 @@ export default function SessionPage() {
           {/* Non-host: read-only code badge */}
           {!isHost && (
             <div className="rounded-3xl border border-border/60 bg-card p-5 text-center space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Session Code</p>
-              <p className="font-mono text-3xl font-bold tracking-[0.3em] text-foreground">{session.code}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                {t("session.code.label")}
+              </p>
+              <p className="font-mono text-3xl font-bold tracking-[0.3em] text-foreground">
+                {session.code}
+              </p>
             </div>
           )}
 
           {/* Capacity bar */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-muted-foreground">Members in session</span>
-              <span className={memberCount >= MAX_MEMBERS ? "text-destructive" : "text-foreground"}>
+              <span className="text-muted-foreground">
+                {t("session.page.members.label")}
+              </span>
+              <span
+                className={
+                  memberCount >= MAX_MEMBERS
+                    ? "text-destructive"
+                    : "text-foreground"
+                }
+              >
                 {memberCount} / {MAX_MEMBERS}
               </span>
             </div>
@@ -450,24 +496,36 @@ export default function SessionPage() {
               <motion.div
                 className={cn(
                   "h-full rounded-full",
-                  memberCount >= MAX_MEMBERS ? "bg-destructive" : memberCount >= 7 ? "bg-amber-500" : "bg-[hsl(38,42%,58%)]",
+                  memberCount >= MAX_MEMBERS
+                    ? "bg-destructive"
+                    : memberCount >= 7
+                      ? "bg-amber-500"
+                      : "bg-[hsl(38,42%,58%)]",
                 )}
                 initial={{ width: 0 }}
-                animate={{ width: `${Math.min((memberCount / MAX_MEMBERS) * 100, 100)}%` }}
+                animate={{
+                  width: `${Math.min((memberCount / MAX_MEMBERS) * 100, 100)}%`,
+                }}
                 transition={{ duration: 0.5, ease: EASE_OUT_QUART }}
               />
             </div>
             {memberCount >= MAX_MEMBERS && (
-              <p className="text-xs text-destructive font-medium">Session is full — no more members can join.</p>
+              <p className="text-xs text-destructive font-medium">
+                {t("session.page.members.full")}
+              </p>
             )}
           </div>
 
           {/* Member list */}
           <div className="rounded-3xl border border-border/60 bg-card overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/50">
-              <p className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">In the room</p>
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                {t("session.page.members.listTitle")}
+              </p>
               {isHost && memberCount === 1 && (
-                <p className="text-[11px] text-muted-foreground">Waiting for friends to join…</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {t("session.page.members.waiting")}
+                </p>
               )}
             </div>
             <div className="divide-y divide-border/40">
@@ -481,17 +539,31 @@ export default function SessionPage() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      transition={{ delay: i * 0.04, duration: 0.22, ease: EASE_OUT_QUART }}
+                      transition={{
+                        delay: i * 0.04,
+                        duration: 0.22,
+                        ease: EASE_OUT_QUART,
+                      }}
                       className="flex items-center gap-3 px-5 py-3.5"
                     >
-                      <MemberAvatar member={member} isHost={isMemberHost} size="md" />
+                      <MemberAvatar
+                        member={member}
+                        isHost={isMemberHost}
+                        size="md"
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate">
                           {member.name}
-                          {isMe && <span className="ml-1.5 text-xs font-normal text-muted-foreground">(you)</span>}
+                          {isMe && (
+                            <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                              {t("session.page.member.you")}
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {isMemberHost ? "Host · created session" : "Member"}
+                          {isMemberHost
+                            ? t("session.page.member.host")
+                            : t("session.page.member.member")}
                         </p>
                       </div>
                       <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
@@ -506,10 +578,15 @@ export default function SessionPage() {
               {memberCount < MAX_MEMBERS && (
                 <div className="flex items-center gap-3 px-5 py-3 opacity-40">
                   <div className="h-11 w-11 rounded-full border-2 border-dashed border-border/80 flex items-center justify-center">
-                    <span className="text-xs font-bold text-muted-foreground">+</span>
+                    <span className="text-xs font-bold text-muted-foreground">
+                      +
+                    </span>
                   </div>
                   <p className="text-xs text-muted-foreground italic">
-                    {MAX_MEMBERS - memberCount} spot{MAX_MEMBERS - memberCount !== 1 ? "s" : ""} remaining
+                    {t("session.page.members.remaining", {
+                      count: MAX_MEMBERS - memberCount,
+                      suffix: MAX_MEMBERS - memberCount !== 1 ? "s" : "",
+                    })}
                   </p>
                 </div>
               )}
@@ -526,12 +603,14 @@ export default function SessionPage() {
                 id="session-get-recommendations-btn"
               >
                 <Sparkles className="h-4 w-4" />
-                {memberCount < 2 ? "Waiting for at least 1 friend…" : `Get Recommendations (${memberCount} members)`}
+                {memberCount < 2
+                  ? t("session.page.action.waitingFriend")
+                  : t("session.page.action.getRecs", { count: memberCount })}
               </Button>
             ) : (
               <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-dashed border-border/70 py-3.5 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Waiting for host to start recommendations…
+                {t("session.page.action.waitingHost")}
               </div>
             )}
             <Button
@@ -541,7 +620,7 @@ export default function SessionPage() {
               id="session-leave-btn"
             >
               <LogOut className="h-4 w-4" />
-              Leave
+              {t("session.page.action.leave")}
             </Button>
           </div>
         </>
@@ -559,8 +638,6 @@ export default function SessionPage() {
       )}
     </motion.div>
   );
-
-
 
   // ── Loading Recommendations ───────────────────────────────────
   const renderLoadingRecs = () => (
@@ -582,9 +659,11 @@ export default function SessionPage() {
         )}
       </div>
       <div className="space-y-2">
-        <h2 className="text-xl font-bold text-foreground">Finding the Perfect Spots</h2>
+        <h2 className="text-xl font-bold text-foreground">
+          {t("session.page.loading.title")}
+        </h2>
         <p className="text-sm text-muted-foreground">
-          Analysing everyone's preferences to curate the best group outing recommendations…
+          {t("session.page.loading.subtitle")}
         </p>
       </div>
       <div className="flex gap-1.5">
@@ -618,13 +697,13 @@ export default function SessionPage() {
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[hsl(38,42%,45%)] dark:text-[hsl(38,42%,68%)]">
-            Group Recommendations
+            {t("session.page.recs.badge")}
           </p>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Perfect Spots for Your Group
+            {t("session.page.recs.title")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {memberCount} members · curated just for you
+            {t("session.page.recs.subtitle", { count: memberCount })}
           </p>
         </div>
 
@@ -637,7 +716,7 @@ export default function SessionPage() {
               className="h-9 rounded-full px-4 text-xs font-semibold"
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              Refresh
+              {t("session.page.recs.refresh")}
             </Button>
           )}
           <Button
@@ -647,7 +726,7 @@ export default function SessionPage() {
             className="h-9 rounded-full border-destructive/30 px-4 text-xs font-semibold text-destructive hover:bg-destructive/5"
           >
             <LogOut className="h-3.5 w-3.5" />
-            End Session
+            {t("session.page.recs.end")}
           </Button>
         </div>
       </div>
@@ -671,7 +750,7 @@ export default function SessionPage() {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Recommendations for{" "}
+            {t("session.page.recs.forLabel")}{" "}
             <span className="font-semibold text-foreground">
               {session.members.map((m) => m.name.split(" ")[0]).join(", ")}
             </span>
@@ -694,9 +773,11 @@ export default function SessionPage() {
       ) : (
         <div className="rounded-3xl border border-dashed border-border/70 bg-card/70 py-16 text-center">
           <Sparkles className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-          <p className="font-semibold text-foreground">No recommendations yet</p>
+          <p className="font-semibold text-foreground">
+            {t("session.page.recs.empty.title")}
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Make sure all group members have completed onboarding with their preferences.
+            {t("session.page.recs.empty.subtitle")}
           </p>
         </div>
       )}
@@ -727,14 +808,16 @@ export default function SessionPage() {
         <Users className="h-8 w-8 text-muted-foreground" />
       </div>
       <div className="space-y-2">
-        <h2 className="text-xl font-bold text-foreground">Session Not Found</h2>
+        <h2 className="text-xl font-bold text-foreground">
+          {t("session.page.idle.title")}
+        </h2>
         <p className="text-sm text-muted-foreground">
-          {error ?? "This session may have expired or the code is invalid."}
+          {error ?? t("session.page.idle.subtitle")}
         </p>
       </div>
       <Button onClick={() => navigate("/")} className="rounded-full px-6">
         <ArrowLeft className="h-4 w-4" />
-        Back to Home
+        {t("session.page.idle.back")}
       </Button>
     </motion.div>
   );
@@ -748,11 +831,13 @@ export default function SessionPage() {
             type="button"
             onClick={() => navigate("/")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border/70 bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            aria-label="Back to home"
+            aria-label={t("session.page.backHomeAria")}
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <h1 className="text-sm font-semibold text-foreground">Group Outing</h1>
+          <h1 className="text-sm font-semibold text-foreground">
+            {t("session.page.topbar.title")}
+          </h1>
           {(status === "waiting" || status === "loading-recs") && session && (
             <span className="ml-auto rounded-full border border-border/60 bg-muted px-3 py-1 text-xs font-mono font-semibold tracking-widest text-foreground">
               {session.code}
@@ -763,7 +848,9 @@ export default function SessionPage() {
 
       {/* Content */}
       <AnimatePresence mode="wait">
-        {(status === "waiting" || status === "creating" || status === "joining") &&
+        {(status === "waiting" ||
+          status === "creating" ||
+          status === "joining") &&
           renderWaitingRoom()}
         {status === "loading-recs" && renderLoadingRecs()}
         {status === "ready" && renderRecommendations()}
