@@ -321,7 +321,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
       const [homeData, personalizedSeedPool, trendingSeedPool] =
         await Promise.all([
           mapAtlasService.fetchHomePageData({ count: 12 }),
-          mapAtlasService.fetchPersonalizedRecommendations({ count: 70 }),
+          mapAtlasService.fetchPersonalizedRecommendations({ count: 30 }),
           mapAtlasService.fetchTrendingRecommendations({ count: 70 }),
         ]);
 

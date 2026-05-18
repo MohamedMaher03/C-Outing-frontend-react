@@ -69,8 +69,7 @@ export const API_ENDPOINTS = {
 
   // ── Onboarding (preferences submission) ──────────────────────
   onboarding: {
-    submitPreferences: (userId: string) => `/users/${userId}/preferences`,
-    updatePreferences: (userId: string) => `/users/${userId}/preferences`,
+    submit: "/api/v1/Recommendation/onboarding",
   },
 
   // ── Places / Detail ──────────────────────────────────────────

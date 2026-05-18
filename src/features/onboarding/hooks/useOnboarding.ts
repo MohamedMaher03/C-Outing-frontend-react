@@ -149,7 +149,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
         companionTypes: selectedCompanionTypes,
       };
 
-      await submitOnboardingPreferences(user.userId, preferences);
+      await submitOnboardingPreferences(preferences);
 
       updateUser({ ...user, hasCompletedOnboarding: true });
 
