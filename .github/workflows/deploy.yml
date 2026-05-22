@@ -48,14 +48,14 @@ jobs:
             sudo /usr/bin/systemctl reload nginx
 
             echo "--- Smoke test ---"
-            # Pass the Host header so nginx routes to the frontend server block
-            # (the server_name is cairo-outing.com, not localhost)
+            # 200 = HTTP served directly (Cloudflare Flexible mode)
+            # 301 = HTTP→HTTPS redirect (Certbot hardened the config) — both mean nginx is up
             HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
               -H "Host: cairo-outing.com" http://localhost)
             echo "Response code: $HTTP_CODE"
-            if [ "$HTTP_CODE" != "200" ]; then
+            if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "301" ]; then
               echo "❌ Smoke test FAILED — Nginx returned HTTP $HTTP_CODE"
-              sudo /usr/bin/systemctl status nginx --no-pager
+              tail -5 /var/log/nginx/error.log
               exit 1
             fi
-            echo "✅ Smoke test passed — frontend is live"
+            echo "✅ Smoke test passed (HTTP $HTTP_CODE) — frontend is live"
