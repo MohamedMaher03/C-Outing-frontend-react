@@ -25,6 +25,8 @@ describe("onboarding service", () => {
       vibe: 61.4,
       districts: ["Maadi"],
       budget: "midrange",
+      favoriteActivities: ["Dining"],
+      companionTypes: ["solo"],
     });
 
     expect(mockedDataSource.submitPreferences).toHaveBeenCalledWith("user-1", {
@@ -32,6 +34,8 @@ describe("onboarding service", () => {
       vibe: 61,
       districts: ["Maadi"],
       budget: "midrange",
+      favoriteActivities: ["Dining"],
+      companionTypes: ["solo"],
     });
   });
 
