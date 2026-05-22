@@ -45,14 +45,17 @@ jobs:
             set -e
 
             echo "--- Reloading Nginx ---"
-            sudo systemctl reload nginx
+            sudo /usr/bin/systemctl reload nginx
 
-            echo "--- Smoke test (HTTP 200 on localhost) ---"
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost)
+            echo "--- Smoke test ---"
+            # Pass the Host header so nginx routes to the frontend server block
+            # (the server_name is cairo-outing.com, not localhost)
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "Host: cairo-outing.com" http://localhost)
             echo "Response code: $HTTP_CODE"
             if [ "$HTTP_CODE" != "200" ]; then
               echo "❌ Smoke test FAILED — Nginx returned HTTP $HTTP_CODE"
-              sudo systemctl status nginx --no-pager
+              sudo /usr/bin/systemctl status nginx --no-pager
               exit 1
             fi
             echo "✅ Smoke test passed — frontend is live"
