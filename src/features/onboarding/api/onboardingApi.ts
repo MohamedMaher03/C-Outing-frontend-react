@@ -14,7 +14,8 @@ interface OnboardingRequestBody {
 }
 
 export const onboardingApi: OnboardingDataSource = {
-  async submitPreferences(preferences: OnboardingPreferences): Promise<void> {
+  // _userId is normalized by the service layer; JWT carries identity to the server.
+  async submitPreferences(_userId: string, preferences: OnboardingPreferences): Promise<void> {
     const body: OnboardingRequestBody = {
       loveInterests: preferences.interests,
       vibeLevel: preferences.vibe,
@@ -25,5 +26,10 @@ export const onboardingApi: OnboardingDataSource = {
     };
 
     await axiosInstance.post(API_ENDPOINTS.onboarding.submit, body);
+  },
+
+  // Partial preference updates — implement when the backend endpoint is available.
+  async updatePreferences(_userId: string, _preferences: Partial<OnboardingPreferences>): Promise<void> {
+    // TODO: wire up PATCH /preferences endpoint
   },
 };
