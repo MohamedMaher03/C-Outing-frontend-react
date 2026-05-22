@@ -1,0 +1,58 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Deploy dist/ to Droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: deploy
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "dist/"
+          target: "/home/deploy/c-outing-frontend"
+          rm: true
+
+      - name: Reload Nginx & smoke test
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: deploy
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            echo "--- Reloading Nginx ---"
+            sudo systemctl reload nginx
+
+            echo "--- Smoke test (HTTP 200 on localhost) ---"
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost)
+            echo "Response code: $HTTP_CODE"
+            if [ "$HTTP_CODE" != "200" ]; then
+              echo "❌ Smoke test FAILED — Nginx returned HTTP $HTTP_CODE"
+              sudo systemctl status nginx --no-pager
+              exit 1
+            fi
+            echo "✅ Smoke test passed — frontend is live"
