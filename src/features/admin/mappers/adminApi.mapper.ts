@@ -99,7 +99,6 @@ interface AdminReviewDto {
   id: string;
   userId: string;
   userName: string;
-  // Backend sends userAvatarUrl, not userAvatar
   userAvatar?: string | null;
   userAvatarUrl?: string | null;
   venueId: string;
@@ -133,8 +132,6 @@ interface AdminCreatedVenueDto {
   phone?: string | null;
   website?: string | null;
 }
-
-// type AdminReviewsPayload = PaginatedDto<AdminReviewDto> | AdminReviewDto[];
 
 const asDate = (value: string | null | undefined): Date => {
   if (!value) {
@@ -256,19 +253,6 @@ const mapAdminPlaceStatus = (value: unknown): AdminPlace["status"] => {
   }
 };
 
-/**
- * FIX 1 (Filters always empty): The backend returns PascalCase status values:
- *   "Approved" | "Flagged" | "Pending" | "Rejected"
- * The old mapper only recognised lowercase equivalents, so every review fell
- * through to the "pending" default — making status-filter queries return an
- * empty list because none of the mapped statuses matched the filter value.
- *
- * The mapping from backend → frontend domain values is:
- *   Approved  → published
- *   Flagged   → flagged
- *   Pending   → pending
- *   Rejected  → removed
- */
 const mapAdminReviewStatus = (value: unknown): AdminReview["status"] => {
   if (typeof value !== "string") return "pending";
 
@@ -281,7 +265,6 @@ const mapAdminReviewStatus = (value: unknown): AdminReview["status"] => {
       return "pending";
     case "rejected":
       return "removed";
-    // keep any already-mapped lowercase values working as a safety net
     case "published":
       return "published";
     case "removed":
@@ -398,18 +381,13 @@ export const mapAdminPlacesPage = (
   );
 
   const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
-
   const rawPageIndex = Math.trunc(toFiniteNumber(page.pageIndex, 0));
-
-  const pageIndex = rawPageIndex + 1; // backend zero-based
-
+  const pageIndex = rawPageIndex + 1;
   const totalCount = Math.max(
     0,
     Math.trunc(toFiniteNumber(page.totalCount, mappedItems.length)),
   );
-
   const fallbackTotalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-
   const totalPages = Math.max(
     1,
     Math.trunc(toFiniteNumber(page.totalPages, fallbackTotalPages)),
@@ -491,6 +469,8 @@ export const mapCreatedAdminPlace = (
 ): AdminPlace => {
   const place = unwrapEnvelope(payload);
   const explicitPriceLevel = mapPriceLevelValue(place.priceLevel);
+  const explicitTags = toStringArray(place.tags);
+  const fallbackTags = toStringArray(place.atmosphereTags);
 
   return {
     id: place.id,
@@ -502,10 +482,7 @@ export const mapCreatedAdminPlace = (
     status: mapAdminPlaceStatus(place.status ?? "pending"),
     createdAt: asDate(place.createdAt),
     image: place.image ?? place.thumbnailUrl ?? place.displayImageUrl ?? "",
-    tags:
-      toStringArray(place.tags).length > 0
-        ? toStringArray(place.tags)
-        : toStringArray(place.atmosphereTags),
+    tags: explicitTags.length > 0 ? explicitTags : fallbackTags,
     description:
       (typeof place.description === "string" && place.description) ||
       (typeof place.location === "string" ? place.location : ""),
@@ -519,10 +496,6 @@ export const mapCreatedAdminPlace = (
   };
 };
 
-/**
- * FIX 1 (avatar field): Backend sends userAvatarUrl, not userAvatar.
- * Now we read both so the field is populated correctly.
- */
 const mapAdminReview = (dto: AdminReviewDto): AdminReview => ({
   id: dto.id,
   userId: dto.userId,
@@ -537,7 +510,6 @@ const mapAdminReview = (dto: AdminReviewDto): AdminReview => ({
   createdAt: asDate(dto.createdAt),
 });
 
-//paginated
 export const mapAdminReviews = (
   payload:
     | ApiEnvelope<PaginatedDto<AdminReviewDto>>
@@ -548,19 +520,8 @@ export const mapAdminReviews = (
   const mappedItems = page.items.map(mapAdminReview);
 
   const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
-
-  /**
-   * FIX 3 (pagination counter always same): The backend uses 0-based pageIndex.
-   * The old mapper used rawPageIndex + 1 here but the PaginatedResponse
-   * consumers (hook state, UI counters) expected 1-based values — which was
-   * already correct. The real problem was that the hook was passing its own
-   * 1-based pageIndex straight to the API as "page", but the API also expects
-   * 1-based pages (query param "page"). That part is correct.
-   * What was wrong: loadReviews() had `[t]` as its only dependency so it
-   * captured stale closures for statusFilter and deferredSearch → fixed in hook.
-   */
   const rawPageIndex = Math.trunc(toFiniteNumber(page.pageIndex, 0));
-  const pageIndex = rawPageIndex + 1; // convert 0-based → 1-based
+  const pageIndex = rawPageIndex + 1;
 
   const totalCount = Math.max(
     0,

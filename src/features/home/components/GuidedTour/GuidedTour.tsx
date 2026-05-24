@@ -22,12 +22,10 @@ import { TOUR_STEPS, type TourStep } from "./tourSteps";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/i18n";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
 const SPOTLIGHT_PADDING = 12;
 const TOOLTIP_WIDTH = 340;
 const TOOLTIP_OFFSET = 16;
 
-// ─── Types ───────────────────────────────────────────────────────────────────
 interface SpotRect {
   x: number;
   y: number;
@@ -43,7 +41,6 @@ interface GuidedTourProps {
   onFinish: () => void;
 }
 
-// ─── Icon Map ─────────────────────────────────────────────────────────────────
 const ACCENT_ICON_MAP = {
   sparkles: Sparkles,
   heart: Heart,
@@ -52,8 +49,6 @@ const ACCENT_ICON_MAP = {
   compass: Compass,
   wand: Wand2,
 } as const;
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function findTourTarget(stepId: string): HTMLElement | null {
   const candidates = Array.from(
@@ -154,7 +149,6 @@ function computeTooltipStyle(
   }
 }
 
-// ─── TourCard ─────────────────────────────────────────────────────────────────
 interface TourCardProps {
   step: (typeof TOUR_STEPS)[number] | undefined;
   currentStep: number;
@@ -193,7 +187,6 @@ const TourCard = ({
   onFinish,
 }: TourCardProps) => (
   <div className="overflow-hidden rounded-3xl border border-border/50 bg-card shadow-[0_24px_60px_rgba(0,0,0,0.42)] backdrop-blur-xl">
-    {/* Animated gradient top accent */}
     <div className="relative h-[3px] w-full overflow-hidden">
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-secondary via-primary to-secondary/60"
@@ -209,7 +202,6 @@ const TourCard = ({
     </div>
 
     <div className={cn("space-y-4 p-5 sm:p-6", isCenter && "sm:p-7")}>
-      {/* Header row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <motion.div
@@ -244,7 +236,6 @@ const TourCard = ({
         </motion.span>
       </div>
 
-      {/* Title */}
       <h3
         className={cn(
           "font-bold leading-snug text-foreground",
@@ -254,7 +245,6 @@ const TourCard = ({
         {stepTitle}
       </h3>
 
-      {/* Body */}
       <p
         className={cn(
           "leading-relaxed text-muted-foreground",
@@ -264,7 +254,6 @@ const TourCard = ({
         {stepBody}
       </p>
 
-      {/* Interaction badges */}
       {step?.badges && step.badges.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-1">
           {step.badges.map((badge, i) => (

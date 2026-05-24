@@ -43,6 +43,4 @@ export const AUTH_ERROR_MESSAGES = {
   VALIDATION_ERROR: "Please review your input and try again.",
 } as const;
 
-export type AuthErrorKey = keyof typeof AUTH_ERROR_MESSAGES;
-
-export type AuthErrorCode = AuthErrorKey;
+export type AuthErrorCode = keyof typeof AUTH_ERROR_MESSAGES;

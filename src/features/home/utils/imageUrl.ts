@@ -19,8 +19,6 @@ export const buildHomeImageCandidates = (rawImage: unknown): string[] => {
 
   const candidates = [image];
 
-  // Google-hosted venue images often include a transform suffix that can fail
-  // intermittently depending on cache and request context, so keep safe fallbacks.
   if (GOOGLE_USER_CONTENT_HOST_PATTERN.test(image)) {
     const suffixMatch = image.match(GOOGLE_TRANSFORM_SUFFIX_PATTERN);
     if (suffixMatch) {

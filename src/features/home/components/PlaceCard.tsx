@@ -182,7 +182,7 @@ const PlaceCard = ({
           : "w-full",
       )}
     >
-      {/* Top Rated Badge */}
+      {/** the badge of the tp rated */}
       {isTopRated && !hideTopRatedBadge && (
         <div
           className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-cream/35 bg-primary/95 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.08em] text-cream shadow-lg shadow-black/35 backdrop-blur-sm"
@@ -197,7 +197,6 @@ const PlaceCard = ({
         </div>
       )}
 
-      {/* Image */}
       <div
         className={cn(
           "relative overflow-hidden",
@@ -235,7 +234,6 @@ const PlaceCard = ({
         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/65 via-black/30 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
 
-        {/* Save Button */}
         <motion.button
           type="button"
           onClick={(e) => {
@@ -298,7 +296,6 @@ const PlaceCard = ({
           )}
         </motion.button>
 
-        {/* Rating Badge */}
         <Badge className="absolute bottom-3 left-3 border-0 bg-card/95 px-2.5 py-1 font-semibold text-foreground shadow-sm backdrop-blur-md gap-1">
           <Star className="h-3.5 w-3.5 fill-secondary text-secondary dark:fill-primary dark:text-primary" />
           {ratingDisplay}
@@ -307,7 +304,6 @@ const PlaceCard = ({
           </span>
         </Badge>
 
-        {/* Wi-Fi badge */}
         {place.hasWifi && (
           <Badge className="absolute bottom-3 right-3 border-0 bg-card/90 px-2 py-1 text-foreground shadow-sm backdrop-blur-md gap-1">
             <Wifi className="h-3 w-3 text-muted-foreground dark:text-foreground/95" />
@@ -315,7 +311,6 @@ const PlaceCard = ({
         )}
       </div>
 
-      {/* Content */}
       <div className="flex flex-col flex-1 space-y-2 p-4 sm:p-5">
         <h3
           className="text-sm font-semibold leading-tight text-foreground transition-colors line-clamp-2 break-words"
@@ -324,7 +319,6 @@ const PlaceCard = ({
           {safeName}
         </h3>
 
-        {/* Address row */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-1.5 text-role-micro text-muted-foreground min-w-0">
             <MapPin className="h-3 w-3 flex-shrink-0 text-muted-foreground dark:text-foreground/85" />
@@ -352,7 +346,6 @@ const PlaceCard = ({
           <span>{distanceLabel}</span>
         </div>
 
-        {/* Tags & price */}
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5 mt-auto">
           <div className="flex gap-1.5 overflow-hidden flex-1 min-w-0">
             {safeTagList.map((tag) => (
@@ -365,7 +358,6 @@ const PlaceCard = ({
               </span>
             ))}
           </div>
-          {/* Price Level */}
           {priceMeta ? (
             <span
               className="ml-auto inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-secondary/20 bg-secondary/10 px-2.5 py-1 text-[11px] font-medium text-foreground"

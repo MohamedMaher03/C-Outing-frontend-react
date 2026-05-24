@@ -537,7 +537,6 @@ const HomePage = () => {
           />
         )}
       </AnimatePresence>
-      {/* ====== HERO SECTION ====== */}
       <div className="relative h-[340px] overflow-hidden sm:h-[390px] lg:h-[420px]">
         <motion.div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -570,7 +569,6 @@ const HomePage = () => {
             </p>
           </motion.div>
 
-          {/* Search Bar */}
           <motion.div
             className="relative w-full max-w-2xl"
             variants={heroItemVariants}
@@ -600,7 +598,6 @@ const HomePage = () => {
             </button>
           </motion.div>
 
-          {/* Filter Pills */}
           <motion.div
             className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide"
             aria-label={t("home.hero.filterAria")}

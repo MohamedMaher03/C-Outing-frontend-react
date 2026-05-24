@@ -1,7 +1,7 @@
 import {
   mapHomePlacesPayload,
   mapHomeVenueToPlace,
-} from "@/features/home/api/homeApi.mapper";
+} from "@/features/home/mappers/homeApi.mapper";
 
 const backendVenueFixture = {
   id: "ffae5327-13b7-4777-b9f6-761a6c71d835",

@@ -14,9 +14,6 @@ interface UseManageReviewsReturn {
   processingReviewIds: string[];
   search: string;
   statusFilter: AdminReviewStatusFilter;
-  // NOTE:take care anyone will work here after me : filteredReviews is now identical to `reviews` – filtering and
-  // searching are fully delegated to the backend. The field is kept in the
-  // public interface so callers don't need to change.
   filteredReviews: AdminReview[];
   pageIndex: number;
   pageSize: number;
@@ -37,13 +34,6 @@ interface UseManageReviewsReturn {
   handleDelete: (reviewId: string) => Promise<void>;
 }
 
-/**
- * here i map the frontend AdminReviewStatusFilter union to the exact string the
- * backend API accepts as the `status` query parameter.
- *
- * Backend allowed values: Approved | Flagged | Pending | Rejected
- * Frontend domain values:  published | flagged  | pending | removed | all
- */
 const toApiStatus = (filter: AdminReviewStatusFilter): string | undefined => {
   switch (filter) {
     case "published":
@@ -81,7 +71,6 @@ export const useManageReviews = (): UseManageReviewsReturn => {
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
 
-  // Debounced search value ─ actual API calls only fire after 650 ms idle
   const [deferredSearch, setDeferredSearch] = useState(search);
   const debounceTimerRef = useRef<number | null>(null);
 

@@ -17,7 +17,7 @@ import { adminService } from "@/features/admin/services/adminService";
 import {
   mapAdminVenuesPage,
   mapReportedVenueIds,
-} from "@/features/admin/api/adminApi.mapper";
+} from "@/features/admin/mappers/adminApi.mapper";
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type { PaginatedResponse } from "@/types";
@@ -99,9 +99,13 @@ export const moderatorService = {
             new Set<string>(),
             "flagged",
           );
-          reportedVenueIds = new Set(fullFlaggedPage.items.map((item) => item.id));
+          reportedVenueIds = new Set(
+            fullFlaggedPage.items.map((item) => item.id),
+          );
         } else {
-          reportedVenueIds = new Set(firstFlaggedPage.items.map((item) => item.id));
+          reportedVenueIds = new Set(
+            firstFlaggedPage.items.map((item) => item.id),
+          );
         }
       }
 

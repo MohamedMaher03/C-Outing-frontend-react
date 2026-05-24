@@ -1,8 +1,3 @@
-/**
- * i need update this page to use pagination
- *
- */
-
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   Search,
@@ -63,10 +58,6 @@ const ADMIN_LIST_ROW_STYLE: CSSProperties = {
   contain: "layout paint style",
 };
 
-// Inline SVG placeholder shown when a venue image URL is missing or fails to load
-// const PLACE_IMAGE_PLACEHOLDER =
-//   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Crect width='56' height='56' fill='%23f1f5f9' rx='12'/%3E%3Cpath d='M28 18a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 14c6.627 0 12 2.686 12 6v2H16v-2c0-3.314 5.373-6 12-6z' fill='%23cbd5e1'/%3E%3C/svg%3E";
-
 const ManagePlacesPage = () => {
   const navigate = useNavigate();
   const { t, formatNumber } = useI18n();
@@ -79,7 +70,7 @@ const ManagePlacesPage = () => {
     pendingPlaceIds,
     search,
     statusFilter,
-    filteredPlaces: filtered,
+    filteredPlaces,
     showAddForm,
     form,
     formErrors,
@@ -136,7 +127,6 @@ const ManagePlacesPage = () => {
     goToPage(nextPage);
   };
 
-  // Scroll to form when opened (DOM-specific side effect stays in the component)
   useEffect(() => {
     let timerId: number | null = null;
 
@@ -536,18 +526,18 @@ const ManagePlacesPage = () => {
       <AdminSection
         title={t("admin.places.records.title")}
         description={t("admin.places.records.description", {
-          count: formatNumber(filtered.length),
+          count: formatNumber(filteredPlaces.length),
         })}
         contentClassName="gap-3"
       >
-        {filtered.length === 0 ? (
+        {filteredPlaces.length === 0 ? (
           <AdminEmptyState
             icon={MapPin}
             title={t("admin.places.empty.title")}
             description={t("admin.places.empty.description")}
           />
         ) : (
-          filtered.map((place) => {
+          filteredPlaces.map((place) => {
             const config = placeStatusConfig[place.status];
             const StatusIcon = config.icon;
             const isPendingAction = pendingPlaceIds.includes(place.id);
@@ -758,7 +748,6 @@ const ManagePlacesPage = () => {
                   page: formatNumber(pageIndex),
                   totalPages: formatNumber(totalPages),
                 })}
-                {/* {pageIndex} / {totalPages} */}
               </span>
 
               <Button

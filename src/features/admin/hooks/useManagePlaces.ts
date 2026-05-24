@@ -74,7 +74,7 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
   const [statusFilter, setStatusFilter] =
     useState<AdminPlaceStatusFilter>("all");
 
-  // here i use  debounce — i wait 650 ms after the user stops typing before firing a request
+  //here i use debounce - i wait 650 ms after user stop typing
   const [deferredSearch, setDeferredSearch] = useState(search);
   const debounceTimerRef = useRef<number | null>(null);
   useEffect(() => {
@@ -234,9 +234,6 @@ export const useManagePlaces = (): UseManagePlacesReturn => {
       await adminService.updatePlaceStatus(placeId, status);
       if (!mountedRef.current) return;
 
-      // Reload from the server so totalCount, pagination, and the filtered list
-      // are all consistent — especially important when status changes cause the
-      // item to leave the current filter view (e.g. "active" → "removed").
       void loadPlaces(pageIndexRef.current);
 
       const statusUpdatedMessage = t("admin.places.toast.statusUpdated", {

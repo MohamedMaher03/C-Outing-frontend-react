@@ -1,4 +1,3 @@
-export { default as PlaceCard } from "./components/PlaceCard";
 export { useHome } from "./hooks/useHomeHook";
 export { useUserLocation } from "./hooks/useUserLocation";
 export { useHomeSeeAll } from "./hooks/useHomeSeeAll";
@@ -24,6 +23,8 @@ export type {
 } from "./types";
 export { homeApi } from "./api/homeApi";
 export { homeService } from "./services/homeService";
+
+export { default as PlaceCard } from "./components/PlaceCard";
 export {
   DISCOVERY_SOURCE_OPTIONS,
   FILTER_OPTIONS,

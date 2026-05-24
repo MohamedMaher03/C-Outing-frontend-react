@@ -3,7 +3,7 @@ import { API_ENDPOINTS } from "@/config/api";
 import {
   mapHomePaginatedPlacesPayload,
   mapHomePlacesPayload,
-} from "./homeApi.mapper";
+} from "../mappers/homeApi.mapper";
 import type {
   HomePageData,
   HomePlace,

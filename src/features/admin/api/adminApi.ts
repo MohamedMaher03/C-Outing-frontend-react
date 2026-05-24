@@ -26,7 +26,7 @@ import {
   mapStats,
   toRecentActivity,
   toSystemSettings,
-} from "./adminApi.mapper";
+} from "../mappers/adminApi.mapper";
 import type { PaginatedResponse } from "@/types";
 
 interface UsersParams extends AdminUsersQuery {

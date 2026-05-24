@@ -57,7 +57,7 @@ const ManageReviewsPage = () => {
     processingReviewIds,
     search,
     statusFilter,
-    filteredReviews: filtered,
+    filteredReviews,
     pageIndex,
     pageSize,
     totalCount,
@@ -173,18 +173,18 @@ const ManageReviewsPage = () => {
       <AdminSection
         title={t("admin.reviews.records.title")}
         description={t("admin.reviews.records.description", {
-          count: formatNumber(filtered.length),
+          count: formatNumber(filteredReviews.length),
         })}
         contentClassName="gap-3"
       >
-        {filtered.length === 0 ? (
+        {filteredReviews.length === 0 ? (
           <AdminEmptyState
             icon={MessageSquare}
             title={t("admin.reviews.empty.title")}
             description={t("admin.reviews.empty.description")}
           />
         ) : (
-          filtered.map((review) => {
+          filteredReviews.map((review) => {
             const config = reviewStatusConfig[review.status];
             const StatusIcon = config.icon;
             const isProcessing = processingReviewIds.includes(review.id);
@@ -400,7 +400,6 @@ const ManageReviewsPage = () => {
                   page: formatNumber(pageIndex),
                   totalPages: formatNumber(totalPages),
                 })}
-                {/* {pageIndex} / {totalPages} */}
               </span>
 
               <Button

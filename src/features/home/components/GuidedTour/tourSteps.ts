@@ -13,7 +13,6 @@ export interface TourStep {
 }
 
 export const TOUR_STEPS: TourStep[] = [
-  // ── Step 1: Welcome hero — no spotlight ──────────────────────────────────
   {
     id: "tour-welcome",
     target: null,
@@ -30,7 +29,6 @@ export const TOUR_STEPS: TourStep[] = [
     },
   },
 
-  // ── Step 2: Interactions tip — no spotlight ───────────────────────────────
   {
     id: "tour-interactions",
     target: null,
@@ -61,7 +59,6 @@ export const TOUR_STEPS: TourStep[] = [
     ],
   },
 
-  // ── Step 3: Curated For You ───────────────────────────────────────────────
   {
     id: "tour-curated",
     target: "tour-curated",
@@ -78,7 +75,6 @@ export const TOUR_STEPS: TourStep[] = [
     },
   },
 
-  // ── Step 4: Discovery Studio ──────────────────────────────────────────────
   {
     id: "tour-discovery",
     target: "tour-discovery",
@@ -95,7 +91,6 @@ export const TOUR_STEPS: TourStep[] = [
     },
   },
 
-  // ── Step 5: Mood Picks ────────────────────────────────────────────────────
   {
     id: "tour-mood",
     target: "tour-mood",
@@ -112,7 +107,6 @@ export const TOUR_STEPS: TourStep[] = [
     },
   },
 
-  // ── Step 6: Map ──────────────────────────────────────────────────────────────
   {
     id: "tour-map-nav",
     target: "tour-map-nav",
