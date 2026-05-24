@@ -142,7 +142,7 @@ export const placeDetailService = {
     try {
       await trackVenueInteractionSafe(data.venueId, data.actionType);
     } catch {
-      // i think no need
+      // ignore interaction recording errors, as they can be caused by network issues or other transient problems, and we don't want to block the user from their primary actions
     }
   },
 };

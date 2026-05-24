@@ -305,12 +305,8 @@ const OnboardingPage = () => {
         </Button>
       }
     >
-      {/* FIX: removed top-level space-y (was causing height jumps between steps).
-           The inner grid now owns all vertical rhythm. */}
       <AuthSurface className="border-border/45 bg-card/90 shadow-lg backdrop-blur-sm">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] lg:gap-7">
-          {/* FIX: self-start keeps the sidebar card from stretching to fill the full
-               grid row and fighting the right column's height */}
           <aside
             className="hidden lg:flex lg:items-start lg:self-start lg:sticky lg:top-6"
             aria-label={t("onboarding.context")}
@@ -374,8 +370,6 @@ const OnboardingPage = () => {
             </Card>
           </aside>
 
-          {/* FIX: flex-col + gap instead of space-y so the sticky nav can sit at
-               the bottom without being pushed by height-changing animated content */}
           <div className="flex flex-col gap-5 sm:gap-6 py-6 sm:py-7 lg:py-0">
             <header className="space-y-2 text-center">
               <Badge
@@ -429,8 +423,6 @@ const OnboardingPage = () => {
               </p>
             </div>
 
-            {/* FIX: each card gets min-h so the row height stays stable when
-                 budget/district text wraps to a second line */}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:hidden">
               <Card className="rounded-lg border-border/50 bg-card/60 px-3 py-2 text-center shadow-none min-h-[3.5rem]">
                 <p className="text-role-caption text-foreground/70">
@@ -474,15 +466,6 @@ const OnboardingPage = () => {
               </Card>
             </div>
 
-            {/*
-              DEFINITIVE FIX:
-              - Outer wrapper has a fixed height (tall enough for the tallest step).
-              - BOTH entering and exiting sections are position:absolute so neither
-                one ever contributes to document flow or changes the wrapper height.
-              - overflow-hidden stops horizontal jitter from the x slide.
-              - overflow-y-auto lets tall steps (e.g. districts with search) scroll
-                inside the box rather than bursting out of it.
-            */}
             <div className="relative h-[440px] sm:h-[420px] overflow-hidden">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.section
@@ -1062,7 +1045,6 @@ const OnboardingPage = () => {
                 </motion.section>
               </AnimatePresence>
             </div>
-            {/* end overflow-hidden step wrapper */}
 
             {error && (
               <Alert
@@ -1090,9 +1072,6 @@ const OnboardingPage = () => {
               </Alert>
             )}
 
-            {/* FIX: mt-auto pushes nav to the bottom of the flex-col without
-                 sticky positioning, which was the primary cause of the "vibration"
-                 when content height changed during step transitions. */}
             <div className="mt-auto pt-3 border-t border-border/30">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Button

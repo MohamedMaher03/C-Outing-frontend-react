@@ -241,24 +241,6 @@ const ModeratePlacesPage = () => {
           flagged: formatCount(placeSummary.flagged, locale),
         })}
         icon={MapPin}
-        // actions={
-        //   <Button
-        //     onClick={() => setShowAddForm((value) => !value)}
-        //     className="gap-2 flex-shrink-0 w-full sm:w-auto"
-        //     variant={showAddForm ? "outline" : "default"}
-        //     aria-expanded={showAddForm}
-        //     aria-controls="moderator-add-place-form"
-        //   >
-        //     {showAddForm ? (
-        //       <X className="h-4 w-4" />
-        //     ) : (
-        //       <Plus className="h-4 w-4" />
-        //     )}
-        //     {showAddForm
-        //       ? t("admin.places.actions.cancel")
-        //       : t("admin.places.actions.addPlace")}
-        //   </Button>
-        // }
       />
 
       {showAddForm ? (

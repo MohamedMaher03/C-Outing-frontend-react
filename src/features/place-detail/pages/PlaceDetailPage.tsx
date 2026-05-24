@@ -256,7 +256,7 @@ const PlaceDetailPage = () => {
 
       await trackInteraction(INTERACTION_ACTION_TYPES.share);
     } catch {
-      // Ignore share cancellation/failures to keep the primary flow uninterrupted.
+      // ignore share errors, as they can be caused by user cancellation or unsupported features, and we don't want to block the user from sharing through other means
     }
   }, [place, t, trackInteraction]);
 
