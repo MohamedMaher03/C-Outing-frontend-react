@@ -36,12 +36,13 @@ import {
   MOOD_ICON_MAP,
   VENUE_PRICE_RANGE_OPTIONS,
 } from "@/features/home/mocks";
-import type { VenuePriceRange } from "@/features/home/types";
+import type { HomePlace, VenuePriceRange } from "@/features/home/types";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
-import { normalizeSearchTerm } from "@/utils/textNormalization";
+import { getErrorMessage } from "@/utils/apiError";
 import { getTranslatedText } from "@/utils/helpers";
 import { GroupSessionWidget } from "@/features/session/components/GroupSessionWidget";
+import { homeService } from "@/features/home/services/homeService";
 
 const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const;
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
@@ -256,50 +257,84 @@ const HomePage = () => {
 
   const discoveryResultCount = discoveryPlaces.length;
   const [similarSearchInput, setSimilarSearchInput] = useState("");
+  const [similarSearchResults, setSimilarSearchResults] = useState<HomePlace[]>(
+    [],
+  );
+  const [isSimilarSearchLoading, setIsSimilarSearchLoading] = useState(false);
+  const [similarSearchError, setSimilarSearchError] = useState<string | null>(
+    null,
+  );
+  const [selectedSimilarSeedFromSearch, setSelectedSimilarSeedFromSearch] =
+    useState<HomePlace | null>(null);
   const [isSimilarInputFocused, setIsSimilarInputFocused] = useState(false);
   const moodSectionRef = useRef<HTMLElement | null>(null);
 
   const similarSeedOptions = similarSeedPlaces;
 
-  const selectedSimilarSeedPlace =
-    similarSeedOptions.find((place) => place.id === selectedSimilarSeedId) ??
-    null;
+  const selectedSimilarSeedPlace = useMemo(() => {
+    if (!selectedSimilarSeedId) {
+      return null;
+    }
+
+    return (
+      similarSeedOptions.find((place) => place.id === selectedSimilarSeedId) ??
+      (selectedSimilarSeedFromSearch?.id === selectedSimilarSeedId
+        ? selectedSimilarSeedFromSearch
+        : null)
+    );
+  }, [
+    selectedSimilarSeedId,
+    similarSeedOptions,
+    selectedSimilarSeedFromSearch,
+  ]);
 
   const selectedMoodOption = useMemo(
     () => moodOptions.find((mood) => mood.id === selectedMood) ?? null,
     [moodOptions, selectedMood],
   );
 
-  const similarSeedSearchIndex = useMemo(
-    () =>
-      similarSeedOptions.map((place) => ({
-        place,
-        name: normalizeSearchTerm(place.name),
-        address: normalizeSearchTerm(place.address),
-        category: normalizeSearchTerm(place.category),
-        tags: normalizeSearchTerm((place.atmosphereTags ?? []).join(" ")),
-      })),
-    [similarSeedOptions],
-  );
-
-  const similarSearchResults = useMemo(() => {
-    const query = normalizeSearchTerm(similarSearchInput);
-    if (!query) {
-      return similarSeedOptions.slice(0, 8);
+  useEffect(() => {
+    const trimmedQuery = similarSearchInput.trim();
+    if (!trimmedQuery) {
+      setIsSimilarSearchLoading(false);
+      setSimilarSearchError(null);
+      setSimilarSearchResults(similarSeedOptions.slice(0, 8));
+      return;
     }
 
-    return similarSeedSearchIndex
-      .filter(({ name, address, category, tags }) => {
-        return (
-          name.includes(query) ||
-          address.includes(query) ||
-          category.includes(query) ||
-          tags.includes(query)
-        );
-      })
-      .map(({ place }) => place)
-      .slice(0, 8);
-  }, [similarSearchInput, similarSeedOptions, similarSeedSearchIndex]);
+    let cancelled = false;
+    const timeoutId = window.setTimeout(async () => {
+      setIsSimilarSearchLoading(true);
+      setSimilarSearchError(null);
+      try {
+        const response = await homeService.searchVenues({
+          searchTerm: trimmedQuery,
+          page: 1,
+          pageSize: 8,
+        });
+
+        if (!cancelled) {
+          setSimilarSearchResults(response.items);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setSimilarSearchError(
+            getErrorMessage(err, "Failed to search venues"),
+          );
+          setSimilarSearchResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSimilarSearchLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [similarSearchInput, similarSeedOptions]);
 
   const getMoodLabel = useCallback(
     (moodId: string, fallback: string) =>
@@ -1364,7 +1399,19 @@ const HomePage = () => {
                           transition={stateTransition}
                           className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-lg"
                         >
-                          {similarSearchResults.length > 0 ? (
+                          {isSimilarSearchLoading ? (
+                            <p className="px-3 py-2 text-xs text-muted-foreground">
+                              {t(
+                                "home.similar.searching",
+                                undefined,
+                                "Searching...",
+                              )}
+                            </p>
+                          ) : similarSearchError ? (
+                            <p className="px-3 py-2 text-xs text-destructive">
+                              {similarSearchError}
+                            </p>
+                          ) : similarSearchResults.length > 0 ? (
                             similarSearchResults.map((place) => {
                               const isActive =
                                 selectedSimilarSeedId === place.id;
@@ -1377,7 +1424,9 @@ const HomePage = () => {
                                   }}
                                   onClick={() => {
                                     setSimilarSearchInput(place.name);
+                                    setSelectedSimilarSeedFromSearch(place);
                                     selectPlaceForSimilar(place.id);
+                                    setIsSimilarInputFocused(false);
                                   }}
                                   className={`w-full rounded-xl px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                                     isActive
@@ -1425,7 +1474,9 @@ const HomePage = () => {
                           key={`quick-seed-${place.id}`}
                           onClick={() => {
                             setSimilarSearchInput(place.name);
+                            setSelectedSimilarSeedFromSearch(place);
                             selectPlaceForSimilar(place.id);
+                            setIsSimilarInputFocused(false);
                           }}
                           className={`rounded-full border px-4 py-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             isActive
