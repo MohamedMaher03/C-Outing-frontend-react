@@ -56,6 +56,11 @@ const FAQS: FaqItem[] = [
     answerKey: "profile.help.faq.updatePreferences.answer",
   },
   {
+    id: "price-levels",
+    questionKey: "profile.help.faq.priceLevels.question",
+    answerKey: "profile.help.faq.priceLevels.answer",
+  },
+  {
     id: "manage-favorites",
     questionKey: "profile.help.faq.manageFavorites.question",
     answerKey: "profile.help.faq.manageFavorites.answer",

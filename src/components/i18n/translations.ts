@@ -420,6 +420,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "budget.midrange": "Standard ($$$)",
     "budget.expensive": "Premium ($$$$)",
     "budget.luxury": "Luxury ($$$$$)",
+    "budget.range.cheapest": "0-100 EGP",
+    "budget.range.cheap": "100-300 EGP",
+    "budget.range.midrange": "300-700 EGP",
+    "budget.range.expensive": "700-1400 EGP",
+    "budget.range.luxury": "1400+ EGP",
 
     "home.scroller.scrollLeft": "Scroll {label} left",
     "home.scroller.scrollRight": "Scroll {label} right",
@@ -1559,6 +1564,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "How do I update my interests, vibe, budget, or areas?",
     "profile.help.faq.updatePreferences.answer":
       "Open Profile, go to Preferences, and update your selections. New recommendations will reflect your latest choices.",
+    "profile.help.faq.priceLevels.question": "What do the price levels mean?",
+    "profile.help.faq.priceLevels.answer":
+      "Economy 0-100 EGP, Value 100-300 EGP, Standard 300-700 EGP, Premium 700-1400 EGP, and Luxury 1400+ EGP.",
     "profile.help.faq.manageFavorites.question":
       "How do I save and manage favorite places?",
     "profile.help.faq.manageFavorites.answer":
@@ -2079,6 +2087,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "budget.midrange": "متوسط ($$$)",
     "budget.expensive": "ممتاز ($$$$)",
     "budget.luxury": "فاخر ($$$$$)",
+    "budget.range.cheapest": "0-100 ج.م",
+    "budget.range.cheap": "100-300 ج.م",
+    "budget.range.midrange": "300-700 ج.م",
+    "budget.range.expensive": "700-1400 ج.م",
+    "budget.range.luxury": "1400+ ج.م",
 
     "home.scroller.scrollLeft": "تمرير {label} لليسار",
     "home.scroller.scrollRight": "تمرير {label} لليمين",
@@ -3121,6 +3134,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "كيف أغيّر الاهتمامات أو مستوى الأجواء أو الميزانية أو المناطق؟",
     "profile.help.faq.updatePreferences.answer":
       "افتح الملف الشخصي، ثم انتقل إلى التفضيلات وحدّث اختياراتك. ستنعكس التغييرات مباشرة على التوصيات الجديدة.",
+    "profile.help.faq.priceLevels.question": "ما معنى مستويات السعر؟",
+    "profile.help.faq.priceLevels.answer":
+      "اقتصادي 0-100 ج.م، موفّر 100-300 ج.م، متوسط 300-700 ج.م، ممتاز 700-1400 ج.م، وفاخر 1400+ ج.م.",
     "profile.help.faq.manageFavorites.question":
       "كيف أحفظ الأماكن المفضلة وأديرها؟",
     "profile.help.faq.manageFavorites.answer":

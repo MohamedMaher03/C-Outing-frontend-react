@@ -114,6 +114,9 @@ const OnboardingPage = () => {
   const getBudgetLabel = (value: string): string =>
     t(`budget.${value}`, undefined, value);
 
+  const getBudgetRangeLabel = (value: string): string =>
+    t(`budget.range.${value}`, undefined, "");
+
   const handleNext = async () => {
     if (step < 5) {
       goToNextStep();
@@ -912,9 +915,15 @@ const OnboardingPage = () => {
                               key={option.value}
                               selected={budget === option.value}
                               onClick={() => setBudget(option.value)}
-                              className="justify-center px-4 py-2.5"
+                              className="justify-center px-4 py-3 text-left sm:text-center"
+                              contentClassName="flex w-full flex-col items-start gap-0.5 sm:items-center"
                             >
-                              {getBudgetLabel(option.value)}
+                              <span className="text-sm font-semibold text-foreground">
+                                {getBudgetLabel(option.value)}
+                              </span>
+                              <span className="text-xs text-foreground/70">
+                                {getBudgetRangeLabel(option.value)}
+                              </span>
                             </OnboardingOptionButton>
                           ))}
                         </div>
