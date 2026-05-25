@@ -28,7 +28,7 @@ export const SIGN_UP_FORM_FIELDS: SignUpFieldConfig[] = [
   {
     id: "phone",
     label: "Phone Number",
-    placeholder: "+20 123 456 7890",
+    placeholder: "122 597 9647",
     type: "tel",
     Icon: Phone,
   },

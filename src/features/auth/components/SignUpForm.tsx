@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useForm, type FieldPath } from "react-hook-form";
+import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema } from "@/features/auth/validation/signUp.schema";
 import type { SignUpFormData } from "@/features/auth/validation/signUp.schema";
@@ -19,22 +19,15 @@ import type { SignUpFieldConfig } from "@/features/auth/types";
 import { AuthShell, AuthSurface } from "./layout/AuthShell";
 import { AuthStatusBanner } from "./ui/AuthStatusBanner";
 import { useI18n } from "@/components/i18n";
+import {
+  COUNTRIES,
+  CUSTOM_COUNTRY_VALUE,
+  DEFAULT_COUNTRY,
+  SIGN_UP_BACKEND_FIELD_MAP,
+  normalizePhone,
+} from "../../../utils/SignUpForm.constants";
 
-const SIGN_UP_BACKEND_FIELD_MAP: Record<string, FieldPath<SignUpFormInput>> = {
-  name: "fullName",
-  fullname: "fullName",
-  email: "email",
-  phone: "phone",
-  phonenumber: "phone",
-  dateofbirth: "dateOfBirth",
-  password: "password",
-  confirmpassword: "confirmPassword",
-  avatar: "avatar",
-};
-
-const toSignUpFieldName = (
-  rawField: string,
-): FieldPath<SignUpFormInput> | undefined => {
+const toSignUpFieldName = (rawField: string) => {
   const normalized = rawField
     .trim()
     .split(".")
@@ -50,6 +43,15 @@ const SignUpForm = () => {
   const navigate = useNavigate();
   const { registerUser, isLoading, error, validationErrors, clearError } =
     useSignUp();
+  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY);
+  const activeCountryCode =
+    countryCode === CUSTOM_COUNTRY_VALUE ? "" : countryCode;
+  const countryLabel = useMemo(() => {
+    if (countryCode === CUSTOM_COUNTRY_VALUE)
+      return t("auth.phoneCountryOther");
+    const match = COUNTRIES.find((country) => country.code === countryCode);
+    return match ? match.label : "";
+  }, [countryCode, t]);
 
   const {
     register,
@@ -78,7 +80,8 @@ const SignUpForm = () => {
     clearError();
     clearErrors();
 
-    const success = await registerUser(data);
+    const normalizedPhone = normalizePhone(data.phone, activeCountryCode);
+    const success = await registerUser({ ...data, phone: normalizedPhone });
     if (success) {
       reset();
       navigate("/verify-email", { state: { email: data.email } });
@@ -113,37 +116,91 @@ const SignUpForm = () => {
           aria-busy={isLoading}
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {SIGN_UP_FORM_FIELDS.map((field: SignUpFieldConfig) => (
-              <FormField
-                key={field.id}
-                id={field.id}
-                label={
-                  field.id === "fullName"
-                    ? t("auth.fields.fullName")
-                    : field.id === "email"
-                      ? t("auth.fields.email")
-                      : field.id === "phone"
-                        ? t("auth.fields.phone")
+            {SIGN_UP_FORM_FIELDS.map((field: SignUpFieldConfig) => {
+              if (field.id === "phone") {
+                return (
+                  <div key={field.id} className="space-y-2">
+                    <Label htmlFor={field.id}>{t("auth.fields.phone")}</Label>
+
+                    <div
+                      className={`flex h-11 items-center overflow-hidden rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${
+                        errors.phone
+                          ? "border-destructive focus-within:ring-destructive"
+                          : "border-input"
+                      }`}
+                    >
+                      <label className="sr-only" htmlFor="phone-country">
+                        {t("auth.phoneCountryLabel")}
+                      </label>
+                      <select
+                        id="phone-country"
+                        value={countryCode}
+                        onChange={(event) => setCountryCode(event.target.value)}
+                        className="h-11 w-40 shrink-0 border-0 border-r border-input bg-muted/30 px-3 text-sm text-foreground outline-none focus-visible:ring-0"
+                        aria-label={`${t("auth.phoneCountryLabel")}: ${countryLabel}`}
+                        disabled={isLoading}
+                      >
+                        {COUNTRIES.map((country) => (
+                          <option key={country.code} value={country.code}>
+                            {country.label} {country.code}
+                          </option>
+                        ))}
+                        <option value={CUSTOM_COUNTRY_VALUE}>
+                          {t("auth.phoneCountryOther")}
+                        </option>
+                      </select>
+
+                      <Input
+                        id={field.id}
+                        type="tel"
+                        dir="ltr"
+                        inputMode="numeric"
+                        autoComplete="tel-national"
+                        placeholder={
+                          countryCode === CUSTOM_COUNTRY_VALUE
+                            ? t("auth.placeholders.phoneInternational")
+                            : t("auth.placeholders.phoneNational")
+                        }
+                        {...register("phone")}
+                        disabled={isLoading}
+                        aria-invalid={!!errors.phone}
+                        className="h-11 min-w-0 flex-1 border-0 bg-transparent text-base focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-sm"
+                      />
+                    </div>
+
+                    <FormError message={errors.phone?.message} />
+                  </div>
+                );
+              }
+
+              return (
+                <FormField
+                  key={field.id}
+                  id={field.id}
+                  label={
+                    field.id === "fullName"
+                      ? t("auth.fields.fullName")
+                      : field.id === "email"
+                        ? t("auth.fields.email")
                         : field.id === "dateOfBirth"
                           ? t("auth.fields.dateOfBirth")
                           : field.label
-                }
-                placeholder={
-                  field.id === "fullName"
-                    ? t("auth.placeholders.fullName")
-                    : field.id === "email"
-                      ? t("auth.placeholders.email")
-                      : field.id === "phone"
-                        ? t("auth.placeholders.phone")
+                  }
+                  placeholder={
+                    field.id === "fullName"
+                      ? t("auth.placeholders.fullName")
+                      : field.id === "email"
+                        ? t("auth.placeholders.email")
                         : field.placeholder
-                }
-                type={field.type}
-                icon={field.Icon && <field.Icon className="h-4 w-4" />}
-                error={errors[field.id]?.message}
-                disabled={isLoading}
-                register={register(field.id)}
-              />
-            ))}
+                  }
+                  type={field.type}
+                  icon={field.Icon && <field.Icon className="h-4 w-4" />}
+                  error={errors[field.id]?.message}
+                  disabled={isLoading}
+                  register={register(field.id)}
+                />
+              );
+            })}
           </div>
 
           <div className="space-y-2">
@@ -216,7 +273,7 @@ const SignUpForm = () => {
           <button
             type="button"
             onClick={() => navigate("/login")}
-            className="inline-flex min-h-11 items-center font-medium text-foreground/80 transition-colors hover:text-foreground"
+            className="inline-flex min-h-11 items-center font-semibold text-primary transition-colors hover:text-primary"
           >
             {t("auth.signIn")}
           </button>

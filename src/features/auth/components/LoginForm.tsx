@@ -172,7 +172,7 @@ const LoginForm = () => {
                 type="button"
                 disabled={isLoading}
                 onClick={() => navigate("/forgot-password")}
-                className="-mx-2 inline-flex min-h-11 items-center px-2 text-sm font-medium text-foreground/75 transition-colors hover:text-foreground/95"
+                className="-mx-2 inline-flex min-h-11 items-center px-2 text-sm font-semibold text-primary transition-colors hover:text-primary/90"
               >
                 {t("auth.forgotPassword")}
               </button>
@@ -208,7 +208,7 @@ const LoginForm = () => {
           <button
             type="button"
             onClick={() => navigate("/register")}
-            className="inline-flex min-h-11 items-center font-medium text-foreground/80 transition-colors hover:text-foreground"
+            className="inline-flex min-h-11 items-center font-semibold text-primary transition-colors hover:text-primary"
           >
             {t("auth.createOne")}
           </button>

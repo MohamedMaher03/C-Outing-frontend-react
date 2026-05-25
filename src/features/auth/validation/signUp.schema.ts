@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { AUTH_AVATAR_RULES, AUTH_PASSWORD_RULES } from "../constants";
 
+const EGYPT_MOBILE_LOCAL_REGEX = /^0?1[0-9]{9}$/;
+const E164_PHONE_REGEX = /^\+[1-9][0-9]{7,14}$/;
+
+const normalizePhoneInput = (value: unknown) => {
+  if (typeof value !== "string") return value;
+  return value.replace(/[^\d+]/g, "");
+};
+
 export const signUpSchema = z
   .object({
     fullName: z
@@ -15,29 +23,25 @@ export const signUpSchema = z
       .max(100, "Email must be less than 100 characters")
       .email("Please enter a valid email address"),
 
-    phone: z
-      .string()
-      .trim()
-      .min(10, "Phone number must be at least 10 characters")
-      .max(20, "Phone number must be less than 20 characters")
-      .regex(
-        /^\+[0-9]{1,3}[0-9\s\-()]{8,}$/,
-        "Phone number must include country code (e.g. +201234567890)",
-      ),
+    phone: z.preprocess(
+      normalizePhoneInput,
+      z
+        .string()
+        .trim()
+        .min(10, "Phone number must be at least 10 characters")
+        .max(16, "Phone number must be less than 16 characters")
+        .regex(
+          new RegExp(
+            `(?:${EGYPT_MOBILE_LOCAL_REGEX.source})|(?:${E164_PHONE_REGEX.source})`,
+          ),
+          "Enter a valid phone number",
+        ),
+    ),
 
     dateOfBirth: z
       .string()
       .min(1, "Date of birth is required")
       .refine((val) => !isNaN(Date.parse(val)), "Please enter a valid date")
-      .refine((val) => {
-        const dob = new Date(val);
-        const today = new Date();
-        const age = today.getFullYear() - dob.getFullYear();
-        const m = today.getMonth() - dob.getMonth();
-        const actualAge =
-          age - (m < 0 || (m === 0 && today.getDate() < dob.getDate()) ? 1 : 0);
-        return actualAge >= 13;
-      }, "You must be at least 13 years old")
       .refine(
         (val) => new Date(val) <= new Date(),
         "Date of birth cannot be in the future",
