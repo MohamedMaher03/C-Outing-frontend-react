@@ -199,6 +199,10 @@ export const adminApi = {
     );
   },
 
+  async deleteUser(userId: AdminUserId): Promise<void> {
+    await axiosInstance.delete(API_ENDPOINTS.admin.deleteUser(String(userId)));
+  },
+
   async getPlaces(
     params: AdminPlaceQuery = {},
   ): Promise<PaginatedResponse<AdminPlace>> {

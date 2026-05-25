@@ -485,6 +485,12 @@ export const adminMock = {
     if (user) user.status = status;
   },
 
+  async deleteUser(userId: AdminUserId): Promise<void> {
+    await delay(400);
+    const idx = MOCK_ADMIN_USERS.findIndex((u) => u.userId === userId);
+    if (idx !== -1) MOCK_ADMIN_USERS.splice(idx, 1);
+  },
+
   async getPlaces(
     params: AdminPlaceQuery = {},
   ): Promise<PaginatedResponse<AdminPlace>> {

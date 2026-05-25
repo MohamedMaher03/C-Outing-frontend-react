@@ -60,6 +60,13 @@ export const adminService = {
     );
   },
 
+  async deleteUser(userId: AdminUserId): Promise<void> {
+    return withAdminServiceError(
+      () => adminDataSource.deleteUser(userId),
+      "Failed to delete user",
+    );
+  },
+
   async getPlaces(
     placesQueryParams?: AdminPlaceQuery,
   ): Promise<PaginatedResponse<AdminPlace>> {

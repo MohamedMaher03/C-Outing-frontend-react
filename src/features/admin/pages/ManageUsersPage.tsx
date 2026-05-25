@@ -6,6 +6,7 @@ import {
   User,
   Ban,
   CheckCircle,
+  Trash2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -60,6 +61,7 @@ const ManageUsersPage = () => {
     goToPage,
     handleStatusChange,
     handleRoleChange,
+    handleDeleteUser,
   } = useManageUsers();
 
   const monthYearFormatter = useMemo(
@@ -332,6 +334,17 @@ const ManageUsersPage = () => {
                           {t("admin.users.actions.ban")}
                         </button>
                       )}
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => void handleDeleteUser(user.userId)}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-role-secondary text-destructive transition-colors motion-reduce:transition-none hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        disabled={updatingUserId === user.userId}
+                        aria-disabled={updatingUserId === user.userId}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {t("admin.users.actions.delete")}
+                      </button>
                       <p className="px-3 py-1 text-role-caption uppercase text-muted-foreground">
                         {t("admin.users.actions.roleTitle", undefined, "Role")}
                       </p>

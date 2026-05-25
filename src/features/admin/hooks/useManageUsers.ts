@@ -42,6 +42,7 @@ interface UseManageUsersReturn {
     status: Extract<AdminUserStatus, "active" | "banned">,
   ) => Promise<void>;
   handleRoleChange: (userId: AdminUserId, role: AdminUserRole) => Promise<void>;
+  handleDeleteUser: (userId: AdminUserId) => Promise<void>;
 }
 
 const USERS_PAGE_SIZE = 10;
@@ -225,6 +226,36 @@ export const useManageUsers = (): UseManageUsersReturn => {
     }
   };
 
+  const handleDeleteUser = async (userId: AdminUserId) => {
+    if (inFlightRef.current.has(userId)) {
+      return;
+    }
+
+    inFlightRef.current.add(userId);
+    setUpdatingUserId(userId);
+    setError(null);
+
+    try {
+      await adminService.deleteUser(userId);
+      if (!mountedRef.current) return;
+
+      setActionMenu(null);
+      await loadUsers({
+        targetPage: pageIndex,
+        targetRoleFilter: roleFilter,
+        targetSearch: deferredSearch,
+      });
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setError(getErrorMessage(err, t("admin.error.deleteUser")));
+    } finally {
+      inFlightRef.current.delete(userId);
+      if (mountedRef.current) {
+        setUpdatingUserId((prev) => (prev === userId ? null : prev));
+      }
+    }
+  };
+
   const handleSearchChange = useCallback(
     (value: string) => {
       setSearch(value);
@@ -339,5 +370,6 @@ export const useManageUsers = (): UseManageUsersReturn => {
     goToPage,
     handleStatusChange,
     handleRoleChange,
+    handleDeleteUser,
   };
 };

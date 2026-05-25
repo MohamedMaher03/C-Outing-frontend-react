@@ -25,6 +25,7 @@ export interface AdminDataSource {
     status: AdminUserStatus,
   ) => Promise<void>;
   updateUserRole: (userId: AdminUserId, role: AdminUserRole) => Promise<void>;
+  deleteUser: (userId: AdminUserId) => Promise<void>;
   getPlaces: (
     params?: AdminPlaceQuery,
   ) => Promise<PaginatedResponse<AdminPlace>>;
