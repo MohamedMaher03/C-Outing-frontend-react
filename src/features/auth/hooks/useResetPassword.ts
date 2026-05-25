@@ -51,7 +51,7 @@ export const useResetPassword = (): UseResetPasswordReturn => {
     setError(null);
 
     try {
-      await authService.resendOtp({ email });
+      await authService.resendResetPasswordOtp({ email });
       return true;
     } catch (err) {
       setError(getAuthErrorMessage(err));

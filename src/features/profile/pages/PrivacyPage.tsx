@@ -254,7 +254,7 @@ const PrivacyPage = () => {
               </span>{" "}
               {t("profile.privacy.info.descriptionPrefix")}{" "}
               <a
-                href="mailto:farouqdiaaeldin@gmail.com?subject=Privacy%20Policy%20Request"
+                href="mailto:support@cairo-outing.com?subject=Privacy%20Policy%20Request"
                 className="text-secondary underline"
               >
                 {t("profile.privacy.info.link")}

@@ -11,7 +11,8 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   verifyEmail: (email: string, otp: string) => Promise<void>;
-  resendOtp: (email: string) => Promise<void>;
+  resendVerificationOtp: (email: string) => Promise<void>;
+  resendResetPasswordOtp: (email: string) => Promise<void>;
   setPendingVerificationEmail: (email: string) => void;
   clearPendingVerificationEmail: () => void;
   logout: () => Promise<void>;

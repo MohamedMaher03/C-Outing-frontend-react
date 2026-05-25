@@ -12,7 +12,8 @@ jest.mock("../services/authService", () => ({
     login: jest.fn(),
     register: jest.fn(),
     verifyEmail: jest.fn(),
-    resendOtp: jest.fn(),
+    resendVerificationOtp: jest.fn(),
+    resendResetPasswordOtp: jest.fn(),
     setPendingVerificationEmail: jest.fn(),
     clearPendingVerificationEmail: jest.fn(),
     logout: jest.fn(),
@@ -53,7 +54,7 @@ describe("AuthProvider", () => {
       token: "token-verify",
       user: userFixture,
     });
-    mockedAuthService.resendOtp.mockResolvedValue(undefined);
+    mockedAuthService.resendVerificationOtp.mockResolvedValue(undefined);
     mockedAuthService.logout.mockResolvedValue(undefined);
   });
 
@@ -142,10 +143,10 @@ describe("AuthProvider", () => {
     expect(result.current.pendingVerificationEmail).toBe("register@test.com");
 
     await act(async () => {
-      await result.current.resendOtp(" RESEND@EXAMPLE.COM ");
+      await result.current.resendVerificationOtp(" RESEND@EXAMPLE.COM ");
     });
 
-    expect(mockedAuthService.resendOtp).toHaveBeenCalledWith({
+    expect(mockedAuthService.resendVerificationOtp).toHaveBeenCalledWith({
       email: " RESEND@EXAMPLE.COM ",
     });
     expect(result.current.pendingVerificationEmail).toBe("resend@example.com");
@@ -174,7 +175,9 @@ describe("AuthProvider", () => {
       result.current.updateUser(updatedUser);
     });
 
-    expect(mockedAuthService.updateStoredUser).toHaveBeenCalledWith(updatedUser);
+    expect(mockedAuthService.updateStoredUser).toHaveBeenCalledWith(
+      updatedUser,
+    );
     expect(result.current.user).toEqual(updatedUser);
 
     await act(async () => {

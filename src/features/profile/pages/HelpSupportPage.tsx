@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { normalizeSearchTerm } from "@/utils/textNormalization";
 import { useI18n } from "@/components/i18n";
 
-const SUPPORT_EMAIL = "farouqdiaaeldin@gmail.com";
+const SUPPORT_EMAIL = "support@cairo-outing.com";
 const SUPPORT_EMAIL_HREF = `mailto:${SUPPORT_EMAIL}`;
 
 type ContactOption = {

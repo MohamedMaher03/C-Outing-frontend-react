@@ -62,9 +62,23 @@ export const authApi = {
     }
   },
 
-  async resendOtp(payload: ResendOtpRequest): Promise<void> {
+  async resendVerificationOtp(payload: ResendOtpRequest): Promise<void> {
     try {
-      await axiosInstance.post(API_ENDPOINTS.auth.resendOtp, payload);
+      await axiosInstance.post(
+        API_ENDPOINTS.auth.resendVerificationOtp,
+        payload,
+      );
+    } catch (error) {
+      throw normalizeAuthError(error);
+    }
+  },
+
+  async resendResetPasswordOtp(payload: ResendOtpRequest): Promise<void> {
+    try {
+      await axiosInstance.post(
+        API_ENDPOINTS.auth.resendResetPasswordOtp,
+        payload,
+      );
     } catch (error) {
       throw normalizeAuthError(error);
     }

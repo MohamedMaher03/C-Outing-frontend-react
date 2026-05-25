@@ -289,7 +289,7 @@ const OnboardingPage = () => {
           onClick={() => void handleLogout()}
           disabled={isLoggingOut}
           aria-busy={isLoggingOut}
-          className="min-h-10 gap-2 border-white/30 bg-black/35 text-white backdrop-blur-sm hover:bg-black/50"
+          className="min-h-10 gap-2 border-white/30 bg-red-700 text-white backdrop-blur-sm hover:bg-red-800"
         >
           {isLoggingOut ? (
             <>

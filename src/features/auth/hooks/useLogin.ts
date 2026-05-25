@@ -17,7 +17,7 @@ interface UseLoginReturn {
 export const useLogin = (): UseLoginReturn => {
   const {
     login,
-    resendOtp,
+    resendVerificationOtp,
     setPendingVerificationEmail,
     pendingVerificationEmail,
   } = useAuth();
@@ -62,7 +62,7 @@ export const useLogin = (): UseLoginReturn => {
     setError(null);
 
     try {
-      await resendOtp(normalizedEmail);
+      await resendVerificationOtp(normalizedEmail);
       setPendingVerificationEmail(normalizedEmail);
       return true;
     } catch (err) {

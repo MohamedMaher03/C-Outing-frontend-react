@@ -3,7 +3,10 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import type { ReactNode } from "react";
 import { ProtectedRoute, PublicRoute, OnboardingRoute } from "./index";
 import { RoleBasedRoute } from "./RoleBasedRoute";
-import { AuthContext, type AuthContextType } from "@/features/auth/context/AuthContext";
+import {
+  AuthContext,
+  type AuthContextType,
+} from "@/features/auth/context/AuthContext";
 import type { User } from "@/types";
 
 jest.mock("@/components/ui/LoadingSpinner", () => ({
@@ -29,7 +32,8 @@ const createAuthValue = (
   login: jest.fn(async () => undefined),
   register: jest.fn(async () => undefined),
   verifyEmail: jest.fn(async () => undefined),
-  resendOtp: jest.fn(async () => undefined),
+  resendVerificationOtp: jest.fn(async () => undefined),
+  resendResetPasswordOtp: jest.fn(async () => undefined),
   setPendingVerificationEmail: jest.fn(),
   clearPendingVerificationEmail: jest.fn(),
   logout: jest.fn(async () => undefined),

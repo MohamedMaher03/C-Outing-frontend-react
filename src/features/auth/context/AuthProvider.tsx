@@ -60,10 +60,20 @@ export function AuthProvider({
     [],
   );
 
-  const resendOtp = useCallback(async (email: string): Promise<void> => {
-    await authService.resendOtp({ email });
-    setPendingVerificationEmailState(normalizeEmail(email));
-  }, []);
+  const resendVerificationOtp = useCallback(
+    async (email: string): Promise<void> => {
+      await authService.resendVerificationOtp({ email });
+      setPendingVerificationEmailState(normalizeEmail(email));
+    },
+    [],
+  );
+
+  const resendResetPasswordOtp = useCallback(
+    async (email: string): Promise<void> => {
+      await authService.resendResetPasswordOtp({ email });
+    },
+    [],
+  );
 
   const setPendingVerificationEmail = useCallback((email: string): void => {
     const normalizedEmail = normalizeEmail(email);
@@ -97,7 +107,8 @@ export function AuthProvider({
     login,
     register,
     verifyEmail,
-    resendOtp,
+    resendVerificationOtp,
+    resendResetPasswordOtp,
     setPendingVerificationEmail,
     clearPendingVerificationEmail,
     logout,

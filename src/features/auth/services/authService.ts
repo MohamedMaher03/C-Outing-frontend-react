@@ -145,7 +145,9 @@ export const authService = {
 
         if (shouldRecover) {
           try {
-            await authDataSource.resendOtp({ email: payload.email });
+            await authDataSource.resendVerificationOtp({
+              email: payload.email,
+            });
             persistPendingVerificationEmail(payload.email);
             return "Verification code sent to your email";
           } catch {
@@ -166,8 +168,12 @@ export const authService = {
     return { token: raw.token, user };
   },
 
-  async resendOtp(payload: ResendOtpRequest): Promise<void> {
-    await authDataSource.resendOtp(payload);
+  async resendVerificationOtp(payload: ResendOtpRequest): Promise<void> {
+    await authDataSource.resendVerificationOtp(payload);
+  },
+
+  async resendResetPasswordOtp(payload: ResendOtpRequest): Promise<void> {
+    await authDataSource.resendResetPasswordOtp(payload);
   },
 
   async logout(): Promise<void> {

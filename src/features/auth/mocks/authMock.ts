@@ -144,7 +144,14 @@ export const authMock = {
     };
   },
 
-  async resendOtp(_payload: ResendOtpRequest): Promise<void> {
+  async resendVerificationOtp(_payload: ResendOtpRequest): Promise<void> {
+    await delay(800);
+    if (_payload.email === "unregistered@example.com") {
+      throw new AuthError("EMAIL_NOT_FOUND");
+    }
+  },
+
+  async resendResetPasswordOtp(_payload: ResendOtpRequest): Promise<void> {
     await delay(800);
     if (_payload.email === "unregistered@example.com") {
       throw new AuthError("EMAIL_NOT_FOUND");
