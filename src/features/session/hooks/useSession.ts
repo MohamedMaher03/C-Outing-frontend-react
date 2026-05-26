@@ -21,9 +21,22 @@ export function useSession() {
   >(null);
   const [error, setError] = useState<string | null>(null);
   const [joinCodeInput, setJoinCodeInput] = useState("");
+  const [isRestoring, setIsRestoring] = useState(false);
 
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionCodeRef = useRef<string | null>(null);
+  const statusRef = useRef<SessionStatus>(status);
+  const recommendationsRef = useRef<SessionRecommendation[] | null>(
+    recommendations,
+  );
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+  useEffect(() => {
+    recommendationsRef.current = recommendations;
+  }, [recommendations]);
 
   // ── Helpers ───────────────────────────────────────────────────
 
@@ -34,14 +47,77 @@ export function useSession() {
     }
   }, []);
 
-  const syncSession = useCallback(async (code: string) => {
-    try {
-      const updated = await sessionApi.getSession(code);
-      setSession(updated);
-    } catch {
-      // silently ignore intermittent poll errors
-    }
+  const getCacheKey = useCallback((code: string) => {
+    const safeCode = code.trim().toUpperCase();
+    return `session-recs:${safeCode}`;
   }, []);
+
+  const setCachedRecommendations = useCallback(
+    (code: string, recs: SessionRecommendation[]) => {
+      try {
+        sessionStorage.setItem(getCacheKey(code), JSON.stringify(recs));
+      } catch {
+        // storage can fail in private mode; ignore
+      }
+    },
+    [getCacheKey],
+  );
+
+  const getCachedRecommendations = useCallback(
+    (code: string): SessionRecommendation[] | null => {
+      try {
+        const cached = sessionStorage.getItem(getCacheKey(code));
+        if (!cached) return null;
+        const parsed = JSON.parse(cached);
+        return Array.isArray(parsed) ? parsed : null;
+      } catch {
+        return null;
+      }
+    },
+    [getCacheKey],
+  );
+
+  const clearCachedRecommendations = useCallback(
+    (code: string) => {
+      try {
+        sessionStorage.removeItem(getCacheKey(code));
+      } catch {
+        // ignore
+      }
+    },
+    [getCacheKey],
+  );
+
+  const trySyncRecommendations = useCallback(
+    async (code: string) => {
+      if (statusRef.current !== "waiting") return;
+      if (recommendationsRef.current?.length) return;
+      try {
+        const recs = await sessionApi.getRecommendations(code);
+        if (recs.length === 0) return;
+        stopPolling();
+        setRecommendations(recs);
+        setCachedRecommendations(code, recs);
+        setStatus("ready");
+      } catch {
+        // ignore; host may not have generated recommendations yet
+      }
+    },
+    [setCachedRecommendations, stopPolling],
+  );
+
+  const syncSession = useCallback(
+    async (code: string) => {
+      try {
+        const updated = await sessionApi.getSession(code);
+        setSession(updated);
+        await trySyncRecommendations(code);
+      } catch {
+        // silently ignore intermittent poll errors
+      }
+    },
+    [trySyncRecommendations],
+  );
 
   const startPolling = useCallback(
     (code: string) => {
@@ -81,7 +157,6 @@ export function useSession() {
     }
   }, [navigate, startPolling]);
 
-
   const joinSession = useCallback(
     async (code: string) => {
       const trimmedCode = code.trim().toUpperCase();
@@ -120,10 +195,11 @@ export function useSession() {
       sessionCodeRef.current = null;
       setSession(null);
       setRecommendations(null);
+      clearCachedRecommendations(code);
       setStatus("idle");
       setError(null);
     }
-  }, [session, stopPolling]);
+  }, [session, stopPolling, clearCachedRecommendations]);
 
   const getRecommendations = useCallback(async () => {
     const code = sessionCodeRef.current ?? session?.code;
@@ -133,35 +209,44 @@ export function useSession() {
     try {
       const recs = await sessionApi.getRecommendations(code);
       stopPolling();
-      setRecommendations(recs ?? []);
+      setRecommendations(recs);
+      setCachedRecommendations(code, recs);
       setStatus("ready");
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to fetch recommendations.",
+        err instanceof Error ? err.message : "Failed to fetch recommendations.",
       );
       setStatus("waiting");
     }
-  }, [session, stopPolling]);
+  }, [session, stopPolling, setCachedRecommendations]);
 
   /** Restore session when navigating directly to /session/:code */
   const restoreSession = useCallback(
     async (code: string) => {
       if (session?.code === code) return;
       setError(null);
+      setIsRestoring(true);
       try {
         const existing = await sessionApi.getSession(code);
         sessionCodeRef.current = code;
         setSession(existing);
-        setStatus("waiting");
-        startPolling(code);
+        const cached = getCachedRecommendations(code);
+        if (cached && cached.length > 0) {
+          setRecommendations(cached);
+          setStatus("ready");
+          stopPolling();
+        } else {
+          setStatus("waiting");
+          startPolling(code);
+        }
       } catch {
         setError("Session not found or has expired.");
         setStatus("idle");
+      } finally {
+        setIsRestoring(false);
       }
     },
-    [session, startPolling],
+    [session, startPolling, getCachedRecommendations, stopPolling],
   );
 
   const isHost = user?.userId !== undefined && session?.host.id === user.userId;
@@ -177,6 +262,7 @@ export function useSession() {
     setJoinCodeInput,
     isHost,
     memberCount,
+    isRestoring,
     // Actions
     createSession,
     joinSession,

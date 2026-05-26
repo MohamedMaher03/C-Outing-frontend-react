@@ -197,9 +197,11 @@ function RecommendationCard({
             <MapPin className="h-10 w-10 text-muted-foreground/40" />
           </div>
         )}
-        <span className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-          {rec.category}
-        </span>
+        {rec.category && (
+          <span className="absolute left-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+            {rec.category}
+          </span>
+        )}
         <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-[hsl(38,42%,58%)] text-xs font-bold text-white shadow-md">
           #{index + 1}
         </span>
@@ -215,7 +217,7 @@ function RecommendationCard({
         </p>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          {rec.rating !== undefined && (
+          {typeof rec.rating === "number" && (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
               <Star className="h-3 w-3 fill-current" />
               {rec.rating.toFixed(2)}
@@ -264,6 +266,7 @@ export default function SessionPage() {
     error,
     isHost,
     memberCount,
+    isRestoring,
     leaveSession,
     getRecommendations,
     restoreSession,
@@ -776,7 +779,8 @@ export default function SessionPage() {
           renderWaitingRoom()}
         {status === "loading-recs" && renderLoadingRecs()}
         {status === "ready" && renderRecommendations()}
-        {status === "idle" && renderIdleError()}
+        {status === "idle" &&
+          (isRestoring ? renderLoadingRecs() : renderIdleError())}
       </AnimatePresence>
     </div>
   );

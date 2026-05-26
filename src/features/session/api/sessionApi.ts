@@ -2,6 +2,27 @@ import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import type { Session, SessionRecommendation } from "../types/session.types";
 
+interface SessionRecommendationVenue {
+  id: string;
+  name: string;
+  location: string;
+  category: string | null;
+  priceRange: string | null;
+  averageRating: number | null;
+  displayImageUrl: string | null;
+  thumbnailUrl: string | null;
+  atmosphereTags: string[] | null;
+}
+
+interface SessionRecommendationEntry {
+  rank: number;
+  venue: SessionRecommendationVenue;
+}
+
+interface SessionRecommendationsResponse {
+  recommendations: SessionRecommendationEntry[];
+}
+
 export const sessionApi = {
   /**
    * POST /api/v1/Session
@@ -42,10 +63,29 @@ export const sessionApi = {
   /** GET /api/v1/Session/{code}/recommend — get group recommendations */
   async getRecommendations(
     code: string,
-  ): Promise<SessionRecommendation[] | null> {
-    const response = await axiosInstance.get<SessionRecommendation[] | null>(
+    params?: { count?: number },
+  ): Promise<SessionRecommendation[]> {
+    const response = await axiosInstance.get<SessionRecommendationsResponse>(
       API_ENDPOINTS.session.recommend(code),
+      {
+        params: { count: params?.count ?? 10 },
+      },
     );
-    return response.data;
+    const entries = response.data?.recommendations ?? [];
+    return [...entries]
+      .sort((a, b) => a.rank - b.rank)
+      .map(({ venue }) => ({
+        id: venue.id,
+        name: venue.name,
+        address: venue.location,
+        category: venue.category,
+        imageUrl: venue.displayImageUrl ?? venue.thumbnailUrl,
+        rating:
+          typeof venue.averageRating === "number" ? venue.averageRating : null,
+        priceRange: venue.priceRange,
+        atmosphereTags: Array.isArray(venue.atmosphereTags)
+          ? venue.atmosphereTags
+          : [],
+      }));
   },
 };
