@@ -13,14 +13,14 @@ describe("auth register payload", () => {
       avatar,
     });
 
-    expect(payload.params.DateOfBirth).toBe("2000-01-01T00:00:00Z");
+    expect(payload.formData.get("DateOfBirth")).toBe("2000-01-01");
     expect(payload.formData.get("Name")).toBe("Mohamed Ali");
     expect(payload.formData.get("Email")).toBe("mohamed@example.com");
     expect(payload.formData.get("PhoneNumber")).toBe("+201234567890");
     expect(payload.formData.get("Avatar")).toBe(avatar);
   });
 
-  it("normalizes non-YYYY-MM-DD dates through Date ISO conversion", () => {
+  it("normalizes non-YYYY-MM-DD dates to date-only format", () => {
     const payload = buildRegisterPayload({
       name: "Mohamed Ali",
       email: "mohamed@example.com",
@@ -29,7 +29,7 @@ describe("auth register payload", () => {
       dateOfBirth: "2001-03-04T10:30:00.000Z",
     });
 
-    expect(payload.params.DateOfBirth).toBe("2001-03-04T10:30:00.000Z");
+    expect(payload.formData.get("DateOfBirth")).toBe("2001-03-04");
     expect(payload.formData.get("Avatar")).toBeNull();
   });
 });

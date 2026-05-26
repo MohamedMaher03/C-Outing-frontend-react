@@ -36,7 +36,6 @@ export const authApi = {
         registerPayload.formData,
         {
           timeout: AUTH_TIMEOUTS.REGISTER_REQUEST_MS,
-          params: registerPayload.params,
           headers: {
             "Content-Type": "multipart/form-data",
           },

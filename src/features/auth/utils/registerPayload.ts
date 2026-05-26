@@ -3,14 +3,19 @@ import type { RegisterRequest } from "../types";
 const buildDateOfBirthParam = (dateOfBirth: string): string => {
   const trimmed = dateOfBirth.trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    return `${trimmed}T00:00:00Z`;
+    return trimmed;
   }
-  return new Date(trimmed).toISOString();
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+
+  return trimmed;
 };
 
 export interface RegisterPayload {
   formData: FormData;
-  params: { DateOfBirth: string };
 }
 
 export const buildRegisterPayload = (
@@ -22,15 +27,11 @@ export const buildRegisterPayload = (
   formData.append("Email", payload.email);
   formData.append("Password", payload.password);
   formData.append("PhoneNumber", payload.phoneNumber);
+  formData.append("DateOfBirth", buildDateOfBirthParam(payload.dateOfBirth));
 
   if (payload.avatar) {
     formData.append("Avatar", payload.avatar);
   }
 
-  return {
-    formData,
-    params: {
-      DateOfBirth: buildDateOfBirthParam(payload.dateOfBirth),
-    },
-  };
+  return { formData };
 };

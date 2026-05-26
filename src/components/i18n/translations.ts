@@ -616,13 +616,13 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "session.code.share": "Share",
 
     "session.widget.ariaLabel": "Group Outing Session",
-    "session.widget.badgeNew": "New",
+    "session.widget.badgeNew": "Plan Together",
     "session.widget.title": "Group Outing",
     "session.widget.banner.description":
       "Create a session, share a 6-digit code, and get recommendations tailored to your whole group.",
-    "session.widget.sidebar.eyebrow": "Plan With Your Friends",
+    "session.widget.sidebar.eyebrow": "Plan Together",
     "session.widget.sidebar.description":
-      "Plan an outing with friends. Create a session, share your 6-digit code, and get recommendations that match everyone.",
+      "Plan an outing with friends and family. Create a session, share your 6-digit code, and get recommendations that match everyone.",
     "session.widget.create": "Create Session",
     "session.widget.join": "Join Session",
     "session.widget.join.toggle": "Have a code? Join →",
@@ -3269,13 +3269,13 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "session.code.share": "مشاركة",
 
     "session.widget.ariaLabel": "جلسة خروجة جماعية",
-    "session.widget.badgeNew": "جديد",
+    "session.widget.badgeNew": "نخطط سوا",
     "session.widget.title": "خروجة جماعية",
     "session.widget.banner.description":
-      "اعمل جلسة، شارك كود من 6 أرقام، وخد توصيات تناسب المجموعة كلها.",
-    "session.widget.sidebar.eyebrow": "خطط مع أصحابك",
+      "خطط خروجة مع أصحابك وعائلتك. اعمل جلسة، شارك كودك المكون من 6 حروف، وخد توصيات تناسب الكل.",
+    "session.widget.sidebar.eyebrow": "نخطط سوا",
     "session.widget.sidebar.description":
-      "خطط خروجة مع أصحابك. اعمل جلسة، شارك كودك المكون من 6 حروف، وخد توصيات تناسب الكل.",
+      "خطط خروجة مع أصحابك وعائلتك. اعمل جلسة، شارك كودك المكون من 6 حروف، وخد توصيات تناسب الكل.",
     "session.widget.create": "إنشاء جلسة",
     "session.widget.join": "انضم للجلسة",
     "session.widget.join.toggle": "معاك كود؟ انضم →",
