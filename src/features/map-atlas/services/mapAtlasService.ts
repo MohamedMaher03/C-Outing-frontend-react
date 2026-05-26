@@ -95,7 +95,7 @@ export const toggleMapAtlasPlaceSave = async (
   await mapAtlasDataSource.togglePlaceSave(normalizePlaceId(placeId), isSaved);
 };
 
-export const fetchMapAtlasPlacesByMood = async (
+export const fetchMapAtlasMoodRecommendations = async (
   moodId: string,
 ): Promise<HomePlace[]> => {
   const normalizedMoodId = normalizeStringParam(moodId);
@@ -103,7 +103,8 @@ export const fetchMapAtlasPlacesByMood = async (
     return [];
   }
 
-  const places = await mapAtlasDataSource.fetchPlacesByMood(normalizedMoodId);
+  const places =
+    await mapAtlasDataSource.fetchMoodRecommendations(normalizedMoodId);
   return mapMapAtlasPlaces(places);
 };
 
@@ -161,7 +162,7 @@ export const mapAtlasService = {
   fetchTrendingRecommendations: fetchMapAtlasTrendingRecommendations,
   fetchSimilarRecommendations: fetchMapAtlasSimilarRecommendations,
   togglePlaceSave: toggleMapAtlasPlaceSave,
-  fetchPlacesByMood: fetchMapAtlasPlacesByMood,
+  fetchMoodRecommendations: fetchMapAtlasMoodRecommendations,
   fetchVenuesByDistrict: fetchMapAtlasVenuesByDistrict,
   fetchVenuesByType: fetchMapAtlasVenuesByType,
   fetchVenuesByPriceRange: fetchMapAtlasVenuesByPriceRange,

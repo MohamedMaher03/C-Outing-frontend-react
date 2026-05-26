@@ -425,15 +425,25 @@ const HomePage = () => {
       "(prefers-reduced-motion: reduce)",
     ).matches;
     const maxAttempts = 8;
+    const offset = 96;
     let attempts = 0;
 
     const tryScroll = () => {
       const moodSection = moodSectionRef.current;
       if (moodSection) {
-        moodSection.scrollIntoView({
-          behavior: prefersReducedMotion ? "auto" : "smooth",
-          block: "start",
-        });
+        const rect = moodSection.getBoundingClientRect();
+        const viewportHeight =
+          window.innerHeight || document.documentElement.clientHeight;
+        const isMostlyVisible =
+          rect.top >= offset && rect.bottom <= viewportHeight - offset;
+
+        if (!isMostlyVisible) {
+          const targetTop = Math.max(0, rect.top + window.scrollY - offset);
+          window.scrollTo({
+            top: targetTop,
+            behavior: prefersReducedMotion ? "auto" : "smooth",
+          });
+        }
         return;
       }
 

@@ -434,7 +434,8 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
 
     void (async () => {
       try {
-        const places = await mapAtlasService.fetchPlacesByMood(selectedMood);
+        const places =
+          await mapAtlasService.fetchMoodRecommendations(selectedMood);
 
         if (!mountedRef.current || requestId !== moodRequestIdRef.current) {
           return;

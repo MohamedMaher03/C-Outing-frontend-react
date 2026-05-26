@@ -7,7 +7,7 @@ export const mapAtlasApi: MapAtlasDataSource = {
   fetchTrendingRecommendations: homeApi.fetchTrendingRecommendations,
   fetchSimilarRecommendations: homeApi.fetchSimilarRecommendations,
   togglePlaceSave: homeApi.togglePlaceSave,
-  fetchPlacesByMood: homeApi.fetchPlacesByMood,
+  fetchMoodRecommendations: homeApi.fetchMoodRecommendations,
   fetchVenuesByDistrict: homeApi.fetchVenuesByDistrict,
   fetchVenuesByType: homeApi.fetchVenuesByType,
   fetchVenuesByPriceRange: homeApi.fetchVenuesByPriceRange,

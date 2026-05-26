@@ -12,7 +12,7 @@ export {
   fetchMapAtlasTrendingRecommendations,
   fetchMapAtlasSimilarRecommendations,
   toggleMapAtlasPlaceSave,
-  fetchMapAtlasPlacesByMood,
+  fetchMapAtlasMoodRecommendations,
   fetchMapAtlasVenuesByDistrict,
   fetchMapAtlasVenuesByType,
   fetchMapAtlasVenuesByPriceRange,

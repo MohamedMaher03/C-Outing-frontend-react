@@ -211,7 +211,7 @@ export const useHome = (): UseHomeReturn => {
       setIsMoodLoading(true);
       setMoodError(null);
       try {
-        const places = await homeService.fetchPlacesByMood(selectedMood);
+        const places = await homeService.fetchMoodRecommendations(selectedMood);
         if (!cancelled) setMoodPlaces(places);
       } catch (err) {
         if (!cancelled) {

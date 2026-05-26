@@ -88,4 +88,6 @@ export const MOOD_ICON_MAP: Record<string, LucideIcon> = {
   Users,
   Binoculars,
   UtensilsCrossed,
+  Moon,
+  Palette,
 };

@@ -75,9 +75,9 @@ export const homeService = {
     );
   },
 
-  async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
+  async fetchMoodRecommendations(moodId: string): Promise<HomePlace[]> {
     return withServiceError(
-      () => homeDataSource.fetchPlacesByMood(moodId),
+      () => homeDataSource.fetchMoodRecommendations(moodId),
       "Failed to fetch mood-based places",
     );
   },

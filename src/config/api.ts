@@ -59,6 +59,7 @@ export const API_ENDPOINTS = {
     curated: "/api/v1/Recommendation/personalized",
     similar: (venueId: string) => `/api/v1/Recommendation/similar/${venueId}`,
     trending: "/api/v1/Recommendation/trending",
+    mood: "/api/v1/Recommendation/mood",
   },
   // ── Favorites ────────────────────────────────────────────────
   favorites: {

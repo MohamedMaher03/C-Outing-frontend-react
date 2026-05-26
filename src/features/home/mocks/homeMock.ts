@@ -72,33 +72,6 @@ const buildPaginatedResponse = (
   };
 };
 
-const MOOD_FILTER_MAP: Record<string, (p: HomePlace) => boolean> = {
-  chill: (p) =>
-    (p.atmosphereTags ?? []).some((t) =>
-      ["Quiet", "Serene", "Relaxed", "Peaceful", "Scenic"].includes(t),
-    ),
-  adventure: (p) =>
-    (p.atmosphereTags ?? []).some((t) =>
-      ["Outdoor", "Exciting", "Adventure", "Vibrant"].includes(t),
-    ) || p.category.toLowerCase().includes("activities"),
-  romantic: (p) =>
-    (p.atmosphereTags ?? []).some((t) =>
-      ["Romantic", "Upscale", "Nile View"].includes(t),
-    ),
-  social: (p) =>
-    (p.atmosphereTags ?? []).some((t) =>
-      ["Lively", "Bustling", "Community", "Vibrant", "Musical"].includes(t),
-    ),
-  explore: (p) =>
-    (p.atmosphereTags ?? []).some((t) =>
-      ["Historic", "Artistic", "Cultural", "Local", "Trendy"].includes(t),
-    ),
-  foodie: (p) =>
-    p.category.toLowerCase().includes("food") ||
-    p.category.toLowerCase().includes("restaurant") ||
-    p.category.toLowerCase().includes("cafe"),
-};
-
 export const homeMock = {
   async fetchHomePageData(
     params?: HomeRecommendationsQuery,
@@ -174,14 +147,9 @@ export const homeMock = {
     void isSaved;
   },
 
-  async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
+  async fetchMoodRecommendations(): Promise<HomePlace[]> {
     await delay(2500);
-    const filter = MOOD_FILTER_MAP[moodId];
-    if (!filter) return [];
-    return [...PLACES]
-      .filter(filter)
-      .sort((a, b) => b.rating - a.rating)
-      .map((p) => ({ ...p, isSaved: p.isSaved ?? false }));
+    return normalizedPlaces();
   },
 
   async fetchVenuesByDistrict(

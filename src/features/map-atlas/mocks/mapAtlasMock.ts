@@ -7,7 +7,7 @@ export const mapAtlasMock: MapAtlasDataSource = {
   fetchTrendingRecommendations: homeMock.fetchTrendingRecommendations,
   fetchSimilarRecommendations: homeMock.fetchSimilarRecommendations,
   togglePlaceSave: homeMock.togglePlaceSave,
-  fetchPlacesByMood: homeMock.fetchPlacesByMood,
+  fetchMoodRecommendations: homeMock.fetchMoodRecommendations,
   fetchVenuesByDistrict: homeMock.fetchVenuesByDistrict,
   fetchVenuesByType: homeMock.fetchVenuesByType,
   fetchVenuesByPriceRange: homeMock.fetchVenuesByPriceRange,

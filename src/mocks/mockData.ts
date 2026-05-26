@@ -106,25 +106,19 @@ export const CATEGORIES: Category[] = [
 
 export const MOOD_OPTIONS: MoodOption[] = [
   {
-    id: "chill",
+    id: "chill_vibes",
     label: "Chill Vibes",
     icon: "Coffee",
     description: "Relaxed cafés & parks",
   },
   {
-    id: "adventure",
-    label: "Adventure",
-    icon: "Mountain",
-    description: "Exciting activities",
-  },
-  {
-    id: "romantic",
+    id: "date_night",
     label: "Date Night",
     icon: "Heart",
     description: "Romantic spots",
   },
   {
-    id: "social",
+    id: "squad_goals",
     label: "Squad Goals",
     icon: "Users",
     description: "Fun with friends",
@@ -136,10 +130,28 @@ export const MOOD_OPTIONS: MoodOption[] = [
     description: "Hidden gems",
   },
   {
-    id: "foodie",
+    id: "foodie_run",
     label: "Foodie Run",
     icon: "UtensilsCrossed",
     description: "Best eats in Cairo",
+  },
+  {
+    id: "adventure",
+    label: "Adventure",
+    icon: "Mountain",
+    description: "Exciting activities",
+  },
+  {
+    id: "night_owl",
+    label: "Night Owl",
+    icon: "Moon",
+    description: "Late-night hangouts",
+  },
+  {
+    id: "culture_trip",
+    label: "Culture Trip",
+    icon: "Palette",
+    description: "Arts & heritage spots",
   },
 ];
 

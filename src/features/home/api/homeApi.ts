@@ -1,6 +1,7 @@
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
 import {
+  mapHomeMoodRecommendationsPayload,
   mapHomePaginatedPlacesPayload,
   mapHomePlacesPayload,
 } from "../mappers/homeApi.mapper";
@@ -84,11 +85,17 @@ export const homeApi = {
     await axiosInstance.delete(API_ENDPOINTS.favorites.remove(placeId));
   },
 
-  async fetchPlacesByMood(moodId: string): Promise<HomePlace[]> {
+  async fetchMoodRecommendations(moodId: string): Promise<HomePlace[]> {
     const response = await axiosInstance.get<unknown>(
-      API_ENDPOINTS.home.moodPlaces(moodId),
+      API_ENDPOINTS.recommendations.mood,
+      {
+        params: {
+          mood: moodId,
+          count: 10,
+        },
+      },
     );
-    return mapHomePlacesPayload(response.data);
+    return mapHomeMoodRecommendationsPayload(response.data);
   },
 
   async fetchVenuesByDistrict(

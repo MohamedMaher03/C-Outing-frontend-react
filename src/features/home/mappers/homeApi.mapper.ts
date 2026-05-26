@@ -27,6 +27,11 @@ type HomeVenueDto = {
   matchScore?: unknown;
 };
 
+type MoodRecommendationDto = {
+  rank?: unknown;
+  venue?: unknown;
+};
+
 const PRICE_LEVEL_VALUES: CanonicalPriceLevel[] = [
   "cheapest",
   "cheap",
@@ -143,6 +148,27 @@ const extractCollection = (raw: unknown): unknown[] => {
   }
 
   return [];
+};
+
+const extractMoodRecommendations = (
+  raw: unknown,
+): Array<{ rank: number; venue: unknown }> => {
+  const payload = unwrapDataPayload(raw);
+  if (!isRecord(payload)) {
+    return [];
+  }
+
+  const recommendations = payload.recommendations;
+  if (!Array.isArray(recommendations)) {
+    return [];
+  }
+
+  return recommendations
+    .filter((item): item is MoodRecommendationDto => isRecord(item))
+    .map((item) => ({
+      rank: toFiniteNumber(item.rank) ?? Number.POSITIVE_INFINITY,
+      venue: item.venue,
+    }));
 };
 
 const toCanonicalPriceFromNumber = (
@@ -303,6 +329,32 @@ export const mapHomePlacesPayload = (raw: unknown): HomePlace[] => {
 
   for (const item of collection) {
     const place = mapHomeVenueToPlace(item);
+    if (!place) {
+      continue;
+    }
+
+    if (seenIds.has(place.id)) {
+      continue;
+    }
+
+    seenIds.add(place.id);
+    mapped.push(place);
+  }
+
+  return mapped;
+};
+
+export const mapHomeMoodRecommendationsPayload = (
+  raw: unknown,
+): HomePlace[] => {
+  const recommendations = extractMoodRecommendations(raw).sort(
+    (a, b) => a.rank - b.rank,
+  );
+  const seenIds = new Set<string>();
+  const mapped: HomePlace[] = [];
+
+  for (const item of recommendations) {
+    const place = mapHomeVenueToPlace(item.venue);
     if (!place) {
       continue;
     }
