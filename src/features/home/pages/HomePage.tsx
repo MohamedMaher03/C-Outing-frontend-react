@@ -109,7 +109,7 @@ const HorizontalScroller = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative isolate">
       <button
         type="button"
         onClick={() => scrollByDirection("left")}
@@ -123,7 +123,7 @@ const HorizontalScroller = ({
       <div
         ref={scrollRef}
         className={cn(
-          "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 scrollbar-hide",
+          "-mx-4 flex snap-x snap-proximity gap-4 overflow-x-auto overscroll-x-contain px-4 pb-3 scrollbar-hide transform-gpu",
           className,
         )}
         aria-label={ariaLabel}
@@ -450,7 +450,7 @@ const HomePage = () => {
 
         <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center px-4 py-10 sm:px-6 lg:px-8">
           <section
-            className="w-full overflow-hidden rounded-3xl border border-border/60 bg-card/90 shadow-xl backdrop-blur-md"
+            className="w-full overflow-hidden rounded-3xl border border-border/60 bg-card/95 shadow-xl"
             role="alert"
             aria-live="assertive"
           >
@@ -517,15 +517,7 @@ const HomePage = () => {
   }
 
   return (
-    <motion.div
-      className="min-h-screen bg-background"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{
-        duration: shouldReduceMotion ? 0.01 : 0.32,
-        ease: EASE_OUT_QUART,
-      }}
-    >
+    <div className="min-h-screen bg-background animate-in fade-in duration-300">
       <AnimatePresence>
         {tourActive && (
           <GuidedTour
@@ -541,8 +533,8 @@ const HomePage = () => {
         <motion.div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${cairoBg})` }}
-          initial={{ scale: shouldReduceMotion ? 1 : 1.06 }}
-          animate={{ scale: 1 }}
+          initial={{ opacity: shouldReduceMotion ? 1 : 0 }}
+          animate={{ opacity: 1 }}
           transition={{
             duration: shouldReduceMotion ? 0.01 : 0.85,
             ease: EASE_OUT_EXPO,
@@ -586,7 +578,7 @@ const HomePage = () => {
                 }
               }}
               aria-label={t("home.hero.searchAria")}
-              className="h-12 rounded-2xl border border-white/20 bg-black/25 pl-12 pr-24 text-base text-white shadow-lg transition-colors placeholder:text-white/65 focus:border-secondary/70 focus:bg-black/30 focus:ring-secondary/20 backdrop-blur-md sm:h-14"
+              className="h-12 rounded-2xl border border-white/20 bg-black/30 pl-12 pr-24 text-base text-white shadow-lg transition-colors placeholder:text-white/65 focus:border-secondary/70 focus:bg-black/35 focus:ring-secondary/20 sm:h-14"
             />
             <button
               type="button"
@@ -637,7 +629,7 @@ const HomePage = () => {
                   className={`inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-5 ${
                     isActive
                       ? "border-accent/90 bg-accent text-accent-foreground shadow-sm"
-                      : "border-white/20 bg-black/20 text-white/90 backdrop-blur-md hover:border-primary/65 hover:bg-primary/28 hover:text-primary-foreground dark:hover:bg-primary/35 dark:hover:text-cream"
+                      : "border-white/20 bg-black/25 text-white/90 hover:border-primary/65 hover:bg-primary/28 hover:text-primary-foreground dark:hover:bg-primary/35 dark:hover:text-cream"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -672,7 +664,7 @@ const HomePage = () => {
             className="mx-auto mt-4 max-w-7xl px-4"
             initial={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+            exit={{ opacity: 0 }}
             transition={stateTransition}
           >
             <div
@@ -718,7 +710,7 @@ const HomePage = () => {
               data-tour="tour-mood"
               id="tour-mood"
             >
-              <div className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
+              <div className="isolate rounded-3xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="text-base font-semibold text-foreground">
                     {t("home.mobile.moodSelectorTitle")}
@@ -739,7 +731,7 @@ const HomePage = () => {
                         onClick={() =>
                           handleMoodOptionSelect(mood.id, isActive)
                         }
-                        className={`flex min-h-11 items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                        className={`flex min-h-[44px] items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
                             : "border-border/60 bg-background hover:border-primary/55 hover:bg-primary/12"
@@ -756,13 +748,13 @@ const HomePage = () => {
               </div>
             </section>
 
-            {/* ── Venue Discovery Studio (New Endpoints) ── */}
+            {/* ── Venue Discovery Stdio section */}
             <section
-              className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-5 sm:p-6 shadow-sm"
+              className="relative rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-5 sm:p-6 shadow-sm"
               data-tour="tour-discovery"
               id="tour-discovery"
             >
-              <div className="relative z-10 space-y-5">
+              <div className="space-y-5">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
                     <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
@@ -803,7 +795,7 @@ const HomePage = () => {
                         type="button"
                         key={source.id}
                         onClick={() => setActiveDiscoverySource(source.id)}
-                        className={`group min-h-11 rounded-2xl border px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                        className={`group min-h-[44px] rounded-2xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
                             : "border-border/60 bg-card/90 hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
@@ -1004,7 +996,7 @@ const HomePage = () => {
                         key="discovery-loading"
                         initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        exit={{ opacity: 0 }}
                         transition={stateTransition}
                       >
                         <HorizontalScroller
@@ -1024,7 +1016,7 @@ const HomePage = () => {
                         key="discovery-error"
                         initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        exit={{ opacity: 0 }}
                         transition={stateTransition}
                         className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
                       >
@@ -1050,7 +1042,7 @@ const HomePage = () => {
                         key="discovery-empty"
                         initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        exit={{ opacity: 0 }}
                         transition={stateTransition}
                         className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
                       >
@@ -1066,7 +1058,7 @@ const HomePage = () => {
                         key="discovery-ready"
                         initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        exit={{ opacity: 0 }}
                         transition={stateTransition}
                       >
                         <HorizontalScroller
@@ -1114,7 +1106,7 @@ const HomePage = () => {
                   className="space-y-4"
                   initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -10 }}
+                  exit={{ opacity: 0 }}
                   transition={{
                     duration: shouldReduceMotion ? 0.01 : 0.28,
                     ease: EASE_OUT_QUART,
@@ -1360,7 +1352,7 @@ const HomePage = () => {
                             y: shouldReduceMotion ? 0 : -8,
                           }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                          exit={{ opacity: 0 }}
                           transition={stateTransition}
                           className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-lg"
                         >
@@ -1446,7 +1438,7 @@ const HomePage = () => {
                       key="similar-loading"
                       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      exit={{ opacity: 0 }}
                       transition={stateTransition}
                     >
                       <HorizontalScroller
@@ -1466,7 +1458,7 @@ const HomePage = () => {
                       key="similar-error"
                       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      exit={{ opacity: 0 }}
                       transition={stateTransition}
                       className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
                     >
@@ -1492,7 +1484,7 @@ const HomePage = () => {
                       key="similar-empty"
                       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      exit={{ opacity: 0 }}
                       transition={stateTransition}
                       className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
                     >
@@ -1508,7 +1500,7 @@ const HomePage = () => {
                       key="similar-ready"
                       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      exit={{ opacity: 0 }}
                       transition={stateTransition}
                     >
                       <HorizontalScroller
@@ -1573,7 +1565,7 @@ const HomePage = () => {
                       type="button"
                       key={mood.id}
                       onClick={() => handleMoodOptionSelect(mood.id, isActive)}
-                      className={`flex min-h-11 flex-col items-center gap-1 rounded-2xl border px-3 py-3 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                      className={`flex min-h-[44px] flex-col items-center gap-1 rounded-2xl border px-3 py-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                         isActive
                           ? "border-primary/85 bg-primary text-primary-foreground shadow-sm dark:text-cream"
                           : "bg-background border-border/50 hover:border-primary/55 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
@@ -1615,7 +1607,7 @@ const HomePage = () => {
           </aside>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
