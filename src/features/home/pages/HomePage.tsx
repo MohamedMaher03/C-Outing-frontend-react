@@ -151,6 +151,8 @@ const HomePage = () => {
   const { user } = useAuth();
   const { tourActive, currentStep, totalSteps, next, skip, finish } =
     useGuidedTour();
+  const shouldReduceMotion = useReducedMotion();
+  const [isCoarsePointer, setIsCoarsePointer] = useState(false);
 
   const {
     search,
@@ -208,6 +210,24 @@ const HomePage = () => {
     () => new Intl.NumberFormat(locale, { notation: "compact" }),
     [locale],
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(pointer: coarse)");
+    const updatePointerState = () => setIsCoarsePointer(mediaQuery.matches);
+    updatePointerState();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", updatePointerState);
+      return () => mediaQuery.removeEventListener("change", updatePointerState);
+    }
+
+    mediaQuery.addListener(updatePointerState);
+    return () => mediaQuery.removeListener(updatePointerState);
+  }, []);
 
   const localizedFilters = useMemo(
     () =>
@@ -352,52 +372,52 @@ const HomePage = () => {
     isSimilarInputFocused ||
     (similarSearchInput.trim().length > 0 &&
       similarSearchInput !== selectedSimilarSeedPlace?.name);
-  const shouldReduceMotion = useReducedMotion();
+  const shouldStabilizeMotion = shouldReduceMotion || isCoarsePointer;
 
   const stateTransition = useMemo(
     () => ({
-      duration: shouldReduceMotion ? 0.01 : 0.24,
+      duration: shouldStabilizeMotion ? 0.01 : 0.24,
       ease: EASE_OUT_QUART,
     }),
-    [shouldReduceMotion],
+    [shouldStabilizeMotion],
   );
 
   const heroContainerVariants = useMemo(
     () => ({
-      hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 16 },
+      hidden: { opacity: 0, y: shouldStabilizeMotion ? 0 : 16 },
       visible: {
         opacity: 1,
         y: 0,
         transition: {
-          duration: shouldReduceMotion ? 0.01 : 0.62,
+          duration: shouldStabilizeMotion ? 0.01 : 0.62,
           ease: EASE_OUT_EXPO,
-          staggerChildren: shouldReduceMotion ? 0 : 0.12,
-          delayChildren: shouldReduceMotion ? 0 : 0.08,
+          staggerChildren: shouldStabilizeMotion ? 0 : 0.12,
+          delayChildren: shouldStabilizeMotion ? 0 : 0.08,
         },
       },
     }),
-    [shouldReduceMotion],
+    [shouldStabilizeMotion],
   );
 
   const heroItemVariants = useMemo(
     () => ({
-      hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 14 },
+      hidden: { opacity: 0, y: shouldStabilizeMotion ? 0 : 14 },
       visible: {
         opacity: 1,
         y: 0,
         transition: {
-          duration: shouldReduceMotion ? 0.01 : 0.48,
+          duration: shouldStabilizeMotion ? 0.01 : 0.48,
           ease: EASE_OUT_QUART,
         },
       },
     }),
-    [shouldReduceMotion],
+    [shouldStabilizeMotion],
   );
 
   const cardDelay = useCallback(
     (index: number, base = 0) =>
-      shouldReduceMotion ? 0 : base + Math.min(index * 0.06, 0.28),
-    [shouldReduceMotion],
+      shouldStabilizeMotion ? 0 : base + Math.min(index * 0.06, 0.28),
+    [shouldStabilizeMotion],
   );
 
   const handlePriceRangeSelect = (priceRange: VenuePriceRange) => {
@@ -421,9 +441,9 @@ const HomePage = () => {
       return;
     }
 
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const prefersReducedMotion =
+      shouldStabilizeMotion ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const maxAttempts = 8;
     const offset = 96;
     let attempts = 0;
@@ -454,7 +474,7 @@ const HomePage = () => {
     };
 
     window.requestAnimationFrame(tryScroll);
-  }, []);
+  }, [shouldStabilizeMotion]);
 
   const handleMoodOptionSelect = useCallback(
     (moodId: string, isActive: boolean) => {
@@ -567,7 +587,7 @@ const HomePage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{
-        duration: shouldReduceMotion ? 0.01 : 0.32,
+        duration: shouldStabilizeMotion ? 0.01 : 0.32,
         ease: EASE_OUT_QUART,
       }}
     >
@@ -586,10 +606,10 @@ const HomePage = () => {
         <motion.div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${cairoBg})` }}
-          initial={{ scale: shouldReduceMotion ? 1 : 1.06 }}
+          initial={{ scale: shouldStabilizeMotion ? 1 : 1.06 }}
           animate={{ scale: 1 }}
           transition={{
-            duration: shouldReduceMotion ? 0.01 : 0.85,
+            duration: shouldStabilizeMotion ? 0.01 : 0.85,
             ease: EASE_OUT_EXPO,
           }}
         />
@@ -663,19 +683,19 @@ const HomePage = () => {
                   aria-pressed={isActive}
                   onClick={() => toggleFilter(filter.id)}
                   whileHover={
-                    shouldReduceMotion
+                    shouldStabilizeMotion
                       ? undefined
                       : { y: -2, transition: { duration: 0.16 } }
                   }
                   whileTap={
-                    shouldReduceMotion
+                    shouldStabilizeMotion
                       ? undefined
                       : { scale: 0.97, transition: { duration: 0.1 } }
                   }
-                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
+                  initial={{ opacity: 0, y: shouldStabilizeMotion ? 0 : 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
-                    duration: shouldReduceMotion ? 0.01 : 0.26,
+                    duration: shouldStabilizeMotion ? 0.01 : 0.26,
                     ease: EASE_OUT_QUART,
                     delay: cardDelay(index, 0.18),
                   }}
@@ -696,12 +716,12 @@ const HomePage = () => {
 
       <motion.div
         className="max-w-7xl mx-auto px-4 pt-4"
-        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 14 }}
+        initial={{ opacity: 0, y: shouldStabilizeMotion ? 0 : 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
-          duration: shouldReduceMotion ? 0.01 : 0.36,
+          duration: shouldStabilizeMotion ? 0.01 : 0.36,
           ease: EASE_OUT_QUART,
-          delay: shouldReduceMotion ? 0 : 0.1,
+          delay: shouldStabilizeMotion ? 0 : 0.1,
         }}
       >
         <LocationPermissionBanner
@@ -715,9 +735,9 @@ const HomePage = () => {
           <motion.div
             key="save-error"
             className="mx-auto mt-4 max-w-7xl px-4"
-            initial={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+            initial={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+            exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
             transition={stateTransition}
           >
             <div
@@ -1047,9 +1067,12 @@ const HomePage = () => {
                     {showDiscoverySkeleton ? (
                       <motion.div
                         key="discovery-loading"
-                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                        initial={{
+                          opacity: 0,
+                          y: shouldStabilizeMotion ? 0 : 10,
+                        }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
                         transition={stateTransition}
                       >
                         <HorizontalScroller
@@ -1067,9 +1090,12 @@ const HomePage = () => {
                     ) : discoveryError ? (
                       <motion.div
                         key="discovery-error"
-                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                        initial={{
+                          opacity: 0,
+                          y: shouldStabilizeMotion ? 0 : 10,
+                        }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
                         transition={stateTransition}
                         className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
                       >
@@ -1093,9 +1119,12 @@ const HomePage = () => {
                     ) : discoveryPlaces.length === 0 ? (
                       <motion.div
                         key="discovery-empty"
-                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                        initial={{
+                          opacity: 0,
+                          y: shouldStabilizeMotion ? 0 : 10,
+                        }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
                         transition={stateTransition}
                         className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
                       >
@@ -1109,9 +1138,12 @@ const HomePage = () => {
                     ) : (
                       <motion.div
                         key="discovery-ready"
-                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                        initial={{
+                          opacity: 0,
+                          y: shouldStabilizeMotion ? 0 : 10,
+                        }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
                         transition={stateTransition}
                       >
                         <HorizontalScroller
@@ -1124,11 +1156,11 @@ const HomePage = () => {
                               className="snap-start"
                               initial={{
                                 opacity: 0,
-                                y: shouldReduceMotion ? 0 : 12,
+                                y: shouldStabilizeMotion ? 0 : 12,
                               }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{
-                                duration: shouldReduceMotion ? 0.01 : 0.3,
+                                duration: shouldStabilizeMotion ? 0.01 : 0.3,
                                 ease: EASE_OUT_QUART,
                                 delay: cardDelay(index),
                               }}
@@ -1157,11 +1189,11 @@ const HomePage = () => {
                 <motion.section
                   ref={moodSectionRef}
                   className="space-y-4"
-                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16 }}
+                  initial={{ opacity: 0, y: shouldStabilizeMotion ? 0 : 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -10 }}
+                  exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -10 }}
                   transition={{
-                    duration: shouldReduceMotion ? 0.01 : 0.28,
+                    duration: shouldStabilizeMotion ? 0.01 : 0.28,
                     ease: EASE_OUT_QUART,
                   }}
                 >
@@ -1404,10 +1436,13 @@ const HomePage = () => {
                           key="similar-suggestions"
                           initial={{
                             opacity: 0,
-                            y: shouldReduceMotion ? 0 : -8,
+                            y: shouldStabilizeMotion ? 0 : -8,
                           }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                          exit={{
+                            opacity: 0,
+                            y: shouldStabilizeMotion ? 0 : -8,
+                          }}
                           transition={stateTransition}
                           className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-lg"
                         >
@@ -1507,9 +1542,12 @@ const HomePage = () => {
                   {isSimilarLoading ? (
                     <motion.div
                       key="similar-loading"
-                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      initial={{
+                        opacity: 0,
+                        y: shouldStabilizeMotion ? 0 : 10,
+                      }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
                       transition={stateTransition}
                     >
                       <HorizontalScroller
@@ -1527,9 +1565,12 @@ const HomePage = () => {
                   ) : similarError ? (
                     <motion.div
                       key="similar-error"
-                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      initial={{
+                        opacity: 0,
+                        y: shouldStabilizeMotion ? 0 : 10,
+                      }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
                       transition={stateTransition}
                       className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
                     >
@@ -1553,9 +1594,12 @@ const HomePage = () => {
                   ) : similarPlaces.length === 0 ? (
                     <motion.div
                       key="similar-empty"
-                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      initial={{
+                        opacity: 0,
+                        y: shouldStabilizeMotion ? 0 : 10,
+                      }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
                       transition={stateTransition}
                       className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
                     >
@@ -1569,9 +1613,12 @@ const HomePage = () => {
                   ) : (
                     <motion.div
                       key="similar-ready"
-                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      initial={{
+                        opacity: 0,
+                        y: shouldStabilizeMotion ? 0 : 10,
+                      }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
                       transition={stateTransition}
                     >
                       <HorizontalScroller
@@ -1584,11 +1631,11 @@ const HomePage = () => {
                             className="snap-start"
                             initial={{
                               opacity: 0,
-                              y: shouldReduceMotion ? 0 : 12,
+                              y: shouldStabilizeMotion ? 0 : 12,
                             }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{
-                              duration: shouldReduceMotion ? 0.01 : 0.3,
+                              duration: shouldStabilizeMotion ? 0.01 : 0.3,
                               ease: EASE_OUT_QUART,
                               delay: cardDelay(index),
                             }}
