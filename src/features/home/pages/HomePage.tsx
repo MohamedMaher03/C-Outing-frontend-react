@@ -110,13 +110,21 @@ const HorizontalScroller = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative overflow-hidden">
+      {/* Scroll-fade left edge — signals more content to the left */}
+      <div
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-background to-transparent transition-opacity duration-200",
+          canScrollLeft ? "opacity-100" : "opacity-0",
+        )}
+      />
       <button
         type="button"
         onClick={() => scrollByDirection("left")}
         aria-label={t("home.scroller.scrollLeft", { label: ariaLabel })}
         disabled={!canScrollLeft}
-        className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-card/95 text-foreground shadow-sm transition-opacity hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
+        className="absolute left-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-md transition-opacity hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
@@ -124,7 +132,7 @@ const HorizontalScroller = ({
       <div
         ref={scrollRef}
         className={cn(
-          "-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 pt-1 scrollbar-hide sm:gap-4",
+          "-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 pt-1 scrollbar-hide sm:gap-4 md:px-20",
           className,
         )}
         aria-label={ariaLabel}
@@ -137,10 +145,18 @@ const HorizontalScroller = ({
         onClick={() => scrollByDirection("right")}
         aria-label={t("home.scroller.scrollRight", { label: ariaLabel })}
         disabled={!canScrollRight}
-        className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-card/95 text-foreground shadow-sm transition-opacity hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
+        className="absolute right-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-md transition-opacity hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="h-4 w-4 " />
       </button>
+      {/* Scroll-fade right edge — signals more content to the right */}
+      <div
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-background to-transparent transition-opacity duration-200",
+          canScrollRight ? "opacity-100" : "opacity-0",
+        )}
+      />
     </div>
   );
 };
@@ -583,7 +599,7 @@ const HomePage = () => {
           />
         )}
       </AnimatePresence>
-      <div className="relative h-[360px] overflow-hidden sm:h-[400px] lg:h-[430px]">
+      <div className="relative h-[310px] overflow-hidden sm:h-[380px] lg:h-[430px]">
         <motion.div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${cairoBg})` }}
@@ -637,7 +653,7 @@ const HomePage = () => {
             <button
               type="button"
               onClick={handleSearchNavigate}
-              className="absolute right-2 top-1/2 z-10 h-8 min-w-[4.5rem] -translate-y-1/2 rounded-full bg-secondary/90 px-3 text-xs font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:h-10 sm:px-4"
+              className="absolute right-2 top-1/2 z-10 h-10 min-w-[4.5rem] -translate-y-1/2 rounded-full bg-secondary/90 px-3 text-xs font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:h-11 sm:px-4"
               aria-label={t("home.hero.searchAction", undefined, "Search")}
             >
               {t("home.hero.searchAction", undefined, "Search")}
@@ -680,7 +696,7 @@ const HomePage = () => {
                     ease: EASE_OUT_QUART,
                     delay: cardDelay(index, 0.18),
                   }}
-                  className={`inline-flex h-10 flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-xs font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:h-11 sm:gap-2 sm:px-5 sm:text-sm ${
+                  className={`inline-flex h-11 flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-xs font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:h-11 sm:gap-2 sm:px-5 sm:text-sm ${
                     isActive
                       ? "border-accent/90 bg-accent text-accent-foreground shadow-sm"
                       : "border-white/20 bg-black/20 text-white/90 backdrop-blur-md hover:border-primary/65 hover:bg-primary/28 hover:text-primary-foreground dark:hover:bg-primary/35 dark:hover:text-cream"
@@ -746,7 +762,7 @@ const HomePage = () => {
       </AnimatePresence>
 
       {/* ====== MAIN CONTENT: TWO-COLUMN LAYOUT ====== */}
-      <div className="mx-auto max-w-7xl px-4 py-5 pb-10 sm:py-6 sm:pb-12 md:py-8 md:pb-8">
+      <div className="mx-auto max-w-7xl px-4 pt-5 [padding-bottom:max(2.5rem,calc(env(safe-area-inset-bottom,0px)+2.5rem))] sm:py-6 sm:pb-12 md:py-8 md:pb-8">
         <div className="grid grid-cols-1 items-start gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           {/* ── LEFT: Main Feed ── */}
           <div
@@ -802,7 +818,14 @@ const HomePage = () => {
                         }`}
                         style={{ transform: "translateZ(0)" }}
                       >
-                        <MoodIcon className="h-4 w-4 shrink-0 text-secondary/90 dark:text-primary" />
+                        <MoodIcon
+                          className={cn(
+                            "h-4 w-4 shrink-0",
+                            isActive
+                              ? "text-primary-foreground"
+                              : "text-secondary/90 dark:text-primary",
+                          )}
+                        />
                         <span className="min-w-0 truncate text-xs font-medium text-foreground leading-tight">
                           {getMoodLabel(mood.id, mood.label)}
                         </span>
@@ -829,19 +852,19 @@ const HomePage = () => {
                       </span>
                       {t("home.discovery.title")}
                     </h2>
-                    <p className="text-sm text-muted-foreground mt-0.5 ml-0 sm:mt-1">
+                    <p className="text-sm text-muted-foreground mt-0.5 mb-2 ml-0 sm:mt-2">
                       {t("home.discovery.subtitle")}
                     </p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1.5 font-medium text-foreground">
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs sm:gap-2 mb-2">
+                    <span className="max-w-[9rem] truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1.5 font-medium text-foreground sm:max-w-none">
                       {t("home.discovery.topRatedCount", {
                         count: compactNumberFormatter.format(
                           globalTopRatedVenues.length,
                         ),
                       })}
                     </span>
-                    <span className="truncate rounded-full border border-border/70 bg-background px-3 py-1.5 font-medium text-foreground">
+                    <span className="max-w-[9rem] truncate rounded-full border border-border/70 bg-background px-3 py-1.5 font-medium text-foreground sm:max-w-none">
                       {t("home.discovery.areaCount", {
                         area: selectedArea,
                         count: compactNumberFormatter.format(
@@ -853,7 +876,7 @@ const HomePage = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-0.5 scrollbar-hide sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 lg:grid-cols-5">
                 {localizedDiscoverySources.map((source) => {
                   const Icon = source.icon;
                   const isActive = activeDiscoverySource === source.id;
@@ -862,7 +885,7 @@ const HomePage = () => {
                       type="button"
                       key={source.id}
                       onClick={() => setActiveDiscoverySource(source.id)}
-                      className={`group min-h-[2.75rem] rounded-xl border px-2 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:rounded-2xl sm:px-3 sm:py-2.5 ${
+                      className={`group min-h-[2.75rem] min-w-[6.5rem] flex-shrink-0 rounded-xl border px-2 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:min-w-0 sm:rounded-2xl sm:px-3 sm:py-2.5 ${
                         isActive
                           ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
                           : "border-border/60 bg-card/90 hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
@@ -1304,7 +1327,7 @@ const HomePage = () => {
                   onClick={() => navigate("/home/see-all/curated")}
                   variant="ghost"
                   size="sm"
-                  className="h-9 flex-shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground sm:h-8"
+                  className="h-10 flex-shrink-0 px-3 text-xs text-muted-foreground hover:text-foreground"
                 >
                   {t("home.seeAll")}
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -1345,7 +1368,7 @@ const HomePage = () => {
                     onClick={() => navigate("/home/see-all/trending")}
                     variant="ghost"
                     size="sm"
-                    className="h-9 flex-shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground sm:h-8"
+                    className="h-10 flex-shrink-0 px-3 text-xs text-muted-foreground hover:text-foreground"
                   >
                     {t("home.seeAll")}
                     <ChevronRight className="h-3.5 w-3.5" />
@@ -1427,7 +1450,7 @@ const HomePage = () => {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                           transition={stateTransition}
-                          className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-lg"
+                          className="absolute z-20 mt-2 max-h-52 w-full overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-lg sm:max-h-72"
                         >
                           {isSimilarSearchLoading ? (
                             <p className="px-3 py-2 text-xs text-muted-foreground">
@@ -1495,7 +1518,7 @@ const HomePage = () => {
                     </AnimatePresence>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 scrollbar-hide sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
                     {similarSeedOptions.slice(0, 6).map((place) => {
                       const isActive = selectedSimilarSeedId === place.id;
                       return (
@@ -1508,7 +1531,7 @@ const HomePage = () => {
                             selectPlaceForSimilar(place.id);
                             setIsSimilarInputFocused(false);
                           }}
-                          className={`rounded-full border px-4 py-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                          className={`flex-shrink-0 rounded-full border px-4 py-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             isActive
                               ? "border-primary/85 bg-primary text-primary-foreground shadow-sm dark:text-cream"
                               : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"

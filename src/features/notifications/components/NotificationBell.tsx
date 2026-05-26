@@ -140,7 +140,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
   });
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative h-full">
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {unreadCount > 0
           ? t("notifications.unreadStatus", {
@@ -158,7 +158,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
         className={cn(
           "relative transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           mobile
-            ? "flex h-full min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1.5 py-1.5 text-muted-foreground hover:text-foreground"
+            ? "flex h-full w-full min-h-11 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1.5 py-1.5 text-muted-foreground hover:text-foreground"
             : "flex min-h-10 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
       >

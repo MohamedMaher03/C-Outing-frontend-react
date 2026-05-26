@@ -496,7 +496,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.mobile.moodSelectorHint": "Tap to personalize suggestions",
     "home.mobile.trendingTags": "Trending tags",
 
-    "home.discovery.title": "Venue Discovery Studio",
+    "home.discovery.title": "Venue Discovery",
     "home.discovery.subtitle":
       "Explore live venue slices by district, type, budget, and rating intelligence.",
     "home.discovery.topRatedCount": "Top Rated: {count}",
@@ -2165,7 +2165,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.mobile.moodSelectorHint": "اضغط لتخصيص الاقتراحات",
     "home.mobile.trendingTags": "وسوم رائجة",
 
-    "home.discovery.title": "استوديو اكتشاف الأماكن",
+    "home.discovery.title": "اكتشاف الأماكن",
     "home.discovery.subtitle":
       "استكشف شرائح الأماكن حسب المنطقة والنوع والميزانية ومستوى التقييم.",
     "home.discovery.topRatedCount": "الأعلى تقييمًا: {count}",
