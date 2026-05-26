@@ -1070,10 +1070,12 @@ const HomePage = () => {
                     ) : discoveryError ? (
                       <motion.div
                         key="discovery-error"
-                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                        transition={stateTransition}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                          duration: shouldReduceMotion ? 0.01 : 0.18,
+                        }}
                         className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
                       >
                         <p className="text-sm font-semibold text-destructive">
@@ -1096,10 +1098,12 @@ const HomePage = () => {
                     ) : discoveryPlaces.length === 0 ? (
                       <motion.div
                         key="discovery-empty"
-                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                        transition={stateTransition}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                          duration: shouldReduceMotion ? 0.01 : 0.18,
+                        }}
                         className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
                       >
                         <p className="font-semibold text-foreground">
@@ -1112,29 +1116,21 @@ const HomePage = () => {
                     ) : (
                       <motion.div
                         key="discovery-ready"
-                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                        transition={stateTransition}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                          duration: shouldReduceMotion ? 0.01 : 0.18,
+                        }}
                       >
                         <HorizontalScroller
                           ariaLabel={t("home.scroller.label.discovery")}
                           className="-mx-2 px-2"
                         >
-                          {discoveryPlaces.map((place, index) => (
-                            <motion.div
+                          {discoveryPlaces.map((place) => (
+                            <div
                               key={`${activeDiscoverySource}-${place.id}`}
                               className="snap-start"
-                              initial={{
-                                opacity: 0,
-                                y: shouldReduceMotion ? 0 : 12,
-                              }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{
-                                duration: shouldReduceMotion ? 0.01 : 0.3,
-                                ease: EASE_OUT_QUART,
-                                delay: cardDelay(index),
-                              }}
                             >
                               <PlaceCard
                                 place={place}
@@ -1144,7 +1140,7 @@ const HomePage = () => {
                                 isSavePending={isPlaceSavePending(place.id)}
                                 onClick={(id) => navigate(`/venue/${id}`)}
                               />
-                            </motion.div>
+                            </div>
                           ))}
                         </HorizontalScroller>
                       </motion.div>
@@ -1359,10 +1355,7 @@ const HomePage = () => {
             )}
 
             {/* ── Similar Places Studio ── */}
-            <section
-              className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm"
-              style={{ isolation: "isolate" }}
-            >
+            <section className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm overflow-hidden">
               <div className="space-y-5">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-start justify-between gap-3">
@@ -1584,20 +1577,10 @@ const HomePage = () => {
                         ariaLabel={t("home.scroller.label.similar")}
                         className="-mx-2 px-2"
                       >
-                        {similarPlaces.map((place, index) => (
-                          <motion.div
+                        {similarPlaces.map((place) => (
+                          <div
                             key={`similar-${place.id}`}
                             className="snap-start"
-                            initial={{
-                              opacity: 0,
-                              y: shouldReduceMotion ? 0 : 12,
-                            }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{
-                              duration: shouldReduceMotion ? 0.01 : 0.3,
-                              ease: EASE_OUT_QUART,
-                              delay: cardDelay(index),
-                            }}
                           >
                             <PlaceCard
                               place={place}
@@ -1608,7 +1591,7 @@ const HomePage = () => {
                               hideTopRatedBadge={showSimilarSuggestions}
                               onClick={(id) => navigate(`/venue/${id}`)}
                             />
-                          </motion.div>
+                          </div>
                         ))}
                       </HorizontalScroller>
                     </motion.div>
