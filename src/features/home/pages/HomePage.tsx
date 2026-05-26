@@ -36,11 +36,16 @@ import {
   MOOD_ICON_MAP,
   VENUE_PRICE_RANGE_OPTIONS,
 } from "@/features/home/mocks";
-import type { VenuePriceRange } from "@/features/home/types";
+import type { HomePlace, VenuePriceRange } from "@/features/home/types";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
-import { normalizeSearchTerm } from "@/utils/textNormalization";
+import { getErrorMessage } from "@/utils/apiError";
 import { getTranslatedText } from "@/utils/helpers";
 import { GroupSessionWidget } from "@/features/session/components/GroupSessionWidget";
+import { homeService } from "@/features/home/services/homeService";
+
+const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const;
+const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
 interface HorizontalScrollerProps {
   children: ReactNode;
@@ -55,26 +60,35 @@ const HorizontalScroller = ({
 }: HorizontalScrollerProps) => {
   const { t } = useI18n();
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const shouldReduceMotion = useReducedMotion();
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   const updateScrollButtons = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    setCanScrollLeft(el.scrollLeft > 8);
-    setCanScrollRight(el.scrollLeft < max - 8);
+    const element = scrollRef.current;
+    if (!element) {
+      return;
+    }
+
+    const maxScrollLeft = element.scrollWidth - element.clientWidth;
+    setCanScrollLeft(element.scrollLeft > 8);
+    setCanScrollRight(element.scrollLeft < maxScrollLeft - 8);
   }, []);
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.addEventListener("scroll", updateScrollButtons, { passive: true });
-    const ro = new ResizeObserver(updateScrollButtons);
-    ro.observe(el);
+    const element = scrollRef.current;
+    if (!element) {
+      return;
+    }
+
+    element.addEventListener("scroll", updateScrollButtons, { passive: true });
+
+    const resizeObserver = new ResizeObserver(updateScrollButtons);
+    resizeObserver.observe(element);
+
     return () => {
-      el.removeEventListener("scroll", updateScrollButtons);
-      ro.disconnect();
+      element.removeEventListener("scroll", updateScrollButtons);
+      resizeObserver.disconnect();
     };
   }, [updateScrollButtons]);
 
@@ -82,13 +96,16 @@ const HorizontalScroller = ({
     updateScrollButtons();
   }, [children, updateScrollButtons]);
 
-  const scrollBy = (dir: "left" | "right") => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const amount = Math.max(Math.round(el.clientWidth * 0.8), 280);
-    el.scrollBy({
-      left: dir === "left" ? -amount : amount,
-      behavior: "smooth",
+  const scrollByDirection = (direction: "left" | "right") => {
+    const element = scrollRef.current;
+    if (!element) {
+      return;
+    }
+
+    const amount = Math.max(Math.round(element.clientWidth * 0.8), 280);
+    element.scrollBy({
+      left: direction === "left" ? -amount : amount,
+      behavior: shouldReduceMotion ? "auto" : "smooth",
     });
   };
 
@@ -96,7 +113,7 @@ const HorizontalScroller = ({
     <div className="relative">
       <button
         type="button"
-        onClick={() => scrollBy("left")}
+        onClick={() => scrollByDirection("left")}
         aria-label={t("home.scroller.scrollLeft", { label: ariaLabel })}
         disabled={!canScrollLeft}
         className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-card/95 text-foreground shadow-sm transition-opacity hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
@@ -107,7 +124,7 @@ const HorizontalScroller = ({
       <div
         ref={scrollRef}
         className={cn(
-          "-mx-4 flex snap-x snap-proximity gap-4 overflow-x-auto overscroll-x-contain px-4 pb-3 scrollbar-hide",
+          "-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 pt-1 scrollbar-hide sm:gap-4",
           className,
         )}
         aria-label={ariaLabel}
@@ -117,7 +134,7 @@ const HorizontalScroller = ({
 
       <button
         type="button"
-        onClick={() => scrollBy("right")}
+        onClick={() => scrollByDirection("right")}
         aria-label={t("home.scroller.scrollRight", { label: ariaLabel })}
         disabled={!canScrollRight}
         className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-card/95 text-foreground shadow-sm transition-opacity hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
@@ -128,9 +145,6 @@ const HorizontalScroller = ({
   );
 };
 
-// ---------------------------------------------------------------------------
-// HomePage
-// ---------------------------------------------------------------------------
 const HomePage = () => {
   const { t, formatNumber, locale } = useI18n();
   const navigate = useNavigate();
@@ -243,46 +257,84 @@ const HomePage = () => {
 
   const discoveryResultCount = discoveryPlaces.length;
   const [similarSearchInput, setSimilarSearchInput] = useState("");
+  const [similarSearchResults, setSimilarSearchResults] = useState<HomePlace[]>(
+    [],
+  );
+  const [isSimilarSearchLoading, setIsSimilarSearchLoading] = useState(false);
+  const [similarSearchError, setSimilarSearchError] = useState<string | null>(
+    null,
+  );
+  const [selectedSimilarSeedFromSearch, setSelectedSimilarSeedFromSearch] =
+    useState<HomePlace | null>(null);
   const [isSimilarInputFocused, setIsSimilarInputFocused] = useState(false);
   const moodSectionRef = useRef<HTMLElement | null>(null);
 
   const similarSeedOptions = similarSeedPlaces;
 
-  const selectedSimilarSeedPlace =
-    similarSeedOptions.find((place) => place.id === selectedSimilarSeedId) ??
-    null;
+  const selectedSimilarSeedPlace = useMemo(() => {
+    if (!selectedSimilarSeedId) {
+      return null;
+    }
+
+    return (
+      similarSeedOptions.find((place) => place.id === selectedSimilarSeedId) ??
+      (selectedSimilarSeedFromSearch?.id === selectedSimilarSeedId
+        ? selectedSimilarSeedFromSearch
+        : null)
+    );
+  }, [
+    selectedSimilarSeedId,
+    similarSeedOptions,
+    selectedSimilarSeedFromSearch,
+  ]);
 
   const selectedMoodOption = useMemo(
     () => moodOptions.find((mood) => mood.id === selectedMood) ?? null,
     [moodOptions, selectedMood],
   );
 
-  const similarSeedSearchIndex = useMemo(
-    () =>
-      similarSeedOptions.map((place) => ({
-        place,
-        name: normalizeSearchTerm(place.name),
-        address: normalizeSearchTerm(place.address),
-        category: normalizeSearchTerm(place.category),
-        tags: normalizeSearchTerm((place.atmosphereTags ?? []).join(" ")),
-      })),
-    [similarSeedOptions],
-  );
+  useEffect(() => {
+    const trimmedQuery = similarSearchInput.trim();
+    if (!trimmedQuery) {
+      setIsSimilarSearchLoading(false);
+      setSimilarSearchError(null);
+      setSimilarSearchResults(similarSeedOptions.slice(0, 8));
+      return;
+    }
 
-  const similarSearchResults = useMemo(() => {
-    const query = normalizeSearchTerm(similarSearchInput);
-    if (!query) return similarSeedOptions.slice(0, 8);
-    return similarSeedSearchIndex
-      .filter(
-        ({ name, address, category, tags }) =>
-          name.includes(query) ||
-          address.includes(query) ||
-          category.includes(query) ||
-          tags.includes(query),
-      )
-      .map(({ place }) => place)
-      .slice(0, 8);
-  }, [similarSearchInput, similarSeedOptions, similarSeedSearchIndex]);
+    let cancelled = false;
+    const timeoutId = window.setTimeout(async () => {
+      setIsSimilarSearchLoading(true);
+      setSimilarSearchError(null);
+      try {
+        const response = await homeService.searchVenues({
+          searchTerm: trimmedQuery,
+          page: 1,
+          pageSize: 8,
+        });
+
+        if (!cancelled) {
+          setSimilarSearchResults(response.items);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setSimilarSearchError(
+            getErrorMessage(err, "Failed to search venues"),
+          );
+          setSimilarSearchResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSimilarSearchLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [similarSearchInput, similarSeedOptions]);
 
   const getMoodLabel = useCallback(
     (moodId: string, fallback: string) =>
@@ -300,37 +352,52 @@ const HomePage = () => {
     isSimilarInputFocused ||
     (similarSearchInput.trim().length > 0 &&
       similarSearchInput !== selectedSimilarSeedPlace?.name);
+  const shouldReduceMotion = useReducedMotion();
 
-  const scrollMoodSectionIntoView = useCallback(() => {
-    if (typeof window === "undefined") return;
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    let attempts = 0;
-    const tryScroll = () => {
-      const el = moodSectionRef.current;
-      if (el) {
-        el.scrollIntoView({
-          behavior: prefersReducedMotion ? "auto" : "smooth",
-          block: "start",
-        });
-        return;
-      }
-      if (++attempts < 8) window.requestAnimationFrame(tryScroll);
-    };
-    window.requestAnimationFrame(tryScroll);
-  }, []);
+  const stateTransition = useMemo(
+    () => ({
+      duration: shouldReduceMotion ? 0.01 : 0.24,
+      ease: EASE_OUT_QUART,
+    }),
+    [shouldReduceMotion],
+  );
 
-  const handleMoodOptionSelect = useCallback(
-    (moodId: string, isActive: boolean) => {
-      if (isActive) {
-        setSelectedMood(null);
-        return;
-      }
-      setSelectedMood(moodId);
-      scrollMoodSectionIntoView();
-    },
-    [scrollMoodSectionIntoView, setSelectedMood],
+  const heroContainerVariants = useMemo(
+    () => ({
+      hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 16 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+          duration: shouldReduceMotion ? 0.01 : 0.62,
+          ease: EASE_OUT_EXPO,
+          staggerChildren: shouldReduceMotion ? 0 : 0.12,
+          delayChildren: shouldReduceMotion ? 0 : 0.08,
+        },
+      },
+    }),
+    [shouldReduceMotion],
+  );
+
+  const heroItemVariants = useMemo(
+    () => ({
+      hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 14 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+          duration: shouldReduceMotion ? 0.01 : 0.48,
+          ease: EASE_OUT_QUART,
+        },
+      },
+    }),
+    [shouldReduceMotion],
+  );
+
+  const cardDelay = useCallback(
+    (index: number, base = 0) =>
+      shouldReduceMotion ? 0 : base + Math.min(index * 0.06, 0.28),
+    [shouldReduceMotion],
   );
 
   const handlePriceRangeSelect = (priceRange: VenuePriceRange) => {
@@ -342,9 +409,65 @@ const HomePage = () => {
 
   const handleSearchNavigate = useCallback(() => {
     const trimmed = search.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      return;
+    }
+
     navigate(`/home/search?q=${encodeURIComponent(trimmed)}`);
   }, [navigate, search]);
+
+  const scrollMoodSectionIntoView = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const maxAttempts = 8;
+    const offset = 96;
+    let attempts = 0;
+
+    const tryScroll = () => {
+      const moodSection = moodSectionRef.current;
+      if (moodSection) {
+        const rect = moodSection.getBoundingClientRect();
+        const viewportHeight =
+          window.innerHeight || document.documentElement.clientHeight;
+        const isMostlyVisible =
+          rect.top >= offset && rect.bottom <= viewportHeight - offset;
+
+        if (!isMostlyVisible) {
+          const targetTop = Math.max(0, rect.top + window.scrollY - offset);
+          window.scrollTo({
+            top: targetTop,
+            behavior: prefersReducedMotion ? "auto" : "smooth",
+          });
+        }
+        return;
+      }
+
+      attempts += 1;
+      if (attempts < maxAttempts) {
+        window.requestAnimationFrame(tryScroll);
+      }
+    };
+
+    window.requestAnimationFrame(tryScroll);
+  }, []);
+
+  const handleMoodOptionSelect = useCallback(
+    (moodId: string, isActive: boolean) => {
+      if (isActive) {
+        setSelectedMood(null);
+        return;
+      }
+
+      setSelectedMood(moodId);
+      scrollMoodSectionIntoView();
+    },
+    [scrollMoodSectionIntoView, setSelectedMood],
+  );
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -355,7 +478,6 @@ const HomePage = () => {
 
   const userName = user?.name?.split(" ")[0] || t("home.user.explorer");
 
-  // ── Loading / Error states ────────────────────────────────────────────────
   if (isLoading) {
     return (
       <PageLoading
@@ -370,9 +492,10 @@ const HomePage = () => {
       <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-primary via-primary/92 to-primary/80">
         <div className="absolute -top-20 -left-10 h-72 w-72 rounded-full bg-secondary/10 blur-2xl" />
         <div className="absolute right-0 top-12 h-64 w-64 rounded-full bg-secondary/10 blur-2xl" />
+
         <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center px-4 py-10 sm:px-6 lg:px-8">
           <section
-            className="w-full overflow-hidden rounded-3xl border border-border/60 bg-card/95 shadow-xl"
+            className="w-full overflow-hidden rounded-3xl border border-border/60 bg-card/90 shadow-xl backdrop-blur-md"
             role="alert"
             aria-live="assertive"
           >
@@ -382,6 +505,7 @@ const HomePage = () => {
                   <ShieldAlert className="h-3.5 w-3.5" />
                   {t("home.error.badge")}
                 </div>
+
                 <div className="space-y-2">
                   <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                     {t("home.error.title")}
@@ -390,6 +514,7 @@ const HomePage = () => {
                     {t("home.error.description")}
                   </p>
                 </div>
+
                 <div className="flex flex-wrap gap-3">
                   <Button
                     type="button"
@@ -400,6 +525,7 @@ const HomePage = () => {
                     <RotateCcw className="h-4 w-4" />
                     {t("common.retry")}
                   </Button>
+
                   <Button
                     type="button"
                     onClick={() => window.location.reload()}
@@ -410,10 +536,12 @@ const HomePage = () => {
                   </Button>
                 </div>
               </div>
+
               <aside className="border-t border-border/70 bg-background/45 p-6 sm:p-8 lg:border-l lg:border-t-0">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("home.error.quickCheck")}
                 </h2>
+
                 <ul className="mt-4 space-y-3">
                   <li className="rounded-2xl border border-border/70 bg-card/70 p-3 text-sm text-foreground">
                     <span className="flex items-center gap-2 font-semibold text-foreground">
@@ -433,145 +561,199 @@ const HomePage = () => {
     );
   }
 
-  // ── Main render ───────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-background">
-      {/* Guided tour — kept outside scroll flow */}
-      {tourActive && (
-        <GuidedTour
-          currentStep={currentStep}
-          totalSteps={totalSteps}
-          onNext={next}
-          onSkip={skip}
-          onFinish={finish}
-        />
-      )}
-
-      {/* ── HERO ── */}
-      <div className="relative h-[340px] overflow-hidden sm:h-[390px] lg:h-[420px]">
-        {/* Static background — no motion, no scale */}
-        <div
+    <motion.div
+      className="min-h-screen bg-background"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{
+        duration: shouldReduceMotion ? 0.01 : 0.32,
+        ease: EASE_OUT_QUART,
+      }}
+      style={{ willChange: "auto", backfaceVisibility: "hidden" }}
+    >
+      <AnimatePresence>
+        {tourActive && (
+          <GuidedTour
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            onNext={next}
+            onSkip={skip}
+            onFinish={finish}
+          />
+        )}
+      </AnimatePresence>
+      <div className="relative h-[360px] overflow-hidden sm:h-[400px] lg:h-[430px]">
+        <motion.div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${cairoBg})` }}
+          initial={{ scale: shouldReduceMotion ? 1 : 1.06 }}
+          animate={{ scale: 1 }}
+          transition={{
+            duration: shouldReduceMotion ? 0.01 : 0.85,
+            ease: EASE_OUT_EXPO,
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--navy)/0.86)] via-[hsl(var(--navy)/0.56)] to-transparent dark:from-black/72 dark:via-black/46" />
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy)/0.26)] via-transparent to-black/10 dark:from-black/24 dark:to-black/18" />
 
-        {/* Hero text — plain div, CSS fade */}
-        <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-5 pt-8 sm:pb-6 sm:pt-10 [animation:hp-fade-up_0.5s_ease-out_both]">
-          <div className="mb-6 space-y-2">
-            <p className="text-white/80 text-sm font-medium tracking-wide uppercase">
+        <motion.div
+          className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-6 pt-8 sm:pb-7 sm:pt-10 lg:pb-8"
+          variants={heroContainerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div className="mb-5 space-y-1.5" variants={heroItemVariants}>
+            <p className="text-white/80 text-xs font-medium tracking-widest uppercase">
               {getGreeting()}, {userName} ✦
             </p>
-            <h1 className="text-3xl font-semibold leading-tight sm:text-5xl lg:text-[3.4rem]">
+            <h1 className="text-2xl font-semibold leading-tight sm:text-4xl lg:text-[3.2rem] lg:leading-[1.08]">
               <span className="text-cream">{t("home.hero.title")}</span>
             </h1>
-            <p className="max-w-md text-sm text-white/85 sm:text-base">
+            <p className="max-w-sm text-sm text-white/80 sm:text-base sm:max-w-md leading-snug">
               {t("home.hero.subtitle")}
             </p>
-          </div>
+          </motion.div>
 
-          {/* Search bar */}
-          <div
+          <motion.div
             className="relative w-full max-w-2xl"
+            variants={heroItemVariants}
             data-tour="tour-search"
             id="tour-search"
           >
-            <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-white/95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-4.5 w-4.5 -translate-y-1/2 text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
             <Input
               placeholder={t("home.hero.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") handleSearchNavigate();
+                if (event.key === "Enter") {
+                  handleSearchNavigate();
+                }
               }}
               aria-label={t("home.hero.searchAria")}
-              className="h-12 rounded-2xl border border-white/20 bg-black/30 pl-12 pr-24 text-base text-white shadow-lg transition-colors placeholder:text-white/65 focus:border-secondary/70 focus:bg-black/35 focus:ring-secondary/20 sm:h-14"
+              className="h-12 rounded-2xl border border-white/25 bg-white/85 pl-11 pr-[5.5rem] text-sm text-slate-900 shadow-lg transition-colors placeholder:text-slate-500 focus:border-secondary/70 focus:bg-white focus:ring-secondary/20 backdrop-blur-md dark:bg-black/45 dark:text-white dark:placeholder:text-white/65 dark:focus:bg-black/55 sm:h-14 sm:pl-12 sm:pr-28 sm:text-base"
             />
             <button
               type="button"
               onClick={handleSearchNavigate}
-              className="absolute right-2 top-1/2 z-10 h-9 -translate-y-1/2 rounded-full bg-secondary/90 px-4 text-xs font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:h-10"
+              className="absolute right-2 top-1/2 z-10 h-8 min-w-[4.5rem] -translate-y-1/2 rounded-full bg-secondary/90 px-3 text-xs font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:h-10 sm:px-4"
               aria-label={t("home.hero.searchAction", undefined, "Search")}
             >
               {t("home.hero.searchAction", undefined, "Search")}
             </button>
-          </div>
+          </motion.div>
 
-          {/* Filter pills — plain horizontal scroll, no motion.button */}
-          <div
-            className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide"
+          <motion.div
+            className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide"
             aria-label={t("home.hero.filterAria")}
+            variants={heroItemVariants}
             data-tour="tour-filters"
             id="tour-filters"
           >
-            {localizedFilters.map((filter) => {
+            {localizedFilters.map((filter, index) => {
               const Icon = filter.icon;
               const isActive =
                 filter.id === "all"
                   ? selectedFilters.length === 0
                   : selectedFilters.includes(filter.id);
               return (
-                <button
+                <motion.button
                   type="button"
                   key={filter.id}
                   aria-pressed={isActive}
                   onClick={() => toggleFilter(filter.id)}
-                  className={`inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-5 ${
+                  whileHover={
+                    shouldReduceMotion
+                      ? undefined
+                      : { y: -2, transition: { duration: 0.16 } }
+                  }
+                  whileTap={
+                    shouldReduceMotion
+                      ? undefined
+                      : { scale: 0.97, transition: { duration: 0.1 } }
+                  }
+                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: shouldReduceMotion ? 0.01 : 0.26,
+                    ease: EASE_OUT_QUART,
+                    delay: cardDelay(index, 0.18),
+                  }}
+                  className={`inline-flex h-10 flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-xs font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:h-11 sm:gap-2 sm:px-5 sm:text-sm ${
                     isActive
                       ? "border-accent/90 bg-accent text-accent-foreground shadow-sm"
-                      : "border-white/20 bg-black/25 text-white/90 hover:border-primary/65 hover:bg-primary/28 hover:text-primary-foreground dark:hover:bg-primary/35 dark:hover:text-cream"
+                      : "border-white/20 bg-black/20 text-white/90 backdrop-blur-md hover:border-primary/65 hover:bg-primary/28 hover:text-primary-foreground dark:hover:bg-primary/35 dark:hover:text-cream"
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   {filter.label}
-                </button>
+                </motion.button>
               );
             })}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
 
-      {/* Location banner */}
-      <div className="max-w-7xl mx-auto px-4 pt-4">
+      <motion.div
+        className="max-w-7xl mx-auto px-4 pt-4"
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: shouldReduceMotion ? 0.01 : 0.36,
+          ease: EASE_OUT_QUART,
+          delay: shouldReduceMotion ? 0 : 0.1,
+        }}
+      >
         <LocationPermissionBanner
           userLocation={userLocation}
           onEnableLocation={requestUserLocation}
         />
-      </div>
+      </motion.div>
 
-      {/* Save error toast */}
-      {saveError && (
-        <div className="mx-auto mt-4 max-w-7xl px-4">
-          <div
-            className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3"
-            role="status"
-            aria-live="polite"
+      <AnimatePresence initial={false}>
+        {saveError && (
+          <motion.div
+            key="save-error"
+            className="mx-auto mt-4 max-w-7xl px-4"
+            initial={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+            transition={stateTransition}
           >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-medium text-destructive">
-                {saveError}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={clearSaveError}
-                className="h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
-              >
-                {t("common.dismiss")}
-              </Button>
+            <div
+              className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-medium text-destructive">
+                  {saveError}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={clearSaveError}
+                  className="h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
+                >
+                  {t("common.dismiss")}
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* ====== MAIN CONTENT ====== */}
-      <div className="mx-auto max-w-7xl px-4 py-6 md:py-8">
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+      {/* ====== MAIN CONTENT: TWO-COLUMN LAYOUT ====== */}
+      <div className="mx-auto max-w-7xl px-4 py-5 pb-10 sm:py-6 sm:pb-12 md:py-8 md:pb-8">
+        <div className="grid grid-cols-1 items-start gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           {/* ── LEFT: Main Feed ── */}
-          <div className="flex-1 min-w-0 space-y-12">
-            {/* Group Session Banner (mobile/tablet) */}
+          <div
+            className="flex-1 min-w-0 space-y-8 sm:space-y-10 lg:space-y-12"
+            style={{ isolation: "isolate" }}
+          >
+            {/* Group Session Banner (mobile / tablet) */}
             <section
               className="lg:hidden"
               aria-label={t("session.widget.ariaLabel")}
@@ -579,22 +761,30 @@ const HomePage = () => {
               <GroupSessionWidget variant="banner" />
             </section>
 
-            {/* ── MOOD SELECTOR (mobile/tablet) ── */}
+            {/* ── QUICK CONTROLS (MOBILE/TABLET) ── */}
             <section
               className="space-y-4 lg:hidden"
+              style={{ isolation: "isolate", position: "relative", zIndex: 1 }}
               data-tour="tour-mood"
               id="tour-mood"
             >
-              <div className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-base font-semibold text-foreground">
+              <div
+                className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm"
+                style={{
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                }}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold text-foreground">
                     {t("home.mobile.moodSelectorTitle")}
                   </h2>
                   <span className="text-xs font-medium text-muted-foreground">
                     {t("home.mobile.moodSelectorHint")}
                   </span>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {moodOptions.map((mood) => {
                     const isActive = selectedMood === mood.id;
                     const MoodIcon = MOOD_ICON_MAP[mood.icon] ?? Sparkles;
@@ -605,14 +795,15 @@ const HomePage = () => {
                         onClick={() =>
                           handleMoodOptionSelect(mood.id, isActive)
                         }
-                        className={`flex min-h-[44px] items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                        className={`flex min-h-[2.75rem] items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
-                            : "border-border/60 bg-background hover:border-primary/55 hover:bg-primary/12"
+                            : "border-border/60 bg-card hover:border-primary/55 hover:bg-primary/10"
                         }`}
+                        style={{ transform: "translateZ(0)" }}
                       >
                         <MoodIcon className="h-4 w-4 shrink-0 text-secondary/90 dark:text-primary" />
-                        <span className="min-w-0 truncate text-xs font-medium text-foreground">
+                        <span className="min-w-0 truncate text-xs font-medium text-foreground leading-tight">
                           {getMoodLabel(mood.id, mood.label)}
                         </span>
                       </button>
@@ -622,35 +813,35 @@ const HomePage = () => {
               </div>
             </section>
 
-            {/* ── VENUE DISCOVERY STUDIO ── */}
+            {/* ── Venue Discovery Studio (New Endpoints) ── */}
             <section
-              className="rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-5 sm:p-6 shadow-sm"
+              className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm"
+              style={{ isolation: "isolate" }}
               data-tour="tour-discovery"
               id="tour-discovery"
             >
               <div className="space-y-5">
-                {/* Header */}
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <div>
-                    <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/12 text-secondary dark:bg-primary/18 dark:text-primary">
-                        <Compass className="h-4 w-4" />
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+                      <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl bg-secondary/12 text-secondary dark:bg-primary/18 dark:text-primary sm:h-8 sm:w-8">
+                        <Compass className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </span>
                       {t("home.discovery.title")}
                     </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-0.5 ml-0 sm:mt-1">
                       {t("home.discovery.subtitle")}
                     </p>
                   </div>
-                  <div className="flex w-full flex-wrap items-center gap-2 text-xs sm:w-auto sm:justify-end">
-                    <span className="max-w-[180px] truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1.5 font-medium text-foreground">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1.5 font-medium text-foreground">
                       {t("home.discovery.topRatedCount", {
                         count: compactNumberFormatter.format(
                           globalTopRatedVenues.length,
                         ),
                       })}
                     </span>
-                    <span className="max-w-[180px] truncate rounded-full border border-border/70 bg-background px-3 py-1.5 font-medium text-foreground">
+                    <span className="truncate rounded-full border border-border/70 bg-background px-3 py-1.5 font-medium text-foreground">
                       {t("home.discovery.areaCount", {
                         area: selectedArea,
                         count: compactNumberFormatter.format(
@@ -660,61 +851,166 @@ const HomePage = () => {
                     </span>
                   </div>
                 </div>
+              </div>
 
-                {/* Source selector tabs */}
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                  {localizedDiscoverySources.map((source) => {
-                    const Icon = source.icon;
-                    const isActive = activeDiscoverySource === source.id;
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                {localizedDiscoverySources.map((source) => {
+                  const Icon = source.icon;
+                  const isActive = activeDiscoverySource === source.id;
+                  return (
+                    <button
+                      type="button"
+                      key={source.id}
+                      onClick={() => setActiveDiscoverySource(source.id)}
+                      className={`group min-h-[2.75rem] rounded-xl border px-2 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:rounded-2xl sm:px-3 sm:py-2.5 ${
+                        isActive
+                          ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                          : "border-border/60 bg-card/90 hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <span
+                          className={`inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md sm:h-7 sm:w-7 sm:rounded-lg ${
+                            isActive
+                              ? "bg-primary-foreground/18 text-primary-foreground"
+                              : "bg-muted/80 text-muted-foreground group-hover:text-primary dark:bg-primary/15 dark:text-primary/85 dark:group-hover:bg-primary/24 dark:group-hover:text-primary"
+                          }`}
+                        >
+                          <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </span>
+                        <span
+                          className={`text-[11px] font-medium leading-tight sm:text-xs ${
+                            isActive
+                              ? "text-primary-foreground"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {source.label}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {activeDiscoverySource === "district" && (
+                <HorizontalScroller
+                  ariaLabel={t(
+                    "home.discovery.districtsAria",
+                    undefined,
+                    "Popular districts",
+                  )}
+                  className="-mx-2 px-2"
+                >
+                  {popularDistricts.map((district) => {
+                    const isActive = selectedDistrict === district.name;
+                    const translatedDistrictName = getTranslatedText(
+                      district.nameKey,
+                      district.name,
+                      t,
+                    );
                     return (
                       <button
                         type="button"
-                        key={source.id}
-                        onClick={() => setActiveDiscoverySource(source.id)}
-                        className={`group min-h-[44px] rounded-2xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                        key={district.id}
+                        onClick={() => {
+                          setSelectedDistrict(isActive ? null : district.name);
+                          setActiveDiscoverySource("district");
+                        }}
+                        className={`flex-shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
-                            : "border-border/60 bg-card/90 hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
+                            : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${
-                              isActive
-                                ? "bg-primary-foreground/18 text-primary-foreground"
-                                : "bg-muted/80 text-muted-foreground group-hover:text-primary dark:bg-primary/15 dark:text-primary/85 dark:group-hover:bg-primary/24 dark:group-hover:text-primary"
-                            }`}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </span>
-                          <span
-                            className={`text-xs font-medium leading-tight ${
-                              isActive
-                                ? "text-primary-foreground"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {source.label}
-                          </span>
-                        </div>
+                        {translatedDistrictName}
+                      </button>
+                    );
+                  })}
+                </HorizontalScroller>
+              )}
+
+              {activeDiscoverySource === "type" && (
+                <div className="flex flex-wrap gap-2">
+                  {typeDiscoveryOptions.map((option) => {
+                    const isActive = selectedVenueType === option.id;
+
+                    return (
+                      <button
+                        type="button"
+                        key={option.id}
+                        onClick={() => {
+                          setSelectedVenueType(isActive ? null : option.id);
+                          setActiveDiscoverySource("type");
+                        }}
+                        className={`rounded-xl border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                          isActive
+                            ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                            : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
+                        }`}
+                      >
+                        {option.label}
                       </button>
                     );
                   })}
                 </div>
+              )}
 
-                {/* District filter */}
-                {activeDiscoverySource === "district" && (
+              {activeDiscoverySource === "price-range" && (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                  {localizedPriceRangeOptions.map((option) => {
+                    const isActive = selectedPriceRange === option.id;
+                    return (
+                      <button
+                        type="button"
+                        key={option.id}
+                        onClick={() => handlePriceRangeSelect(option.id)}
+                        className={`rounded-2xl border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                          isActive
+                            ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                            : "border-border/60 bg-card hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
+                        }`}
+                      >
+                        <p
+                          className={`text-sm font-semibold tracking-tight ${
+                            isActive
+                              ? "text-primary-foreground"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {option.label}
+                        </p>
+                        <p
+                          className={`text-[11px] font-medium ${
+                            isActive
+                              ? "text-primary-foreground/85"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {option.caption}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {activeDiscoverySource === "top-rated-area" && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    {t("home.discovery.selectArea")}
+                  </p>
                   <HorizontalScroller
                     ariaLabel={t(
-                      "home.discovery.districtsAria",
+                      "home.discovery.areasAria",
                       undefined,
-                      "Popular districts",
+                      "Popular areas",
                     )}
                     className="-mx-2 px-2"
                   >
                     {popularDistricts.map((district) => {
-                      const isActive = selectedDistrict === district.name;
-                      const label = getTranslatedText(
+                      const isActive = selectedArea === district.name;
+                      const translatedDistrictName = getTranslatedText(
                         district.nameKey,
                         district.name,
                         t,
@@ -722,12 +1018,10 @@ const HomePage = () => {
                       return (
                         <button
                           type="button"
-                          key={district.id}
+                          key={`${district.id}-area`}
                           onClick={() => {
-                            setSelectedDistrict(
-                              isActive ? null : district.name,
-                            );
-                            setActiveDiscoverySource("district");
+                            setSelectedArea(district.name);
+                            setActiveDiscoverySource("top-rated-area");
                           }}
                           className={`flex-shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             isActive
@@ -735,138 +1029,200 @@ const HomePage = () => {
                               : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                           }`}
                         >
-                          {label}
+                          {translatedDistrictName}
                         </button>
                       );
                     })}
                   </HorizontalScroller>
-                )}
+                </div>
+              )}
 
-                {/* Type filter */}
-                {activeDiscoverySource === "type" && (
-                  <div className="flex flex-wrap gap-2">
-                    {typeDiscoveryOptions.map((option) => {
-                      const isActive = selectedVenueType === option.id;
-                      return (
-                        <button
-                          type="button"
-                          key={option.id}
-                          onClick={() => {
-                            setSelectedVenueType(isActive ? null : option.id);
-                            setActiveDiscoverySource("type");
-                          }}
-                          className={`rounded-xl border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                            isActive
-                              ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
-                              : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      );
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-foreground shrink-0">
+                    {t("home.discovery.results", {
+                      count: formatNumber(discoveryResultCount),
                     })}
-                  </div>
-                )}
-
-                {/* Price range filter */}
-                {activeDiscoverySource === "price-range" && (
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                    {localizedPriceRangeOptions.map((option) => {
-                      const isActive = selectedPriceRange === option.id;
-                      return (
-                        <button
-                          type="button"
-                          key={option.id}
-                          onClick={() => handlePriceRangeSelect(option.id)}
-                          className={`rounded-2xl border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                            isActive
-                              ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
-                              : "border-border/60 bg-card hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
-                          }`}
-                        >
-                          <p
-                            className={`text-sm font-semibold tracking-tight ${isActive ? "text-primary-foreground" : "text-foreground"}`}
-                          >
-                            {option.label}
-                          </p>
-                          <p
-                            className={`text-[11px] font-medium ${isActive ? "text-primary-foreground/85" : "text-muted-foreground"}`}
-                          >
-                            {option.caption}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Top-rated area filter */}
-                {activeDiscoverySource === "top-rated-area" && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                      {t("home.discovery.selectArea")}
-                    </p>
-                    <HorizontalScroller
-                      ariaLabel={t(
-                        "home.discovery.areasAria",
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate text-right min-w-0">
+                    {t("home.discovery.sourceLabel", {
+                      source: t(
+                        `home.discovery.source.${activeDiscoverySource}`,
                         undefined,
-                        "Popular areas",
-                      )}
-                      className="-mx-2 px-2"
+                        activeDiscoverySource.replace("-", " "),
+                      ),
+                    })}
+                  </p>
+                </div>
+
+                <div style={{ position: "relative", overflow: "hidden" }}>
+                  <AnimatePresence mode="wait" initial={false}>
+                    {showDiscoverySkeleton ? (
+                      <motion.div
+                        key="discovery-loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                          duration: shouldReduceMotion ? 0.01 : 0.18,
+                        }}
+                      >
+                        <HorizontalScroller
+                          ariaLabel={t("home.scroller.label.discovery")}
+                          className="-mx-2 px-2"
+                        >
+                          {Array.from({ length: 3 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
+                            />
+                          ))}
+                        </HorizontalScroller>
+                      </motion.div>
+                    ) : discoveryError ? (
+                      <motion.div
+                        key="discovery-error"
+                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        transition={stateTransition}
+                        className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
+                      >
+                        <p className="text-sm font-semibold text-destructive">
+                          {t("home.discovery.errorTitle")}
+                        </p>
+                        <p className="text-xs text-destructive/80 mt-1">
+                          {discoveryError}
+                        </p>
+                        <Button
+                          type="button"
+                          onClick={retryDiscovery}
+                          variant="outline"
+                          size="sm"
+                          className="mt-3 h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                          {t("home.discovery.retry")}
+                        </Button>
+                      </motion.div>
+                    ) : discoveryPlaces.length === 0 ? (
+                      <motion.div
+                        key="discovery-empty"
+                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        transition={stateTransition}
+                        className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
+                      >
+                        <p className="font-semibold text-foreground">
+                          {t("home.discovery.emptyTitle")}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {t("home.discovery.emptyDescription")}
+                        </p>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="discovery-ready"
+                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                        transition={stateTransition}
+                      >
+                        <HorizontalScroller
+                          ariaLabel={t("home.scroller.label.discovery")}
+                          className="-mx-2 px-2"
+                        >
+                          {discoveryPlaces.map((place, index) => (
+                            <motion.div
+                              key={`${activeDiscoverySource}-${place.id}`}
+                              className="snap-start"
+                              initial={{
+                                opacity: 0,
+                                y: shouldReduceMotion ? 0 : 12,
+                              }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{
+                                duration: shouldReduceMotion ? 0.01 : 0.3,
+                                ease: EASE_OUT_QUART,
+                                delay: cardDelay(index),
+                              }}
+                            >
+                              <PlaceCard
+                                place={place}
+                                variant="horizontal"
+                                userLocation={userLocation}
+                                onToggleSave={toggleSave}
+                                isSavePending={isPlaceSavePending(place.id)}
+                                onClick={(id) => navigate(`/venue/${id}`)}
+                              />
+                            </motion.div>
+                          ))}
+                        </HorizontalScroller>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </section>
+
+            {/* ── Mood Picks ── */}
+            <AnimatePresence initial={false} mode="wait">
+              {selectedMood && (
+                <motion.section
+                  ref={moodSectionRef}
+                  className="space-y-4"
+                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -10 }}
+                  transition={{
+                    duration: shouldReduceMotion ? 0.01 : 0.28,
+                    ease: EASE_OUT_QUART,
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
+                        <div className="rounded-lg bg-secondary/12 p-1.5 dark:bg-primary/18 flex-shrink-0">
+                          {(() => {
+                            const MoodIcon = selectedMoodOption
+                              ? (MOOD_ICON_MAP[selectedMoodOption.icon] ??
+                                Sparkles)
+                              : Sparkles;
+                            return (
+                              <MoodIcon className="h-4 w-4 text-secondary dark:text-primary" />
+                            );
+                          })()}
+                        </div>
+                        {selectedMoodOption?.label
+                          ? getMoodLabel(
+                              selectedMoodOption.id,
+                              selectedMoodOption.label,
+                            )
+                          : t("home.mood.defaultTitle")}
+                      </h2>
+                      <p className="mt-0.5 text-sm text-muted-foreground sm:ml-9">
+                        {selectedMoodOption?.description
+                          ? getMoodDescription(
+                              selectedMoodOption.id,
+                              selectedMoodOption.description,
+                            )
+                          : t("home.mood.defaultDescription")}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => setSelectedMood(null)}
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 flex-shrink-0 px-2 text-xs text-muted-foreground"
                     >
-                      {popularDistricts.map((district) => {
-                        const isActive = selectedArea === district.name;
-                        const label = getTranslatedText(
-                          district.nameKey,
-                          district.name,
-                          t,
-                        );
-                        return (
-                          <button
-                            type="button"
-                            key={`${district.id}-area`}
-                            onClick={() => {
-                              setSelectedArea(district.name);
-                              setActiveDiscoverySource("top-rated-area");
-                            }}
-                            className={`flex-shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                              isActive
-                                ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
-                                : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </HorizontalScroller>
-                  </div>
-                )}
-
-                {/* Results count row */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-foreground">
-                      {t("home.discovery.results", {
-                        count: formatNumber(discoveryResultCount),
-                      })}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate max-w-[170px] text-right">
-                      {t("home.discovery.sourceLabel", {
-                        source: t(
-                          `home.discovery.source.${activeDiscoverySource}`,
-                          undefined,
-                          activeDiscoverySource.replace("-", " "),
-                        ),
-                      })}
-                    </p>
+                      {t("home.mood.clear")}
+                    </Button>
                   </div>
 
-                  {/* Discovery results — CSS fade between states */}
-                  {showDiscoverySkeleton ? (
+                  {isMoodLoading ? (
                     <HorizontalScroller
-                      ariaLabel={t("home.scroller.label.discovery")}
-                      className="-mx-2 px-2"
+                      ariaLabel={t("home.scroller.label.mood")}
                     >
                       {Array.from({ length: 3 }).map((_, i) => (
                         <div
@@ -875,44 +1231,41 @@ const HomePage = () => {
                         />
                       ))}
                     </HorizontalScroller>
-                  ) : discoveryError ? (
+                  ) : moodError ? (
                     <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
                       <p className="text-sm font-semibold text-destructive">
-                        {t("home.discovery.errorTitle")}
+                        {t("home.mood.errorTitle")}
                       </p>
                       <p className="text-xs text-destructive/80 mt-1">
-                        {discoveryError}
+                        {moodError}
                       </p>
                       <Button
                         type="button"
-                        onClick={retryDiscovery}
+                        onClick={retryMood}
                         variant="outline"
                         size="sm"
                         className="mt-3 h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
-                        {t("home.discovery.retry")}
+                        {t("home.mood.retry")}
                       </Button>
                     </div>
-                  ) : discoveryPlaces.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center">
+                  ) : moodPlaces.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-border/60 bg-muted/30">
+                      <span className="text-3xl mb-3">🔍</span>
                       <p className="font-semibold text-foreground">
-                        {t("home.discovery.emptyTitle")}
+                        {t("home.mood.emptyTitle")}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t("home.discovery.emptyDescription")}
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {t("home.mood.emptyDescription")}
                       </p>
                     </div>
                   ) : (
                     <HorizontalScroller
-                      ariaLabel={t("home.scroller.label.discovery")}
-                      className="-mx-2 px-2"
+                      ariaLabel={t("home.scroller.label.mood")}
                     >
-                      {discoveryPlaces.map((place) => (
-                        <div
-                          key={`${activeDiscoverySource}-${place.id}`}
-                          className="snap-start"
-                        >
+                      {moodPlaces.map((place) => (
+                        <div key={place.id} className="snap-start">
                           <PlaceCard
                             place={place}
                             variant="horizontal"
@@ -925,128 +1278,25 @@ const HomePage = () => {
                       ))}
                     </HorizontalScroller>
                   )}
-                </div>
-              </div>
-            </section>
+                </motion.section>
+              )}
+            </AnimatePresence>
 
-            {/* ── MOOD PICKS — only rendered when mood is selected ── */}
-            {selectedMood && (
-              <section
-                ref={moodSectionRef}
-                className="space-y-4 [animation:hp-fade-up_0.25s_ease-out_both]"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-                      <div className="rounded-lg bg-secondary/12 p-1.5 dark:bg-primary/18">
-                        {(() => {
-                          const MoodIcon = selectedMoodOption
-                            ? (MOOD_ICON_MAP[selectedMoodOption.icon] ??
-                              Sparkles)
-                            : Sparkles;
-                          return (
-                            <MoodIcon className="h-5 w-5 text-secondary dark:text-primary" />
-                          );
-                        })()}
-                      </div>
-                      {selectedMoodOption?.label
-                        ? getMoodLabel(
-                            selectedMoodOption.id,
-                            selectedMoodOption.label,
-                          )
-                        : t("home.mood.defaultTitle")}
-                    </h2>
-                    <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
-                      {selectedMoodOption?.description
-                        ? getMoodDescription(
-                            selectedMoodOption.id,
-                            selectedMoodOption.description,
-                          )
-                        : t("home.mood.defaultDescription")}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => setSelectedMood(null)}
-                    variant="ghost"
-                    size="sm"
-                    className="h-11 px-3 text-xs text-muted-foreground sm:h-8 sm:px-2"
-                  >
-                    {t("home.mood.clear")}
-                  </Button>
-                </div>
-
-                {isMoodLoading ? (
-                  <HorizontalScroller ariaLabel={t("home.scroller.label.mood")}>
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
-                      />
-                    ))}
-                  </HorizontalScroller>
-                ) : moodError ? (
-                  <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
-                    <p className="text-sm font-semibold text-destructive">
-                      {t("home.mood.errorTitle")}
-                    </p>
-                    <p className="text-xs text-destructive/80 mt-1">
-                      {moodError}
-                    </p>
-                    <Button
-                      type="button"
-                      onClick={retryMood}
-                      variant="outline"
-                      size="sm"
-                      className="mt-3 h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      {t("home.mood.retry")}
-                    </Button>
-                  </div>
-                ) : moodPlaces.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-border/60 bg-muted/30">
-                    <span className="text-3xl mb-3">🔍</span>
-                    <p className="font-semibold text-foreground">
-                      {t("home.mood.emptyTitle")}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t("home.mood.emptyDescription")}
-                    </p>
-                  </div>
-                ) : (
-                  <HorizontalScroller ariaLabel={t("home.scroller.label.mood")}>
-                    {moodPlaces.map((place) => (
-                      <div key={place.id} className="snap-start">
-                        <PlaceCard
-                          place={place}
-                          variant="horizontal"
-                          userLocation={userLocation}
-                          onToggleSave={toggleSave}
-                          isSavePending={isPlaceSavePending(place.id)}
-                          onClick={(id) => navigate(`/venue/${id}`)}
-                        />
-                      </div>
-                    ))}
-                  </HorizontalScroller>
-                )}
-              </section>
-            )}
-
-            {/* ── CURATED FOR YOU ── */}
+            {/* ── Curated For You ── */}
             <section
               className="space-y-4"
               data-tour="tour-curated"
               id="tour-curated"
             >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-                    <div className="p-1.5 rounded-lg bg-secondary/15 dark:bg-primary/20">
-                      <Sparkles className="h-5 w-5 text-secondary dark:text-primary" />
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
+                    <div className="p-1.5 rounded-lg bg-secondary/15 dark:bg-primary/20 flex-shrink-0">
+                      <Sparkles className="h-4 w-4 text-secondary dark:text-primary" />
                     </div>
                     {t("home.curated.title")}
                   </h2>
-                  <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
+                  <p className="mt-0.5 text-sm text-muted-foreground sm:ml-9">
                     {t("home.curated.subtitle")}
                   </p>
                 </div>
@@ -1054,7 +1304,7 @@ const HomePage = () => {
                   onClick={() => navigate("/home/see-all/curated")}
                   variant="ghost"
                   size="sm"
-                  className="h-11 px-3 text-xs text-muted-foreground hover:text-foreground sm:h-8 sm:px-2"
+                  className="h-9 flex-shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground sm:h-8"
                 >
                   {t("home.seeAll")}
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -1076,18 +1326,18 @@ const HomePage = () => {
               </HorizontalScroller>
             </section>
 
-            {/* ── TRENDING NOW ── */}
+            {/* ── Trending Now ── */}
             {trendingPlaces.length > 0 && (
               <section className="space-y-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-                      <div className="p-1.5 rounded-lg bg-secondary/15 dark:bg-primary/20">
-                        <Flame className="h-5 w-5 text-secondary dark:text-primary" />
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
+                      <div className="p-1.5 rounded-lg bg-secondary/15 dark:bg-primary/20 flex-shrink-0">
+                        <Flame className="h-4 w-4 text-secondary dark:text-primary" />
                       </div>
                       {t("home.trending.title")}
                     </h2>
-                    <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
+                    <p className="mt-0.5 text-sm text-muted-foreground sm:ml-9">
                       {t("home.trending.subtitle")}
                     </p>
                   </div>
@@ -1095,7 +1345,7 @@ const HomePage = () => {
                     onClick={() => navigate("/home/see-all/trending")}
                     variant="ghost"
                     size="sm"
-                    className="h-11 px-3 text-xs text-muted-foreground hover:text-foreground sm:h-8 sm:px-2"
+                    className="h-9 flex-shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground sm:h-8"
                   >
                     {t("home.seeAll")}
                     <ChevronRight className="h-3.5 w-3.5" />
@@ -1120,24 +1370,29 @@ const HomePage = () => {
               </section>
             )}
 
-            {/* ── SIMILAR PLACES STUDIO ── */}
-            <section className="rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-5 sm:p-6 shadow-sm">
+            {/* ── Similar Places Studio ── */}
+            <section
+              className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm"
+              style={{ isolation: "isolate" }}
+            >
               <div className="space-y-5">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <div>
-                    <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/12 text-secondary dark:bg-primary/18 dark:text-primary">
-                        <WandSparkles className="h-4 w-4" />
-                      </span>
-                      {t("home.similar.title")}
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t("home.similar.subtitle")}
-                    </p>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+                        <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl bg-secondary/12 text-secondary dark:bg-primary/18 dark:text-primary sm:h-8 sm:w-8">
+                          <WandSparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        </span>
+                        {t("home.similar.title")}
+                      </h2>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {t("home.similar.subtitle")}
+                      </p>
+                    </div>
                   </div>
                   {selectedSimilarSeedPlace && (
                     <span
-                      className="max-w-full truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1 text-xs font-medium text-foreground"
+                      className="self-start truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1 text-xs font-medium text-foreground max-w-full"
                       title={selectedSimilarSeedPlace.name}
                     >
                       {t("home.similar.selected", {
@@ -1148,7 +1403,6 @@ const HomePage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {/* Search input + autocomplete dropdown */}
                   <div className="relative">
                     <Search className="pointer-events-none absolute top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground/75 [inset-inline-start:1rem]" />
                     <Input
@@ -1162,50 +1416,85 @@ const HomePage = () => {
                       className="h-12 rounded-2xl border-border/70 bg-card/90 [padding-inline-start:2.75rem] focus-visible:ring-secondary/30"
                     />
 
-                    {/* Autocomplete dropdown — absolutely positioned, isolated layer */}
-                    {showSimilarSuggestions && (
-                      <div className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-lg [animation:hp-fade-up_0.15s_ease-out_both]">
-                        {similarSearchResults.length > 0 ? (
-                          similarSearchResults.map((place) => {
-                            const isActive = selectedSimilarSeedId === place.id;
-                            return (
-                              <button
-                                type="button"
-                                key={`suggestion-${place.id}`}
-                                onMouseDown={(e) => e.preventDefault()}
-                                onClick={() => {
-                                  setSimilarSearchInput(place.name);
-                                  selectPlaceForSimilar(place.id);
-                                }}
-                                className={`w-full rounded-xl px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                                  isActive
-                                    ? "bg-primary text-primary-foreground dark:text-cream"
-                                    : "hover:bg-primary/12 hover:text-primary dark:hover:bg-primary/24 dark:hover:text-cream"
-                                }`}
-                              >
-                                <p
-                                  className={`text-sm font-semibold ${isActive ? "text-primary-foreground dark:text-cream" : "text-foreground"}`}
+                    <AnimatePresence>
+                      {showSimilarSuggestions && (
+                        <motion.div
+                          key="similar-suggestions"
+                          initial={{
+                            opacity: 0,
+                            y: shouldReduceMotion ? 0 : -8,
+                          }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                          transition={stateTransition}
+                          className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-lg"
+                        >
+                          {isSimilarSearchLoading ? (
+                            <p className="px-3 py-2 text-xs text-muted-foreground">
+                              {t(
+                                "home.similar.searching",
+                                undefined,
+                                "Searching...",
+                              )}
+                            </p>
+                          ) : similarSearchError ? (
+                            <p className="px-3 py-2 text-xs text-destructive">
+                              {similarSearchError}
+                            </p>
+                          ) : similarSearchResults.length > 0 ? (
+                            similarSearchResults.map((place) => {
+                              const isActive =
+                                selectedSimilarSeedId === place.id;
+                              return (
+                                <button
+                                  type="button"
+                                  key={`suggestion-${place.id}`}
+                                  onMouseDown={(event) => {
+                                    event.preventDefault();
+                                  }}
+                                  onClick={() => {
+                                    setSimilarSearchInput(place.name);
+                                    setSelectedSimilarSeedFromSearch(place);
+                                    selectPlaceForSimilar(place.id);
+                                    setIsSimilarInputFocused(false);
+                                  }}
+                                  className={`w-full rounded-xl px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                                    isActive
+                                      ? "bg-primary text-primary-foreground dark:text-cream"
+                                      : "hover:bg-primary/12 hover:text-primary dark:hover:bg-primary/24 dark:hover:text-cream"
+                                  }`}
                                 >
-                                  {place.name}
-                                </p>
-                                <p
-                                  className={`mt-0.5 truncate text-xs ${isActive ? "text-primary-foreground/90 dark:text-cream/90" : "text-muted-foreground"}`}
-                                >
-                                  {place.address}
-                                </p>
-                              </button>
-                            );
-                          })
-                        ) : (
-                          <p className="px-3 py-2 text-xs text-muted-foreground">
-                            {t("home.similar.noMatches")}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                                  <p
+                                    className={`text-sm font-semibold ${
+                                      isActive
+                                        ? "text-primary-foreground dark:text-cream"
+                                        : "text-foreground"
+                                    }`}
+                                  >
+                                    {place.name}
+                                  </p>
+                                  <p
+                                    className={`mt-0.5 truncate text-xs ${
+                                      isActive
+                                        ? "text-primary-foreground/90 dark:text-cream/90"
+                                        : "text-muted-foreground"
+                                    }`}
+                                  >
+                                    {place.address}
+                                  </p>
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <p className="px-3 py-2 text-xs text-muted-foreground">
+                              {t("home.similar.noMatches")}
+                            </p>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
-                  {/* Quick seed chips */}
                   <div className="flex flex-wrap gap-2">
                     {similarSeedOptions.slice(0, 6).map((place) => {
                       const isActive = selectedSimilarSeedId === place.id;
@@ -1215,7 +1504,9 @@ const HomePage = () => {
                           key={`quick-seed-${place.id}`}
                           onClick={() => {
                             setSimilarSearchInput(place.name);
+                            setSelectedSimilarSeedFromSearch(place);
                             selectPlaceForSimilar(place.id);
+                            setIsSimilarInputFocused(false);
                           }}
                           className={`rounded-full border px-4 py-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             isActive
@@ -1230,77 +1521,121 @@ const HomePage = () => {
                   </div>
                 </div>
 
-                {/* Similar results */}
-                {isSimilarLoading ? (
-                  <HorizontalScroller
-                    ariaLabel={t("home.scroller.label.similar")}
-                    className="-mx-2 px-2"
-                  >
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <div
-                        key={`similar-skeleton-${i}`}
-                        className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
-                      />
-                    ))}
-                  </HorizontalScroller>
-                ) : similarError ? (
-                  <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
-                    <p className="text-sm font-semibold text-destructive">
-                      {t("home.similar.errorTitle")}
-                    </p>
-                    <p className="text-xs text-destructive/80 mt-1">
-                      {similarError}
-                    </p>
-                    <Button
-                      type="button"
-                      onClick={retrySimilar}
-                      variant="outline"
-                      size="sm"
-                      className="mt-3 h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
+                <AnimatePresence mode="wait" initial={false}>
+                  {isSimilarLoading ? (
+                    <motion.div
+                      key="similar-loading"
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      transition={stateTransition}
                     >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      {t("home.similar.retry")}
-                    </Button>
-                  </div>
-                ) : similarPlaces.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center">
-                    <p className="font-semibold text-foreground">
-                      {t("home.similar.emptyTitle")}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t("home.similar.emptyDescription")}
-                    </p>
-                  </div>
-                ) : (
-                  <HorizontalScroller
-                    ariaLabel={t("home.scroller.label.similar")}
-                    className="-mx-2 px-2"
-                  >
-                    {similarPlaces.map((place) => (
-                      <div key={`similar-${place.id}`} className="snap-start">
-                        <PlaceCard
-                          place={place}
-                          variant="horizontal"
-                          userLocation={userLocation}
-                          onToggleSave={toggleSave}
-                          isSavePending={isPlaceSavePending(place.id)}
-                          hideTopRatedBadge={showSimilarSuggestions}
-                          onClick={(id) => navigate(`/venue/${id}`)}
-                        />
-                      </div>
-                    ))}
-                  </HorizontalScroller>
-                )}
+                      <HorizontalScroller
+                        ariaLabel={t("home.scroller.label.similar")}
+                        className="-mx-2 px-2"
+                      >
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div
+                            key={`similar-skeleton-${i}`}
+                            className="w-[280px] h-[240px] flex-shrink-0 rounded-2xl bg-muted animate-pulse"
+                          />
+                        ))}
+                      </HorizontalScroller>
+                    </motion.div>
+                  ) : similarError ? (
+                    <motion.div
+                      key="similar-error"
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      transition={stateTransition}
+                      className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
+                    >
+                      <p className="text-sm font-semibold text-destructive">
+                        {t("home.similar.errorTitle")}
+                      </p>
+                      <p className="text-xs text-destructive/80 mt-1">
+                        {similarError}
+                      </p>
+                      <Button
+                        type="button"
+                        onClick={retrySimilar}
+                        variant="outline"
+                        size="sm"
+                        className="mt-3 h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        {t("home.similar.retry")}
+                      </Button>
+                    </motion.div>
+                  ) : similarPlaces.length === 0 ? (
+                    <motion.div
+                      key="similar-empty"
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      transition={stateTransition}
+                      className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
+                    >
+                      <p className="font-semibold text-foreground">
+                        {t("home.similar.emptyTitle")}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t("home.similar.emptyDescription")}
+                      </p>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="similar-ready"
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
+                      transition={stateTransition}
+                    >
+                      <HorizontalScroller
+                        ariaLabel={t("home.scroller.label.similar")}
+                        className="-mx-2 px-2"
+                      >
+                        {similarPlaces.map((place, index) => (
+                          <motion.div
+                            key={`similar-${place.id}`}
+                            className="snap-start"
+                            initial={{
+                              opacity: 0,
+                              y: shouldReduceMotion ? 0 : 12,
+                            }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{
+                              duration: shouldReduceMotion ? 0.01 : 0.3,
+                              ease: EASE_OUT_QUART,
+                              delay: cardDelay(index),
+                            }}
+                          >
+                            <PlaceCard
+                              place={place}
+                              variant="horizontal"
+                              userLocation={userLocation}
+                              onToggleSave={toggleSave}
+                              isSavePending={isPlaceSavePending(place.id)}
+                              hideTopRatedBadge={showSimilarSuggestions}
+                              onClick={(id) => navigate(`/venue/${id}`)}
+                            />
+                          </motion.div>
+                        ))}
+                      </HorizontalScroller>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </section>
           </div>
-          {/* end LEFT */}
 
           {/* ── RIGHT SIDEBAR ── */}
           <aside className="sticky top-6 hidden w-[280px] flex-shrink-0 flex-col gap-6 lg:flex">
+            {/* Group Session Card */}
             <GroupSessionWidget variant="sidebar" />
 
-            {/* Sidebar Mood Selector */}
+            {/* Mood Selector Card */}
             <div
               className="bg-card rounded-3xl border border-border/50 shadow-sm p-5 space-y-4"
               data-tour="tour-mood"
@@ -1319,7 +1654,7 @@ const HomePage = () => {
                       type="button"
                       key={mood.id}
                       onClick={() => handleMoodOptionSelect(mood.id, isActive)}
-                      className={`flex min-h-[44px] flex-col items-center gap-1 rounded-2xl border px-3 py-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                      className={`flex min-h-[3rem] flex-col items-center gap-1 rounded-2xl border px-2 py-3 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                         isActive
                           ? "border-primary/85 bg-primary text-primary-foreground shadow-sm dark:text-cream"
                           : "bg-background border-border/50 hover:border-primary/55 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
@@ -1327,7 +1662,7 @@ const HomePage = () => {
                     >
                       <MoodIcon
                         className={cn(
-                          "h-5 w-5",
+                          "h-4 w-4",
                           isActive
                             ? "text-primary-foreground dark:text-cream"
                             : "text-secondary dark:text-primary",
@@ -1335,7 +1670,7 @@ const HomePage = () => {
                       />
                       <span
                         className={cn(
-                          "text-[11px] font-medium leading-tight",
+                          "text-[10px] font-medium leading-tight line-clamp-1",
                           isActive
                             ? "text-primary-foreground dark:text-cream"
                             : "text-foreground",
@@ -1345,7 +1680,7 @@ const HomePage = () => {
                       </span>
                       <span
                         className={cn(
-                          "text-[11px] leading-tight",
+                          "text-[10px] leading-tight line-clamp-2",
                           isActive
                             ? "text-primary-foreground/90 dark:text-cream/90"
                             : "text-muted-foreground",
@@ -1361,14 +1696,7 @@ const HomePage = () => {
           </aside>
         </div>
       </div>
-
-      <style>{`
-        @keyframes hp-fade-up {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0);    }
-        }
-      `}</style>
-    </div>
+    </motion.div>
   );
 };
 
