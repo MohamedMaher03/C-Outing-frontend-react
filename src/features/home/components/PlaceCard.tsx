@@ -54,7 +54,7 @@ const PlaceCard = ({
   const safeTagList = (place.atmosphereTags ?? [])
     .filter((tag): tag is string => typeof tag === "string")
     .slice(0, 2);
-  const ratingDisplay = Number.isFinite(rating) ? rating.toFixed(1) : "0.0";
+  const ratingDisplay = Number.isFinite(rating) ? rating.toFixed(2) : "0.00";
   const reviewCountDisplay = useMemo(
     () =>
       Number.isFinite(reviewCount)
@@ -187,7 +187,7 @@ const PlaceCard = ({
         <div
           className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-cream/35 bg-primary/95 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.08em] text-cream shadow-lg shadow-black/35 backdrop-blur-sm"
           title={t("home.place.topRatedHint", {
-            rating: TOP_RATED_MIN_RATING.toFixed(1),
+            rating: TOP_RATED_MIN_RATING.toFixed(2),
           })}
         >
           <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-secondary/20 dark:bg-primary-foreground/24">

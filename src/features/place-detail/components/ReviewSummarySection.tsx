@@ -67,7 +67,7 @@ const ReviewSummarySectionComponent = ({
             className="gap-0.5 border-secondary/40 text-secondary pd-type-micro pd-type-number"
           >
             <Star className="h-3 w-3 fill-secondary" />
-            {summary.averageRating.toFixed(1)}
+            {summary.averageRating.toFixed(2)}
           </Badge>
           <span
             className="pd-type-micro pd-type-number text-muted-foreground"

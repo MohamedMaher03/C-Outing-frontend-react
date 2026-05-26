@@ -90,7 +90,7 @@ const SocialReviewCardComponent = ({
               dir="ltr"
             >
               <span className="text-accent">★</span>
-              {review.rating.toFixed(1)}
+              {review.rating.toFixed(2)}
             </span>
           )}
         </div>

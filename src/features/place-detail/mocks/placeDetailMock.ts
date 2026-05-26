@@ -171,7 +171,7 @@ const updateVenueRatingMetadata = (venueId: string): void => {
     venueReviews.reduce((sum, review) => sum + review.rating, 0) / totalCount;
 
   venue.reviewCount = totalCount;
-  venue.rating = Number(averageRating.toFixed(1));
+  venue.rating = Number(averageRating.toFixed(2));
   venue.averageRating = venue.rating;
 };
 

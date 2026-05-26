@@ -21,7 +21,7 @@ const getCurrentLocale = (): string => {
 /**
  * Format rating value to display string
  */
-export function formatRating(rating: number, decimals: number = 1): string {
+export function formatRating(rating: number, decimals: number = 2): string {
   return rating.toFixed(decimals);
 }
 

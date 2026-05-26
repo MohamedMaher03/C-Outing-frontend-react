@@ -218,7 +218,7 @@ function RecommendationCard({
           {rec.rating !== undefined && (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
               <Star className="h-3 w-3 fill-current" />
-              {rec.rating.toFixed(1)}
+              {rec.rating.toFixed(2)}
             </span>
           )}
           {rec.priceRange && (
