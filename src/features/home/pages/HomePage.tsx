@@ -570,7 +570,7 @@ const HomePage = () => {
         duration: shouldReduceMotion ? 0.01 : 0.32,
         ease: EASE_OUT_QUART,
       }}
-      style={{ willChange: "auto", backfaceVisibility: "hidden" }}
+      style={{ willChange: "opacity" }}
     >
       <AnimatePresence>
         {tourActive && (
@@ -749,10 +749,7 @@ const HomePage = () => {
       <div className="mx-auto max-w-7xl px-4 py-5 pb-10 sm:py-6 sm:pb-12 md:py-8 md:pb-8">
         <div className="grid grid-cols-1 items-start gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           {/* ── LEFT: Main Feed ── */}
-          <div
-            className="flex-1 min-w-0 space-y-8 sm:space-y-10 lg:space-y-12"
-            style={{ isolation: "isolate" }}
-          >
+          <div className="flex-1 min-w-0 space-y-8 sm:space-y-10 lg:space-y-12">
             {/* Group Session Banner (mobile / tablet) */}
             <section
               className="lg:hidden"
@@ -764,17 +761,10 @@ const HomePage = () => {
             {/* ── QUICK CONTROLS (MOBILE/TABLET) ── */}
             <section
               className="space-y-4 lg:hidden"
-              style={{ isolation: "isolate", position: "relative", zIndex: 1 }}
               data-tour="tour-mood"
               id="tour-mood"
             >
-              <div
-                className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm"
-                style={{
-                  transform: "translateZ(0)",
-                  backfaceVisibility: "hidden",
-                }}
-              >
+              <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="text-sm font-semibold text-foreground">
                     {t("home.mobile.moodSelectorTitle")}
@@ -800,7 +790,6 @@ const HomePage = () => {
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
                             : "border-border/60 bg-card hover:border-primary/55 hover:bg-primary/10"
                         }`}
-                        style={{ transform: "translateZ(0)" }}
                       >
                         <MoodIcon className="h-4 w-4 shrink-0 text-secondary/90 dark:text-primary" />
                         <span className="min-w-0 truncate text-xs font-medium text-foreground leading-tight">
@@ -815,8 +804,7 @@ const HomePage = () => {
 
             {/* ── Venue Discovery Studio (New Endpoints) ── */}
             <section
-              className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm"
-              style={{ isolation: "isolate", contain: "layout style" }}
+              className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm overflow-hidden"
               data-tour="tour-discovery"
               id="tour-discovery"
             >
@@ -851,58 +839,165 @@ const HomePage = () => {
                     </span>
                   </div>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                  {localizedDiscoverySources.map((source) => {
-                    const Icon = source.icon;
-                    const isActive = activeDiscoverySource === source.id;
+              <div className="relative grid grid-cols-3 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                {localizedDiscoverySources.map((source) => {
+                  const Icon = source.icon;
+                  const isActive = activeDiscoverySource === source.id;
+                  return (
+                    <button
+                      type="button"
+                      key={source.id}
+                      onClick={() => setActiveDiscoverySource(source.id)}
+                      className={`relative group min-h-[2.75rem] rounded-xl border px-2 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:rounded-2xl sm:px-3 sm:py-2.5 ${
+                        isActive
+                          ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                          : "border-border/60 bg-card/90 hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <span
+                          className={`inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md sm:h-7 sm:w-7 sm:rounded-lg ${
+                            isActive
+                              ? "bg-primary-foreground/18 text-primary-foreground"
+                              : "bg-muted/80 text-muted-foreground group-hover:text-primary dark:bg-primary/15 dark:text-primary/85 dark:group-hover:bg-primary/24 dark:group-hover:text-primary"
+                          }`}
+                        >
+                          <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </span>
+                        <span
+                          className={`text-[11px] font-medium leading-tight sm:text-xs ${
+                            isActive
+                              ? "text-primary-foreground"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {source.label}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {activeDiscoverySource === "district" && (
+                <HorizontalScroller
+                  ariaLabel={t(
+                    "home.discovery.districtsAria",
+                    undefined,
+                    "Popular districts",
+                  )}
+                  className="-mx-2 px-2"
+                >
+                  {popularDistricts.map((district) => {
+                    const isActive = selectedDistrict === district.name;
+                    const translatedDistrictName = getTranslatedText(
+                      district.nameKey,
+                      district.name,
+                      t,
+                    );
                     return (
                       <button
                         type="button"
-                        key={source.id}
-                        onClick={() => setActiveDiscoverySource(source.id)}
-                        className={`group min-h-[2.75rem] rounded-xl border px-2 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:rounded-2xl sm:px-3 sm:py-2.5 ${
+                        key={district.id}
+                        onClick={() => {
+                          setSelectedDistrict(isActive ? null : district.name);
+                          setActiveDiscoverySource("district");
+                        }}
+                        className={`flex-shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
-                            : "border-border/60 bg-card/90 hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
+                            : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                         }`}
                       >
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <span
-                            className={`inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md sm:h-7 sm:w-7 sm:rounded-lg ${
-                              isActive
-                                ? "bg-primary-foreground/18 text-primary-foreground"
-                                : "bg-muted/80 text-muted-foreground group-hover:text-primary dark:bg-primary/15 dark:text-primary/85 dark:group-hover:bg-primary/24 dark:group-hover:text-primary"
-                            }`}
-                          >
-                            <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </span>
-                          <span
-                            className={`text-[11px] font-medium leading-tight sm:text-xs ${
-                              isActive
-                                ? "text-primary-foreground"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {source.label}
-                          </span>
-                        </div>
+                        {translatedDistrictName}
+                      </button>
+                    );
+                  })}
+                </HorizontalScroller>
+              )}
+
+              {activeDiscoverySource === "type" && (
+                <div className="flex flex-wrap gap-2">
+                  {typeDiscoveryOptions.map((option) => {
+                    const isActive = selectedVenueType === option.id;
+
+                    return (
+                      <button
+                        type="button"
+                        key={option.id}
+                        onClick={() => {
+                          setSelectedVenueType(isActive ? null : option.id);
+                          setActiveDiscoverySource("type");
+                        }}
+                        className={`rounded-xl border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                          isActive
+                            ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                            : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
+                        }`}
+                      >
+                        {option.label}
                       </button>
                     );
                   })}
                 </div>
+              )}
 
-                {activeDiscoverySource === "district" && (
+              {activeDiscoverySource === "price-range" && (
+                <div className="relative grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                  {localizedPriceRangeOptions.map((option) => {
+                    const isActive = selectedPriceRange === option.id;
+                    return (
+                      <button
+                        type="button"
+                        key={option.id}
+                        onClick={() => handlePriceRangeSelect(option.id)}
+                        className={`relative rounded-2xl border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                          isActive
+                            ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                            : "border-border/60 bg-card hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
+                        }`}
+                      >
+                        <p
+                          className={`text-sm font-semibold tracking-tight ${
+                            isActive
+                              ? "text-primary-foreground"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {option.label}
+                        </p>
+                        <p
+                          className={`text-[11px] font-medium ${
+                            isActive
+                              ? "text-primary-foreground/85"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {option.caption}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {activeDiscoverySource === "top-rated-area" && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    {t("home.discovery.selectArea")}
+                  </p>
                   <HorizontalScroller
                     ariaLabel={t(
-                      "home.discovery.districtsAria",
+                      "home.discovery.areasAria",
                       undefined,
-                      "Popular districts",
+                      "Popular areas",
                     )}
                     className="-mx-2 px-2"
                   >
                     {popularDistricts.map((district) => {
-                      const isActive = selectedDistrict === district.name;
+                      const isActive = selectedArea === district.name;
                       const translatedDistrictName = getTranslatedText(
                         district.nameKey,
                         district.name,
@@ -911,12 +1006,10 @@ const HomePage = () => {
                       return (
                         <button
                           type="button"
-                          key={district.id}
+                          key={`${district.id}-area`}
                           onClick={() => {
-                            setSelectedDistrict(
-                              isActive ? null : district.name,
-                            );
-                            setActiveDiscoverySource("district");
+                            setSelectedArea(district.name);
+                            setActiveDiscoverySource("top-rated-area");
                           }}
                           className={`flex-shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             isActive
@@ -929,141 +1022,38 @@ const HomePage = () => {
                       );
                     })}
                   </HorizontalScroller>
-                )}
+                </div>
+              )}
 
-                {activeDiscoverySource === "type" && (
-                  <div className="flex flex-wrap gap-2">
-                    {typeDiscoveryOptions.map((option) => {
-                      const isActive = selectedVenueType === option.id;
-
-                      return (
-                        <button
-                          type="button"
-                          key={option.id}
-                          onClick={() => {
-                            setSelectedVenueType(isActive ? null : option.id);
-                            setActiveDiscoverySource("type");
-                          }}
-                          className={`rounded-xl border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                            isActive
-                              ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
-                              : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      );
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-foreground shrink-0">
+                    {t("home.discovery.results", {
+                      count: formatNumber(discoveryResultCount),
                     })}
-                  </div>
-                )}
-
-                {activeDiscoverySource === "price-range" && (
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                    {localizedPriceRangeOptions.map((option) => {
-                      const isActive = selectedPriceRange === option.id;
-                      return (
-                        <button
-                          type="button"
-                          key={option.id}
-                          onClick={() => handlePriceRangeSelect(option.id)}
-                          className={`rounded-2xl border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                            isActive
-                              ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
-                              : "border-border/60 bg-card hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
-                          }`}
-                        >
-                          <p
-                            className={`text-sm font-semibold tracking-tight ${
-                              isActive
-                                ? "text-primary-foreground"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {option.label}
-                          </p>
-                          <p
-                            className={`text-[11px] font-medium ${
-                              isActive
-                                ? "text-primary-foreground/85"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            {option.caption}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {activeDiscoverySource === "top-rated-area" && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                      {t("home.discovery.selectArea")}
-                    </p>
-                    <HorizontalScroller
-                      ariaLabel={t(
-                        "home.discovery.areasAria",
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate text-right min-w-0">
+                    {t("home.discovery.sourceLabel", {
+                      source: t(
+                        `home.discovery.source.${activeDiscoverySource}`,
                         undefined,
-                        "Popular areas",
-                      )}
-                      className="-mx-2 px-2"
-                    >
-                      {popularDistricts.map((district) => {
-                        const isActive = selectedArea === district.name;
-                        const translatedDistrictName = getTranslatedText(
-                          district.nameKey,
-                          district.name,
-                          t,
-                        );
-                        return (
-                          <button
-                            type="button"
-                            key={`${district.id}-area`}
-                            onClick={() => {
-                              setSelectedArea(district.name);
-                              setActiveDiscoverySource("top-rated-area");
-                            }}
-                            className={`flex-shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                              isActive
-                                ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
-                                : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
-                            }`}
-                          >
-                            {translatedDistrictName}
-                          </button>
-                        );
-                      })}
-                    </HorizontalScroller>
-                  </div>
-                )}
+                        activeDiscoverySource.replace("-", " "),
+                      ),
+                    })}
+                  </p>
+                </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-foreground shrink-0">
-                      {t("home.discovery.results", {
-                        count: formatNumber(discoveryResultCount),
-                      })}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate text-right min-w-0">
-                      {t("home.discovery.sourceLabel", {
-                        source: t(
-                          `home.discovery.source.${activeDiscoverySource}`,
-                          undefined,
-                          activeDiscoverySource.replace("-", " "),
-                        ),
-                      })}
-                    </p>
-                  </div>
-
+                <div style={{ position: "relative", overflow: "hidden" }}>
                   <AnimatePresence mode="wait" initial={false}>
                     {showDiscoverySkeleton ? (
                       <motion.div
                         key="discovery-loading"
-                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                        transition={stateTransition}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                          duration: shouldReduceMotion ? 0.01 : 0.18,
+                        }}
                       >
                         <HorizontalScroller
                           ariaLabel={t("home.scroller.label.discovery")}
@@ -1371,7 +1361,7 @@ const HomePage = () => {
             {/* ── Similar Places Studio ── */}
             <section
               className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm"
-              style={{ isolation: "isolate", contain: "layout style" }}
+              style={{ isolation: "isolate" }}
             >
               <div className="space-y-5">
                 <div className="flex flex-col gap-2">
