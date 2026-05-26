@@ -344,9 +344,7 @@ export const mapHomePlacesPayload = (raw: unknown): HomePlace[] => {
   return mapped;
 };
 
-export const mapHomeMoodRecommendationsPayload = (
-  raw: unknown,
-): HomePlace[] => {
+const mapRankedRecommendationsPayload = (raw: unknown): HomePlace[] => {
   const recommendations = extractMoodRecommendations(raw).sort(
     (a, b) => a.rank - b.rank,
   );
@@ -369,6 +367,13 @@ export const mapHomeMoodRecommendationsPayload = (
 
   return mapped;
 };
+
+export const mapHomeRankedRecommendationsPayload = (
+  raw: unknown,
+): HomePlace[] => mapRankedRecommendationsPayload(raw);
+
+export const mapHomeMoodRecommendationsPayload = (raw: unknown): HomePlace[] =>
+  mapRankedRecommendationsPayload(raw);
 
 export const mapHomePaginatedPlacesPayload = (
   raw: unknown,

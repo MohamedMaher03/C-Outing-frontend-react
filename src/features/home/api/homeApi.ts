@@ -4,6 +4,7 @@ import {
   mapHomeMoodRecommendationsPayload,
   mapHomePaginatedPlacesPayload,
   mapHomePlacesPayload,
+  mapHomeRankedRecommendationsPayload,
 } from "../mappers/homeApi.mapper";
 import type {
   HomePageData,
@@ -33,7 +34,7 @@ export const homeApi = {
     ]);
 
     return {
-      curatedPlaces: mapHomePlacesPayload(curated.data),
+      curatedPlaces: mapHomeRankedRecommendationsPayload(curated.data),
       trendingPlaces: mapHomePlacesPayload(trending.data),
     };
   },
@@ -47,7 +48,7 @@ export const homeApi = {
         params: { count: params?.count },
       },
     );
-    return mapHomePlacesPayload(data);
+    return mapHomeRankedRecommendationsPayload(data);
   },
 
   async fetchTrendingRecommendations(
