@@ -245,7 +245,7 @@ const HomeSearchPage = () => {
             </Button>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
             <label className="space-y-1 text-xs font-semibold text-muted-foreground">
               <span>
                 {t("home.search.filter.districtLabel", undefined, "District")}

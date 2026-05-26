@@ -124,7 +124,7 @@ const HorizontalScroller = ({
       <div
         ref={scrollRef}
         className={cn(
-          "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 scrollbar-hide",
+          "-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 pt-1 scrollbar-hide sm:gap-4",
           className,
         )}
         aria-label={ariaLabel}
@@ -582,7 +582,7 @@ const HomePage = () => {
           />
         )}
       </AnimatePresence>
-      <div className="relative h-[340px] overflow-hidden sm:h-[390px] lg:h-[420px]">
+      <div className="relative h-[360px] overflow-hidden sm:h-[400px] lg:h-[430px]">
         <motion.div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${cairoBg})` }}
@@ -597,19 +597,19 @@ const HomePage = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy)/0.26)] via-transparent to-black/10 dark:from-black/24 dark:to-black/18" />
 
         <motion.div
-          className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-5 pt-8 sm:pb-6 sm:pt-10"
+          className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-6 pt-8 sm:pb-7 sm:pt-10 lg:pb-8"
           variants={heroContainerVariants}
           initial="hidden"
           animate="visible"
         >
-          <motion.div className="mb-6 space-y-2" variants={heroItemVariants}>
-            <p className="text-white/80 text-sm font-medium tracking-wide uppercase">
+          <motion.div className="mb-5 space-y-1.5" variants={heroItemVariants}>
+            <p className="text-white/80 text-xs font-medium tracking-widest uppercase">
               {getGreeting()}, {userName} ✦
             </p>
-            <h1 className="text-3xl font-semibold leading-tight sm:text-5xl lg:text-[3.4rem]">
+            <h1 className="text-2xl font-semibold leading-tight sm:text-4xl lg:text-[3.2rem] lg:leading-[1.08]">
               <span className="text-cream">{t("home.hero.title")}</span>
             </h1>
-            <p className="max-w-md text-sm text-white/85 sm:text-base">
+            <p className="max-w-sm text-sm text-white/80 sm:text-base sm:max-w-md leading-snug">
               {t("home.hero.subtitle")}
             </p>
           </motion.div>
@@ -620,7 +620,7 @@ const HomePage = () => {
             data-tour="tour-search"
             id="tour-search"
           >
-            <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-white/95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-4.5 w-4.5 -translate-y-1/2 text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
             <Input
               placeholder={t("home.hero.searchPlaceholder")}
               value={search}
@@ -631,12 +631,12 @@ const HomePage = () => {
                 }
               }}
               aria-label={t("home.hero.searchAria")}
-              className="h-12 rounded-2xl border border-white/20 bg-black/25 pl-12 pr-24 text-base text-white shadow-lg transition-colors placeholder:text-white/65 focus:border-secondary/70 focus:bg-black/30 focus:ring-secondary/20 backdrop-blur-md sm:h-14"
+              className="h-12 rounded-2xl border border-white/25 bg-white/85 pl-11 pr-[5.5rem] text-sm text-slate-900 shadow-lg transition-colors placeholder:text-slate-500 focus:border-secondary/70 focus:bg-white focus:ring-secondary/20 backdrop-blur-md dark:bg-black/45 dark:text-white dark:placeholder:text-white/65 dark:focus:bg-black/55 sm:h-14 sm:pl-12 sm:pr-28 sm:text-base"
             />
             <button
               type="button"
               onClick={handleSearchNavigate}
-              className="absolute right-2 top-1/2 z-10 h-9 -translate-y-1/2 rounded-full bg-secondary/90 px-4 text-xs font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:h-10"
+              className="absolute right-2 top-1/2 z-10 h-8 min-w-[4.5rem] -translate-y-1/2 rounded-full bg-secondary/90 px-3 text-xs font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:h-10 sm:px-4"
               aria-label={t("home.hero.searchAction", undefined, "Search")}
             >
               {t("home.hero.searchAction", undefined, "Search")}
@@ -644,7 +644,7 @@ const HomePage = () => {
           </motion.div>
 
           <motion.div
-            className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide"
+            className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide"
             aria-label={t("home.hero.filterAria")}
             variants={heroItemVariants}
             data-tour="tour-filters"
@@ -679,13 +679,13 @@ const HomePage = () => {
                     ease: EASE_OUT_QUART,
                     delay: cardDelay(index, 0.18),
                   }}
-                  className={`inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-5 ${
+                  className={`inline-flex h-10 flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-xs font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:h-11 sm:gap-2 sm:px-5 sm:text-sm ${
                     isActive
                       ? "border-accent/90 bg-accent text-accent-foreground shadow-sm"
                       : "border-white/20 bg-black/20 text-white/90 backdrop-blur-md hover:border-primary/65 hover:bg-primary/28 hover:text-primary-foreground dark:hover:bg-primary/35 dark:hover:text-cream"
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   {filter.label}
                 </motion.button>
               );
@@ -745,10 +745,10 @@ const HomePage = () => {
       </AnimatePresence>
 
       {/* ====== MAIN CONTENT: TWO-COLUMN LAYOUT ====== */}
-      <div className="mx-auto max-w-7xl px-4 py-6 md:py-8">
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="mx-auto max-w-7xl px-4 py-5 pb-10 sm:py-6 sm:pb-12 md:py-8 md:pb-8">
+        <div className="grid grid-cols-1 items-start gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           {/* ── LEFT: Main Feed ── */}
-          <div className="flex-1 min-w-0 space-y-12">
+          <div className="flex-1 min-w-0 space-y-8 sm:space-y-10 lg:space-y-12">
             {/* Group Session Banner (mobile / tablet) */}
             <section
               className="lg:hidden"
@@ -763,9 +763,9 @@ const HomePage = () => {
               data-tour="tour-mood"
               id="tour-mood"
             >
-              <div className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-base font-semibold text-foreground">
+              <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-semibold text-foreground">
                     {t("home.mobile.moodSelectorTitle")}
                   </h2>
                   <span className="text-xs font-medium text-muted-foreground">
@@ -773,7 +773,7 @@ const HomePage = () => {
                   </span>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="mt-3 grid grid-cols-2 gap-2 xs:grid-cols-2 sm:grid-cols-3">
                   {moodOptions.map((mood) => {
                     const isActive = selectedMood === mood.id;
                     const MoodIcon = MOOD_ICON_MAP[mood.icon] ?? Sparkles;
@@ -784,14 +784,14 @@ const HomePage = () => {
                         onClick={() =>
                           handleMoodOptionSelect(mood.id, isActive)
                         }
-                        className={`flex min-h-11 items-center gap-2 rounded-2xl border px-3 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                        className={`flex min-h-[2.75rem] items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
                             : "border-border/60 bg-background hover:border-primary/55 hover:bg-primary/12"
                         }`}
                       >
                         <MoodIcon className="h-4 w-4 shrink-0 text-secondary/90 dark:text-primary" />
-                        <span className="min-w-0 truncate text-xs font-medium text-foreground">
+                        <span className="min-w-0 truncate text-xs font-medium text-foreground leading-tight">
                           {getMoodLabel(mood.id, mood.label)}
                         </span>
                       </button>
@@ -808,27 +808,27 @@ const HomePage = () => {
               id="tour-discovery"
             >
               <div className="relative z-10 space-y-5">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <div>
-                    <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/12 text-secondary dark:bg-primary/18 dark:text-primary">
-                        <Compass className="h-4 w-4" />
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+                      <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl bg-secondary/12 text-secondary dark:bg-primary/18 dark:text-primary sm:h-8 sm:w-8">
+                        <Compass className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </span>
                       {t("home.discovery.title")}
                     </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-0.5 ml-0 sm:mt-1">
                       {t("home.discovery.subtitle")}
                     </p>
                   </div>
-                  <div className="flex w-full flex-wrap items-center gap-2 text-xs sm:w-auto sm:justify-end">
-                    <span className="max-w-[180px] truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1.5 font-medium text-foreground">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1.5 font-medium text-foreground">
                       {t("home.discovery.topRatedCount", {
                         count: compactNumberFormatter.format(
                           globalTopRatedVenues.length,
                         ),
                       })}
                     </span>
-                    <span className="max-w-[180px] truncate rounded-full border border-border/70 bg-background px-3 py-1.5 font-medium text-foreground">
+                    <span className="truncate rounded-full border border-border/70 bg-background px-3 py-1.5 font-medium text-foreground">
                       {t("home.discovery.areaCount", {
                         area: selectedArea,
                         count: compactNumberFormatter.format(
@@ -839,7 +839,7 @@ const HomePage = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                   {localizedDiscoverySources.map((source) => {
                     const Icon = source.icon;
                     const isActive = activeDiscoverySource === source.id;
@@ -848,24 +848,24 @@ const HomePage = () => {
                         type="button"
                         key={source.id}
                         onClick={() => setActiveDiscoverySource(source.id)}
-                        className={`group min-h-11 rounded-2xl border px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                        className={`group min-h-[2.75rem] rounded-xl border px-2 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:rounded-2xl sm:px-3 sm:py-2.5 ${
                           isActive
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
                             : "border-border/60 bg-card/90 hover:border-primary/60 hover:bg-primary/10 dark:hover:bg-primary/20 dark:hover:text-cream"
                         }`}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
                           <span
-                            className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${
+                            className={`inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md sm:h-7 sm:w-7 sm:rounded-lg ${
                               isActive
                                 ? "bg-primary-foreground/18 text-primary-foreground"
                                 : "bg-muted/80 text-muted-foreground group-hover:text-primary dark:bg-primary/15 dark:text-primary/85 dark:group-hover:bg-primary/24 dark:group-hover:text-primary"
                             }`}
                           >
-                            <Icon className="h-4 w-4" />
+                            <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
                           </span>
                           <span
-                            className={`text-xs font-medium leading-tight ${
+                            className={`text-[11px] font-medium leading-tight sm:text-xs ${
                               isActive
                                 ? "text-primary-foreground"
                                 : "text-foreground"
@@ -1026,13 +1026,13 @@ const HomePage = () => {
                 )}
 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-foreground">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-foreground shrink-0">
                       {t("home.discovery.results", {
                         count: formatNumber(discoveryResultCount),
                       })}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate max-w-[170px] text-right">
+                    <p className="text-xs text-muted-foreground truncate text-right min-w-0">
                       {t("home.discovery.sourceLabel", {
                         source: t(
                           `home.discovery.source.${activeDiscoverySource}`,
@@ -1165,17 +1165,17 @@ const HomePage = () => {
                     ease: EASE_OUT_QUART,
                   }}
                 >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-                        <div className="rounded-lg bg-secondary/12 p-1.5 dark:bg-primary/18">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
+                        <div className="rounded-lg bg-secondary/12 p-1.5 dark:bg-primary/18 flex-shrink-0">
                           {(() => {
                             const MoodIcon = selectedMoodOption
                               ? (MOOD_ICON_MAP[selectedMoodOption.icon] ??
                                 Sparkles)
                               : Sparkles;
                             return (
-                              <MoodIcon className="h-5 w-5 text-secondary dark:text-primary" />
+                              <MoodIcon className="h-4 w-4 text-secondary dark:text-primary" />
                             );
                           })()}
                         </div>
@@ -1186,7 +1186,7 @@ const HomePage = () => {
                             )
                           : t("home.mood.defaultTitle")}
                       </h2>
-                      <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
+                      <p className="mt-0.5 text-sm text-muted-foreground sm:ml-9">
                         {selectedMoodOption?.description
                           ? getMoodDescription(
                               selectedMoodOption.id,
@@ -1199,7 +1199,7 @@ const HomePage = () => {
                       onClick={() => setSelectedMood(null)}
                       variant="ghost"
                       size="sm"
-                      className="h-11 px-3 text-xs text-muted-foreground sm:h-8 sm:px-2"
+                      className="h-9 flex-shrink-0 px-2 text-xs text-muted-foreground"
                     >
                       {t("home.mood.clear")}
                     </Button>
@@ -1273,15 +1273,15 @@ const HomePage = () => {
               data-tour="tour-curated"
               id="tour-curated"
             >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-                    <div className="p-1.5 rounded-lg bg-secondary/15 dark:bg-primary/20">
-                      <Sparkles className="h-5 w-5 text-secondary dark:text-primary" />
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
+                    <div className="p-1.5 rounded-lg bg-secondary/15 dark:bg-primary/20 flex-shrink-0">
+                      <Sparkles className="h-4 w-4 text-secondary dark:text-primary" />
                     </div>
                     {t("home.curated.title")}
                   </h2>
-                  <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
+                  <p className="mt-0.5 text-sm text-muted-foreground sm:ml-9">
                     {t("home.curated.subtitle")}
                   </p>
                 </div>
@@ -1289,7 +1289,7 @@ const HomePage = () => {
                   onClick={() => navigate("/home/see-all/curated")}
                   variant="ghost"
                   size="sm"
-                  className="h-11 px-3 text-xs text-muted-foreground hover:text-foreground sm:h-8 sm:px-2"
+                  className="h-9 flex-shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground sm:h-8"
                 >
                   {t("home.seeAll")}
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -1314,15 +1314,15 @@ const HomePage = () => {
             {/* ── Trending Now ── */}
             {trendingPlaces.length > 0 && (
               <section className="space-y-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-                      <div className="p-1.5 rounded-lg bg-secondary/15 dark:bg-primary/20">
-                        <Flame className="h-5 w-5 text-secondary dark:text-primary" />
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground sm:text-xl">
+                      <div className="p-1.5 rounded-lg bg-secondary/15 dark:bg-primary/20 flex-shrink-0">
+                        <Flame className="h-4 w-4 text-secondary dark:text-primary" />
                       </div>
                       {t("home.trending.title")}
                     </h2>
-                    <p className="mt-1 text-sm text-muted-foreground sm:ml-10">
+                    <p className="mt-0.5 text-sm text-muted-foreground sm:ml-9">
                       {t("home.trending.subtitle")}
                     </p>
                   </div>
@@ -1330,7 +1330,7 @@ const HomePage = () => {
                     onClick={() => navigate("/home/see-all/trending")}
                     variant="ghost"
                     size="sm"
-                    className="h-11 px-3 text-xs text-muted-foreground hover:text-foreground sm:h-8 sm:px-2"
+                    className="h-9 flex-shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground sm:h-8"
                   >
                     {t("home.seeAll")}
                     <ChevronRight className="h-3.5 w-3.5" />
@@ -1358,21 +1358,23 @@ const HomePage = () => {
             {/* ── Similar Places Studio ── */}
             <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-5 sm:p-6 shadow-sm">
               <div className="relative z-10 space-y-5">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <div>
-                    <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/12 text-secondary dark:bg-primary/18 dark:text-primary">
-                        <WandSparkles className="h-4 w-4" />
-                      </span>
-                      {t("home.similar.title")}
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t("home.similar.subtitle")}
-                    </p>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+                        <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-xl bg-secondary/12 text-secondary dark:bg-primary/18 dark:text-primary sm:h-8 sm:w-8">
+                          <WandSparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        </span>
+                        {t("home.similar.title")}
+                      </h2>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {t("home.similar.subtitle")}
+                      </p>
+                    </div>
                   </div>
                   {selectedSimilarSeedPlace && (
                     <span
-                      className="max-w-full truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1 text-xs font-medium text-foreground"
+                      className="self-start truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1 text-xs font-medium text-foreground max-w-full"
                       title={selectedSimilarSeedPlace.name}
                     >
                       {t("home.similar.selected", {
@@ -1634,7 +1636,7 @@ const HomePage = () => {
                       type="button"
                       key={mood.id}
                       onClick={() => handleMoodOptionSelect(mood.id, isActive)}
-                      className={`flex min-h-11 flex-col items-center gap-1 rounded-2xl border px-3 py-3 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                      className={`flex min-h-[3rem] flex-col items-center gap-1 rounded-2xl border px-2 py-3 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                         isActive
                           ? "border-primary/85 bg-primary text-primary-foreground shadow-sm dark:text-cream"
                           : "bg-background border-border/50 hover:border-primary/55 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
@@ -1642,7 +1644,7 @@ const HomePage = () => {
                     >
                       <MoodIcon
                         className={cn(
-                          "h-5 w-5",
+                          "h-4 w-4",
                           isActive
                             ? "text-primary-foreground dark:text-cream"
                             : "text-secondary dark:text-primary",
@@ -1650,7 +1652,7 @@ const HomePage = () => {
                       />
                       <span
                         className={cn(
-                          "text-[11px] font-medium leading-tight",
+                          "text-[10px] font-medium leading-tight line-clamp-1",
                           isActive
                             ? "text-primary-foreground dark:text-cream"
                             : "text-foreground",
@@ -1660,7 +1662,7 @@ const HomePage = () => {
                       </span>
                       <span
                         className={cn(
-                          "text-[11px] leading-tight",
+                          "text-[10px] leading-tight line-clamp-2",
                           isActive
                             ? "text-primary-foreground/90 dark:text-cream/90"
                             : "text-muted-foreground",
