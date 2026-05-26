@@ -151,8 +151,6 @@ const HomePage = () => {
   const { user } = useAuth();
   const { tourActive, currentStep, totalSteps, next, skip, finish } =
     useGuidedTour();
-  const shouldReduceMotion = useReducedMotion();
-  const [isCoarsePointer, setIsCoarsePointer] = useState(false);
 
   const {
     search,
@@ -210,24 +208,6 @@ const HomePage = () => {
     () => new Intl.NumberFormat(locale, { notation: "compact" }),
     [locale],
   );
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia("(pointer: coarse)");
-    const updatePointerState = () => setIsCoarsePointer(mediaQuery.matches);
-    updatePointerState();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", updatePointerState);
-      return () => mediaQuery.removeEventListener("change", updatePointerState);
-    }
-
-    mediaQuery.addListener(updatePointerState);
-    return () => mediaQuery.removeListener(updatePointerState);
-  }, []);
 
   const localizedFilters = useMemo(
     () =>
@@ -372,52 +352,52 @@ const HomePage = () => {
     isSimilarInputFocused ||
     (similarSearchInput.trim().length > 0 &&
       similarSearchInput !== selectedSimilarSeedPlace?.name);
-  const shouldStabilizeMotion = shouldReduceMotion || isCoarsePointer;
+  const shouldReduceMotion = useReducedMotion();
 
   const stateTransition = useMemo(
     () => ({
-      duration: shouldStabilizeMotion ? 0.01 : 0.24,
+      duration: shouldReduceMotion ? 0.01 : 0.24,
       ease: EASE_OUT_QUART,
     }),
-    [shouldStabilizeMotion],
+    [shouldReduceMotion],
   );
 
   const heroContainerVariants = useMemo(
     () => ({
-      hidden: { opacity: 0, y: shouldStabilizeMotion ? 0 : 16 },
+      hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 16 },
       visible: {
         opacity: 1,
         y: 0,
         transition: {
-          duration: shouldStabilizeMotion ? 0.01 : 0.62,
+          duration: shouldReduceMotion ? 0.01 : 0.62,
           ease: EASE_OUT_EXPO,
-          staggerChildren: shouldStabilizeMotion ? 0 : 0.12,
-          delayChildren: shouldStabilizeMotion ? 0 : 0.08,
+          staggerChildren: shouldReduceMotion ? 0 : 0.12,
+          delayChildren: shouldReduceMotion ? 0 : 0.08,
         },
       },
     }),
-    [shouldStabilizeMotion],
+    [shouldReduceMotion],
   );
 
   const heroItemVariants = useMemo(
     () => ({
-      hidden: { opacity: 0, y: shouldStabilizeMotion ? 0 : 14 },
+      hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 14 },
       visible: {
         opacity: 1,
         y: 0,
         transition: {
-          duration: shouldStabilizeMotion ? 0.01 : 0.48,
+          duration: shouldReduceMotion ? 0.01 : 0.48,
           ease: EASE_OUT_QUART,
         },
       },
     }),
-    [shouldStabilizeMotion],
+    [shouldReduceMotion],
   );
 
   const cardDelay = useCallback(
     (index: number, base = 0) =>
-      shouldStabilizeMotion ? 0 : base + Math.min(index * 0.06, 0.28),
-    [shouldStabilizeMotion],
+      shouldReduceMotion ? 0 : base + Math.min(index * 0.06, 0.28),
+    [shouldReduceMotion],
   );
 
   const handlePriceRangeSelect = (priceRange: VenuePriceRange) => {
@@ -441,9 +421,9 @@ const HomePage = () => {
       return;
     }
 
-    const prefersReducedMotion =
-      shouldStabilizeMotion ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     const maxAttempts = 8;
     const offset = 96;
     let attempts = 0;
@@ -474,7 +454,7 @@ const HomePage = () => {
     };
 
     window.requestAnimationFrame(tryScroll);
-  }, [shouldStabilizeMotion]);
+  }, []);
 
   const handleMoodOptionSelect = useCallback(
     (moodId: string, isActive: boolean) => {
@@ -587,9 +567,10 @@ const HomePage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{
-        duration: shouldStabilizeMotion ? 0.01 : 0.32,
+        duration: shouldReduceMotion ? 0.01 : 0.32,
         ease: EASE_OUT_QUART,
       }}
+      style={{ willChange: "auto", backfaceVisibility: "hidden" }}
     >
       <AnimatePresence>
         {tourActive && (
@@ -606,10 +587,10 @@ const HomePage = () => {
         <motion.div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${cairoBg})` }}
-          initial={{ scale: shouldStabilizeMotion ? 1 : 1.06 }}
+          initial={{ scale: shouldReduceMotion ? 1 : 1.06 }}
           animate={{ scale: 1 }}
           transition={{
-            duration: shouldStabilizeMotion ? 0.01 : 0.85,
+            duration: shouldReduceMotion ? 0.01 : 0.85,
             ease: EASE_OUT_EXPO,
           }}
         />
@@ -651,7 +632,7 @@ const HomePage = () => {
                 }
               }}
               aria-label={t("home.hero.searchAria")}
-              className="h-12 rounded-2xl border border-white/25 bg-white/85 pl-11 pr-[5.5rem] text-sm text-slate-900 shadow-lg transition-colors placeholder:text-slate-500 focus:border-secondary/70 focus:bg-white focus:ring-secondary/20 backdrop-blur-md dark:bg-black/45 dark:text-white dark:placeholder:text-white/65 dark:focus:bg-black/55 sm:h-14 sm:pl-12 sm:pr-28 sm:text-base"
+              className="h-12 rounded-2xl border border-white/20 bg-black/28 pl-11 pr-[5.5rem] text-sm text-white shadow-lg transition-colors placeholder:text-white/60 focus:border-secondary/70 focus:bg-black/32 focus:ring-secondary/20 backdrop-blur-md sm:h-14 sm:pl-12 sm:pr-28 sm:text-base"
             />
             <button
               type="button"
@@ -683,19 +664,19 @@ const HomePage = () => {
                   aria-pressed={isActive}
                   onClick={() => toggleFilter(filter.id)}
                   whileHover={
-                    shouldStabilizeMotion
+                    shouldReduceMotion
                       ? undefined
                       : { y: -2, transition: { duration: 0.16 } }
                   }
                   whileTap={
-                    shouldStabilizeMotion
+                    shouldReduceMotion
                       ? undefined
                       : { scale: 0.97, transition: { duration: 0.1 } }
                   }
-                  initial={{ opacity: 0, y: shouldStabilizeMotion ? 0 : 8 }}
+                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
-                    duration: shouldStabilizeMotion ? 0.01 : 0.26,
+                    duration: shouldReduceMotion ? 0.01 : 0.26,
                     ease: EASE_OUT_QUART,
                     delay: cardDelay(index, 0.18),
                   }}
@@ -716,12 +697,12 @@ const HomePage = () => {
 
       <motion.div
         className="max-w-7xl mx-auto px-4 pt-4"
-        initial={{ opacity: 0, y: shouldStabilizeMotion ? 0 : 14 }}
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
-          duration: shouldStabilizeMotion ? 0.01 : 0.36,
+          duration: shouldReduceMotion ? 0.01 : 0.36,
           ease: EASE_OUT_QUART,
-          delay: shouldStabilizeMotion ? 0 : 0.1,
+          delay: shouldReduceMotion ? 0 : 0.1,
         }}
       >
         <LocationPermissionBanner
@@ -735,9 +716,9 @@ const HomePage = () => {
           <motion.div
             key="save-error"
             className="mx-auto mt-4 max-w-7xl px-4"
-            initial={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
+            initial={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
+            exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
             transition={stateTransition}
           >
             <div
@@ -768,7 +749,10 @@ const HomePage = () => {
       <div className="mx-auto max-w-7xl px-4 py-5 pb-10 sm:py-6 sm:pb-12 md:py-8 md:pb-8">
         <div className="grid grid-cols-1 items-start gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           {/* ── LEFT: Main Feed ── */}
-          <div className="flex-1 min-w-0 space-y-8 sm:space-y-10 lg:space-y-12">
+          <div
+            className="flex-1 min-w-0 space-y-8 sm:space-y-10 lg:space-y-12"
+            style={{ isolation: "isolate" }}
+          >
             {/* Group Session Banner (mobile / tablet) */}
             <section
               className="lg:hidden"
@@ -780,10 +764,17 @@ const HomePage = () => {
             {/* ── QUICK CONTROLS (MOBILE/TABLET) ── */}
             <section
               className="space-y-4 lg:hidden"
+              style={{ isolation: "isolate", position: "relative", zIndex: 1 }}
               data-tour="tour-mood"
               id="tour-mood"
             >
-              <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+              <div
+                className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm"
+                style={{
+                  transform: "translateZ(0)",
+                  backfaceVisibility: "hidden",
+                }}
+              >
                 <div className="flex items-center justify-between gap-2">
                   <h2 className="text-sm font-semibold text-foreground">
                     {t("home.mobile.moodSelectorTitle")}
@@ -793,7 +784,7 @@ const HomePage = () => {
                   </span>
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-2 xs:grid-cols-2 sm:grid-cols-3">
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {moodOptions.map((mood) => {
                     const isActive = selectedMood === mood.id;
                     const MoodIcon = MOOD_ICON_MAP[mood.icon] ?? Sparkles;
@@ -807,8 +798,9 @@ const HomePage = () => {
                         className={`flex min-h-[2.75rem] items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
-                            : "border-border/60 bg-background hover:border-primary/55 hover:bg-primary/12"
+                            : "border-border/60 bg-card hover:border-primary/55 hover:bg-primary/10"
                         }`}
+                        style={{ transform: "translateZ(0)" }}
                       >
                         <MoodIcon className="h-4 w-4 shrink-0 text-secondary/90 dark:text-primary" />
                         <span className="min-w-0 truncate text-xs font-medium text-foreground leading-tight">
@@ -823,11 +815,12 @@ const HomePage = () => {
 
             {/* ── Venue Discovery Studio (New Endpoints) ── */}
             <section
-              className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-5 sm:p-6 shadow-sm"
+              className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm"
+              style={{ isolation: "isolate", contain: "layout style" }}
               data-tour="tour-discovery"
               id="tour-discovery"
             >
-              <div className="relative z-10 space-y-5">
+              <div className="space-y-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground sm:text-xl">
@@ -1067,12 +1060,9 @@ const HomePage = () => {
                     {showDiscoverySkeleton ? (
                       <motion.div
                         key="discovery-loading"
-                        initial={{
-                          opacity: 0,
-                          y: shouldStabilizeMotion ? 0 : 10,
-                        }}
+                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
+                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                         transition={stateTransition}
                       >
                         <HorizontalScroller
@@ -1090,12 +1080,9 @@ const HomePage = () => {
                     ) : discoveryError ? (
                       <motion.div
                         key="discovery-error"
-                        initial={{
-                          opacity: 0,
-                          y: shouldStabilizeMotion ? 0 : 10,
-                        }}
+                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
+                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                         transition={stateTransition}
                         className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
                       >
@@ -1119,12 +1106,9 @@ const HomePage = () => {
                     ) : discoveryPlaces.length === 0 ? (
                       <motion.div
                         key="discovery-empty"
-                        initial={{
-                          opacity: 0,
-                          y: shouldStabilizeMotion ? 0 : 10,
-                        }}
+                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
+                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                         transition={stateTransition}
                         className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
                       >
@@ -1138,12 +1122,9 @@ const HomePage = () => {
                     ) : (
                       <motion.div
                         key="discovery-ready"
-                        initial={{
-                          opacity: 0,
-                          y: shouldStabilizeMotion ? 0 : 10,
-                        }}
+                        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
+                        exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                         transition={stateTransition}
                       >
                         <HorizontalScroller
@@ -1156,11 +1137,11 @@ const HomePage = () => {
                               className="snap-start"
                               initial={{
                                 opacity: 0,
-                                y: shouldStabilizeMotion ? 0 : 12,
+                                y: shouldReduceMotion ? 0 : 12,
                               }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{
-                                duration: shouldStabilizeMotion ? 0.01 : 0.3,
+                                duration: shouldReduceMotion ? 0.01 : 0.3,
                                 ease: EASE_OUT_QUART,
                                 delay: cardDelay(index),
                               }}
@@ -1189,11 +1170,11 @@ const HomePage = () => {
                 <motion.section
                   ref={moodSectionRef}
                   className="space-y-4"
-                  initial={{ opacity: 0, y: shouldStabilizeMotion ? 0 : 16 }}
+                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -10 }}
+                  exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -10 }}
                   transition={{
-                    duration: shouldStabilizeMotion ? 0.01 : 0.28,
+                    duration: shouldReduceMotion ? 0.01 : 0.28,
                     ease: EASE_OUT_QUART,
                   }}
                 >
@@ -1388,8 +1369,11 @@ const HomePage = () => {
             )}
 
             {/* ── Similar Places Studio ── */}
-            <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-5 sm:p-6 shadow-sm">
-              <div className="relative z-10 space-y-5">
+            <section
+              className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm"
+              style={{ isolation: "isolate", contain: "layout style" }}
+            >
+              <div className="space-y-5">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -1436,13 +1420,10 @@ const HomePage = () => {
                           key="similar-suggestions"
                           initial={{
                             opacity: 0,
-                            y: shouldStabilizeMotion ? 0 : -8,
+                            y: shouldReduceMotion ? 0 : -8,
                           }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{
-                            opacity: 0,
-                            y: shouldStabilizeMotion ? 0 : -8,
-                          }}
+                          exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                           transition={stateTransition}
                           className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-lg"
                         >
@@ -1542,12 +1523,9 @@ const HomePage = () => {
                   {isSimilarLoading ? (
                     <motion.div
                       key="similar-loading"
-                      initial={{
-                        opacity: 0,
-                        y: shouldStabilizeMotion ? 0 : 10,
-                      }}
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                       transition={stateTransition}
                     >
                       <HorizontalScroller
@@ -1565,12 +1543,9 @@ const HomePage = () => {
                   ) : similarError ? (
                     <motion.div
                       key="similar-error"
-                      initial={{
-                        opacity: 0,
-                        y: shouldStabilizeMotion ? 0 : 10,
-                      }}
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                       transition={stateTransition}
                       className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
                     >
@@ -1594,12 +1569,9 @@ const HomePage = () => {
                   ) : similarPlaces.length === 0 ? (
                     <motion.div
                       key="similar-empty"
-                      initial={{
-                        opacity: 0,
-                        y: shouldStabilizeMotion ? 0 : 10,
-                      }}
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                       transition={stateTransition}
                       className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
                     >
@@ -1613,12 +1585,9 @@ const HomePage = () => {
                   ) : (
                     <motion.div
                       key="similar-ready"
-                      initial={{
-                        opacity: 0,
-                        y: shouldStabilizeMotion ? 0 : 10,
-                      }}
+                      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: shouldStabilizeMotion ? 0 : -8 }}
+                      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                       transition={stateTransition}
                     >
                       <HorizontalScroller
@@ -1631,11 +1600,11 @@ const HomePage = () => {
                             className="snap-start"
                             initial={{
                               opacity: 0,
-                              y: shouldStabilizeMotion ? 0 : 12,
+                              y: shouldReduceMotion ? 0 : 12,
                             }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{
-                              duration: shouldStabilizeMotion ? 0.01 : 0.3,
+                              duration: shouldReduceMotion ? 0.01 : 0.3,
                               ease: EASE_OUT_QUART,
                               delay: cardDelay(index),
                             }}
