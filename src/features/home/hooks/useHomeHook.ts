@@ -151,10 +151,6 @@ export const useHome = (): UseHomeReturn => {
         )
         .slice(0, 60);
       setSimilarSeedPlaces(combinedSeedPool);
-
-      if (combinedSeedPool.length > 0) {
-        setSelectedSimilarSeedId((prev) => prev ?? combinedSeedPool[0].id);
-      }
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load places"));
     } finally {

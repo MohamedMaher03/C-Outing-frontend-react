@@ -62,7 +62,7 @@ export const AuthShell = ({
 
       <div
         className={cn(
-          "relative z-10 w-full px-4 sm:px-0",
+          "relative z-10 w-full px-4 pt-14 sm:px-0 sm:pt-0",
           MAX_WIDTH_CLASS[maxWidth],
         )}
       >

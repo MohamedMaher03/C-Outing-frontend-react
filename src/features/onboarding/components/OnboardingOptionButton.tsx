@@ -32,8 +32,8 @@ export const OnboardingOptionButton = ({
         "h-auto min-h-11 min-w-0 touch-manipulation whitespace-normal border text-sm font-medium leading-tight transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.99] focus-visible:ring-primary/40 focus-visible:ring-offset-1 motion-reduce:transition-none motion-reduce:active:scale-100",
         shape === "pill" ? "rounded-full" : "rounded-xl",
         selected
-          ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
-          : "border-border/80 bg-card/90 text-foreground/80 hover:border-primary/25 hover:text-foreground/90",
+          ? "border-primary bg-primary text-primary-foreground supports-[hover:hover]:hover:bg-primary/90 supports-[hover:hover]:hover:text-primary-foreground"
+          : "border-border/80 bg-card/90 text-foreground/80 supports-[hover:hover]:hover:border-primary/25 supports-[hover:hover]:hover:text-foreground/90",
         className,
       )}
     >

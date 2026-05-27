@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema } from "@/features/auth/validation/signUp.schema";
 import type { SignUpFormData } from "@/features/auth/validation/signUp.schema";
 import type { SignUpFormInput } from "@/features/auth/validation/signUp.schema";
 import { PasswordInput } from "./form/PasswordInput";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InlineLoading } from "@/components/ui/LoadingSpinner";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ import type { SignUpFieldConfig } from "@/features/auth/types";
 import { AuthShell, AuthSurface } from "./layout/AuthShell";
 import { AuthStatusBanner } from "./ui/AuthStatusBanner";
 import { useI18n } from "@/components/i18n";
+import { AUTH_PASSWORD_RULES } from "../constants";
 import {
   COUNTRIES,
   CUSTOM_COUNTRY_VALUE,
@@ -59,10 +60,32 @@ const SignUpForm = () => {
     clearErrors,
     setError,
     reset,
+    control,
     formState: { errors },
   } = useForm<SignUpFormInput, unknown, SignUpFormData>({
     resolver: zodResolver(signUpSchema),
   });
+
+  const passwordValue = useWatch({ control, name: "password" }) ?? "";
+  const passwordRules = [
+    {
+      id: "min",
+      label: t("auth.passwordRuleMinChars", {
+        min: AUTH_PASSWORD_RULES.MIN_LENGTH,
+      }),
+      satisfied: passwordValue.length >= AUTH_PASSWORD_RULES.MIN_LENGTH,
+    },
+    {
+      id: "upperLower",
+      label: t("auth.passwordRuleUpperLower"),
+      satisfied: /[a-z]/.test(passwordValue) && /[A-Z]/.test(passwordValue),
+    },
+    {
+      id: "number",
+      label: t("auth.passwordRuleNumber"),
+      satisfied: /\d/.test(passwordValue),
+    },
+  ];
 
   useEffect(() => {
     if (!validationErrors) return;
@@ -217,6 +240,45 @@ const SignUpForm = () => {
             <FormError message={errors.password?.message} />
           </div>
 
+          <div className="rounded-xl border border-border/60 bg-muted/40 px-3 py-3 sm:px-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-foreground">
+                {t("auth.passwordRulesTitle")}
+              </p>
+              {/* <span className="text-xs text-muted-foreground">
+                {t("auth.passwordRulesHint")}
+              </span> */}
+            </div>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+              {passwordRules.map((rule) => (
+                <li
+                  key={rule.id}
+                  className={`flex items-start gap-2 text-xs sm:text-sm ${
+                    rule.satisfied
+                      ? "text-emerald-700 dark:text-emerald-300"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border ${
+                      rule.satisfied
+                        ? "border-emerald-600 bg-emerald-600/10"
+                        : "border-border/70 bg-background/70"
+                    }`}
+                    aria-hidden="true"
+                  >
+                    {rule.satisfied ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Circle className="h-2.5 w-2.5" />
+                    )}
+                  </span>
+                  <span>{rule.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">{t("auth.confirmPassword")}</Label>
 
@@ -268,12 +330,12 @@ const SignUpForm = () => {
           </Button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground">
-          {t("auth.alreadyHaveAccount")}{" "}
+        <p className="flex flex-wrap items-center justify-center gap-1 text-sm text-muted-foreground">
+          <span>{t("auth.alreadyHaveAccount")}</span>
           <button
             type="button"
             onClick={() => navigate("/login")}
-            className="inline-flex min-h-11 items-center font-semibold text-primary transition-colors hover:text-primary"
+            className="inline-flex min-h-11 items-center px-1.5 font-semibold text-primary transition-colors hover:text-primary"
           >
             {t("auth.signIn")}
           </button>

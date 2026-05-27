@@ -507,7 +507,7 @@ const OnboardingPage = () => {
                         <legend id={interestsLegendId} className="sr-only">
                           {t("onboarding.interests.legend")}
                         </legend>
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3">
                           {INTERESTS.map((item) => {
                             const selected = selectedInterestsSet.has(item.id);
                             const InterestIcon =

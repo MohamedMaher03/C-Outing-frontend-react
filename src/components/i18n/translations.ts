@@ -117,6 +117,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.joinUs": "Join us and discover the best places Cairo has to offer",
     "auth.password": "Password",
     "auth.confirmPassword": "Confirm Password",
+    "auth.passwordRulesTitle": "Password rules",
+    "auth.passwordRulesHint": "Updates as you type",
+    "auth.passwordRuleMinChars": "At least {min} characters",
+    "auth.passwordRuleUpperLower": "One uppercase and one lowercase letter",
+    "auth.passwordRuleNumber": "One number",
     "auth.avatarOptional": "Avatar (Optional)",
     "auth.defaultAvatarHint":
       "If you skip this, we will upload a default avatar.(maximum allowed 5MB).",
@@ -1791,6 +1796,11 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.joinUs": "انضم إلينا واكتشف أفضل الأماكن في القاهرة",
     "auth.password": "كلمة المرور",
     "auth.confirmPassword": "تأكيد كلمة المرور",
+    "auth.passwordRulesTitle": "قواعد كلمة المرور",
+    "auth.passwordRulesHint": "تتحدث أثناء الكتابة",
+    "auth.passwordRuleMinChars": "على الأقل {min} أحرف",
+    "auth.passwordRuleUpperLower": "حرف كبير وحرف صغير",
+    "auth.passwordRuleNumber": "رقم واحد",
     "auth.avatarOptional": "الصورة الشخصية (اختياري)",
     "auth.defaultAvatarHint":
       "إذا تخطيت هذه الخطوة، سنرفع صورة افتراضية. لتسجيل أسرع، استخدم صورة أقل من 2MB (الحد الأقصى 5MB).",

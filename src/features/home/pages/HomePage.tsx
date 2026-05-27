@@ -280,15 +280,22 @@ const HomePage = () => {
   const [similarSearchError, setSimilarSearchError] = useState<string | null>(
     null,
   );
+  const [hasSelectedSimilarSeed, setHasSelectedSimilarSeed] = useState(false);
   const [selectedSimilarSeedFromSearch, setSelectedSimilarSeedFromSearch] =
     useState<HomePlace | null>(null);
   const [isSimilarInputFocused, setIsSimilarInputFocused] = useState(false);
   const moodSectionRef = useRef<HTMLElement | null>(null);
 
-  const similarSeedOptions = similarSeedPlaces;
+  const defaultSimilarSeedOptions = useMemo(
+    () => curatedPlaces.slice(0, 6),
+    [curatedPlaces],
+  );
+  const similarSeedOptions = hasSelectedSimilarSeed
+    ? similarSeedPlaces
+    : defaultSimilarSeedOptions;
 
   const selectedSimilarSeedPlace = useMemo(() => {
-    if (!selectedSimilarSeedId) {
+    if (!selectedSimilarSeedId || !hasSelectedSimilarSeed) {
       return null;
     }
 
@@ -300,6 +307,7 @@ const HomePage = () => {
     );
   }, [
     selectedSimilarSeedId,
+    hasSelectedSimilarSeed,
     similarSeedOptions,
     selectedSimilarSeedFromSearch,
   ]);
@@ -1479,6 +1487,7 @@ const HomePage = () => {
                                     setSimilarSearchInput(place.name);
                                     setSelectedSimilarSeedFromSearch(place);
                                     selectPlaceForSimilar(place.id);
+                                    setHasSelectedSimilarSeed(true);
                                     setIsSimilarInputFocused(false);
                                   }}
                                   className={`w-full rounded-xl px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
@@ -1529,6 +1538,7 @@ const HomePage = () => {
                             setSimilarSearchInput(place.name);
                             setSelectedSimilarSeedFromSearch(place);
                             selectPlaceForSimilar(place.id);
+                            setHasSelectedSimilarSeed(true);
                             setIsSimilarInputFocused(false);
                           }}
                           className={`flex-shrink-0 rounded-full border px-4 py-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${

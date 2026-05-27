@@ -203,12 +203,12 @@ const LoginForm = () => {
           </Button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground">
-          {t("auth.noAccount")}{" "}
+        <p className="flex flex-wrap items-center justify-center gap-1 text-sm text-muted-foreground">
+          <span>{t("auth.noAccount")}</span>
           <button
             type="button"
             onClick={() => navigate("/register")}
-            className="inline-flex min-h-11 items-center font-semibold text-primary transition-colors hover:text-primary"
+            className="inline-flex min-h-11 items-center px-1.5 font-semibold text-primary transition-colors hover:text-primary"
           >
             {t("auth.createOne")}
           </button>
