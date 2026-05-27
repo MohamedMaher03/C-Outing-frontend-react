@@ -1,12 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import ProfilePage from "@/features/profile/pages/ProfilePage";
 import { useProfile } from "@/features/profile/hooks/useProfile";
 
-const mockNavigate = jest.fn();
-
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useNavigate: () => mockNavigate,
+  useNavigate: () => jest.fn(),
 }));
 
 jest.mock("@/features/profile/hooks/useProfile", () => ({
@@ -95,22 +93,12 @@ describe("ProfilePage", () => {
     expect(baseHookState.refreshProfile).toHaveBeenCalledTimes(1);
   });
 
-  it("saves preferences and signs out from account tab", async () => {
+  it("saves preferences from the preferences tab", () => {
     render(<ProfilePage />);
 
     fireEvent.click(
       screen.getAllByRole("button", { name: "profile.preferences.save" })[0],
     );
     expect(baseHookState.savePreferences).toHaveBeenCalledTimes(1);
-
-    fireEvent.click(screen.getByRole("tab", { name: "profile.tab.account" }));
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "profile.account.signOut" })[0],
-    );
-
-    await waitFor(() => {
-      expect(baseHookState.handleSignOut).toHaveBeenCalledTimes(1);
-      expect(mockNavigate).toHaveBeenCalledWith("/");
-    });
   });
 });

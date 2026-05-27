@@ -1238,14 +1238,27 @@ const HomePage = () => {
                           : t("home.mood.defaultDescription")}
                       </p>
                     </div>
-                    <Button
-                      onClick={() => setSelectedMood(null)}
-                      variant="ghost"
-                      size="sm"
-                      className="h-9 flex-shrink-0 px-2 text-xs text-muted-foreground"
-                    >
-                      {t("home.mood.clear")}
-                    </Button>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button
+                        onClick={() =>
+                          navigate(`/home/see-all/mood/${selectedMood}`)
+                        }
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 px-2 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        {t("home.seeAll")}
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        onClick={() => setSelectedMood(null)}
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 px-2 text-xs text-muted-foreground"
+                      >
+                        {t("home.mood.clear")}
+                      </Button>
+                    </div>
                   </div>
 
                   {isMoodLoading ? (

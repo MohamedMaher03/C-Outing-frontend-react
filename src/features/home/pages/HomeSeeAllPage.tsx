@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, Flame, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,11 @@ import PlaceCard from "@/features/home/components/PlaceCard";
 import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
 import { useHomeSeeAll } from "@/features/home/hooks/useHomeSeeAll";
 import type { HomeRecommendationCollection } from "@/features/home/types";
+import { MOOD_ICON_MAP } from "@/features/home/mocks";
+import { MOOD_OPTIONS } from "@/mocks/mockData";
 
 const COLLECTION_META: Record<
-  HomeRecommendationCollection,
+  Exclude<HomeRecommendationCollection, "mood">,
   {
     titleKey: string;
     subtitleKey: string;
@@ -36,7 +39,11 @@ const COUNT_OPTIONS = [10, 20, 30];
 const HomeSeeAllPage = () => {
   const { t, formatNumber } = useI18n();
   const navigate = useNavigate();
-  const { collection } = useParams<{ collection: string }>();
+  const { collection, moodId } = useParams<{
+    collection?: string;
+    moodId?: string;
+  }>();
+  const resolvedCollection = collection ?? (moodId ? "mood" : undefined);
   const {
     safeCollection,
     places,
@@ -51,7 +58,19 @@ const HomeSeeAllPage = () => {
     retryFetch,
     userLocation,
     requestUserLocation,
-  } = useHomeSeeAll({ collection });
+  } = useHomeSeeAll({ collection: resolvedCollection, moodId });
+
+  const moodOption = MOOD_OPTIONS.find((mood) => mood.id === moodId) ?? null;
+  const moodLabel = moodOption
+    ? t(`home.mood.${moodOption.id}.label`, undefined, moodOption.label)
+    : t("home.mood.defaultTitle");
+  const MoodIcon = moodOption
+    ? (MOOD_ICON_MAP[moodOption.icon] ?? Sparkles)
+    : Sparkles;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [collection, moodId]);
 
   if (!safeCollection) {
     return (
@@ -71,13 +90,28 @@ const HomeSeeAllPage = () => {
     );
   }
 
-  const meta = COLLECTION_META[safeCollection];
+  const meta =
+    safeCollection === "mood"
+      ? {
+          title: t("home.seeAll.collection.mood.title", { mood: moodLabel }),
+          subtitle: t("home.seeAll.collection.mood.subtitle", {
+            mood: moodLabel,
+          }),
+          icon: MoodIcon,
+          colorClass: "text-secondary dark:text-primary",
+        }
+      : {
+          title: t(COLLECTION_META[safeCollection].titleKey),
+          subtitle: t(COLLECTION_META[safeCollection].subtitleKey),
+          icon: COLLECTION_META[safeCollection].icon,
+          colorClass: COLLECTION_META[safeCollection].colorClass,
+        };
   const Icon = meta.icon;
 
   if (isLoading) {
     return (
       <PageLoading
-        text={t("home.seeAll.loading", { title: t(meta.titleKey) })}
+        text={t("home.seeAll.loading", { title: meta.title })}
         subText={t("home.seeAll.loadingSubtitle")}
       />
     );
@@ -98,11 +132,9 @@ const HomeSeeAllPage = () => {
             </button>
             <h1 className="text-3xl font-black tracking-tight flex items-center gap-2 text-foreground">
               <Icon className={`h-7 w-7 ${meta.colorClass}`} />
-              {t(meta.titleKey)}
+              {meta.title}
             </h1>
-            <p className="text-sm text-muted-foreground">
-              {t(meta.subtitleKey)}
-            </p>
+            <p className="text-sm text-muted-foreground">{meta.subtitle}</p>
           </div>
 
           <div

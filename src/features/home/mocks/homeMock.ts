@@ -147,9 +147,13 @@ export const homeMock = {
     void isSaved;
   },
 
-  async fetchMoodRecommendations(): Promise<HomePlace[]> {
+  async fetchMoodRecommendations(
+    moodId?: string,
+    count?: number,
+  ): Promise<HomePlace[]> {
     await delay(2500);
-    return normalizedPlaces();
+    void moodId;
+    return withCount(normalizedPlaces(), count, 10);
   },
 
   async fetchVenuesByDistrict(

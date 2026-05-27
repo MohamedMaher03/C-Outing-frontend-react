@@ -687,6 +687,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.seeAll.collection.trending.title": "Trending Now",
     "home.seeAll.collection.trending.subtitle":
       "The most popular places right now across Cairo.",
+    "home.seeAll.collection.mood.title": "Mood picks: {mood}",
+    "home.seeAll.collection.mood.subtitle":
+      "More places tailored to the {mood} vibe.",
     "home.seeAll.invalidType.title": "Invalid list type",
     "home.seeAll.invalidType.description":
       "The requested recommendation list is not available.",
@@ -2289,6 +2292,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.seeAll.collection.trending.title": "الرائج الآن",
     "home.seeAll.collection.trending.subtitle":
       "أكثر الأماكن شعبية حاليًا في القاهرة.",
+    "home.seeAll.collection.mood.title": "اختيارات المزاج: {mood}",
+    "home.seeAll.collection.mood.subtitle": "أماكن أكثر مناسبة لأجواء {mood}.",
     "home.seeAll.invalidType.title": "نوع قائمة غير صالح",
     "home.seeAll.invalidType.description":
       "قائمة الاقتراحات المطلوبة غير متاحة.",

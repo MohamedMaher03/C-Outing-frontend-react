@@ -86,13 +86,16 @@ export const homeApi = {
     await axiosInstance.delete(API_ENDPOINTS.favorites.remove(placeId));
   },
 
-  async fetchMoodRecommendations(moodId: string): Promise<HomePlace[]> {
+  async fetchMoodRecommendations(
+    moodId: string,
+    count?: number,
+  ): Promise<HomePlace[]> {
     const response = await axiosInstance.get<unknown>(
       API_ENDPOINTS.recommendations.mood,
       {
         params: {
           mood: moodId,
-          count: 10,
+          count: count ?? 10,
         },
       },
     );

@@ -23,7 +23,10 @@ export interface MapAtlasDataSource {
     params: SimilarRecommendationsParams,
   ) => Promise<HomePlace[]>;
   togglePlaceSave: (placeId: string, isSaved: boolean) => Promise<void>;
-  fetchMoodRecommendations: (moodId: string) => Promise<HomePlace[]>;
+  fetchMoodRecommendations: (
+    moodId: string,
+    count?: number,
+  ) => Promise<HomePlace[]>;
   fetchVenuesByDistrict: (
     params: VenueByDistrictParams,
   ) => Promise<HomePlace[]>;

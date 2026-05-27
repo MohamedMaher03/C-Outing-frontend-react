@@ -74,9 +74,7 @@ const PublicProfilePage = lazy(
   () => import("@/features/users/pages/PublicProfilePage"),
 );
 const NotFound = lazy(() => import("@/pages/NotFound"));
-const SessionPage = lazy(
-  () => import("@/features/session/pages/SessionPage"),
-);
+const SessionPage = lazy(() => import("@/features/session/pages/SessionPage"));
 
 const AdminDashboardPage = lazy(
   () => import("@/features/admin/pages/AdminDashboardPage"),
@@ -217,6 +215,10 @@ function App() {
             }
           >
             <Route path="/" element={<HomePage />} />
+            <Route
+              path="/home/see-all/mood/:moodId"
+              element={<HomeSeeAllPage />}
+            />
             <Route
               path="/home/see-all/:collection"
               element={<HomeSeeAllPage />}

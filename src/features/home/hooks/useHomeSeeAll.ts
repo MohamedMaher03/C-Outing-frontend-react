@@ -13,6 +13,7 @@ import { getErrorMessage } from "@/utils/apiError";
 
 interface UseHomeSeeAllOptions {
   collection?: string;
+  moodId?: string;
 }
 
 interface UseHomeSeeAllReturn {
@@ -33,6 +34,7 @@ interface UseHomeSeeAllReturn {
 
 export const useHomeSeeAll = ({
   collection,
+  moodId,
 }: UseHomeSeeAllOptions): UseHomeSeeAllReturn => {
   const [places, setPlaces] = useState<HomePlace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,20 +49,31 @@ export const useHomeSeeAll = ({
   const saveInFlightIds = useRef(new Set<string>());
 
   const safeCollection: HomeRecommendationCollection | null =
-    collection === "curated" || collection === "trending" ? collection : null;
+    collection === "curated" || collection === "trending"
+      ? collection
+      : collection === "mood" && moodId
+        ? "mood"
+        : null;
 
   useEffect(() => {
     if (!safeCollection) return;
+    if (safeCollection === "mood" && !moodId) return;
 
     let cancelled = false;
     const fetchPlaces = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const data =
-          safeCollection === "curated"
-            ? await homeService.fetchPersonalizedRecommendations({ count })
-            : await homeService.fetchTrendingRecommendations({ count });
+        let data: HomePlace[];
+
+        if (safeCollection === "curated") {
+          data = await homeService.fetchPersonalizedRecommendations({ count });
+        } else if (safeCollection === "trending") {
+          data = await homeService.fetchTrendingRecommendations({ count });
+        } else {
+          const moodKey = moodId ?? "";
+          data = await homeService.fetchMoodRecommendations(moodKey, count);
+        }
 
         if (!cancelled) {
           setPlaces(data);
@@ -78,7 +91,7 @@ export const useHomeSeeAll = ({
     return () => {
       cancelled = true;
     };
-  }, [safeCollection, count, reloadKey]);
+  }, [safeCollection, count, reloadKey, moodId]);
 
   const toggleSave = useCallback(
     async (id: string) => {

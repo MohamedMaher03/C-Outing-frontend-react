@@ -84,7 +84,7 @@ export interface SimilarRecommendationsParams extends HomeRecommendationsQuery {
   venueId: string;
 }
 
-export type HomeRecommendationCollection = "curated" | "trending";
+export type HomeRecommendationCollection = "curated" | "trending" | "mood";
 
 export interface VenueByDistrictParams {
   district: string;

@@ -7,6 +7,7 @@ jest.mock("@/features/home/services/homeService", () => ({
   homeService: {
     fetchPersonalizedRecommendations: jest.fn(),
     fetchTrendingRecommendations: jest.fn(),
+    fetchMoodRecommendations: jest.fn(),
   },
 }));
 
@@ -54,6 +55,9 @@ describe("useHomeSeeAll", () => {
     ] as never);
     mockedHomeService.fetchTrendingRecommendations.mockResolvedValue([
       { ...placeFixture, id: "p2" },
+    ] as never);
+    mockedHomeService.fetchMoodRecommendations.mockResolvedValue([
+      { ...placeFixture, id: "p3" },
     ] as never);
   });
 
@@ -113,5 +117,21 @@ describe("useHomeSeeAll", () => {
         mockedHomeService.fetchTrendingRecommendations.mock.calls.length,
       ).toBeGreaterThan(callsBeforeRetry);
     });
+  });
+
+  it("loads mood recommendations with moodId", async () => {
+    const { result } = renderHook(() =>
+      useHomeSeeAll({ collection: "mood", moodId: "romantic" }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.safeCollection).toBe("mood");
+    expect(mockedHomeService.fetchMoodRecommendations).toHaveBeenCalledWith(
+      "romantic",
+      20,
+    );
   });
 });

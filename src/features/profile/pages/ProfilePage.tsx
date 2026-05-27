@@ -1,6 +1,4 @@
 import {
-  Settings,
-  LogOut,
   ChevronRight,
   Palette,
   Phone,
@@ -120,7 +118,6 @@ const ProfilePage = () => {
     toggleDistrict,
     setSelectedBudget,
     savePreferences,
-    handleSignOut,
     refreshProfile,
   } = useProfile();
   const isPreferencesTabActive = activeTab === "preferences";
@@ -168,14 +165,6 @@ const ProfilePage = () => {
 
   const handleSave = async () => {
     await savePreferences().catch(() => undefined);
-  };
-
-  const handleLogout = async () => {
-    await handleSignOut()
-      .then(() => {
-        navigate("/");
-      })
-      .catch(() => undefined);
   };
 
   if (loading) {
@@ -279,15 +268,6 @@ const ProfilePage = () => {
             ) : null}
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setActiveTab("account")}
-          aria-label={t("profile.action.openAccountSettings")}
-          className="h-11 w-11 rounded-full"
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-4">
@@ -462,14 +442,6 @@ const ProfilePage = () => {
                 <ChevronRight className={accountChevronClassName} />
               </button>
             ))}
-
-            <Button
-              variant="ghost"
-              className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2 mt-4"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-4 w-4" /> {t("profile.account.signOut")}
-            </Button>
           </TabsContent>
         </Tabs>
 
@@ -495,14 +467,6 @@ const ProfilePage = () => {
           <p className="pt-2 text-role-caption text-muted-foreground">
             {t("profile.quickActions.hint")}
           </p>
-
-          <Button
-            variant="ghost"
-            className="mt-1 w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" /> {t("profile.account.signOut")}
-          </Button>
         </aside>
       </div>
 
