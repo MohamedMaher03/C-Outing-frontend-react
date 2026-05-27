@@ -97,7 +97,7 @@ const SocialReviewCardComponent = ({
       )}
 
       <p
-        className="pd-type-body pd-measure text-muted-foreground break-words whitespace-pre-wrap"
+        className="pd-type-body w-full text-start text-muted-foreground break-words whitespace-pre-wrap"
         dir="auto"
       >
         {review.content}
