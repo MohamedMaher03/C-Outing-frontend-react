@@ -134,7 +134,7 @@ export const AddReviewForm = ({
         >
           {t("placeDetail.reviewForm.commentLabel")}
         </label>
-        <p className="pd-type-micro text-muted-foreground">
+        <p className="pd-type-micro text-muted-foreground pb-2">
           {t("placeDetail.reviewForm.commentOptional")}
         </p>
         <textarea

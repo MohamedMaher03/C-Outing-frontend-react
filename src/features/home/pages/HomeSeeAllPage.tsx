@@ -42,8 +42,12 @@ const HomeSeeAllPage = () => {
     places,
     isLoading,
     error,
+    saveError,
+    clearSaveError,
     count,
     setCount,
+    toggleSave,
+    savePendingMap,
     retryFetch,
     userLocation,
     requestUserLocation,
@@ -131,6 +135,29 @@ const HomeSeeAllPage = () => {
           onEnableLocation={requestUserLocation}
         />
 
+        {saveError && (
+          <div
+            className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-medium text-destructive">
+                {saveError}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={clearSaveError}
+                className="h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
+              >
+                {t("common.dismiss")}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {error ? (
           <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
             <p className="text-sm font-semibold text-destructive">
@@ -164,6 +191,8 @@ const HomeSeeAllPage = () => {
                 place={place}
                 variant="grid"
                 userLocation={userLocation}
+                onToggleSave={toggleSave}
+                isSavePending={Boolean(savePendingMap[place.id])}
                 onClick={(id) => navigate(`/venue/${id}`)}
               />
             ))}

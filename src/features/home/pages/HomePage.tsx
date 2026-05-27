@@ -494,8 +494,8 @@ const HomePage = () => {
   );
 
   const getGreetingKey = (hour: number) => {
-    if (hour < 12) return "home.greeting.morning";
-    if (hour < 18) return "home.greeting.afternoon";
+    if (hour >= 6 && hour < 12) return "home.greeting.morning";
+    if (hour >= 12 && hour < 18) return "home.greeting.afternoon";
     return "home.greeting.evening";
   };
 

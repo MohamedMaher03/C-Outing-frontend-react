@@ -550,7 +550,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.mood.emptyDescription": "Try a different vibe!",
 
     "home.curated.title": "Curated for You",
-    "home.curated.subtitle": "AI-powered picks based on your preferences",
+    "home.curated.subtitle": "Places picks based on your preferences",
     "home.trending.title": "Trending Now",
     "home.trending.subtitle": "Most popular this week in Cairo",
     "home.seeAll": "See all",
