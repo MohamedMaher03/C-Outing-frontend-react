@@ -162,7 +162,7 @@ const HorizontalScroller = ({
 };
 
 const HomePage = () => {
-  const { t, formatNumber, locale } = useI18n();
+  const { t, formatNumber } = useI18n();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { tourActive, currentStep, totalSteps, next, skip, finish } =
@@ -188,8 +188,6 @@ const HomePage = () => {
     discoveryPlaces,
     isDiscoveryLoading,
     discoveryError,
-    globalTopRatedVenues,
-    topRatedInAreaVenues,
     isGlobalTopRatedLoading,
     isTopRatedInAreaLoading,
     curatedPlaces,
@@ -219,11 +217,6 @@ const HomePage = () => {
     moodOptions,
     popularDistricts,
   } = useHome();
-
-  const compactNumberFormatter = useMemo(
-    () => new Intl.NumberFormat(locale, { notation: "compact" }),
-    [locale],
-  );
 
   const localizedFilters = useMemo(
     () =>
@@ -293,6 +286,10 @@ const HomePage = () => {
   const similarSeedOptions = hasSelectedSimilarSeed
     ? similarSeedPlaces
     : defaultSimilarSeedOptions;
+  const defaultSimilarSearchResults = useMemo(
+    () => similarSeedOptions.slice(0, 8),
+    [similarSeedOptions],
+  );
 
   const selectedSimilarSeedPlace = useMemo(() => {
     if (!selectedSimilarSeedId || !hasSelectedSimilarSeed) {
@@ -317,12 +314,15 @@ const HomePage = () => {
     [moodOptions, selectedMood],
   );
 
+  const trimmedSimilarQuery = similarSearchInput.trim();
+  const effectiveSimilarResults = trimmedSimilarQuery
+    ? similarSearchResults
+    : defaultSimilarSearchResults;
+
   useEffect(() => {
-    const trimmedQuery = similarSearchInput.trim();
-    if (!trimmedQuery) {
+    if (!trimmedSimilarQuery) {
       setIsSimilarSearchLoading(false);
       setSimilarSearchError(null);
-      setSimilarSearchResults(similarSeedOptions.slice(0, 8));
       return;
     }
 
@@ -332,7 +332,7 @@ const HomePage = () => {
       setSimilarSearchError(null);
       try {
         const response = await homeService.searchVenues({
-          searchTerm: trimmedQuery,
+          searchTerm: trimmedSimilarQuery,
           page: 1,
           pageSize: 8,
         });
@@ -358,7 +358,7 @@ const HomePage = () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [similarSearchInput, similarSeedOptions]);
+  }, [trimmedSimilarQuery]);
 
   const getMoodLabel = useCallback(
     (moodId: string, fallback: string) =>
@@ -374,8 +374,8 @@ const HomePage = () => {
 
   const showSimilarSuggestions =
     isSimilarInputFocused ||
-    (similarSearchInput.trim().length > 0 &&
-      similarSearchInput !== selectedSimilarSeedPlace?.name);
+    (trimmedSimilarQuery.length > 0 &&
+      trimmedSimilarQuery !== selectedSimilarSeedPlace?.name);
   const shouldReduceMotion = useReducedMotion();
 
   const stateTransition = useMemo(
@@ -493,12 +493,25 @@ const HomePage = () => {
     [scrollMoodSectionIntoView, setSelectedMood],
   );
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return t("home.greeting.morning");
-    if (hour < 18) return t("home.greeting.afternoon");
-    return t("home.greeting.evening");
+  const getGreetingKey = (hour: number) => {
+    if (hour < 12) return "home.greeting.morning";
+    if (hour < 18) return "home.greeting.afternoon";
+    return "home.greeting.evening";
   };
+
+  const [greetingKey, setGreetingKey] = useState(() =>
+    getGreetingKey(new Date().getHours()),
+  );
+
+  useEffect(() => {
+    const updateGreeting = () => {
+      setGreetingKey(getGreetingKey(new Date().getHours()));
+    };
+
+    updateGreeting();
+    const intervalId = window.setInterval(updateGreeting, 60_000);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const userName = user?.name?.split(" ")[0] || t("home.user.explorer");
 
@@ -629,7 +642,7 @@ const HomePage = () => {
         >
           <motion.div className="mb-5 space-y-1.5" variants={heroItemVariants}>
             <p className="text-white/80 text-xs font-medium tracking-widest uppercase">
-              {getGreeting()}, {userName} ✦
+              {t(greetingKey)}, {userName} ✦
             </p>
             <h1 className="text-2xl font-semibold leading-tight sm:text-4xl lg:text-[3.2rem] lg:leading-[1.08]">
               <span className="text-cream">{t("home.hero.title")}</span>
@@ -669,7 +682,7 @@ const HomePage = () => {
           </motion.div>
 
           <motion.div
-            className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide"
+            className="-mx-4 mt-3 flex gap-2 overflow-x-auto overflow-y-visible px-4 pb-1 pt-1 scrollbar-hide"
             aria-label={t("home.hero.filterAria")}
             variants={heroItemVariants}
             data-tour="tour-filters"
@@ -864,23 +877,7 @@ const HomePage = () => {
                       {t("home.discovery.subtitle")}
                     </p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs sm:gap-2 mb-2">
-                    <span className="max-w-[9rem] truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1.5 font-medium text-foreground sm:max-w-none">
-                      {t("home.discovery.topRatedCount", {
-                        count: compactNumberFormatter.format(
-                          globalTopRatedVenues.length,
-                        ),
-                      })}
-                    </span>
-                    <span className="max-w-[9rem] truncate rounded-full border border-border/70 bg-background px-3 py-1.5 font-medium text-foreground sm:max-w-none">
-                      {t("home.discovery.areaCount", {
-                        area: selectedArea,
-                        count: compactNumberFormatter.format(
-                          topRatedInAreaVenues.length,
-                        ),
-                      })}
-                    </span>
-                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs sm:gap-2 mb-2" />
                 </div>
               </div>
 
@@ -1070,12 +1067,12 @@ const HomePage = () => {
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-foreground shrink-0">
+                  <p className="text-sm font-medium text-foreground shrink-0 pt-2">
                     {t("home.discovery.results", {
                       count: formatNumber(discoveryResultCount),
                     })}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate text-right min-w-0">
+                  <p className="text-xs text-muted-foreground truncate text-right min-w-0 pt-2">
                     {t("home.discovery.sourceLabel", {
                       source: t(
                         `home.discovery.source.${activeDiscoverySource}`,
@@ -1472,8 +1469,8 @@ const HomePage = () => {
                             <p className="px-3 py-2 text-xs text-destructive">
                               {similarSearchError}
                             </p>
-                          ) : similarSearchResults.length > 0 ? (
-                            similarSearchResults.map((place) => {
+                          ) : effectiveSimilarResults.length > 0 ? (
+                            effectiveSimilarResults.map((place) => {
                               const isActive =
                                 selectedSimilarSeedId === place.id;
                               return (
