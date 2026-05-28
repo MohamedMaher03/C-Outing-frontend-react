@@ -25,18 +25,6 @@ export function useSession() {
 
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionCodeRef = useRef<string | null>(null);
-  const statusRef = useRef<SessionStatus>(status);
-  const recommendationsRef = useRef<SessionRecommendation[] | null>(
-    recommendations,
-  );
-
-  useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
-
-  useEffect(() => {
-    recommendationsRef.current = recommendations;
-  }, [recommendations]);
 
   // ── Helpers ───────────────────────────────────────────────────
 
@@ -63,6 +51,7 @@ export function useSession() {
     [getCacheKey],
   );
 
+
   const getCachedRecommendations = useCallback(
     (code: string): SessionRecommendation[] | null => {
       try {
@@ -88,36 +77,19 @@ export function useSession() {
     [getCacheKey],
   );
 
-  const trySyncRecommendations = useCallback(
-    async (code: string) => {
-      if (statusRef.current !== "waiting") return;
-      if (recommendationsRef.current?.length) return;
-      try {
-        const recs = await sessionApi.getRecommendations(code);
-        if (recs.length === 0) return;
-        stopPolling();
-        setRecommendations(recs);
-        setCachedRecommendations(code, recs);
-        setStatus("ready");
-      } catch {
-        // ignore; host may not have generated recommendations yet
-      }
-    },
-    [setCachedRecommendations, stopPolling],
-  );
-
-  const syncSession = useCallback(
-    async (code: string) => {
-      try {
-        const updated = await sessionApi.getSession(code);
-        setSession(updated);
-        await trySyncRecommendations(code);
-      } catch {
-        // silently ignore intermittent poll errors
-      }
-    },
-    [trySyncRecommendations],
-  );
+  /**
+   * Polls only the session state (members list, etc.).
+   * Recommendations are NOT fetched here — only the host's explicit button
+   * click (getRecommendations) should ever call the recommend endpoint.
+   */
+  const syncSession = useCallback(async (code: string) => {
+    try {
+      const updated = await sessionApi.getSession(code);
+      setSession(updated);
+    } catch {
+      // silently ignore intermittent poll errors
+    }
+  }, []);
 
   const startPolling = useCallback(
     (code: string) => {
