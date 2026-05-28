@@ -21,7 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { INTERESTS, POPULAR_DISTRICTS, type District } from "@/mocks/mockData";
+import { INTERESTS, POPULAR_DISTRICTS } from "@/mocks/mockData";
 import { useProfile } from "@/features/profile/hooks/useProfile";
 import { INTEREST_ICON_MAP } from "@/features/profile/mocks";
 import type { PriceLevel } from "@/features/admin/types";
@@ -31,7 +31,10 @@ import { BUDGET_OPTIONS as SHARED_BUDGET_OPTIONS } from "@/utils/priceLevels";
 import { ProfilePreferenceOptionButton } from "@/features/profile/components/ProfilePreferenceOptionButton";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useI18n } from "@/components/i18n";
-import { FAVORITE_ACTIVITIES, COMPANION_TYPES } from "@/features/onboarding/mocks";
+import {
+  FAVORITE_ACTIVITIES,
+  COMPANION_TYPES,
+} from "@/features/onboarding/mocks";
 
 const BUDGET_OPTIONS: Array<{ value: PriceLevel; label: string }> =
   SHARED_BUDGET_OPTIONS as Array<{ value: PriceLevel; label: string }>;
@@ -141,7 +144,9 @@ const ProfilePage = () => {
     t(`onboarding.interest.${interestId}`, undefined, fallback);
 
   const getDistrictLabel = (districtName: string): string => {
-    const found = POPULAR_DISTRICTS.find(d => d.name.toLowerCase() === districtName.toLowerCase());
+    const found = POPULAR_DISTRICTS.find(
+      (d) => d.name.toLowerCase() === districtName.toLowerCase(),
+    );
     if (found?.nameKey) {
       return t(found.nameKey, undefined, found.name);
     }
@@ -167,11 +172,6 @@ const ProfilePage = () => {
   const [districtSearch, setDistrictSearch] = useState("");
   const [districtPage, setDistrictPage] = useState(1);
 
-  const districtLookup = useMemo(
-    () => new Map(POPULAR_DISTRICTS.map((d) => [d.name, d])),
-    [],
-  );
-
   const filteredDistricts = useMemo(() => {
     const query = districtSearch.trim().toLowerCase();
     if (!query) return POPULAR_DISTRICTS;
@@ -188,8 +188,14 @@ const ProfilePage = () => {
   }, [districtSearch, t]);
 
   const districtPageSize = 8;
-  const districtTotalPages = Math.max(1, Math.ceil(filteredDistricts.length / districtPageSize));
-  const safeDistrictPage = Math.min(Math.max(districtPage, 1), districtTotalPages);
+  const districtTotalPages = Math.max(
+    1,
+    Math.ceil(filteredDistricts.length / districtPageSize),
+  );
+  const safeDistrictPage = Math.min(
+    Math.max(districtPage, 1),
+    districtTotalPages,
+  );
   const displayedDistricts = useMemo(() => {
     const start = (safeDistrictPage - 1) * districtPageSize;
     return filteredDistricts.slice(start, start + districtPageSize);
@@ -432,7 +438,7 @@ const ProfilePage = () => {
                       "cursor-pointer relative rounded-xl border p-2.5 text-center transition-all duration-200 hover:bg-muted/35",
                       vibeBand === "calm"
                         ? "border-primary bg-primary/10 text-primary shadow-sm"
-                        : "border-border/50 bg-background/40 text-muted-foreground"
+                        : "border-border/50 bg-background/40 text-muted-foreground",
                     )}
                   >
                     {vibeBand === "calm" && (
@@ -453,7 +459,7 @@ const ProfilePage = () => {
                       "cursor-pointer relative rounded-xl border p-2.5 text-center transition-all duration-200 hover:bg-muted/35",
                       vibeBand === "balanced"
                         ? "border-primary bg-primary/10 text-primary shadow-sm"
-                        : "border-border/50 bg-background/40 text-muted-foreground"
+                        : "border-border/50 bg-background/40 text-muted-foreground",
                     )}
                   >
                     {vibeBand === "balanced" && (
@@ -474,7 +480,7 @@ const ProfilePage = () => {
                       "cursor-pointer relative rounded-xl border p-2.5 text-center transition-all duration-200 hover:bg-muted/35",
                       vibeBand === "energetic"
                         ? "border-primary bg-primary/10 text-primary shadow-sm"
-                        : "border-border/50 bg-background/40 text-muted-foreground"
+                        : "border-border/50 bg-background/40 text-muted-foreground",
                     )}
                   >
                     {vibeBand === "energetic" && (
@@ -493,7 +499,9 @@ const ProfilePage = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between gap-3 text-xs text-muted-foreground">
                     <span>{t("profile.preferences.vibe.low")}</span>
-                    <span className="text-right">{t("profile.preferences.vibe.high")}</span>
+                    <span className="text-right">
+                      {t("profile.preferences.vibe.high")}
+                    </span>
                   </div>
                   <Slider
                     value={vibe}
@@ -503,7 +511,10 @@ const ProfilePage = () => {
                     aria-label={t("profile.preferences.vibeAria")}
                   />
                   <div className="flex items-center justify-between pt-1">
-                    <Badge variant="outline" className="rounded-full bg-background/70 px-2 py-0.5 text-[10px] text-foreground/80">
+                    <Badge
+                      variant="outline"
+                      className="rounded-full bg-background/70 px-2 py-0.5 text-[10px] text-foreground/80"
+                    >
                       Score: {vibe[0]}
                     </Badge>
                     <p className="text-xs font-semibold text-foreground/90">
@@ -523,7 +534,7 @@ const ProfilePage = () => {
               <h3 className="text-role-caption text-foreground uppercase tracking-wider font-semibold">
                 {t("profile.preferences.areas")}
               </h3>
-              
+
               <div className="space-y-3 rounded-2xl border border-border/70 bg-card/45 p-4 shadow-sm">
                 {/* Search input */}
                 <div className="relative">
@@ -574,7 +585,9 @@ const ProfilePage = () => {
                   ) : (
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {displayedDistricts.map((district) => {
-                        const selected = selectedDistricts.includes(district.name);
+                        const selected = selectedDistricts.includes(
+                          district.name,
+                        );
                         return (
                           <ProfilePreferenceOptionButton
                             key={district.id}
@@ -598,7 +611,9 @@ const ProfilePage = () => {
                       size="sm"
                       variant="outline"
                       disabled={safeDistrictPage <= 1}
-                      onClick={() => setDistrictPage(prev => Math.max(1, prev - 1))}
+                      onClick={() =>
+                        setDistrictPage((prev) => Math.max(1, prev - 1))
+                      }
                       className="h-8 rounded-lg px-2.5"
                     >
                       {t("onboarding.districts.paginationPrev")}
@@ -614,7 +629,11 @@ const ProfilePage = () => {
                       size="sm"
                       variant="outline"
                       disabled={safeDistrictPage >= districtTotalPages}
-                      onClick={() => setDistrictPage(prev => Math.min(districtTotalPages, prev + 1))}
+                      onClick={() =>
+                        setDistrictPage((prev) =>
+                          Math.min(districtTotalPages, prev + 1),
+                        )
+                      }
                       className="h-8 rounded-lg px-2.5"
                     >
                       {t("onboarding.districts.paginationNext")}
@@ -691,7 +710,9 @@ const ProfilePage = () => {
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {COMPANION_TYPES.map((companion) => {
-                  const selected = selectedCompanionTypes.includes(companion.id);
+                  const selected = selectedCompanionTypes.includes(
+                    companion.id,
+                  );
                   return (
                     <ProfilePreferenceOptionButton
                       key={companion.id}
