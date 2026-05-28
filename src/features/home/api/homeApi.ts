@@ -24,7 +24,7 @@ export const homeApi = {
     params?: HomeRecommendationsQuery,
   ): Promise<HomePageData> {
     const count = params?.count;
-    const [curated, trending] = await Promise.all([
+    const [curatedResult, trendingResult] = await Promise.allSettled([
       axiosInstance.get<unknown>(API_ENDPOINTS.recommendations.curated, {
         params: { count },
       }),
@@ -33,22 +33,55 @@ export const homeApi = {
       }),
     ]);
 
+    let trendingPlaces: HomePlace[] = [];
+    if (trendingResult.status === "fulfilled") {
+      trendingPlaces = mapHomePlacesPayload(trendingResult.value.data);
+    } else {
+      console.error("Failed to fetch trending recommendations:", trendingResult.reason);
+    }
+
+    let curatedPlaces: HomePlace[] = [];
+    if (curatedResult.status === "fulfilled") {
+      curatedPlaces = mapHomeRankedRecommendationsPayload(curatedResult.value.data);
+    } else {
+      console.warn(
+        "Failed to fetch personalized recommendations, falling back to trending",
+        curatedResult.reason
+      );
+      curatedPlaces = trendingPlaces;
+    }
+
     return {
-      curatedPlaces: mapHomeRankedRecommendationsPayload(curated.data),
-      trendingPlaces: mapHomePlacesPayload(trending.data),
+      curatedPlaces,
+      trendingPlaces,
     };
   },
 
   async fetchPersonalizedRecommendations(
     params?: HomeRecommendationsQuery,
   ): Promise<HomePlace[]> {
-    const { data } = await axiosInstance.get<unknown>(
-      API_ENDPOINTS.recommendations.curated,
-      {
-        params: { count: params?.count },
-      },
-    );
-    return mapHomeRankedRecommendationsPayload(data);
+    try {
+      const { data } = await axiosInstance.get<unknown>(
+        API_ENDPOINTS.recommendations.curated,
+        {
+          params: { count: params?.count },
+        },
+      );
+      return mapHomeRankedRecommendationsPayload(data);
+    } catch (err) {
+      console.warn("Failed to fetch personalized recommendations, falling back to trending", err);
+      try {
+        const { data } = await axiosInstance.get<unknown>(
+          API_ENDPOINTS.recommendations.trending,
+          {
+            params: { count: params?.count },
+          },
+        );
+        return mapHomePlacesPayload(data);
+      } catch {
+        return [];
+      }
+    }
   },
 
   async fetchTrendingRecommendations(
