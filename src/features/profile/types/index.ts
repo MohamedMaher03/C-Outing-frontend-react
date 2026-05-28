@@ -29,6 +29,8 @@ export interface UserPreferences {
   vibe: number;
   districts: string[];
   budget: PriceLevel;
+  favoriteActivities: string[];
+  companionTypes: string[];
 }
 
 export interface UpdatePreferencesRequest {
@@ -36,6 +38,8 @@ export interface UpdatePreferencesRequest {
   vibe?: number;
   districts?: string[];
   budget?: PriceLevel;
+  favoriteActivities?: string[];
+  companionTypes?: string[];
 }
 
 export interface EditProfileData {

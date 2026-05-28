@@ -72,6 +72,8 @@ export const API_ENDPOINTS = {
   // ── Onboarding (preferences submission) ──────────────────────
   onboarding: {
     submit: "/api/v1/Recommendation/onboarding",
+    getPreferences: "/api/v1/Recommendation/onboarding/preferences",
+    updatePreferences: "/api/v1/Recommendation/onboarding",
   },
 
   // ── Places / Detail ──────────────────────────────────────────

@@ -21,11 +21,15 @@ interface UseProfileReturn {
   vibe: number[];
   selectedDistricts: string[];
   selectedBudget: PriceLevel;
+  selectedActivities: string[];
+  selectedCompanionTypes: string[];
 
   toggleInterest: (id: string) => void;
   setVibe: (value: number[]) => void;
   toggleDistrict: (district: string) => void;
   setSelectedBudget: (budget: PriceLevel) => void;
+  toggleActivity: (id: string) => void;
+  toggleCompanionType: (id: string) => void;
   savePreferences: () => Promise<void>;
   handleSignOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -46,6 +50,8 @@ export const useProfile = (): UseProfileReturn => {
   const [vibe, setVibe] = useState<number[]>([50]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<PriceLevel>("midrange");
+  const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
+  const [selectedCompanionTypes, setSelectedCompanionTypes] = useState<string[]>([]);
 
   const clearError = () => setError(null);
 
@@ -72,6 +78,8 @@ export const useProfile = (): UseProfileReturn => {
       setVibe([preferencesData.vibe || 50]);
       setSelectedDistricts(preferencesData.districts || []);
       setSelectedBudget(preferencesData.budget || "midrange");
+      setSelectedActivities(preferencesData.favoriteActivities || []);
+      setSelectedCompanionTypes(preferencesData.companionTypes || []);
     } catch (err) {
       if (runId !== latestLoadRunRef.current) {
         return;
@@ -105,6 +113,20 @@ export const useProfile = (): UseProfileReturn => {
     );
   };
 
+  const toggleActivity = (id: string) => {
+    clearError();
+    setSelectedActivities((prev) =>
+      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
+    );
+  };
+
+  const toggleCompanionType = (id: string) => {
+    clearError();
+    setSelectedCompanionTypes((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
+    );
+  };
+
   const savePreferences = async () => {
     if (saveInFlightRef.current || saving) {
       return;
@@ -121,6 +143,8 @@ export const useProfile = (): UseProfileReturn => {
         vibe: vibe[0],
         districts: selectedDistricts,
         budget: selectedBudget,
+        favoriteActivities: selectedActivities,
+        companionTypes: selectedCompanionTypes,
       });
 
       setPreferences(updatedPreferences);
@@ -165,6 +189,8 @@ export const useProfile = (): UseProfileReturn => {
     vibe,
     selectedDistricts,
     selectedBudget,
+    selectedActivities,
+    selectedCompanionTypes,
     toggleInterest,
     setVibe,
     toggleDistrict,
@@ -172,6 +198,8 @@ export const useProfile = (): UseProfileReturn => {
       clearError();
       setSelectedBudget(budget);
     },
+    toggleActivity,
+    toggleCompanionType,
     savePreferences,
     handleSignOut,
     refreshProfile,

@@ -39,10 +39,12 @@ export const MOCK_PROFILE: UserProfile = {
 };
 
 export const MOCK_PREFERENCES: UserPreferences = {
-  interests: ["cafes", "street-food", "rooftops"],
-  vibe: 65,
-  districts: ["Zamalek", "Downtown", "Maadi"],
+  interests: ["historical", "cafes"],
+  vibe: 35,
+  districts: ["Downtown", "Zamalek"],
   budget: "midrange",
+  favoriteActivities: ["cafe", "arts-culture"],
+  companionTypes: ["couple", "small-group"],
 };
 
 export const MOCK_EDIT_PROFILE: EditProfileData = {

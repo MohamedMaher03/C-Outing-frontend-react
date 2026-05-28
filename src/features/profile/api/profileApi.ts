@@ -8,6 +8,11 @@ import type {
   UserPreferences,
   UserProfile,
 } from "../types";
+import {
+  mapStoredOutingPreferencesToUserPreferences,
+  mapUserPreferencesToStoredOutingPreferences,
+  type StoredOutingPreferences,
+} from "../mappers/profileMapper";
 import type { ProfileDataSource } from "../types/dataSource";
 
 const toDateOnly = (value: string): string => {
@@ -87,21 +92,20 @@ export const profileApi = {
   },
 
   async getPreferences(userId: string): Promise<UserPreferences> {
-    const { data } = await axiosInstance.get<UserPreferences>(
-      API_ENDPOINTS.users.getPreferences(userId),
+    void userId;
+    const { data } = await axiosInstance.get<StoredOutingPreferences>(
+      API_ENDPOINTS.onboarding.getPreferences,
     );
-    return data;
+    return mapStoredOutingPreferencesToUserPreferences(data);
   },
 
   async updatePreferences(
     userId: string,
     payload: UpdatePreferencesRequest,
   ): Promise<UserPreferences> {
-    const { data } = await axiosInstance.put<UserPreferences>(
-      API_ENDPOINTS.users.updatePreferences(userId),
-      payload,
-    );
-    return data;
+    const body = mapUserPreferencesToStoredOutingPreferences(payload);
+    await axiosInstance.put(API_ENDPOINTS.onboarding.updatePreferences, body);
+    return this.getPreferences(userId);
   },
 
   async getNotifications(): Promise<NotificationSettings> {
