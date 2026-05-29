@@ -8,6 +8,7 @@ import {
   Heart,
   Layers3,
   LocateFixed,
+  MapPin,
   MapPinned,
   Navigation,
   RefreshCcw,
@@ -30,13 +31,17 @@ import { useI18n } from "@/components/i18n";
 import { useTheme } from "@/components/theme/useTheme";
 import { cn } from "@/lib/utils";
 import MapAtlasCanvas from "@/features/map-atlas/components/MapAtlasCanvas";
-import { FILTER_OPTIONS } from "@/features/home/mocks";
+import {
+  DISCOVERY_SOURCE_OPTIONS,
+  FILTER_OPTIONS,
+  VENUE_PRICE_RANGE_OPTIONS,
+} from "@/features/home/mocks";
 import { useMapAtlas } from "@/features/map-atlas/hooks/useMapAtlas";
 import {
   INTERACTION_ACTION_TYPES,
   trackVenueInteractionSafe,
 } from "@/features/interactions";
-import type { DiscoverySource, HomePlace } from "@/features/home/types";
+import type { HomePlace } from "@/features/home/types";
 import type { MapAtlasSource } from "@/features/map-atlas/types";
 import {
   buildGoogleMapsDirectionsUrl,
@@ -44,7 +49,6 @@ import {
 } from "@/features/map-atlas/utils/mapAtlas";
 import {
   PRICE_LEVEL_META,
-  PRICE_LEVEL_VALUES,
   type CanonicalPriceLevel,
 } from "@/utils/priceLevels";
 
@@ -99,6 +103,7 @@ export default function MapAtlasPage() {
     selectedFilters,
     toggleFilter,
     selectedDistrict,
+    autoSelectedDistrictId,
     setSelectedDistrict,
     selectedVenueType,
     setSelectedVenueType,
@@ -326,12 +331,6 @@ export default function MapAtlasPage() {
     );
   };
 
-  const discoveryModeLabel = t(
-    `home.discovery.source.${activeDiscoverySource}`,
-    undefined,
-    activeDiscoverySource,
-  );
-
   const getLocalizedBudgetLabel = useCallback(
     (priceLevel: CanonicalPriceLevel) =>
       t(
@@ -353,6 +352,49 @@ export default function MapAtlasPage() {
       t(`mapAtlas.category.${categoryId}`, undefined, fallbackLabel),
     [t],
   );
+
+  const discoverySourceOptions = useMemo(
+    () =>
+      DISCOVERY_SOURCE_OPTIONS.map((source) => ({
+        ...source,
+        label: t(
+          `home.discovery.source.${source.id}`,
+          undefined,
+          source.label,
+        ),
+      })),
+    [t],
+  );
+
+  const typeDiscoveryOptions = useMemo(
+    () =>
+      categories.map((category) => ({
+        id: category.id,
+        label: getLocalizedCategoryName(category.id, category.label),
+      })),
+    [categories, getLocalizedCategoryName],
+  );
+
+  const localizedPriceRangeOptions = useMemo(
+    () =>
+      VENUE_PRICE_RANGE_OPTIONS.map((option) => ({
+        ...option,
+        label: getLocalizedBudgetLabel(option.id),
+      })),
+    [getLocalizedBudgetLabel],
+  );
+
+  const selectedDistrictRecord = useMemo(
+    () =>
+      popularDistricts.find((district) => district.name === selectedDistrict) ??
+      null,
+    [popularDistricts, selectedDistrict],
+  );
+
+  const showNearYouDistrictHint =
+    activeDiscoverySource === "district" &&
+    autoSelectedDistrictId !== null &&
+    selectedDistrictRecord?.id === autoSelectedDistrictId;
 
   if (isLoading) {
     return (
@@ -548,200 +590,300 @@ export default function MapAtlasPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                 transition={{ duration: shouldReduceMotion ? 0.01 : 0.2 }}
-                className="mt-4 space-y-3 rounded-2xl border border-border/65 bg-background/65 p-3"
+                className="mt-4 space-y-4 rounded-2xl border border-border/65 bg-background/65 p-4"
               >
-                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
-                  {(
-                    [
-                      "district",
-                      "type",
-                      "price-range",
-                      "top-rated",
-                      "top-rated-area",
-                    ] as DiscoverySource[]
-                  ).map((sourceId) => {
-                    const active = activeDiscoverySource === sourceId;
+                <div>
+                  <p className="text-role-caption uppercase tracking-wide text-muted-foreground">
+                    {t(
+                      "mapAtlas.discovery.title",
+                      undefined,
+                      "How do you want to explore?",
+                    )}
+                  </p>
+                  <p className="mt-1 text-role-secondary text-muted-foreground">
+                    {t(
+                      "mapAtlas.discovery.subtitle",
+                      undefined,
+                      "Pick a discovery lens, then refine your results below.",
+                    )}
+                  </p>
+                </div>
+
+                <div
+                  role="radiogroup"
+                  aria-label={t(
+                    "mapAtlas.discovery.lensAria",
+                    undefined,
+                    "Discovery lens",
+                  )}
+                  className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5"
+                >
+                  {discoverySourceOptions.map((source) => {
+                    const Icon = source.icon;
+                    const active = activeDiscoverySource === source.id;
+
                     return (
                       <button
-                        key={`discovery-lens-${sourceId}`}
+                        key={`discovery-lens-${source.id}`}
                         type="button"
-                        onClick={() => setActiveDiscoverySource(sourceId)}
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => setActiveDiscoverySource(source.id)}
                         className={cn(
-                          "inline-flex min-h-11 items-center rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors",
+                          "group min-h-[3.25rem] rounded-2xl border px-3 py-2.5 text-left transition-colors",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                           active
-                            ? "border-primary/85 bg-primary text-primary-foreground"
+                            ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
                             : "border-border/70 bg-card hover:border-primary/55 hover:bg-primary/10",
                         )}
                       >
-                        {t(
-                          `home.discovery.source.${sourceId}`,
-                          undefined,
-                          sourceId,
-                        )}
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              "inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg",
+                              active
+                                ? "bg-primary-foreground/18 text-primary-foreground"
+                                : "bg-muted/80 text-muted-foreground group-hover:text-primary",
+                            )}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <span
+                            className={cn(
+                              "text-xs font-semibold leading-tight sm:text-sm",
+                              active
+                                ? "text-primary-foreground"
+                                : "text-foreground",
+                            )}
+                          >
+                            {source.label}
+                          </span>
+                        </div>
                       </button>
                     );
                   })}
                 </div>
 
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  {activeDiscoverySource === "district" && (
-                    <div>
-                      <Label
-                        htmlFor="map-atlas-discovery-district"
-                        className="sr-only"
-                      >
+                {activeDiscoverySource === "district" && (
+                  <div className="space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <Label className="text-role-secondary font-semibold text-foreground">
                         {t(
-                          "mapAtlas.discovery.district",
+                          "mapAtlas.discovery.districtLabel",
                           undefined,
-                          "Select district",
+                          "Choose a district",
                         )}
                       </Label>
-                      <select
-                        id="map-atlas-discovery-district"
-                        value={selectedDistrict ?? ""}
-                        onChange={(event) =>
-                          setSelectedDistrict(event.target.value || null)
-                        }
-                        className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm"
-                      >
-                        <option value="">
+                      {showNearYouDistrictHint && selectedDistrictRecord && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/70 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                          <LocateFixed className="h-3 w-3" />
                           {t(
-                            "mapAtlas.discovery.district",
+                            "mapAtlas.discovery.nearYou",
                             undefined,
-                            "Select district",
+                            "Near you",
                           )}
-                        </option>
-                        {popularDistricts.map((district) => (
-                          <option key={district.id} value={district.name}>
+                        </span>
+                      )}
+                    </div>
+
+                    {showNearYouDistrictHint && selectedDistrictRecord && (
+                      <p className="text-role-micro text-muted-foreground">
+                        {t(
+                          "mapAtlas.discovery.autoDistrict",
+                          {
+                            district: getLocalizedDistrictName(
+                              selectedDistrictRecord.id,
+                              selectedDistrictRecord.name,
+                            ),
+                          },
+                          `Showing places in ${selectedDistrictRecord.name} — nearest to your location.`,
+                        )}
+                      </p>
+                    )}
+
+                    <div
+                      role="listbox"
+                      aria-label={t(
+                        "home.discovery.districtsAria",
+                        undefined,
+                        "Popular districts",
+                      )}
+                      className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide"
+                    >
+                      {popularDistricts.map((district) => {
+                        const isActive = selectedDistrict === district.name;
+                        const isNearYou =
+                          autoSelectedDistrictId === district.id && isActive;
+
+                        return (
+                          <button
+                            key={district.id}
+                            type="button"
+                            role="option"
+                            aria-selected={isActive}
+                            onClick={() => {
+                              setSelectedDistrict(
+                                isActive ? null : district.name,
+                              );
+                              setActiveDiscoverySource("district");
+                            }}
+                            className={cn(
+                              "inline-flex min-h-11 flex-shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                              isActive
+                                ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                                : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12",
+                            )}
+                          >
+                            {isNearYou && (
+                              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                            )}
                             {getLocalizedDistrictName(
                               district.id,
                               district.name,
                             )}
-                          </option>
-                        ))}
-                      </select>
+                          </button>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {activeDiscoverySource === "type" && (
-                    <div>
-                      <Label
-                        htmlFor="map-atlas-discovery-type"
-                        className="sr-only"
-                      >
-                        {t(
-                          "mapAtlas.discovery.type",
-                          undefined,
-                          "Select venue type",
-                        )}
-                      </Label>
-                      <select
-                        id="map-atlas-discovery-type"
-                        value={selectedVenueType ?? ""}
-                        onChange={(event) =>
-                          setSelectedVenueType(event.target.value || null)
-                        }
-                        className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm"
-                      >
-                        <option value="">
-                          {t(
-                            "mapAtlas.discovery.type",
-                            undefined,
-                            "Select venue type",
-                          )}
-                        </option>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {getLocalizedCategoryName(
-                              category.id,
-                              category.label,
+                {activeDiscoverySource === "type" && (
+                  <div className="space-y-2.5">
+                    <Label className="text-role-secondary font-semibold text-foreground">
+                      {t(
+                        "mapAtlas.discovery.typeLabel",
+                        undefined,
+                        "Choose a venue type",
+                      )}
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {typeDiscoveryOptions.map((option) => {
+                        const isActive = selectedVenueType === option.id;
+
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedVenueType(isActive ? null : option.id);
+                              setActiveDiscoverySource("type");
+                            }}
+                            className={cn(
+                              "min-h-11 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                              isActive
+                                ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                                : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12",
                             )}
-                          </option>
-                        ))}
-                      </select>
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {activeDiscoverySource === "price-range" && (
-                    <div>
-                      <Label
-                        htmlFor="map-atlas-discovery-price"
-                        className="sr-only"
-                      >
-                        {t(
-                          "mapAtlas.discovery.price",
-                          undefined,
-                          "Select budget level",
-                        )}
-                      </Label>
-                      <select
-                        id="map-atlas-discovery-price"
-                        value={selectedPriceRange ?? ""}
-                        onChange={(event) =>
-                          setSelectedPriceRange(
-                            (event.target.value ||
-                              null) as typeof selectedPriceRange,
-                          )
-                        }
-                        className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm"
-                      >
-                        <option value="">
-                          {t(
-                            "mapAtlas.discovery.price",
-                            undefined,
-                            "Select budget level",
-                          )}
-                        </option>
-                        {PRICE_LEVEL_VALUES.map((value) => (
-                          <option key={value} value={value}>
-                            {getLocalizedBudgetLabel(value)}
-                          </option>
-                        ))}
-                      </select>
+                {activeDiscoverySource === "price-range" && (
+                  <div className="space-y-2.5">
+                    <Label className="text-role-secondary font-semibold text-foreground">
+                      {t(
+                        "mapAtlas.discovery.priceLabel",
+                        undefined,
+                        "Choose a budget level",
+                      )}
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                      {localizedPriceRangeOptions.map((option) => {
+                        const isActive = selectedPriceRange === option.id;
+
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedPriceRange(isActive ? null : option.id);
+                              setActiveDiscoverySource("price-range");
+                            }}
+                            className={cn(
+                              "min-h-[4.5rem] rounded-2xl border px-3 py-3 text-left transition-colors",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                              isActive
+                                ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                                : "border-border/60 bg-card hover:border-primary/60 hover:bg-primary/10",
+                            )}
+                          >
+                            <span className="text-xs font-semibold">
+                              {option.label}
+                            </span>
+                            <span
+                              className={cn(
+                                "mt-1 block text-[11px]",
+                                isActive
+                                  ? "text-primary-foreground/85"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              {option.caption}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {activeDiscoverySource === "top-rated-area" && (
-                    <div>
-                      <Label
-                        htmlFor="map-atlas-discovery-area"
-                        className="sr-only"
-                      >
-                        {t("mapAtlas.discovery.area", undefined, "Select area")}
-                      </Label>
-                      <select
-                        id="map-atlas-discovery-area"
-                        value={selectedArea}
-                        onChange={(event) =>
-                          setSelectedArea(event.target.value)
-                        }
-                        className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm"
-                      >
-                        {popularDistricts.map((district) => (
-                          <option
+                {activeDiscoverySource === "top-rated" && (
+                  <p className="text-role-secondary rounded-xl border border-border/60 bg-card/70 px-3.5 py-3 text-muted-foreground">
+                    {t(
+                      "mapAtlas.discovery.topRatedHint",
+                      undefined,
+                      "Showing the highest-rated venues across Cairo — no extra filter needed.",
+                    )}
+                  </p>
+                )}
+
+                {activeDiscoverySource === "top-rated-area" && (
+                  <div className="space-y-2.5">
+                    <Label className="text-role-secondary font-semibold text-foreground">
+                      {t(
+                        "mapAtlas.discovery.areaLabel",
+                        undefined,
+                        "Choose an area for top-rated picks",
+                      )}
+                    </Label>
+                    <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
+                      {popularDistricts.map((district) => {
+                        const isActive = selectedArea === district.name;
+
+                        return (
+                          <button
                             key={`area-${district.id}`}
-                            value={district.name}
+                            type="button"
+                            onClick={() => {
+                              setSelectedArea(district.name);
+                              setActiveDiscoverySource("top-rated-area");
+                            }}
+                            className={cn(
+                              "inline-flex min-h-11 flex-shrink-0 items-center rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                              isActive
+                                ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                                : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12",
+                            )}
                           >
                             {getLocalizedDistrictName(
                               district.id,
                               district.name,
                             )}
-                          </option>
-                        ))}
-                      </select>
+                          </button>
+                        );
+                      })}
                     </div>
-                  )}
-
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="rounded-full border border-border/70 bg-card px-3 py-2">
-                      {t(
-                        "mapAtlas.discovery.mode",
-                        { mode: discoveryModeLabel },
-                        `Mode: ${discoveryModeLabel}`,
-                      )}
-                    </span>
                   </div>
-                </div>
+                )}
               </motion.div>
             )}
 

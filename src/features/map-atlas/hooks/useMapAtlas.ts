@@ -23,6 +23,10 @@ import {
 } from "@/features/interactions";
 import { getErrorMessage, isApiError } from "@/utils/apiError";
 import { mapAtlasService } from "@/features/map-atlas/services/mapAtlasService";
+import {
+  findNearestDistrict,
+  sortDistrictsByProximity,
+} from "@/features/map-atlas/utils/districtCoordinates";
 
 interface UseMapAtlasReturn {
   search: string;
@@ -38,6 +42,7 @@ interface UseMapAtlasReturn {
   saveError: string | null;
 
   selectedDistrict: string | null;
+  autoSelectedDistrictId: string | null;
   selectedVenueType: string | null;
   selectedPriceRange: VenuePriceRange | null;
   selectedArea: string;
@@ -154,7 +159,12 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
   const [isMoodLoading, setIsMoodLoading] = useState(false);
   const [moodError, setMoodError] = useState<string | null>(null);
 
-  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(
+    POPULAR_DISTRICTS[0]?.name ?? null,
+  );
+  const [autoSelectedDistrictId, setAutoSelectedDistrictId] = useState<
+    string | null
+  >(null);
   const [selectedVenueType, setSelectedVenueType] = useState<string | null>(
     null,
   );
@@ -164,7 +174,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
     POPULAR_DISTRICTS[0]?.name ?? "Cairo",
   );
   const [activeDiscoverySource, setActiveDiscoverySource] =
-    useState<DiscoverySource>("top-rated");
+    useState<DiscoverySource>("district");
 
   const [rawDiscoveryPlaces, setRawDiscoveryPlaces] = useState<HomePlace[]>([]);
   const [discoveryError, setDiscoveryError] = useState<string | null>(null);
@@ -214,6 +224,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
   const [moodReloadKey, setMoodReloadKey] = useState(0);
 
   const saveInFlightIds = useRef(new Set<string>());
+  const userChangedDistrictRef = useRef(false);
   const homeRequestIdRef = useRef(0);
   const similarRequestIdRef = useRef(0);
   const moodRequestIdRef = useRef(0);
@@ -360,6 +371,48 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
       }
     }
   }, [user]);
+
+  useEffect(() => {
+    if (userChangedDistrictRef.current) {
+      return;
+    }
+
+    if (userLocation.status !== "granted" || !userCoordinates) {
+      return;
+    }
+
+    const nearestDistrict = findNearestDistrict(
+      userCoordinates.latitude,
+      userCoordinates.longitude,
+      POPULAR_DISTRICTS,
+    );
+
+    if (!nearestDistrict) {
+      return;
+    }
+
+    setSelectedDistrict(nearestDistrict.name);
+    setSelectedArea(nearestDistrict.name);
+    setAutoSelectedDistrictId(nearestDistrict.id);
+  }, [userCoordinates, userLocation.status]);
+
+  const handleSetSelectedDistrict = useCallback((district: string | null) => {
+    userChangedDistrictRef.current = true;
+    setAutoSelectedDistrictId(null);
+    setSelectedDistrict(district);
+  }, []);
+
+  const popularDistrictsForDisplay = useMemo(() => {
+    if (!userCoordinates) {
+      return POPULAR_DISTRICTS;
+    }
+
+    return sortDistrictsByProximity(
+      POPULAR_DISTRICTS,
+      userCoordinates.latitude,
+      userCoordinates.longitude,
+    );
+  }, [userCoordinates]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -853,6 +906,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
     saveError,
 
     selectedDistrict,
+    autoSelectedDistrictId,
     selectedVenueType,
     selectedPriceRange,
     selectedArea,
@@ -870,12 +924,12 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
 
     categories: CATEGORIES,
     moodOptions: MOOD_OPTIONS,
-    popularDistricts: POPULAR_DISTRICTS,
+    popularDistricts: popularDistrictsForDisplay,
 
     setSearch,
     toggleFilter,
     setSelectedMood,
-    setSelectedDistrict,
+    setSelectedDistrict: handleSetSelectedDistrict,
     setSelectedVenueType,
     setSelectedPriceRange,
     setSelectedArea,

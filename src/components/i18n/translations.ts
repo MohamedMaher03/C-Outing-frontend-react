@@ -744,6 +744,19 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "mapAtlas.discovery.price": "Select budget level",
     "mapAtlas.discovery.area": "Select area",
     "mapAtlas.discovery.mode": "Mode: {mode}",
+    "mapAtlas.discovery.title": "How do you want to explore?",
+    "mapAtlas.discovery.subtitle":
+      "Pick a discovery lens, then refine your results below.",
+    "mapAtlas.discovery.lensAria": "Discovery lens",
+    "mapAtlas.discovery.districtLabel": "Choose a district",
+    "mapAtlas.discovery.typeLabel": "Choose a venue type",
+    "mapAtlas.discovery.priceLabel": "Choose a budget level",
+    "mapAtlas.discovery.areaLabel": "Choose an area for top-rated picks",
+    "mapAtlas.discovery.topRatedHint":
+      "Showing the highest-rated venues across Cairo — no extra filter needed.",
+    "mapAtlas.discovery.nearYou": "Near you",
+    "mapAtlas.discovery.autoDistrict":
+      "Showing places in {district} — nearest to your location.",
 
     "mapAtlas.category.food": "Food & Drink",
     "mapAtlas.category.nightlife": "Nightlife",
@@ -2347,6 +2360,18 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "mapAtlas.discovery.price": "اختر مستوى الميزانية",
     "mapAtlas.discovery.area": "اختر النطاق",
     "mapAtlas.discovery.mode": "الوضع: {mode}",
+    "mapAtlas.discovery.title": "كيف تريد الاستكشاف؟",
+    "mapAtlas.discovery.subtitle": "اختر طريقة الاكتشاف، ثم حدّد النتائج أدناه.",
+    "mapAtlas.discovery.lensAria": "طريقة الاكتشاف",
+    "mapAtlas.discovery.districtLabel": "اختر منطقة",
+    "mapAtlas.discovery.typeLabel": "اختر نوع المكان",
+    "mapAtlas.discovery.priceLabel": "اختر مستوى الميزانية",
+    "mapAtlas.discovery.areaLabel": "اختر منطقة للأعلى تقييمًا",
+    "mapAtlas.discovery.topRatedHint":
+      "عرض أعلى الأماكن تقييمًا في القاهرة — لا حاجة لفلتر إضافي.",
+    "mapAtlas.discovery.nearYou": "قريب منك",
+    "mapAtlas.discovery.autoDistrict":
+      "عرض أماكن في {district} — الأقرب لموقعك.",
 
     "mapAtlas.category.food": "أكل ومشروبات",
     "mapAtlas.category.nightlife": "حياة ليلية",
