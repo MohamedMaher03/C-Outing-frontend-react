@@ -310,6 +310,10 @@ export default function SessionPage() {
     navigate("/");
   }, [leaveSession, navigate]);
 
+  const leaveActionLabel = isHost
+    ? t("session.page.recs.end")
+    : t("session.page.action.leave");
+
   const MAX_MEMBERS = 10;
 
   // ── Waiting Room ─────────────────────────────────────────────
@@ -545,7 +549,7 @@ export default function SessionPage() {
               id="session-leave-btn"
             >
               <LogOut className="h-4 w-4" />
-              {t("session.page.action.leave")}
+              {leaveActionLabel}
             </Button>
           </div>
         </>
@@ -651,7 +655,7 @@ export default function SessionPage() {
             className="h-9 rounded-full border-destructive/30 px-4 text-xs font-semibold text-destructive hover:bg-destructive/5"
           >
             <LogOut className="h-3.5 w-3.5" />
-            {t("session.page.recs.end")}
+            {leaveActionLabel}
           </Button>
         </div>
       </div>

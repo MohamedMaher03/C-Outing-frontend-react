@@ -660,7 +660,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "session.page.action.getRecs": "Get Recommendations ({count} members)",
     "session.page.action.waitingHost":
       "Waiting for host to start recommendations…",
-    "session.page.action.leave": "Leave",
+    "session.page.action.leave": "Leave Session",
     "session.page.loading.title": "Finding the Perfect Spots",
     "session.page.loading.subtitle":
       "Analysing everyone's preferences to curate the best group outing recommendations…",
@@ -3321,7 +3321,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "session.page.action.waitingFriend": "مستنيين حد واحد على الأقل…",
     "session.page.action.getRecs": "هات التوصيات ({count} عضو)",
     "session.page.action.waitingHost": "مستنيين المضيف يبدأ التوصيات…",
-    "session.page.action.leave": "مغادرة",
+    "session.page.action.leave": "مغادرة الجلسة",
     "session.page.loading.title": "بنجهز أفضل الأماكن",
     "session.page.loading.subtitle":
       "بنحلل تفضيلات كل الناس علشان نطلع أفضل توصيات للخروجة…",

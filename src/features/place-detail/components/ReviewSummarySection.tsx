@@ -42,12 +42,6 @@ const ReviewSummarySectionComponent = ({
     1,
   );
 
-  const sentimentColor = {
-    positive: "text-secondary",
-    neutral: "text-muted-foreground",
-    negative: "text-destructive",
-  };
-
   return (
     <Card className="rounded-2xl border-border/70 bg-card/95 p-5 space-y-4 shadow-sm">
       <div className="flex items-center justify-between">
@@ -56,12 +50,6 @@ const ReviewSummarySectionComponent = ({
           <span className="truncate">Community Pulse</span>
         </h2>
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          <span
-            className={`pd-type-micro ${sentimentColor[summary.overallSentiment]}`}
-          >
-            {summary.overallSentiment.charAt(0).toUpperCase() +
-              summary.overallSentiment.slice(1)}
-          </span>
           <Badge
             variant="outline"
             className="gap-0.5 border-secondary/40 text-secondary pd-type-micro pd-type-number"
@@ -133,11 +121,7 @@ const ReviewSummarySectionComponent = ({
           ) : (
             summary.commonTopics.map((topic, i) => {
               const barWidth = Math.max((topic.count / maxTopicCount) * 100, 8);
-              const barColor = {
-                positive: "bg-secondary/80",
-                neutral: "bg-muted-foreground/50",
-                negative: "bg-destructive/70",
-              };
+              const barColor = "bg-secondary/80";
               return (
                 <div key={i} className="space-y-1">
                   <div className="flex items-center justify-between gap-2 pd-type-micro">
@@ -156,7 +140,7 @@ const ReviewSummarySectionComponent = ({
                   </div>
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${barColor[topic.sentiment]}`}
+                      className={`h-full rounded-full transition-all duration-500 ${barColor}`}
                       style={{
                         width: `${Number.isFinite(barWidth) ? barWidth : 8}%`,
                       }}

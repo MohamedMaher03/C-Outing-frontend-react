@@ -84,7 +84,7 @@ function StatPill({
 }
 
 const PublicProfilePage = () => {
-  const { t, locale, formatNumber } = useI18n();
+  const { t, locale } = useI18n();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -421,16 +421,6 @@ const PublicProfilePage = () => {
                   >
                     {review.comment}
                   </p>
-
-                  {typeof review.sentimentScore === "number" && (
-                    <div className="text-role-caption mt-2 inline-flex rounded-full bg-secondary/12 px-2.5 py-1 text-primary/85">
-                      {t("users.publicProfile.sentimentScore", {
-                        score: formatNumber(
-                          Number(review.sentimentScore.toFixed(1)),
-                        ),
-                      })}
-                    </div>
-                  )}
 
                   <p className="text-role-caption mt-2 text-muted-foreground/70">
                     {toDisplayDate(

@@ -27,25 +27,6 @@ const PlatformIcon = ({ platform }: { platform: string }) => {
   }
 };
 
-const SentimentBadge = ({
-  sentiment,
-}: {
-  sentiment: "positive" | "neutral" | "negative";
-}) => {
-  const config = {
-    positive: "border border-accent/35 bg-accent/15 text-accent",
-    neutral: "border border-border bg-muted text-muted-foreground",
-    negative: "border border-destructive/30 bg-destructive/10 text-destructive",
-  };
-  return (
-    <span
-      className={`pd-type-micro px-2 py-0.5 rounded-full font-semibold ${config[sentiment]}`}
-    >
-      {sentiment}
-    </span>
-  );
-};
-
 const SocialReviewCardComponent = ({
   review,
 }: {
@@ -64,7 +45,6 @@ const SocialReviewCardComponent = ({
           >
             {review.author}
           </span>
-          <SentimentBadge sentiment={review.sentiment} />
         </div>
         <span
           className="pd-type-micro pd-type-number text-muted-foreground shrink-0"
