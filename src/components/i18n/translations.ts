@@ -664,10 +664,18 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "session.page.loading.title": "Finding the Perfect Spots",
     "session.page.loading.subtitle":
       "Analysing everyone's preferences to curate the best group outing recommendations…",
+    "session.page.loading.subtitleCount":
+      "Loading {count} curated places for your group…",
     "session.page.recs.badge": "Group Recommendations",
     "session.page.recs.title": "Perfect Spots for Your Group",
-    "session.page.recs.subtitle": "{count} members · curated just for you",
+    "session.page.recs.subtitle":
+      "{count} members · showing {places} curated places",
     "session.page.recs.refresh": "Refresh",
+    "session.page.recs.count.label": "Number of places",
+    "session.page.recs.count.hint":
+      "We start with best 10 picks — expand to 20 or 30 for more options.",
+    "session.page.recs.count.recommended": "places",
+    "session.page.recs.count.places": "places",
     "session.page.recs.end": "End Session",
     "session.page.recs.forLabel": "Recommendations for",
     "session.page.recs.empty.title": "No recommendations yet",
@@ -3325,10 +3333,17 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "session.page.loading.title": "بنجهز أفضل الأماكن",
     "session.page.loading.subtitle":
       "بنحلل تفضيلات كل الناس علشان نطلع أفضل توصيات للخروجة…",
+    "session.page.loading.subtitleCount": "بنجمّع {count} مكان مخصص لمجموعتك…",
     "session.page.recs.badge": "توصيات المجموعة",
     "session.page.recs.title": "أفضل أماكن لمجموعتك",
-    "session.page.recs.subtitle": "{count} عضو · توصيات مخصوصة ليكم",
+    "session.page.recs.subtitle":
+      "{count} عضو · بنعرض {places} مكان مخصص",
     "session.page.recs.refresh": "تحديث",
+    "session.page.recs.count.label": "عدد الأماكن",
+    "session.page.recs.count.hint":
+      "بنبدأ بأفضل 10 اختيارات — زود لـ 20 أو 30 لو عايز خيارات أكتر.",
+    "session.page.recs.count.recommended": "مكان",
+    "session.page.recs.count.places": "مكان",
     "session.page.recs.end": "إنهاء الجلسة",
     "session.page.recs.forLabel": "توصيات لـ",
     "session.page.recs.empty.title": "لسه مفيش توصيات",

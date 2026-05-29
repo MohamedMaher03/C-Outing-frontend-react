@@ -20,6 +20,10 @@ export type SessionStatus =
   | "loading-recs" //use when GET /Session/{code}/recommend in-flight
   | "ready"; //this used when recommendations received
 
+export const RECOMMENDATION_COUNT_OPTIONS = [10, 20, 30] as const;
+export type RecommendationCount = (typeof RECOMMENDATION_COUNT_OPTIONS)[number];
+export const DEFAULT_RECOMMENDATION_COUNT: RecommendationCount = 10;
+
 export interface SessionRecommendation {
   id: string;
   name: string;

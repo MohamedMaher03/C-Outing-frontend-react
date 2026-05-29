@@ -5,6 +5,11 @@ import type {
   Session,
   SessionStatus,
   SessionRecommendation,
+  RecommendationCount,
+} from "../types/session.types";
+import {
+  DEFAULT_RECOMMENDATION_COUNT,
+  RECOMMENDATION_COUNT_OPTIONS,
 } from "../types/session.types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 
@@ -22,6 +27,8 @@ export function useSession() {
   const [error, setError] = useState<string | null>(null);
   const [joinCodeInput, setJoinCodeInput] = useState("");
   const [isRestoring, setIsRestoring] = useState(false);
+  const [recommendationCount, setRecommendationCount] =
+    useState<RecommendationCount>(DEFAULT_RECOMMENDATION_COUNT);
 
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionCodeRef = useRef<string | null>(null);
@@ -38,26 +45,39 @@ export function useSession() {
     }
   }, []);
 
-  const getCacheKey = useCallback((code: string) => {
+  const getCacheKey = useCallback((code: string, count: RecommendationCount) => {
     const safeCode = code.trim().toUpperCase();
-    return `session-recs:${safeCode}`;
+    return `session-recs:${safeCode}:${count}`;
+  }, []);
+
+  const getCountMetaKey = useCallback((code: string) => {
+    const safeCode = code.trim().toUpperCase();
+    return `session-rec-count:${safeCode}`;
   }, []);
 
   const setCachedRecommendations = useCallback(
-    (code: string, recs: SessionRecommendation[]) => {
+    (
+      code: string,
+      count: RecommendationCount,
+      recs: SessionRecommendation[],
+    ) => {
       try {
-        sessionStorage.setItem(getCacheKey(code), JSON.stringify(recs));
+        sessionStorage.setItem(getCacheKey(code, count), JSON.stringify(recs));
+        sessionStorage.setItem(getCountMetaKey(code), String(count));
       } catch {
         // storage can fail in private mode; ignore
       }
     },
-    [getCacheKey],
+    [getCacheKey, getCountMetaKey],
   );
 
   const getCachedRecommendations = useCallback(
-    (code: string): SessionRecommendation[] | null => {
+    (
+      code: string,
+      count: RecommendationCount,
+    ): SessionRecommendation[] | null => {
       try {
-        const cached = sessionStorage.getItem(getCacheKey(code));
+        const cached = sessionStorage.getItem(getCacheKey(code, count));
         if (!cached) return null;
         const parsed = JSON.parse(cached);
         return Array.isArray(parsed) ? parsed : null;
@@ -68,15 +88,32 @@ export function useSession() {
     [getCacheKey],
   );
 
+  const getCachedRecommendationCount = useCallback(
+    (code: string): RecommendationCount => {
+      try {
+        const stored = sessionStorage.getItem(getCountMetaKey(code));
+        const parsed = Number(stored);
+        if (parsed === 10 || parsed === 20 || parsed === 30) return parsed;
+      } catch {
+        // ignore
+      }
+      return DEFAULT_RECOMMENDATION_COUNT;
+    },
+    [getCountMetaKey],
+  );
+
   const clearCachedRecommendations = useCallback(
     (code: string) => {
       try {
-        sessionStorage.removeItem(getCacheKey(code));
+        for (const count of RECOMMENDATION_COUNT_OPTIONS) {
+          sessionStorage.removeItem(getCacheKey(code, count));
+        }
+        sessionStorage.removeItem(getCountMetaKey(code));
       } catch {
         // ignore
       }
     },
-    [getCacheKey],
+    [getCacheKey, getCountMetaKey],
   );
 
   const syncSession = useCallback(
@@ -89,9 +126,11 @@ export function useSession() {
           recsFetchedRef.current = true;
           stopPolling();
           setStatus("loading-recs");
+          const count = DEFAULT_RECOMMENDATION_COUNT;
+          setRecommendationCount(count);
           try {
-            const recs = await sessionApi.getRecommendations(code);
-            setCachedRecommendations(code, recs);
+            const recs = await sessionApi.getRecommendations(code, { count });
+            setCachedRecommendations(code, count, recs);
             setRecommendations(recs);
             setStatus("ready");
           } catch {
@@ -185,32 +224,45 @@ export function useSession() {
       recsFetchedRef.current = false;
       setSession(null);
       setRecommendations(null);
+      setRecommendationCount(DEFAULT_RECOMMENDATION_COUNT);
       clearCachedRecommendations(code);
       setStatus("idle");
       setError(null);
     }
   }, [session, stopPolling, clearCachedRecommendations]);
 
-  const getRecommendations = useCallback(async () => {
-    const code = sessionCodeRef.current ?? session?.code;
-    if (!code) return;
-    setError(null);
-    setStatus("loading-recs");
-    recsFetchedRef.current = true;
-    try {
-      const recs = await sessionApi.getRecommendations(code);
-      stopPolling();
-      setRecommendations(recs);
-      setCachedRecommendations(code, recs);
-      setStatus("ready");
-    } catch (err) {
-      recsFetchedRef.current = false;
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch recommendations.",
-      );
-      setStatus("waiting");
-    }
-  }, [session, stopPolling, setCachedRecommendations]);
+  const getRecommendations = useCallback(
+    async (count: RecommendationCount = recommendationCount) => {
+      const code = sessionCodeRef.current ?? session?.code;
+      if (!code) return;
+      setError(null);
+      setRecommendationCount(count);
+      setStatus("loading-recs");
+      recsFetchedRef.current = true;
+      try {
+        const recs = await sessionApi.getRecommendations(code, { count });
+        stopPolling();
+        setRecommendations(recs);
+        setCachedRecommendations(code, count, recs);
+        setStatus("ready");
+      } catch (err) {
+        recsFetchedRef.current = false;
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to fetch recommendations.",
+        );
+        setStatus(recommendations ? "ready" : "waiting");
+      }
+    },
+    [
+      session,
+      recommendationCount,
+      recommendations,
+      stopPolling,
+      setCachedRecommendations,
+    ],
+  );
 
   /** Restore session when navigating directly to /session/:code */
   const restoreSession = useCallback(
@@ -224,19 +276,23 @@ export function useSession() {
         sessionCodeRef.current = code;
         setSession(existing);
 
-        const cached = getCachedRecommendations(code);
+        const cachedCount = getCachedRecommendationCount(code);
+        const cached = getCachedRecommendations(code, cachedCount);
 
         if (cached && cached.length > 0) {
           recsFetchedRef.current = true;
+          setRecommendationCount(cachedCount);
           setRecommendations(cached);
           setStatus("ready");
           stopPolling();
         } else if (existing.status === "ready") {
           recsFetchedRef.current = true;
           setStatus("loading-recs");
+          const count = DEFAULT_RECOMMENDATION_COUNT;
+          setRecommendationCount(count);
           try {
-            const recs = await sessionApi.getRecommendations(code);
-            setCachedRecommendations(code, recs);
+            const recs = await sessionApi.getRecommendations(code, { count });
+            setCachedRecommendations(code, count, recs);
             setRecommendations(recs);
             setStatus("ready");
           } catch {
@@ -259,6 +315,7 @@ export function useSession() {
       session,
       startPolling,
       getCachedRecommendations,
+      getCachedRecommendationCount,
       setCachedRecommendations,
       stopPolling,
     ],
@@ -278,6 +335,7 @@ export function useSession() {
     isHost,
     memberCount,
     isRestoring,
+    recommendationCount,
     // Actions
     createSession,
     joinSession,
