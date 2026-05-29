@@ -26,6 +26,9 @@ export function useSession() {
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionCodeRef = useRef<string | null>(null);
 
+  //NOTE FOR ME TO REMIND:this is i use for preventing the polling loop from triggering multiple simultaneous calls
+  const recsFetchedRef = useRef(false);
+
   // ── Helpers ───────────────────────────────────────────────────
 
   const stopPolling = useCallback(() => {
@@ -50,7 +53,6 @@ export function useSession() {
     },
     [getCacheKey],
   );
-
 
   const getCachedRecommendations = useCallback(
     (code: string): SessionRecommendation[] | null => {
@@ -77,19 +79,35 @@ export function useSession() {
     [getCacheKey],
   );
 
-  /**
-   * Polls only the session state (members list, etc.).
-   * Recommendations are NOT fetched here — only the host's explicit button
-   * click (getRecommendations) should ever call the recommend endpoint.
-   */
-  const syncSession = useCallback(async (code: string) => {
-    try {
-      const updated = await sessionApi.getSession(code);
-      setSession(updated);
-    } catch {
-      // silently ignore intermittent poll errors
-    }
-  }, []);
+  const syncSession = useCallback(
+    async (code: string) => {
+      try {
+        const updated = await sessionApi.getSession(code);
+        setSession(updated);
+
+        if (updated.status === "ready" && !recsFetchedRef.current) {
+          recsFetchedRef.current = true;
+          stopPolling();
+          setStatus("loading-recs");
+          try {
+            const recs = await sessionApi.getRecommendations(code);
+            setCachedRecommendations(code, recs);
+            setRecommendations(recs);
+            setStatus("ready");
+          } catch {
+            recsFetchedRef.current = false;
+            setStatus("waiting");
+            pollTimerRef.current = setInterval(() => {
+              void syncSession(code);
+            }, POLL_INTERVAL_MS);
+          }
+        }
+      } catch {
+        // Silently ignore intermittent poll errors.
+      }
+    },
+    [stopPolling, setCachedRecommendations],
+  );
 
   const startPolling = useCallback(
     (code: string) => {
@@ -101,7 +119,6 @@ export function useSession() {
     [stopPolling, syncSession],
   );
 
-  // Clean up polling on unmount
   useEffect(() => () => stopPolling(), [stopPolling]);
 
   // ── Actions ───────────────────────────────────────────────────
@@ -109,11 +126,10 @@ export function useSession() {
   const createSession = useCallback(async () => {
     setError(null);
     setStatus("creating");
+    recsFetchedRef.current = false;
     try {
-      // createSession returns the plain string code e.g. "302174"
       const code = await sessionApi.createSession();
 
-      // Now fetch the full session object (host, members, createdAt, etc.)
       const newSession = await sessionApi.getSession(code);
 
       sessionCodeRef.current = code;
@@ -138,6 +154,7 @@ export function useSession() {
       }
       setError(null);
       setStatus("joining");
+      recsFetchedRef.current = false;
       try {
         const joined = await sessionApi.joinSession(trimmedCode);
         sessionCodeRef.current = trimmedCode;
@@ -161,10 +178,11 @@ export function useSession() {
     try {
       await sessionApi.leaveSession(code);
     } catch {
-      // best-effort
+      //
     } finally {
       stopPolling();
       sessionCodeRef.current = null;
+      recsFetchedRef.current = false;
       setSession(null);
       setRecommendations(null);
       clearCachedRecommendations(code);
@@ -178,6 +196,7 @@ export function useSession() {
     if (!code) return;
     setError(null);
     setStatus("loading-recs");
+    recsFetchedRef.current = true;
     try {
       const recs = await sessionApi.getRecommendations(code);
       stopPolling();
@@ -185,6 +204,7 @@ export function useSession() {
       setCachedRecommendations(code, recs);
       setStatus("ready");
     } catch (err) {
+      recsFetchedRef.current = false;
       setError(
         err instanceof Error ? err.message : "Failed to fetch recommendations.",
       );
@@ -198,15 +218,32 @@ export function useSession() {
       if (session?.code === code) return;
       setError(null);
       setIsRestoring(true);
+      recsFetchedRef.current = false;
       try {
         const existing = await sessionApi.getSession(code);
         sessionCodeRef.current = code;
         setSession(existing);
+
         const cached = getCachedRecommendations(code);
+
         if (cached && cached.length > 0) {
+          recsFetchedRef.current = true;
           setRecommendations(cached);
           setStatus("ready");
           stopPolling();
+        } else if (existing.status === "ready") {
+          recsFetchedRef.current = true;
+          setStatus("loading-recs");
+          try {
+            const recs = await sessionApi.getRecommendations(code);
+            setCachedRecommendations(code, recs);
+            setRecommendations(recs);
+            setStatus("ready");
+          } catch {
+            recsFetchedRef.current = false;
+            setStatus("waiting");
+            startPolling(code);
+          }
         } else {
           setStatus("waiting");
           startPolling(code);
@@ -218,7 +255,13 @@ export function useSession() {
         setIsRestoring(false);
       }
     },
-    [session, startPolling, getCachedRecommendations, stopPolling],
+    [
+      session,
+      startPolling,
+      getCachedRecommendations,
+      setCachedRecommendations,
+      stopPolling,
+    ],
   );
 
   const isHost = user?.userId !== undefined && session?.host.id === user.userId;

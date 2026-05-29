@@ -9,15 +9,16 @@ export interface Session {
   host: SessionMember;
   members: SessionMember[];
   createdAt: string;
+  status: "waiting" | "ready";
 }
 
 export type SessionStatus =
-  | "idle" // No active session
-  | "creating" // POST /Session in-flight
-  | "joining" // POST /Session/{code}/join in-flight
-  | "waiting" // Session joined, waiting for host to trigger recommendations
-  | "loading-recs" // GET /Session/{code}/recommend in-flight
-  | "ready"; // Recommendations received
+  | "idle" // here i use this stats when no active session
+  | "creating" //use whem POST /Session in-flight
+  | "joining" //use when POST /Session/{code}/join in-flight
+  | "waiting" //use when Session joined, waiting for host to trigger recommendations
+  | "loading-recs" //use when GET /Session/{code}/recommend in-flight
+  | "ready"; //this used when recommendations received
 
 export interface SessionRecommendation {
   id: string;
