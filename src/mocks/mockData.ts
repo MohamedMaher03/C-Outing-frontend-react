@@ -173,7 +173,7 @@ export interface District {
 }
 
 export const POPULAR_DISTRICTS: District[] = [
-  // here i put  most popular first
+  // Most popular districts kept at the top
   { id: "zamalek", name: "Zamalek", nameKey: "onboarding.district.zamalek" },
   { id: "maadi", name: "Maadi", nameKey: "onboarding.district.maadi" },
   { id: "downtown", name: "Downtown", nameKey: "onboarding.district.downtown" },
@@ -183,9 +183,9 @@ export const POPULAR_DISTRICTS: District[] = [
     nameKey: "onboarding.district.heliopolis",
   },
   {
-    id: "new-cairo-1",
-    name: "New Cairo 1",
-    nameKey: "onboarding.district.new-cairo-1",
+    id: "5th-settlement",
+    name: "5th Settlement",
+    nameKey: "onboarding.district.5th-settlement",
   },
   {
     id: "nasr-city",
@@ -315,6 +315,119 @@ export const POPULAR_DISTRICTS: District[] = [
   },
   { id: "tura", name: "Tura", nameKey: "onboarding.district.tura" },
   { id: "zeitoun", name: "Zeitoun", nameKey: "onboarding.district.zeitoun" },
+  {
+    id: "new-cairo",
+    name: "New Cairo",
+    nameKey: "onboarding.district.new-cairo",
+  },
+  {
+    id: "6th-of-october",
+    name: "6th of October",
+    nameKey: "onboarding.district.6th-of-october",
+  },
+  {
+    id: "sheikh-zayed",
+    name: "Sheikh Zayed",
+    nameKey: "onboarding.district.sheikh-zayed",
+  },
+  { id: "obour", name: "Obour", nameKey: "onboarding.district.obour" },
+  {
+    id: "el-shorouk",
+    name: "El Shorouk",
+    nameKey: "onboarding.district.el-shorouk",
+  },
+  { id: "helwan", name: "Helwan", nameKey: "onboarding.district.helwan" },
+  { id: "al-salam", name: "Al Salam", nameKey: "onboarding.district.al-salam" },
+  { id: "badr", name: "Badr", nameKey: "onboarding.district.badr" },
+  { id: "kerdasa", name: "Kerdasa", nameKey: "onboarding.district.kerdasa" },
+  {
+    id: "boulaq-al-dakrour",
+    name: "Boulaq Al Dakrour",
+    nameKey: "onboarding.district.boulaq-al-dakrour",
+  },
+  {
+    id: "15-may-city",
+    name: "15 May City",
+    nameKey: "onboarding.district.15-may-city",
+  },
+  { id: "ossim", name: "Ossim", nameKey: "onboarding.district.ossim" },
+  {
+    id: "el-matareya",
+    name: "El Matareya",
+    nameKey: "onboarding.district.el-matareya",
+  },
+  {
+    id: "10th-of-ramadan",
+    name: "10th of Ramadan",
+    nameKey: "onboarding.district.10th-of-ramadan",
+  },
+  {
+    id: "october-gardens",
+    name: "October Gardens",
+    nameKey: "onboarding.district.october-gardens",
+  },
+  {
+    id: "hadayek-el-ahram",
+    name: "Hadayek El Ahram",
+    nameKey: "onboarding.district.hadayek-el-ahram",
+  },
+  {
+    id: "garden-city",
+    name: "Garden City",
+    nameKey: "onboarding.district.garden-city",
+  },
+  {
+    id: "al-manial",
+    name: "Al Manial",
+    nameKey: "onboarding.district.al-manial",
+  },
+  { id: "al-rehab", name: "Al Rehab", nameKey: "onboarding.district.al-rehab" },
+  {
+    id: "3rd-settlement",
+    name: "3rd Settlement",
+    nameKey: "onboarding.district.3rd-settlement",
+  },
+  { id: "abaseya", name: "Abaseya", nameKey: "onboarding.district.abaseya" },
+
+  { id: "al-haram", name: "Al Haram", nameKey: "onboarding.district.al-haram" },
+  { id: "faisal", name: "Faisal", nameKey: "onboarding.district.faisal" },
+  {
+    id: "dar-el-salam",
+    name: "Dar El Salam",
+    nameKey: "onboarding.district.dar-el-salam",
+  },
+  {
+    id: "badrshein",
+    name: "Badrshein",
+    nameKey: "onboarding.district.badrshein",
+  },
+  {
+    id: "el-hawamdeya",
+    name: "El Hawamdeya",
+    nameKey: "onboarding.district.el-hawamdeya",
+  },
+  {
+    id: "el-masara",
+    name: "El Masara",
+    nameKey: "onboarding.district.el-masara",
+  },
+  {
+    id: "el-tebbin",
+    name: "El Tebbin",
+    nameKey: "onboarding.district.el-tebbin",
+  },
+  {
+    id: "al-khankah",
+    name: "Al Khankah",
+    nameKey: "onboarding.district.al-khankah",
+  },
+  { id: "khusus", name: "Khusus", nameKey: "onboarding.district.khusus" },
+  { id: "qalyub", name: "Qalyub", nameKey: "onboarding.district.qalyub" },
+  {
+    id: "el-qanater",
+    name: "El Qanater",
+    nameKey: "onboarding.district.el-qanater",
+  },
 ];
 export const INTERESTS = [
   { id: "felucca", label: "Felucca Rides", icon: "Ship" },
@@ -331,20 +444,7 @@ export const INTERESTS = [
   // { id: "rooftops", label: "Rooftop Lounges", icon: "Building2" },
 ];
 
-export const DISTRICTS = [
-  "Maadi",
-  "Downtown",
-  "Tagamoa",
-  "Zamalek",
-  "Heliopolis",
-  "Mohandessin",
-  "Dokki",
-  "Nasr City",
-  "Garden City",
-  "6th of October",
-  "New Cairo",
-  "Sheikh Zayed",
-];
+export const DISTRICTS = POPULAR_DISTRICTS.map((district) => district.name);
 
 export const PLACES: Place[] = [
   {
