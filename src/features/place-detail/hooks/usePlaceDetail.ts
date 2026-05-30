@@ -119,6 +119,8 @@ export interface UsePlaceDetailReturn {
   handleReportReview: (payload: ReportPayload) => Promise<void>;
   loadMoreReviews: () => Promise<void>;
   loadMoreSocialReviews: () => Promise<void>;
+  goToReviewsPage: (pageIndex: number) => Promise<void>;
+  goToSocialReviewsPage: (pageIndex: number) => Promise<void>;
   trackInteraction: (actionType: InteractionActionType) => Promise<void>;
   refreshPlaceData: () => Promise<void>;
   retryReviewsLoad: () => Promise<void>;
@@ -515,6 +517,31 @@ export const usePlaceDetail = (
     socialReviewsPagination,
   ]);
 
+  /**
+   * Navigate to an arbitrary reviews page (0-based index).
+   * Replaces the current page of reviews rather than appending.
+   */
+  const goToReviewsPage = useCallback(
+    async (pageIndex: number) => {
+      if (!placeId || loadingMoreReviews) return;
+      // append=false replaces the current items
+      await fetchReviews(placeId, pageIndex, false);
+    },
+    [fetchReviews, loadingMoreReviews, placeId],
+  );
+
+  /**
+   * Navigate to an arbitrary social-reviews page (0-based index).
+   * Replaces the current page of social reviews rather than appending.
+   */
+  const goToSocialReviewsPage = useCallback(
+    async (pageIndex: number) => {
+      if (!placeId || loadingMoreSocialReviews) return;
+      await fetchSocialReviews(placeId, pageIndex, false);
+    },
+    [fetchSocialReviews, loadingMoreSocialReviews, placeId],
+  );
+
   const trackInteraction = useCallback(
     async (actionType: InteractionActionType) => {
       if (!place) return;
@@ -812,6 +839,8 @@ export const usePlaceDetail = (
     handleReportReview,
     loadMoreReviews,
     loadMoreSocialReviews,
+    goToReviewsPage,
+    goToSocialReviewsPage,
     trackInteraction,
     refreshPlaceData,
     retryReviewsLoad,

@@ -46,6 +46,7 @@ import { PRICE_LEVEL_META } from "@/features/place-detail/utils/priceLevel";
 import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defaultImages";
 import { formatCountLabel } from "@/features/place-detail/utils/formatters";
 import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleton";
+import { ReviewsPagination } from "@/features/place-detail/components/Reviewspagination";
 import { OpenHoursCard } from "@/features/place-detail/components/OpenHoursCard";
 import "@/features/place-detail/placeDetailTypography.css";
 import { useAuth } from "@/features/auth";
@@ -119,8 +120,8 @@ const PlaceDetailPage = () => {
     handleSubmitReview,
     handleDeleteMyReview,
     handleReportReview,
-    loadMoreReviews,
-    loadMoreSocialReviews,
+    goToReviewsPage,
+    goToSocialReviewsPage,
     trackInteraction,
     refreshPlaceData,
     retryReviewsLoad,
@@ -225,6 +226,8 @@ const PlaceDetailPage = () => {
   const priceMeta = place?.priceLevel
     ? PRICE_LEVEL_META[place.priceLevel]
     : null;
+  const facilityBadgeClass =
+    "gap-1.5 border-accent/35 bg-accent/10 text-accent";
 
   const trackExternalClick = useCallback(() => {
     void trackInteraction(INTERACTION_ACTION_TYPES.view);
@@ -735,28 +738,19 @@ const PlaceDetailPage = () => {
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {place.hasWifi && (
-                    <Badge
-                      variant="outline"
-                      className="gap-1.5 border-accent/35 bg-accent/10 text-accent"
-                    >
+                    <Badge variant="outline" className={facilityBadgeClass}>
                       <Wifi className="h-3.5 w-3.5" />
                       {t("placeDetail.facilities.wifi")}
                     </Badge>
                   )}
                   {place.hasToilet && (
-                    <Badge
-                      variant="outline"
-                      className="gap-1.5 border-accent/35 bg-accent/10 text-accent"
-                    >
+                    <Badge variant="outline" className={facilityBadgeClass}>
                       <Toilet className="h-3.5 w-3.5" />
                       {t("placeDetail.facilities.restrooms")}
                     </Badge>
                   )}
                   {place.parkingAvailable && (
-                    <Badge
-                      variant="outline"
-                      className="gap-1.5 border-border text-foreground"
-                    >
+                    <Badge variant="outline" className={facilityBadgeClass}>
                       <ParkingSquare className="h-3.5 w-3.5" />
                       {t("placeDetail.facilities.parking")}
                     </Badge>
@@ -765,7 +759,7 @@ const PlaceDetailPage = () => {
                     <Badge
                       key={seat}
                       variant="outline"
-                      className="border-border bg-muted/60 text-muted-foreground capitalize"
+                      className={facilityBadgeClass}
                     >
                       {`${seat} ${t("placeDetail.facilities.seatingSuffix")}`}
                     </Badge>
@@ -910,20 +904,16 @@ const PlaceDetailPage = () => {
                       ))}
                     </Suspense>
 
-                    {reviewsPagination.hasNextPage && (
-                      <Button
-                        variant="outline"
-                        onClick={loadMoreReviews}
-                        disabled={loadingMoreReviews}
-                        className="w-full min-h-11"
-                      >
-                        {loadingMoreReviews
-                          ? t("placeDetail.reviews.loadingMore")
-                          : t("placeDetail.reviews.loadMore", {
-                              shown: formatNumber(reviews.length),
-                              total: formatNumber(reviewsPagination.totalCount),
-                            })}
-                      </Button>
+                    {reviewsPagination.totalPages > 1 && (
+                      <ReviewsPagination
+                        pageIndex={reviewsPagination.pageIndex}
+                        totalPages={reviewsPagination.totalPages}
+                        totalCount={reviewsPagination.totalCount}
+                        pageSize={reviewsPagination.pageSize}
+                        loading={loadingMoreReviews}
+                        onPageChange={goToReviewsPage}
+                        className="pt-1"
+                      />
                     )}
                   </div>
                 )}
@@ -977,20 +967,16 @@ const PlaceDetailPage = () => {
                       ))}
                     </Suspense>
 
-                    {socialReviewsPagination.hasNextPage && (
-                      <Button
-                        variant="outline"
-                        onClick={loadMoreSocialReviews}
-                        disabled={loadingMoreSocialReviews}
-                        className="w-full min-h-11"
-                      >
-                        {loadingMoreSocialReviews
-                          ? t("placeDetail.reviews.loadingMore")
-                          : t("placeDetail.reviews.socialLoadMore", {
-                              shown: formatNumber(socialReviews.length),
-                              total: formatNumber(socialTotalCount),
-                            })}
-                      </Button>
+                    {socialReviewsPagination.totalPages > 1 && (
+                      <ReviewsPagination
+                        pageIndex={socialReviewsPagination.pageIndex}
+                        totalPages={socialReviewsPagination.totalPages}
+                        totalCount={socialReviewsPagination.totalCount}
+                        pageSize={socialReviewsPagination.pageSize}
+                        loading={loadingMoreSocialReviews}
+                        onPageChange={goToSocialReviewsPage}
+                        className="pt-1"
+                      />
                     )}
                   </div>
                 )}
