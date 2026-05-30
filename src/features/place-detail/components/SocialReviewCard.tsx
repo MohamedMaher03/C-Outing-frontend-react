@@ -3,7 +3,6 @@ import { ThumbsUp, Globe, Instagram, Twitter, Facebook } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useI18n } from "@/components/i18n";
 import type { SocialMediaReview } from "../types";
-import { formatInteger, formatShortDate } from "../utils/formatters";
 
 const PlatformIcon = ({ platform }: { platform: string }) => {
   const iconClass = "h-4 w-4 text-accent";
@@ -32,7 +31,23 @@ const SocialReviewCardComponent = ({
 }: {
   review: SocialMediaReview;
 }) => {
-  const { t } = useI18n();
+  const { t, locale, formatNumber, isArabic } = useI18n();
+
+  const formattedDate = new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(review.date));
+
+  const formattedRating =
+    typeof review.rating === "number" && review.rating > 0
+      ? formatNumber(review.rating, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : null;
+
+  const formattedLikes =
+    review.likes !== undefined ? formatNumber(review.likes) : null;
 
   return (
     <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm">
@@ -40,52 +55,52 @@ const SocialReviewCardComponent = ({
         <div className="flex items-center gap-2.5 min-w-0 max-w-full">
           <PlatformIcon platform={review.platform} />
           <span
-            className="pd-type-label text-foreground break-words line-clamp-1 max-w-[11rem] sm:max-w-none"
+            className="pd-type-label text-foreground font-semibold break-words line-clamp-1 max-w-[11rem] sm:max-w-none"
             dir="auto"
           >
             {review.author}
           </span>
         </div>
         <span
-          className="pd-type-micro pd-type-number text-muted-foreground shrink-0"
-          dir="ltr"
+          className="pd-type-micro pd-type-number text-muted-foreground/85 shrink-0"
+          dir={isArabic ? "rtl" : "ltr"}
         >
-          {formatShortDate(review.date, {
-            month: "short",
-            day: "numeric",
-          })}
+          {formattedDate}
         </span>
       </div>
 
-      {(review.source || review.rating) && (
-        <div className="flex flex-wrap items-center gap-2 pd-type-micro text-muted-foreground">
-          {review.source && (
-            <span className="inline-flex items-center gap-1" dir="auto">
-              {t("placeDetail.reviews.sourceLabel", { source: review.source })}
-            </span>
-          )}
-          {typeof review.rating === "number" && review.rating > 0 && (
+      <div className="mt-2 flex flex-wrap items-center gap-2 pd-type-micro text-muted-foreground/90">
+        <span
+          className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-2 py-0.5"
+          dir="auto"
+        >
+          {t("placeDetail.reviews.sourceLabel", {
+            source: t("placeDetail.reviews.source.googleMaps"),
+          })}
+        </span>
+          {formattedRating && (
             <span
-              className="inline-flex items-center gap-1 pd-type-number"
-              dir="ltr"
+              className="inline-flex items-center gap-1 pd-type-number text-foreground/85"
+              dir={isArabic ? "rtl" : "ltr"}
             >
               <span className="text-accent">★</span>
-              {review.rating.toFixed(2)}
+              {formattedRating}
             </span>
           )}
-        </div>
-      )}
+      </div>
 
-      <p
-        className="pd-type-body w-full text-start text-muted-foreground break-words whitespace-pre-wrap"
-        dir="auto"
-      >
-        {review.content}
-      </p>
-      {review.likes !== undefined && (
-        <div className="flex items-center gap-1 pd-type-micro pd-type-number text-muted-foreground">
+      <div className="mt-3 border-t border-border/60 pt-3">
+        <p
+          className="pd-type-body w-full text-start text-foreground break-words whitespace-pre-wrap leading-7 rounded-xl border border-border/50 bg-muted/20 px-3 py-2.5"
+          dir="auto"
+        >
+          {review.content}
+        </p>
+      </div>
+      {formattedLikes && (
+        <div className="mt-2 flex items-center gap-1 pd-type-micro pd-type-number text-muted-foreground/90">
           <ThumbsUp className="h-3 w-3" />
-          <span dir="ltr">{formatInteger(review.likes)}</span>
+          <span dir={isArabic ? "rtl" : "ltr"}>{formattedLikes}</span>
         </div>
       )}
     </Card>

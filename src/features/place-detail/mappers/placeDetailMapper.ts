@@ -343,11 +343,11 @@ export const normalizeSocialReview = (raw: unknown): SocialMediaReview => {
     .toLowerCase()
     .replace(/\s+/g, "-");
 
-  const source =
-    asString(data.source, data.platform, data.userName, data.siteName) ??
-    "Google Maps";
-  const normalizedSource = source.trim();
-  const platformCandidate = normalizedSource.toLowerCase();
+  const platformCandidate = (
+    asString(data.source, data.platform, data.siteName) ?? "google"
+  )
+    .trim()
+    .toLowerCase();
 
   const platform = platformCandidate.includes("instagram")
     ? "instagram"
@@ -388,7 +388,6 @@ export const normalizeSocialReview = (raw: unknown): SocialMediaReview => {
   return {
     id: asString(data.id, data.reviewId, data.externalId) ?? fallbackSocialId,
     platform: normalizedPlatform,
-    source: normalizedSource,
     author: asString(data.author, data.authorName, data.userName) ?? "Unknown",
     authorAvatar: asString(data.authorAvatar, data.avatarUrl),
     content: asString(data.content, data.comment, data.text) ?? "",

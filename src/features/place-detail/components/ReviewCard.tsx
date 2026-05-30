@@ -2,9 +2,9 @@ import { memo } from "react";
 import { Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
+import { useI18n } from "@/components/i18n";
 import type { ReportPayload, Review } from "../types";
 import { getDefaultAvatarDataUrl } from "../utils/defaultImages";
-import { formatShortDate } from "../utils/formatters";
 import { ReportReviewDialog } from "./ReportReviewDialog";
 
 interface ReviewCardProps {
@@ -18,8 +18,15 @@ const ReviewCardComponent = ({
   alreadyReported = false,
   onReport,
 }: ReviewCardProps) => {
+  const { locale } = useI18n();
   const avatarSrc =
     review.userAvatar ?? getDefaultAvatarDataUrl(review.userName);
+
+  const formattedDate = new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(review.createdAt));
 
   return (
     <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm">
@@ -46,14 +53,14 @@ const ReviewCardComponent = ({
           <div className="min-w-0">
             <Link
               to={`/users/${review.userId}`}
-              className="pd-type-label pd-focus-ring text-foreground hover:text-accent transition-colors break-words line-clamp-1"
+              className="pd-type-label pd-focus-ring text-foreground hover:text-accent transition-colors break-words line-clamp-1 font-semibold"
               onClick={(e) => e.stopPropagation()}
               dir="auto"
             >
               {review.userName}
             </Link>
-            <p className="pd-type-micro pd-type-number text-muted-foreground">
-              {formatShortDate(review.createdAt)}
+            <p className="pd-type-micro pd-type-number text-muted-foreground/85">
+              {formattedDate}
             </p>
           </div>
         </div>
@@ -82,12 +89,14 @@ const ReviewCardComponent = ({
           )}
         </div>
       </div>
-      <p
-        className="pd-type-body pd-measure text-muted-foreground break-words whitespace-pre-wrap"
-        dir="auto"
-      >
-        {review.comment}
-      </p>
+      <div className="mt-3 border-t border-border/60 pt-3">
+        <p
+          className="pd-type-body pd-measure text-foreground break-words whitespace-pre-wrap leading-7 rounded-xl border border-border/50 bg-muted/20 px-3 py-2.5"
+          dir="auto"
+        >
+          {review.comment}
+        </p>
+      </div>
     </Card>
   );
 };

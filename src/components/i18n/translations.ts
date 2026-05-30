@@ -907,6 +907,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "placeDetail.reviews.socialDescription":
       "Reviews collected from external web sources and scraping.",
     "placeDetail.reviews.sourceLabel": "Source: {source}",
+    "placeDetail.reviews.source.googleMaps": "Google Maps",
     "placeDetail.reviews.socialError": "Could not load social reviews",
     "placeDetail.reviews.socialEmpty":
       "No social media reviews found for this place yet.",
@@ -2537,6 +2538,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "placeDetail.reviews.socialDescription":
       "مراجعات تم جمعها من مصادر ويب خارجية وعمليات السحب الآلي.",
     "placeDetail.reviews.sourceLabel": "المصدر: {source}",
+    "placeDetail.reviews.source.googleMaps": "خرائط جوجل",
     "placeDetail.reviews.socialError": "تعذر تحميل مراجعات السوشيال",
     "placeDetail.reviews.socialEmpty":
       "لا توجد مراجعات من وسائل التواصل لهذا المكان حتى الآن.",

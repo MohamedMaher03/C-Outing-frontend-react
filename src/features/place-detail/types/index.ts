@@ -128,7 +128,6 @@ export interface VenueAverageRating {
 export interface SocialMediaReview {
   id: string;
   platform: "instagram" | "twitter" | "facebook" | "tiktok" | "google";
-  source?: string;
   author: string;
   authorAvatar?: string;
   content: string;
