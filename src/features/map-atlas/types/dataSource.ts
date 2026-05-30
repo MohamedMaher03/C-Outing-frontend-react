@@ -2,7 +2,6 @@ import type {
   HomePageData,
   HomePlace,
   HomeRecommendationsQuery,
-  SimilarRecommendationsParams,
   VenueByDistrictParams,
   VenueByPriceRangeParams,
   VenueByTypeParams,
@@ -18,9 +17,6 @@ export interface MapAtlasDataSource {
   ) => Promise<HomePlace[]>;
   fetchTrendingRecommendations: (
     params?: HomeRecommendationsQuery,
-  ) => Promise<HomePlace[]>;
-  fetchSimilarRecommendations: (
-    params: SimilarRecommendationsParams,
   ) => Promise<HomePlace[]>;
   togglePlaceSave: (placeId: string, isSaved: boolean) => Promise<void>;
   fetchMoodRecommendations: (

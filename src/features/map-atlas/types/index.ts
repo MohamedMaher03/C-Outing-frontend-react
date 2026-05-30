@@ -4,8 +4,7 @@ export type MapAtlasSource =
   | "discovery"
   | "curated"
   | "trending"
-  | "mood"
-  | "similar";
+  | "mood";
 
 export interface MapAtlasSourceOption {
   id: MapAtlasSource;

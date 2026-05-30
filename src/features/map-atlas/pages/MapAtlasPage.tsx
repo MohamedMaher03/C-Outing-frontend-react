@@ -15,7 +15,6 @@ import {
   Search,
   Sparkles,
   Star,
-  WandSparkles,
   Wifi,
   Clock3,
   type LucideIcon,
@@ -31,6 +30,7 @@ import { useI18n } from "@/components/i18n";
 import { useTheme } from "@/components/theme/useTheme";
 import { cn } from "@/lib/utils";
 import MapAtlasCanvas from "@/features/map-atlas/components/MapAtlasCanvas";
+import MapAtlasRecommendationCountSelector from "@/features/map-atlas/components/MapAtlasRecommendationCountSelector";
 import {
   DISCOVERY_SOURCE_OPTIONS,
   FILTER_OPTIONS,
@@ -42,7 +42,6 @@ import {
   trackVenueInteractionSafe,
 } from "@/features/interactions";
 import type { HomePlace } from "@/features/home/types";
-import type { MapAtlasSource } from "@/features/map-atlas/types";
 import {
   buildGoogleMapsDirectionsUrl,
   computeMapAtlasStats,
@@ -54,7 +53,7 @@ import {
 
 const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const;
 
-type MapAtlasVisibleSource = Exclude<MapAtlasSource, "mood">;
+type MapAtlasVisibleSource = "discovery" | "curated" | "trending";
 
 const SOURCE_META: Record<
   MapAtlasVisibleSource,
@@ -72,17 +71,12 @@ const SOURCE_META: Record<
     icon: Flame,
     fallbackLabel: "Trending",
   },
-  similar: {
-    icon: WandSparkles,
-    fallbackLabel: "Similar",
-  },
 };
 
 const SOURCE_IDS: MapAtlasVisibleSource[] = [
   "discovery",
   "curated",
   "trending",
-  "similar",
 ];
 
 const RATING_FILTERS = [
@@ -118,17 +112,14 @@ export default function MapAtlasPage() {
     discoveryError,
     curatedPlaces,
     trendingPlaces,
-    selectedSimilarSeedId,
-    similarSeedPlaces,
-    similarPlaces,
-    isSimilarLoading,
-    similarError,
-    selectPlaceForSimilar,
+    recommendationCount,
+    setRecommendationCount,
+    isCuratedTrendingLoading,
     requestUserLocation,
     toggleSave,
     isPlaceSavePending,
     retryDiscovery,
-    retrySimilar,
+    retryCuratedTrending,
     isLoading,
     error,
     reloadPlaces,
@@ -154,9 +145,8 @@ export default function MapAtlasPage() {
       discovery: discoveryPlaces,
       curated: curatedPlaces,
       trending: trendingPlaces,
-      similar: similarPlaces,
     }),
-    [curatedPlaces, discoveryPlaces, similarPlaces, trendingPlaces],
+    [curatedPlaces, discoveryPlaces, trendingPlaces],
   );
 
   const sourceOptions = useMemo(
@@ -202,14 +192,13 @@ export default function MapAtlasPage() {
 
   const sourceIsLoading =
     (selectedSource === "discovery" && isDiscoveryLoading) ||
-    (selectedSource === "similar" && isSimilarLoading);
+    ((selectedSource === "curated" || selectedSource === "trending") &&
+      isCuratedTrendingLoading);
 
   const sourceError =
     selectedSource === "discovery"
       ? discoveryError
-      : selectedSource === "similar"
-        ? similarError
-        : null;
+      : null;
 
   const stats = useMemo(() => computeMapAtlasStats(mapPlaces), [mapPlaces]);
 
@@ -267,8 +256,8 @@ export default function MapAtlasPage() {
       return;
     }
 
-    if (selectedSource === "similar") {
-      retrySimilar();
+    if (selectedSource === "curated" || selectedSource === "trending") {
+      retryCuratedTrending();
       return;
     }
 
@@ -357,11 +346,7 @@ export default function MapAtlasPage() {
     () =>
       DISCOVERY_SOURCE_OPTIONS.map((source) => ({
         ...source,
-        label: t(
-          `home.discovery.source.${source.id}`,
-          undefined,
-          source.label,
-        ),
+        label: t(`home.discovery.source.${source.id}`, undefined, source.label),
       })),
     [t],
   );
@@ -686,6 +671,19 @@ export default function MapAtlasPage() {
                       )}
                     </div>
 
+                    {userLocation.status === "granted" && (
+                      <div className="flex flex-wrap items-start gap-2 rounded-2xl border border-primary/15 bg-primary/5 px-3 py-2 text-role-micro text-muted-foreground sm:items-center">
+                        <LocateFixed className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary sm:mt-0" />
+                        <p className="min-w-0 flex-1">
+                          {t(
+                            "mapAtlas.discovery.districtSortHint",
+                            undefined,
+                            "Districts are sorted from nearest to farthest based on your location.",
+                          )}
+                        </p>
+                      </div>
+                    )}
+
                     {showNearYouDistrictHint && selectedDistrictRecord && (
                       <p className="text-role-micro text-muted-foreground">
                         {t(
@@ -804,7 +802,9 @@ export default function MapAtlasPage() {
                             key={option.id}
                             type="button"
                             onClick={() => {
-                              setSelectedPriceRange(isActive ? null : option.id);
+                              setSelectedPriceRange(
+                                isActive ? null : option.id,
+                              );
                               setActiveDiscoverySource("price-range");
                             }}
                             className={cn(
@@ -887,43 +887,25 @@ export default function MapAtlasPage() {
               </motion.div>
             )}
 
-            {selectedSource === "similar" && (
+            {(selectedSource === "curated" || selectedSource === "trending") && (
               <motion.div
-                key="similar-controls"
+                key={`${selectedSource}-count-controls`}
                 initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
                 transition={{ duration: shouldReduceMotion ? 0.01 : 0.2 }}
                 className="mt-4"
               >
-                <Label htmlFor="map-atlas-similar-seed" className="sr-only">
-                  {t(
-                    "mapAtlas.similar.reference",
-                    undefined,
-                    "Choose a reference place for similar recommendations",
-                  )}
-                </Label>
-                <select
-                  id="map-atlas-similar-seed"
-                  value={selectedSimilarSeedId ?? ""}
-                  onChange={(event) =>
-                    selectPlaceForSimilar(event.target.value || null)
+                <MapAtlasRecommendationCountSelector
+                  source={selectedSource}
+                  sourceLabel={
+                    sourceOptions.find((source) => source.id === selectedSource)
+                      ?.label ?? SOURCE_META[selectedSource].fallbackLabel
                   }
-                  className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm"
-                >
-                  <option value="">
-                    {t(
-                      "mapAtlas.similar.reference",
-                      undefined,
-                      "Choose a reference place for similar recommendations",
-                    )}
-                  </option>
-                  {similarSeedPlaces.map((place) => (
-                    <option key={`seed-${place.id}`} value={place.id}>
-                      {place.name}
-                    </option>
-                  ))}
-                </select>
+                  count={recommendationCount}
+                  onCountChange={setRecommendationCount}
+                  isLoading={isCuratedTrendingLoading}
+                />
               </motion.div>
             )}
           </AnimatePresence>
@@ -1095,6 +1077,57 @@ export default function MapAtlasPage() {
                   const hasDirections =
                     Number.isFinite(place.latitude) &&
                     Number.isFinite(place.longitude);
+                  const distanceLabel = (() => {
+                    if (
+                      userLocation.status !== "granted" ||
+                      !userLocation.coordinates ||
+                      !Number.isFinite(place.latitude) ||
+                      !Number.isFinite(place.longitude)
+                    ) {
+                      return null;
+                    }
+
+                    const fromLat = userLocation.coordinates.latitude;
+                    const fromLng = userLocation.coordinates.longitude;
+                    const toLat = place.latitude;
+                    const toLng = place.longitude;
+                    const deltaLat = ((toLat - fromLat) * Math.PI) / 180;
+                    const deltaLng = ((toLng - fromLng) * Math.PI) / 180;
+                    const a =
+                      Math.sin(deltaLat / 2) ** 2 +
+                      Math.cos((fromLat * Math.PI) / 180) *
+                        Math.cos((toLat * Math.PI) / 180) *
+                        Math.sin(deltaLng / 2) ** 2;
+                    const distanceKm = 6371 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+
+                    if (!Number.isFinite(distanceKm) || distanceKm < 0) {
+                      return null;
+                    }
+
+                    if (distanceKm < 1) {
+                      return t(
+                        "mapAtlas.distance.fromMeMeters",
+                        {
+                          distance: formatNumber(
+                            Math.max(1, Math.round(distanceKm * 1000)),
+                          ),
+                        },
+                        "{distance} m from me",
+                      );
+                    }
+
+                    return t(
+                      "mapAtlas.distance.fromMeKm",
+                      {
+                        distance: formatNumber(
+                          distanceKm < 10
+                            ? Number(distanceKm.toFixed(1))
+                            : Math.round(distanceKm),
+                        ),
+                      },
+                      "{distance} km from me",
+                    );
+                  })();
 
                   return (
                     <article
@@ -1132,6 +1165,15 @@ export default function MapAtlasPage() {
                         <p className="text-role-micro mt-1 line-clamp-2 text-muted-foreground">
                           {place.address}
                         </p>
+
+                        {distanceLabel && (
+                          <div className="mt-2">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                              <LocateFixed className="h-3 w-3" />
+                              {distanceLabel}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="text-role-micro mt-2 flex flex-wrap items-center gap-1.5 font-semibold">
                           <span

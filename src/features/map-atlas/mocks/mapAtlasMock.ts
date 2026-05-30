@@ -5,7 +5,6 @@ export const mapAtlasMock: MapAtlasDataSource = {
   fetchHomePageData: homeMock.fetchHomePageData,
   fetchPersonalizedRecommendations: homeMock.fetchPersonalizedRecommendations,
   fetchTrendingRecommendations: homeMock.fetchTrendingRecommendations,
-  fetchSimilarRecommendations: homeMock.fetchSimilarRecommendations,
   togglePlaceSave: homeMock.togglePlaceSave,
   fetchMoodRecommendations: homeMock.fetchMoodRecommendations,
   fetchVenuesByDistrict: homeMock.fetchVenuesByDistrict,

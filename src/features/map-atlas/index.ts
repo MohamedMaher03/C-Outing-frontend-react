@@ -10,7 +10,6 @@ export {
   fetchMapAtlasHomePageData,
   fetchMapAtlasPersonalizedRecommendations,
   fetchMapAtlasTrendingRecommendations,
-  fetchMapAtlasSimilarRecommendations,
   toggleMapAtlasPlaceSave,
   fetchMapAtlasMoodRecommendations,
   fetchMapAtlasVenuesByDistrict,

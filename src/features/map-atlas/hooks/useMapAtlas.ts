@@ -22,6 +22,10 @@ import {
   trackVenueInteractionSafe,
 } from "@/features/interactions";
 import { getErrorMessage, isApiError } from "@/utils/apiError";
+import {
+  DEFAULT_MAP_ATLAS_RECOMMENDATION_COUNT,
+  type MapAtlasRecommendationCount,
+} from "@/features/map-atlas/constants/recommendationCount";
 import { mapAtlasService } from "@/features/map-atlas/services/mapAtlasService";
 import {
   findNearestDistrict,
@@ -34,11 +38,6 @@ interface UseMapAtlasReturn {
   selectedMood: string | null;
   isLoading: boolean;
   error: string | null;
-  selectedSimilarSeedId: string | null;
-  similarSeedPlaces: HomePlace[];
-  similarPlaces: HomePlace[];
-  isSimilarLoading: boolean;
-  similarError: string | null;
   saveError: string | null;
 
   selectedDistrict: string | null;
@@ -50,6 +49,9 @@ interface UseMapAtlasReturn {
   discoveryPlaces: HomePlace[];
   discoveryError: string | null;
   isDiscoveryLoading: boolean;
+
+  recommendationCount: MapAtlasRecommendationCount;
+  isCuratedTrendingLoading: boolean;
 
   curatedPlaces: HomePlace[];
   trendingPlaces: HomePlace[];
@@ -70,12 +72,12 @@ interface UseMapAtlasReturn {
   setSelectedPriceRange: (priceRange: VenuePriceRange | null) => void;
   setSelectedArea: (area: string) => void;
   setActiveDiscoverySource: (source: DiscoverySource) => void;
-  selectPlaceForSimilar: (placeId: string | null) => void;
+  setRecommendationCount: (count: MapAtlasRecommendationCount) => void;
   requestUserLocation: () => void;
   toggleSave: (id: string) => Promise<void>;
   retryDiscovery: () => void;
-  retrySimilar: () => void;
   retryMood: () => void;
+  retryCuratedTrending: () => void;
   clearSaveError: () => void;
   isPlaceSavePending: (id: string) => boolean;
   reloadPlaces: () => Promise<void>;
@@ -115,23 +117,6 @@ const toFriendlyErrorMessage = (error: unknown, fallback: string): string => {
   return getErrorMessage(error, fallback);
 };
 
-const dedupePlacesById = (places: HomePlace[]): HomePlace[] => {
-  const seen = new Set<string>();
-  const deduped: HomePlace[] = [];
-
-  for (const place of places) {
-    const id = typeof place?.id === "string" ? place.id.trim() : "";
-    if (!id || seen.has(id)) {
-      continue;
-    }
-
-    seen.add(id);
-    deduped.push(place);
-  }
-
-  return deduped;
-};
-
 export const useMapAtlas = (): UseMapAtlasReturn => {
   const { user } = useAuth();
   const userLocation = useUserLocation();
@@ -147,14 +132,6 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
   const [rawCurated, setRawCurated] = useState<HomePlace[]>([]);
   const [rawTrending, setRawTrending] = useState<HomePlace[]>([]);
   const [rawMoodPlaces, setRawMoodPlaces] = useState<HomePlace[]>([]);
-  const [rawSimilarPlaces, setRawSimilarPlaces] = useState<HomePlace[]>([]);
-
-  const [selectedSimilarSeedId, setSelectedSimilarSeedId] = useState<
-    string | null
-  >(null);
-  const [similarSeedPlaces, setSimilarSeedPlaces] = useState<HomePlace[]>([]);
-  const [isSimilarLoading, setIsSimilarLoading] = useState(false);
-  const [similarError, setSimilarError] = useState<string | null>(null);
 
   const [isMoodLoading, setIsMoodLoading] = useState(false);
   const [moodError, setMoodError] = useState<string | null>(null);
@@ -219,18 +196,26 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
     {},
   );
 
+  const [recommendationCount, setRecommendationCount] =
+    useState<MapAtlasRecommendationCount>(
+      DEFAULT_MAP_ATLAS_RECOMMENDATION_COUNT,
+    );
+  const [isCuratedTrendingLoading, setIsCuratedTrendingLoading] =
+    useState(false);
+
   const [discoveryReloadKey, setDiscoveryReloadKey] = useState(0);
-  const [similarReloadKey, setSimilarReloadKey] = useState(0);
   const [moodReloadKey, setMoodReloadKey] = useState(0);
+  const [curatedTrendingReloadKey, setCuratedTrendingReloadKey] = useState(0);
 
   const saveInFlightIds = useRef(new Set<string>());
   const userChangedDistrictRef = useRef(false);
   const homeRequestIdRef = useRef(0);
-  const similarRequestIdRef = useRef(0);
   const moodRequestIdRef = useRef(0);
   const discoveryRequestIdRef = useRef(0);
   const topRatedRequestIdRef = useRef(0);
   const topRatedAreaRequestIdRef = useRef(0);
+  const curatedTrendingRequestIdRef = useRef(0);
+  const skipRecommendationCountEffectRef = useRef(true);
 
   const applyFilters = useCallback(
     (list: HomePlace[]): HomePlace[] => {
@@ -303,14 +288,57 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
     [applyFilters, rawMoodPlaces],
   );
 
-  const similarPlaces = useMemo(
-    () => applyFilters(rawSimilarPlaces),
-    [applyFilters, rawSimilarPlaces],
-  );
-
   const discoveryPlaces = useMemo(
     () => applyFilters(rawDiscoveryPlaces),
     [applyFilters, rawDiscoveryPlaces],
+  );
+
+  const loadCuratedAndTrending = useCallback(
+    async (
+      count: MapAtlasRecommendationCount,
+      options?: { showLoading?: boolean },
+    ): Promise<void> => {
+      const requestId = ++curatedTrendingRequestIdRef.current;
+
+      if (!user) {
+        setRawCurated([]);
+        setRawTrending([]);
+        return;
+      }
+
+      if (options?.showLoading) {
+        setIsCuratedTrendingLoading(true);
+      }
+
+      try {
+        const homeData = await mapAtlasService.fetchHomePageData({ count });
+
+        if (
+          !mountedRef.current ||
+          requestId !== curatedTrendingRequestIdRef.current
+        ) {
+          return;
+        }
+
+        setRawCurated(homeData.curatedPlaces);
+        setRawTrending(homeData.trendingPlaces);
+      } catch {
+        if (
+          !mountedRef.current ||
+          requestId !== curatedTrendingRequestIdRef.current
+        ) {
+          return;
+        }
+      } finally {
+        if (
+          mountedRef.current &&
+          requestId === curatedTrendingRequestIdRef.current
+        ) {
+          setIsCuratedTrendingLoading(false);
+        }
+      }
+    },
+    [user],
   );
 
   const loadPlaces = useCallback(async (): Promise<void> => {
@@ -321,7 +349,6 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
       setError("Sign in to load your personalized map places.");
       setRawCurated([]);
       setRawTrending([]);
-      setSimilarSeedPlaces([]);
       return;
     }
 
@@ -329,12 +356,9 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
     setError(null);
 
     try {
-      const [homeData, personalizedSeedPool, trendingSeedPool] =
-        await Promise.all([
-          mapAtlasService.fetchHomePageData({ count: 12 }),
-          mapAtlasService.fetchPersonalizedRecommendations({ count: 30 }),
-          mapAtlasService.fetchTrendingRecommendations({ count: 70 }),
-        ]);
+      const homeData = await mapAtlasService.fetchHomePageData({
+        count: DEFAULT_MAP_ATLAS_RECOMMENDATION_COUNT,
+      });
 
       if (!mountedRef.current || requestId !== homeRequestIdRef.current) {
         return;
@@ -342,14 +366,6 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
 
       setRawCurated(homeData.curatedPlaces);
       setRawTrending(homeData.trendingPlaces);
-
-      const seedPool = dedupePlacesById([
-        ...personalizedSeedPool,
-        ...trendingSeedPool,
-      ]).slice(0, 80);
-
-      setSimilarSeedPlaces(seedPool);
-      setSelectedSimilarSeedId((current) => current ?? seedPool[0]?.id ?? null);
     } catch (loadError) {
       if (!mountedRef.current || requestId !== homeRequestIdRef.current) {
         return;
@@ -363,14 +379,21 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
       );
       setRawCurated([]);
       setRawTrending([]);
-      setSimilarSeedPlaces([]);
-      setSelectedSimilarSeedId(null);
     } finally {
       if (mountedRef.current && requestId === homeRequestIdRef.current) {
         setIsLoading(false);
       }
     }
   }, [user]);
+
+  useEffect(() => {
+    if (skipRecommendationCountEffectRef.current) {
+      skipRecommendationCountEffectRef.current = false;
+      return;
+    }
+
+    void loadCuratedAndTrending(recommendationCount, { showLoading: true });
+  }, [curatedTrendingReloadKey, loadCuratedAndTrending, recommendationCount]);
 
   useEffect(() => {
     if (userChangedDistrictRef.current) {
@@ -421,57 +444,13 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
     return () => {
       mountedRef.current = false;
       homeRequestIdRef.current += 1;
-      similarRequestIdRef.current += 1;
       moodRequestIdRef.current += 1;
       discoveryRequestIdRef.current += 1;
       topRatedRequestIdRef.current += 1;
       topRatedAreaRequestIdRef.current += 1;
+      curatedTrendingRequestIdRef.current += 1;
     };
   }, [loadPlaces]);
-
-  useEffect(() => {
-    if (!selectedSimilarSeedId) {
-      setRawSimilarPlaces([]);
-      setSimilarError(null);
-      setIsSimilarLoading(false);
-      return;
-    }
-
-    const requestId = ++similarRequestIdRef.current;
-    setIsSimilarLoading(true);
-    setSimilarError(null);
-
-    void (async () => {
-      try {
-        const places = await mapAtlasService.fetchSimilarRecommendations({
-          venueId: selectedSimilarSeedId,
-          count: 10,
-        });
-
-        if (!mountedRef.current || requestId !== similarRequestIdRef.current) {
-          return;
-        }
-
-        setRawSimilarPlaces(places);
-      } catch (loadError) {
-        if (!mountedRef.current || requestId !== similarRequestIdRef.current) {
-          return;
-        }
-
-        setRawSimilarPlaces([]);
-        setSimilarError(
-          toFriendlyErrorMessage(
-            loadError,
-            "Could not load similar recommendations.",
-          ),
-        );
-      } finally {
-        if (mountedRef.current && requestId === similarRequestIdRef.current) {
-          setIsSimilarLoading(false);
-        }
-      }
-    })();
-  }, [selectedSimilarSeedId, similarReloadKey]);
 
   useEffect(() => {
     if (!selectedMood) {
@@ -795,9 +774,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
         ...rawCurated,
         ...rawTrending,
         ...rawMoodPlaces,
-        ...rawSimilarPlaces,
         ...rawDiscoveryPlaces,
-        ...similarSeedPlaces,
         ...globalTopRatedVenues,
         ...topRatedInAreaVenues,
       ];
@@ -828,9 +805,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
         setRawCurated((previous) => toggleLocalSave(previous));
         setRawTrending((previous) => toggleLocalSave(previous));
         setRawMoodPlaces((previous) => toggleLocalSave(previous));
-        setRawSimilarPlaces((previous) => toggleLocalSave(previous));
         setRawDiscoveryPlaces((previous) => toggleLocalSave(previous));
-        setSimilarSeedPlaces((previous) => toggleLocalSave(previous));
         setGlobalTopRatedVenues((previous) => toggleLocalSave(previous));
         setTopRatedInAreaVenues((previous) => toggleLocalSave(previous));
         void trackVenueInteractionSafe(
@@ -864,9 +839,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
       rawCurated,
       rawDiscoveryPlaces,
       rawMoodPlaces,
-      rawSimilarPlaces,
       rawTrending,
-      similarSeedPlaces,
       topRatedInAreaVenues,
     ],
   );
@@ -875,12 +848,12 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
     setDiscoveryReloadKey((previous) => previous + 1);
   }, []);
 
-  const retrySimilar = useCallback(() => {
-    setSimilarReloadKey((previous) => previous + 1);
-  }, []);
-
   const retryMood = useCallback(() => {
     setMoodReloadKey((previous) => previous + 1);
+  }, []);
+
+  const retryCuratedTrending = useCallback(() => {
+    setCuratedTrendingReloadKey((previous) => previous + 1);
   }, []);
 
   const isPlaceSavePending = useCallback(
@@ -898,11 +871,6 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
     selectedMood,
     isLoading,
     error,
-    selectedSimilarSeedId,
-    similarSeedPlaces,
-    similarPlaces,
-    isSimilarLoading,
-    similarError,
     saveError,
 
     selectedDistrict,
@@ -914,6 +882,9 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
     discoveryPlaces,
     discoveryError,
     isDiscoveryLoading,
+
+    recommendationCount,
+    isCuratedTrendingLoading,
 
     curatedPlaces,
     trendingPlaces,
@@ -934,12 +905,12 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
     setSelectedPriceRange,
     setSelectedArea,
     setActiveDiscoverySource,
-    selectPlaceForSimilar: setSelectedSimilarSeedId,
+    setRecommendationCount,
     requestUserLocation: userLocation.requestLocation,
     toggleSave,
     retryDiscovery,
-    retrySimilar,
     retryMood,
+    retryCuratedTrending,
     clearSaveError,
     isPlaceSavePending,
     reloadPlaces: loadPlaces,

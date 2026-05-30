@@ -2,7 +2,6 @@ import type {
   HomePageData,
   HomePlace,
   HomeRecommendationsQuery,
-  SimilarRecommendationsParams,
   VenueByDistrictParams,
   VenueByPriceRangeParams,
   VenueByTypeParams,
@@ -67,22 +66,6 @@ export const fetchMapAtlasTrendingRecommendations = async (
 ): Promise<HomePlace[]> => {
   const places = await mapAtlasDataSource.fetchTrendingRecommendations({
     count: normalizeRecommendationCount(params?.count, 40),
-  });
-
-  return mapMapAtlasPlaces(places);
-};
-
-export const fetchMapAtlasSimilarRecommendations = async (
-  params: SimilarRecommendationsParams,
-): Promise<HomePlace[]> => {
-  const venueId = normalizeStringParam(params.venueId);
-  if (!venueId) {
-    return [];
-  }
-
-  const places = await mapAtlasDataSource.fetchSimilarRecommendations({
-    venueId,
-    count: normalizeRecommendationCount(params.count, 8),
   });
 
   return mapMapAtlasPlaces(places);
@@ -160,7 +143,6 @@ export const mapAtlasService = {
   fetchHomePageData: fetchMapAtlasHomePageData,
   fetchPersonalizedRecommendations: fetchMapAtlasPersonalizedRecommendations,
   fetchTrendingRecommendations: fetchMapAtlasTrendingRecommendations,
-  fetchSimilarRecommendations: fetchMapAtlasSimilarRecommendations,
   togglePlaceSave: toggleMapAtlasPlaceSave,
   fetchMoodRecommendations: fetchMapAtlasMoodRecommendations,
   fetchVenuesByDistrict: fetchMapAtlasVenuesByDistrict,

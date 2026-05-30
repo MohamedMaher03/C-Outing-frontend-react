@@ -749,6 +749,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "Pick a discovery lens, then refine your results below.",
     "mapAtlas.discovery.lensAria": "Discovery lens",
     "mapAtlas.discovery.districtLabel": "Choose a district",
+    "mapAtlas.discovery.districtSortHint":
+      "Districts are sorted from nearest to farthest based on your location.",
     "mapAtlas.discovery.typeLabel": "Choose a venue type",
     "mapAtlas.discovery.priceLabel": "Choose a budget level",
     "mapAtlas.discovery.areaLabel": "Choose an area for top-rated picks",
@@ -767,8 +769,15 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "mapAtlas.category.activities": "Activities",
     "mapAtlas.category.coworking": "Co-working",
 
-    "mapAtlas.similar.reference":
-      "Choose a reference place for similar recommendations",
+    "mapAtlas.distance.fromMeMeters": "{distance} m from you",
+    "mapAtlas.distance.fromMeKm": "{distance} km from you",
+
+    "mapAtlas.recommendations.title": "How many places?",
+    "mapAtlas.recommendations.subtitle":
+      "Choose how many {source} picks appear on your map.",
+    "mapAtlas.recommendations.countGroup": "Number of places",
+    "mapAtlas.recommendations.countOption": "{count} places",
+    "mapAtlas.recommendations.loading": "Refreshing...",
 
     "mapAtlas.stats.total": "Total",
     "mapAtlas.stats.open": "Open now",
@@ -2361,9 +2370,12 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "mapAtlas.discovery.area": "اختر النطاق",
     "mapAtlas.discovery.mode": "الوضع: {mode}",
     "mapAtlas.discovery.title": "كيف تريد الاستكشاف؟",
-    "mapAtlas.discovery.subtitle": "اختر طريقة الاكتشاف، ثم حدّد النتائج أدناه.",
+    "mapAtlas.discovery.subtitle":
+      "اختر طريقة الاكتشاف، ثم حدّد النتائج أدناه.",
     "mapAtlas.discovery.lensAria": "طريقة الاكتشاف",
     "mapAtlas.discovery.districtLabel": "اختر منطقة",
+    "mapAtlas.discovery.districtSortHint":
+      "المناطق مترتبة من الأقرب ليك للأبعد حسب موقعك الحالي.",
     "mapAtlas.discovery.typeLabel": "اختر نوع المكان",
     "mapAtlas.discovery.priceLabel": "اختر مستوى الميزانية",
     "mapAtlas.discovery.areaLabel": "اختر منطقة للأعلى تقييمًا",
@@ -2382,7 +2394,14 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "mapAtlas.category.activities": "أنشطة",
     "mapAtlas.category.coworking": "عمل مشترك",
 
-    "mapAtlas.similar.reference": "اختر مكانًا مرجعيًا للتوصيات المشابهة",
+    "mapAtlas.distance.fromMeMeters": "يبعد {distance} كم عنك",
+    "mapAtlas.distance.fromMeKm": "يبعد {distance} كم عنك",
+    "mapAtlas.recommendations.title": "كم عدد الأماكن؟",
+    "mapAtlas.recommendations.subtitle":
+      "اختر عدد توصيات {source} التي تظهر على الخريطة.",
+    "mapAtlas.recommendations.countGroup": "عدد الأماكن",
+    "mapAtlas.recommendations.countOption": "{count} مكان",
+    "mapAtlas.recommendations.loading": "جارٍ التحديث...",
 
     "mapAtlas.stats.total": "الإجمالي",
     "mapAtlas.stats.open": "مفتوح الآن",
@@ -3361,8 +3380,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "session.page.loading.subtitleCount": "بنجمّع {count} مكان مخصص لمجموعتك…",
     "session.page.recs.badge": "توصيات المجموعة",
     "session.page.recs.title": "أفضل أماكن لمجموعتك",
-    "session.page.recs.subtitle":
-      "{count} عضو · بنعرض {places} مكان مخصص",
+    "session.page.recs.subtitle": "{count} عضو · بنعرض {places} مكان مخصص",
     "session.page.recs.refresh": "تحديث",
     "session.page.recs.count.label": "عدد الأماكن",
     "session.page.recs.count.hint":
