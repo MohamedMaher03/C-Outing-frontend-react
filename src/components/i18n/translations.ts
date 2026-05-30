@@ -908,7 +908,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "placeDetail.reviews.pagination.goToLabel": "Go to page",
     "placeDetail.reviews.pagination.jumpInputLabel": "Page number (1–{max})",
     "placeDetail.reviews.pagination.goButton": "Go",
-    "placeDetail.reviews.pagination.jumpError": "Enter a number between 1 and {max}",
+    "placeDetail.reviews.pagination.jumpError":
+      "Enter a number between 1 and {max}",
     "placeDetail.reviews.loadMore": "Load More Reviews ({shown}/{total})",
     "placeDetail.reviews.socialLoadMore":
       "Load More Social Reviews ({shown}/{total})",
