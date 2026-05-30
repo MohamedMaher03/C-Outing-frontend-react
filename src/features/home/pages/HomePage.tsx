@@ -51,12 +51,14 @@ interface HorizontalScrollerProps {
   children: ReactNode;
   ariaLabel: string;
   className?: string;
+  scrollKey?: string | number;
 }
 
 const HorizontalScroller = ({
   children,
   ariaLabel,
   className,
+  scrollKey,
 }: HorizontalScrollerProps) => {
   const { t } = useI18n();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -74,6 +76,13 @@ const HorizontalScroller = ({
     setCanScrollLeft(element.scrollLeft > 8);
     setCanScrollRight(element.scrollLeft < maxScrollLeft - 8);
   }, []);
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    element.scrollTo({ left: 0, behavior: "instant" });
+    requestAnimationFrame(updateScrollButtons);
+  }, [scrollKey, updateScrollButtons]);
 
   useEffect(() => {
     const element = scrollRef.current;
@@ -111,7 +120,6 @@ const HorizontalScroller = ({
 
   return (
     <div className="relative overflow-hidden">
-      {/* Scroll-fade left edge — signals more content to the left */}
       <div
         aria-hidden="true"
         className={cn(
@@ -149,7 +157,6 @@ const HorizontalScroller = ({
       >
         <ChevronRight className="h-4 w-4 " />
       </button>
-      {/* Scroll-fade right edge — signals more content to the right */}
       <div
         aria-hidden="true"
         className={cn(
@@ -217,6 +224,64 @@ const HomePage = () => {
     moodOptions,
     popularDistricts,
   } = useHome();
+
+  const prevDiscoveryKeyRef = useRef<string>(`${activeDiscoverySource}`);
+  const [discoveryScrollKey, setDiscoveryScrollKey] = useState(0);
+  useEffect(() => {
+    const next = `${activeDiscoverySource}`;
+    if (next !== prevDiscoveryKeyRef.current) {
+      prevDiscoveryKeyRef.current = next;
+      setDiscoveryScrollKey((k) => k + 1);
+    }
+  }, [activeDiscoverySource]);
+
+  const prevFiltersKeyRef = useRef(selectedFilters.join(","));
+  const [filterScrollKey, setFilterScrollKey] = useState(0);
+  useEffect(() => {
+    const next = selectedFilters.join(",");
+    if (next !== prevFiltersKeyRef.current) {
+      prevFiltersKeyRef.current = next;
+      setFilterScrollKey((k) => k + 1);
+    }
+  }, [selectedFilters]);
+
+  const HOME_SCROLL_KEY = "home_page_scroll_y";
+  const pageScrollRef = useRef<number>(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      pageScrollRef.current = window.scrollY;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      try {
+        sessionStorage.setItem(HOME_SCROLL_KEY, String(pageScrollRef.current));
+      } catch {
+        // sessionStorage unavailable — ignore
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(HOME_SCROLL_KEY);
+      if (saved) {
+        const y = Number(saved);
+        if (y > 0) {
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: y, behavior: "instant" });
+          });
+        }
+        sessionStorage.removeItem(HOME_SCROLL_KEY);
+      }
+    } catch {
+      // sessionStorage unavailable — ignore
+    }
+  }, []);
 
   const localizedFilters = useMemo(
     () =>
@@ -782,7 +847,7 @@ const HomePage = () => {
         )}
       </AnimatePresence>
 
-      {/* ====== MAIN CONTENT: TWO-COLUMN LAYOUT ====== */}
+      {/*  here we split -> TWO-COLUMN LAYOUT  */}
       <div className="mx-auto max-w-7xl px-4 pt-5 [padding-bottom:max(2.5rem,calc(env(safe-area-inset-bottom,0px)+2.5rem))] sm:py-6 sm:pb-12 md:py-8 md:pb-8">
         <div className="grid grid-cols-1 items-start gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           {/* ── LEFT: Main Feed ── */}
@@ -790,7 +855,6 @@ const HomePage = () => {
             className="flex-1 min-w-0 space-y-8 sm:space-y-10 lg:space-y-12"
             style={{ isolation: "isolate" }}
           >
-            {/* Group Session Banner (mobile / tablet) */}
             <section
               className="lg:hidden"
               aria-label={t("session.widget.ariaLabel")}
@@ -798,7 +862,6 @@ const HomePage = () => {
               <GroupSessionWidget variant="banner" />
             </section>
 
-            {/* ── QUICK CONTROLS (MOBILE/TABLET) ── */}
             <section
               className="space-y-4 lg:hidden"
               style={{ isolation: "isolate", position: "relative", zIndex: 1 }}
@@ -857,7 +920,7 @@ const HomePage = () => {
               </div>
             </section>
 
-            {/* ── Venue Discovery Studio (New Endpoints) ── */}
+            {/* ──here is Venue Discovery ── */}
             <section
               className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm"
               style={{ isolation: "isolate" }}
@@ -881,7 +944,7 @@ const HomePage = () => {
                 </div>
               </div>
 
-              <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-0.5 scrollbar-hide sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 lg:grid-cols-5">
+              <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-2.5 scrollbar-hide sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 lg:grid-cols-5">
                 {localizedDiscoverySources.map((source) => {
                   const Icon = source.icon;
                   const isActive = activeDiscoverySource === source.id;
@@ -1160,6 +1223,7 @@ const HomePage = () => {
                         <HorizontalScroller
                           ariaLabel={t("home.scroller.label.discovery")}
                           className="-mx-2 px-2"
+                          scrollKey={`${discoveryScrollKey}-${filterScrollKey}`}
                         >
                           {discoveryPlaces.map((place, index) => (
                             <motion.div
@@ -1182,7 +1246,13 @@ const HomePage = () => {
                                 userLocation={userLocation}
                                 onToggleSave={toggleSave}
                                 isSavePending={isPlaceSavePending(place.id)}
-                                onClick={(id) => navigate(`/venue/${id}`)}
+                                onClick={(id) =>
+                                  window.open(
+                                    `/venue/${id}`,
+                                    "_blank",
+                                    "noopener,noreferrer",
+                                  )
+                                }
                               />
                             </motion.div>
                           ))}
@@ -1304,6 +1374,7 @@ const HomePage = () => {
                   ) : (
                     <HorizontalScroller
                       ariaLabel={t("home.scroller.label.mood")}
+                      scrollKey={selectedMood ?? undefined}
                     >
                       {moodPlaces.map((place) => (
                         <div key={place.id} className="snap-start">
@@ -1313,7 +1384,13 @@ const HomePage = () => {
                             userLocation={userLocation}
                             onToggleSave={toggleSave}
                             isSavePending={isPlaceSavePending(place.id)}
-                            onClick={(id) => navigate(`/venue/${id}`)}
+                            onClick={(id) =>
+                              window.open(
+                                `/venue/${id}`,
+                                "_blank",
+                                "noopener,noreferrer",
+                              )
+                            }
                           />
                         </div>
                       ))}
@@ -1351,7 +1428,10 @@ const HomePage = () => {
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <HorizontalScroller ariaLabel={t("home.scroller.label.curated")}>
+              <HorizontalScroller
+                ariaLabel={t("home.scroller.label.curated")}
+                scrollKey={filterScrollKey}
+              >
                 {curatedPlaces.map((place) => (
                   <div key={place.id} className="snap-start">
                     <PlaceCard
@@ -1360,7 +1440,13 @@ const HomePage = () => {
                       userLocation={userLocation}
                       onToggleSave={toggleSave}
                       isSavePending={isPlaceSavePending(place.id)}
-                      onClick={(id) => navigate(`/venue/${id}`)}
+                      onClick={(id) =>
+                        window.open(
+                          `/venue/${id}`,
+                          "_blank",
+                          "noopener,noreferrer",
+                        )
+                      }
                     />
                   </div>
                 ))}
@@ -1394,6 +1480,7 @@ const HomePage = () => {
                 </div>
                 <HorizontalScroller
                   ariaLabel={t("home.scroller.label.trending")}
+                  scrollKey={filterScrollKey}
                 >
                   {trendingPlaces.map((place) => (
                     <div key={place.id} className="snap-start">
@@ -1403,7 +1490,13 @@ const HomePage = () => {
                         userLocation={userLocation}
                         onToggleSave={toggleSave}
                         isSavePending={isPlaceSavePending(place.id)}
-                        onClick={(id) => navigate(`/venue/${id}`)}
+                        onClick={(id) =>
+                          window.open(
+                            `/venue/${id}`,
+                            "_blank",
+                            "noopener,noreferrer",
+                          )
+                        }
                       />
                     </div>
                   ))}
@@ -1638,6 +1731,7 @@ const HomePage = () => {
                       <HorizontalScroller
                         ariaLabel={t("home.scroller.label.similar")}
                         className="-mx-2 px-2"
+                        scrollKey={selectedSimilarSeedId ?? undefined}
                       >
                         {similarPlaces.map((place, index) => (
                           <motion.div
@@ -1661,7 +1755,13 @@ const HomePage = () => {
                               onToggleSave={toggleSave}
                               isSavePending={isPlaceSavePending(place.id)}
                               hideTopRatedBadge={showSimilarSuggestions}
-                              onClick={(id) => navigate(`/venue/${id}`)}
+                              onClick={(id) =>
+                                window.open(
+                                  `/venue/${id}`,
+                                  "_blank",
+                                  "noopener,noreferrer",
+                                )
+                              }
                             />
                           </motion.div>
                         ))}
