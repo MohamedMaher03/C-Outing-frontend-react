@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { InlineLoading } from "@/components/ui/LoadingSpinner";
 import { Label } from "@/components/ui/label";
 import { FormError } from "@/components/ui/form-error";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FormField } from "./form/FormField";
 import { useNavigate } from "react-router-dom";
 import { AuthShell, AuthSurface } from "./layout/AuthShell";
 import { AuthStatusBanner } from "./ui/AuthStatusBanner";
 
 import { loginSchema } from "@/features/auth/validation/login.schema";
-import type { LoginFormData } from "@/features/auth/validation/login.schema";
+import type {
+  LoginFormData,
+  LoginFormInput,
+} from "@/features/auth/validation/login.schema";
 import { PasswordInput } from "./form/PasswordInput";
 import { useLogin } from "@/features/auth/hooks/useLogin";
 import { LOGIN_FORM_FIELDS } from "@/features/auth/mocks";
@@ -38,8 +42,11 @@ const LoginForm = () => {
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<LoginFormData>({
+  } = useForm<LoginFormInput, unknown, LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      staySignedIn: false,
+    },
   });
 
   const typedEmail = useWatch({ control, name: "email" }) ?? "";
@@ -185,6 +192,33 @@ const LoginForm = () => {
               disabled={isLoading}
             />
             <FormError message={errors.password?.message} />
+          </div>
+
+          <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
+            <Controller
+              control={control}
+              name="staySignedIn"
+              render={({ field }) => (
+                <Checkbox
+                  id="staySignedIn"
+                  checked={field.value ?? false}
+                  onCheckedChange={(checked) =>
+                    field.onChange(checked === true)
+                  }
+                  disabled={isLoading}
+                  className="shrink-0"
+                />
+              )}
+            />
+
+            <div className="space-y-1">
+              <Label
+                htmlFor="staySignedIn"
+                className="cursor-pointer font-medium leading-none text-foreground"
+              >
+                {t("auth.keepSignedIn")}
+              </Label>
+            </div>
           </div>
 
           <Button

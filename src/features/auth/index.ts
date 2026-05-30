@@ -37,7 +37,7 @@ export { AuthError, normalizeAuthError } from "./errors";
 export type { AuthErrorCode } from "./errors";
 
 export { loginSchema } from "./validation/login.schema";
-export type { LoginFormData } from "./validation/login.schema";
+export type { LoginFormData, LoginFormInput } from "./validation/login.schema";
 export { signUpSchema } from "./validation/signUp.schema";
 export type { SignUpFormData } from "./validation/signUp.schema";
 export { verifyEmailSchema } from "./validation/verifyEmail.schema";

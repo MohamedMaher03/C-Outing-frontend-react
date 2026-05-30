@@ -14,6 +14,8 @@ export const loginSchema = z.object({
       AUTH_PASSWORD_RULES.MAX_LENGTH,
       `Password must be less than ${AUTH_PASSWORD_RULES.MAX_LENGTH} characters`,
     ),
+  staySignedIn: z.boolean().default(false),
 });
 
+export type LoginFormInput = z.input<typeof loginSchema>;
 export type LoginFormData = z.infer<typeof loginSchema>;

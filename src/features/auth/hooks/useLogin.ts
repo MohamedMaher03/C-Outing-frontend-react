@@ -37,7 +37,7 @@ export const useLogin = (): UseLoginReturn => {
     setError(null);
 
     try {
-      await login(data.email, data.password);
+      await login(data.email, data.password, data.staySignedIn);
       return true;
     } catch (err) {
       setError(getAuthErrorMessage(err));

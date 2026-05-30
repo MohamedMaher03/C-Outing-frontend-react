@@ -7,6 +7,7 @@ import type { User } from "@/types";
 export interface LoginRequest {
   email: string;
   password: string;
+  staySignedIn: boolean;
 }
 
 export interface RegisterRequest {

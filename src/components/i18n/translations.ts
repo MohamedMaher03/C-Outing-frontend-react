@@ -94,6 +94,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.discoverCairo": "Discover the best places Cairo has to offer",
     "auth.forgotPassword": "Forgot password?",
     "auth.signIn": "Sign in",
+    "auth.keepSignedIn": "Keep me signed in",
     "auth.signingIn": "Signing in...",
     "auth.login.verifyGuide.title": "Finish verifying your account",
     "auth.login.verifyGuide.subtitle":
@@ -1857,6 +1858,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "auth.discoverCairo": "اكتشف أفضل الأماكن التي تقدمها القاهرة",
     "auth.forgotPassword": "نسيت كلمة المرور؟",
     "auth.signIn": "تسجيل الدخول",
+    "auth.keepSignedIn": "أبقِني مسجّلًا للدخول",
     "auth.signingIn": "جارٍ تسجيل الدخول...",
     "auth.login.verifyGuide.title": "أكمل تأكيد حسابك",
     "auth.login.verifyGuide.subtitle":

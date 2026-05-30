@@ -8,7 +8,11 @@ export interface AuthContextType {
   pendingVerificationEmail: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (
+    email: string,
+    password: string,
+    staySignedIn?: boolean,
+  ) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   verifyEmail: (email: string, otp: string) => Promise<void>;
   resendVerificationOtp: (email: string) => Promise<void>;

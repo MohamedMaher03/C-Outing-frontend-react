@@ -26,34 +26,58 @@ const authDataSource = selectDataSource(
 const canUseStorage = (): boolean =>
   typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 
-const getStorageItem = (key: string): string | null => {
+const getStorageItem = (storage: Storage, key: string): string | null => {
   if (!canUseStorage()) return null;
 
   try {
-    return window.localStorage.getItem(key);
+    return storage.getItem(key);
   } catch {
     return null;
   }
 };
 
-const setStorageItem = (key: string, value: string): boolean => {
+const setStorageItem = (
+  storage: Storage,
+  key: string,
+  value: string,
+): boolean => {
   if (!canUseStorage()) return false;
 
   try {
-    window.localStorage.setItem(key, value);
+    storage.setItem(key, value);
     return true;
   } catch {
     return false;
   }
 };
 
-const removeStorageItem = (key: string): void => {
+const removeStorageItem = (storage: Storage, key: string): void => {
   if (!canUseStorage()) return;
 
   try {
-    window.localStorage.removeItem(key);
+    storage.removeItem(key);
   } catch {
     return;
+  }
+};
+
+const getLocalStorage = (): Storage | null => {
+  if (!canUseStorage()) return null;
+
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+};
+
+const getSessionStorage = (): Storage | null => {
+  if (!canUseStorage()) return null;
+
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
   }
 };
 
@@ -65,7 +89,13 @@ const isRegisterTimeoutError = (error: AuthError): boolean =>
   REGISTER_TIMEOUT_MESSAGE_PATTERN.test(error.message);
 
 const readPendingVerificationEmail = (): string | null => {
-  const raw = getStorageItem(AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL);
+  const storage = getLocalStorage();
+  if (!storage) return null;
+
+  const raw = getStorageItem(
+    storage,
+    AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL,
+  );
   if (!raw) return null;
 
   const email = normalizeEmail(raw);
@@ -79,11 +109,21 @@ const persistPendingVerificationEmail = (email: string): void => {
     return;
   }
 
-  setStorageItem(AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL, normalized);
+  const storage = getLocalStorage();
+  if (!storage) return;
+
+  setStorageItem(
+    storage,
+    AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL,
+    normalized,
+  );
 };
 
 const clearPendingVerificationEmailStorage = (): void => {
-  removeStorageItem(AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL);
+  const storage = getLocalStorage();
+  if (!storage) return;
+
+  removeStorageItem(storage, AUTH_STORAGE_KEYS.PENDING_VERIFICATION_EMAIL);
 };
 
 const isUserRole = (value: unknown): value is User["role"] =>
@@ -105,29 +145,81 @@ const isStoredUser = (value: unknown): value is User => {
   );
 };
 
-const persistSession = (token: string, user: User): void => {
-  const tokenStored = setStorageItem(AUTH_STORAGE_KEYS.TOKEN, token);
+const clearStorageSession = (storage: Storage | null): void => {
+  if (!storage) return;
+
+  removeStorageItem(storage, AUTH_STORAGE_KEYS.TOKEN);
+  removeStorageItem(storage, AUTH_STORAGE_KEYS.USER);
+};
+
+const persistSession = (
+  token: string,
+  user: User,
+  staySignedIn: boolean,
+): void => {
+  const primaryStorage = staySignedIn ? getLocalStorage() : getSessionStorage();
+  const secondaryStorage = staySignedIn
+    ? getSessionStorage()
+    : getLocalStorage();
+
+  if (!primaryStorage) {
+    clearSession();
+    return;
+  }
+
+  const tokenStored = setStorageItem(
+    primaryStorage,
+    AUTH_STORAGE_KEYS.TOKEN,
+    token,
+  );
   const userStored = setStorageItem(
+    primaryStorage,
     AUTH_STORAGE_KEYS.USER,
     JSON.stringify(user),
   );
 
   if (!tokenStored || !userStored) {
-    removeStorageItem(AUTH_STORAGE_KEYS.TOKEN);
-    removeStorageItem(AUTH_STORAGE_KEYS.USER);
+    clearSession();
+    return;
+  }
+
+  clearStorageSession(secondaryStorage);
+};
+
+const readSessionFromStorage = (
+  storage: Storage | null,
+): { token: string; user: User } | null => {
+  if (!storage) return null;
+
+  const token = getStorageItem(storage, AUTH_STORAGE_KEYS.TOKEN);
+  const raw = getStorageItem(storage, AUTH_STORAGE_KEYS.USER);
+
+  if (!token || !raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!isStoredUser(parsed)) {
+      clearStorageSession(storage);
+      return null;
+    }
+
+    return { token, user: parsed };
+  } catch {
+    clearStorageSession(storage);
+    return null;
   }
 };
 
 const clearSession = (): void => {
-  removeStorageItem(AUTH_STORAGE_KEYS.TOKEN);
-  removeStorageItem(AUTH_STORAGE_KEYS.USER);
+  clearStorageSession(getLocalStorage());
+  clearStorageSession(getSessionStorage());
 };
 
 export const authService = {
   async login(payload: LoginRequest): Promise<AuthApiResponse> {
     const raw = await authDataSource.login(payload);
     const user: User = buildUserFromAuthToken(raw);
-    persistSession(raw.token, user);
+    persistSession(raw.token, user, payload.staySignedIn);
     clearPendingVerificationEmailStorage();
     return { token: raw.token, user };
   },
@@ -163,7 +255,7 @@ export const authService = {
   async verifyEmail(payload: VerifyEmailRequest): Promise<AuthApiResponse> {
     const raw = await authDataSource.verifyEmail(payload);
     const user: User = buildUserFromAuthToken(raw);
-    persistSession(raw.token, user);
+    persistSession(raw.token, user, true);
     clearPendingVerificationEmailStorage();
     return { token: raw.token, user };
   },
@@ -198,27 +290,17 @@ export const authService = {
   },
 
   restoreSession(): { token: string; user: User } | null {
-    const token = getStorageItem(AUTH_STORAGE_KEYS.TOKEN);
-    const raw = getStorageItem(AUTH_STORAGE_KEYS.USER);
-
-    if (!token || !raw) return null;
-
-    try {
-      const parsed = JSON.parse(raw) as unknown;
-      if (!isStoredUser(parsed)) {
-        clearSession();
-        return null;
-      }
-
-      return { token, user: parsed };
-    } catch {
-      clearSession();
-      return null;
-    }
+    return (
+      readSessionFromStorage(getLocalStorage()) ??
+      readSessionFromStorage(getSessionStorage())
+    );
   },
 
   updateStoredUser(user: User): void {
-    setStorageItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+    const storage = getLocalStorage();
+    if (!storage) return;
+
+    setStorageItem(storage, AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
   },
 
   async forgotPassword(payload: ForgotPasswordRequest): Promise<void> {

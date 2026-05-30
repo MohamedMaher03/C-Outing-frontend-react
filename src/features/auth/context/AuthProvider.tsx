@@ -36,8 +36,16 @@ export function AuthProvider({
   }, []);
 
   const login = useCallback(
-    async (email: string, password: string): Promise<void> => {
-      const response = await authService.login({ email, password });
+    async (
+      email: string,
+      password: string,
+      staySignedIn = false,
+    ): Promise<void> => {
+      const response = await authService.login({
+        email,
+        password,
+        staySignedIn,
+      });
       setToken(response.token);
       setUser(response.user);
       setPendingVerificationEmailState(null);

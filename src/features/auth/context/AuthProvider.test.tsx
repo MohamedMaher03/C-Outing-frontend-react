@@ -87,12 +87,13 @@ describe("AuthProvider", () => {
     });
 
     await act(async () => {
-      await result.current.login("demo@example.com", "Pass1234");
+      await result.current.login("demo@example.com", "Pass1234", false);
     });
 
     expect(mockedAuthService.login).toHaveBeenCalledWith({
       email: "demo@example.com",
       password: "Pass1234",
+      staySignedIn: false,
     });
     expect(result.current.token).toBe("token-login");
     expect(result.current.user).toEqual(userFixture);
