@@ -46,7 +46,7 @@ import { PRICE_LEVEL_META } from "@/features/place-detail/utils/priceLevel";
 import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defaultImages";
 import { formatCountLabel } from "@/features/place-detail/utils/formatters";
 import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleton";
-import { ReviewsPagination } from "@/features/place-detail/components/Reviewspagination";
+import { ReviewsPagination } from "@/features/place-detail/components/ReviewsPagination";
 import { OpenHoursCard } from "@/features/place-detail/components/OpenHoursCard";
 import "@/features/place-detail/placeDetailTypography.css";
 import { useAuth } from "@/features/auth";
