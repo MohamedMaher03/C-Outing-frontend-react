@@ -432,7 +432,6 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "onboarding.district.el-masara": "El Masara",
     "onboarding.district.el-tebbin": "El Tebbin",
     "onboarding.district.boulaq-al-dakrour": "Boulaq Al Dakrour",
-    // removed redundant: "onboarding.district.al-giza"
     "onboarding.district.al-khankah": "Al Khankah",
     "onboarding.district.khusus": "Khusus",
 

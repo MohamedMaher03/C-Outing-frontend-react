@@ -27,7 +27,6 @@ interface UseHomeSearchReturn {
   hasPreviousPage: boolean;
   hasNextPage: boolean;
   setPageIndex: (pageIndex: number) => void;
-  setPageSize: (pageSize: number) => void;
   retryFetch: () => void;
 }
 
@@ -67,7 +66,7 @@ export const useHomeSearch = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
@@ -169,7 +168,6 @@ export const useHomeSearch = ({
     hasPreviousPage,
     hasNextPage,
     setPageIndex,
-    setPageSize,
     retryFetch,
   };
 };

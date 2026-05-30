@@ -20,7 +20,7 @@ import {
 } from "@/features/interactions";
 import { getErrorMessage } from "@/utils/apiError";
 import { useUserLocation } from "@/features/home/hooks/useUserLocation";
-import { calculateDistanceKm } from "@/features/home/utils/distance";
+import { filterHomePlacesByQuickFilters } from "../utils/filters";
 
 interface UseHomeReturn {
   search: string;
@@ -481,41 +481,11 @@ export const useHome = (): UseHomeReturn => {
         );
       }
 
-      if (selectedFilters.includes("open-now")) {
-        result = result.filter((p) => p.isOpen === true);
-      }
-      if (selectedFilters.includes("saved")) {
-        result = result.filter((p) => p.isSaved === true);
-      }
-      if (selectedFilters.includes("has-wifi")) {
-        result = result.filter((p) => p.hasWifi === true);
-      }
-      if (selectedFilters.includes("near-me")) {
-        if (userLocation.status === "granted" && userLocation.coordinates) {
-          const { latitude, longitude } = userLocation.coordinates;
-          const getPlaceDistance = (place: HomePlace) => {
-            if (
-              !Number.isFinite(place.latitude) ||
-              !Number.isFinite(place.longitude)
-            ) {
-              return Number.POSITIVE_INFINITY;
-            }
-
-            return calculateDistanceKm(
-              latitude,
-              longitude,
-              place.latitude,
-              place.longitude,
-            );
-          };
-
-          result = result.sort((a, b) => {
-            const distA = getPlaceDistance(a);
-            const distB = getPlaceDistance(b);
-            return distA - distB;
-          });
-        }
-      }
+      result = filterHomePlacesByQuickFilters(
+        result,
+        selectedFilters,
+        userLocation,
+      );
 
       return result;
     },

@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { useI18n } from "@/components/i18n";
+import { FILTER_OPTIONS, type FilterType } from "@/features/home";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
 import { useHomeSearch } from "@/features/home/hooks/useHomeSearch";
@@ -14,8 +15,13 @@ import { POPULAR_DISTRICTS, CATEGORIES } from "@/mocks/mockData";
 import { VENUE_PRICE_RANGE_OPTIONS } from "@/features/home/mocks";
 import { PRICE_LEVEL_VALUES } from "@/utils/priceLevels";
 import { getTranslatedText } from "@/utils/helpers";
+import {
+  HOME_QUICK_FILTER_QUERY_KEY,
+  filterHomePlacesByQuickFilters,
+  parseHomeQuickFilters,
+} from "../utils/filters";
 
-const PAGE_SIZE_OPTIONS = [12, 24, 36];
+const QUICK_FILTER_QUERY_KEY = HOME_QUICK_FILTER_QUERY_KEY;
 
 const HomeSearchPage = () => {
   const { t, formatNumber } = useI18n();
@@ -28,6 +34,7 @@ const HomeSearchPage = () => {
   const categoryParam = searchParams.get("category") ?? "";
   const priceRangeParam = searchParams.get("priceRange") ?? "";
   const minRatingParam = searchParams.get("minRating") ?? "";
+  const filtersParam = searchParams.get(QUICK_FILTER_QUERY_KEY) ?? "";
   const normalizedSearch = useMemo(
     () => normalizeSearchTerm(searchParam),
     [searchParam],
@@ -38,6 +45,34 @@ const HomeSearchPage = () => {
   const [categoryInput, setCategoryInput] = useState(categoryParam);
   const [priceRangeInput, setPriceRangeInput] = useState(priceRangeParam);
   const [minRatingInput, setMinRatingInput] = useState(minRatingParam);
+  const selectedFilters = useMemo(
+    () => parseHomeQuickFilters(filtersParam),
+    [filtersParam],
+  );
+
+  useEffect(() => {
+    setSearchInput(searchParam);
+  }, [searchParam]);
+
+  useEffect(() => {
+    setDistrictInput(districtParam);
+  }, [districtParam]);
+
+  useEffect(() => {
+    setTypeInput(typeParam);
+  }, [typeParam]);
+
+  useEffect(() => {
+    setCategoryInput(categoryParam);
+  }, [categoryParam]);
+
+  useEffect(() => {
+    setPriceRangeInput(priceRangeParam);
+  }, [priceRangeParam]);
+
+  useEffect(() => {
+    setMinRatingInput(minRatingParam);
+  }, [minRatingParam]);
 
   const districtOptions = useMemo(
     () =>
@@ -107,13 +142,10 @@ const HomeSearchPage = () => {
     isLoading,
     error,
     pageIndex,
-    pageSize,
-    totalCount,
     totalPages,
     hasPreviousPage,
     hasNextPage,
     setPageIndex,
-    setPageSize,
     retryFetch,
   } = useHomeSearch({
     searchTerm: searchParam,
@@ -129,6 +161,17 @@ const HomeSearchPage = () => {
     applyFilters();
   };
 
+  const handleQuickFilterToggle = (filter: FilterType) => {
+    const nextFilters =
+      filter === "all"
+        ? []
+        : selectedFilters.includes(filter)
+          ? selectedFilters.filter((item) => item !== filter)
+          : [...selectedFilters, filter];
+
+    applyFilters({ [QUICK_FILTER_QUERY_KEY]: nextFilters.join(",") });
+  };
+
   const applyFilters = (overrides?: Partial<Record<string, string>>) => {
     const nextQuery = (overrides?.q ?? searchInput).trim();
     const nextDistrict = (overrides?.district ?? districtInput).trim();
@@ -136,6 +179,9 @@ const HomeSearchPage = () => {
     const nextCategory = (overrides?.category ?? categoryInput).trim();
     const nextPriceRange = (overrides?.priceRange ?? priceRangeInput).trim();
     const nextMinRating = (overrides?.minRating ?? minRatingInput).trim();
+    const nextFilters = (
+      overrides?.[QUICK_FILTER_QUERY_KEY] ?? filtersParam
+    ).trim();
 
     const nextParams = new URLSearchParams();
     if (nextQuery) nextParams.set("q", nextQuery);
@@ -144,9 +190,21 @@ const HomeSearchPage = () => {
     if (nextCategory) nextParams.set("category", nextCategory);
     if (nextPriceRange) nextParams.set("priceRange", nextPriceRange);
     if (nextMinRating) nextParams.set("minRating", nextMinRating);
+    if (nextFilters) nextParams.set(QUICK_FILTER_QUERY_KEY, nextFilters);
 
+    setPageIndex(1);
     setSearchParams(nextParams);
   };
+
+  const filteredPlaces = useMemo(() => {
+    return filterHomePlacesByQuickFilters(
+      places,
+      selectedFilters,
+      userLocation,
+    );
+  }, [places, selectedFilters, userLocation]);
+
+  const activeFilterCount = selectedFilters.length;
 
   if (isLoading) {
     return (
@@ -175,7 +233,7 @@ const HomeSearchPage = () => {
               {t("home.search.backHome", undefined, "Back to home")}
             </button>
             <div className="flex items-center gap-2 text-foreground">
-              <Search className="h-5 w-5 text-secondary" />
+              <Search className="h-5 w-5 text-secondary dark:text-primary" />
               <h1 className="text-3xl font-black tracking-tight">
                 {t("home.search.title", undefined, "Search results")}
               </h1>
@@ -189,34 +247,6 @@ const HomeSearchPage = () => {
                     "Start typing to search for places in Cairo",
                   )}
             </p>
-          </div>
-
-          <div
-            className="flex items-center gap-2 rounded-2xl border border-border/60 bg-card p-1.5 shadow-sm"
-            role="group"
-            aria-label={t(
-              "home.search.countGroup",
-              undefined,
-              "Results per page",
-            )}
-          >
-            {PAGE_SIZE_OPTIONS.map((option) => (
-              <button
-                type="button"
-                key={option}
-                onClick={() => setPageSize(option)}
-                aria-pressed={pageSize === option}
-                className={`min-h-11 rounded-xl px-3 py-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
-                  pageSize === option
-                    ? "bg-foreground text-background"
-                    : "text-foreground hover:bg-muted"
-                }`}
-              >
-                {t("home.search.countOption", {
-                  count: formatNumber(option),
-                })}
-              </button>
-            ))}
           </div>
         </div>
 
@@ -243,6 +273,66 @@ const HomeSearchPage = () => {
             <Button type="submit" className="h-12 rounded-2xl px-5">
               {t("home.search.action", undefined, "Search")}
             </Button>
+          </div>
+
+          <div className="rounded-3xl border border-border/60 bg-card/90 p-4 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-foreground">
+                  {t(
+                    "home.search.quickFiltersTitle",
+                    undefined,
+                    "Quick filters",
+                  )}
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t(
+                    "home.search.quickFiltersSubtitle",
+                    undefined,
+                    "Use the same fast filters from the home page to narrow live, saved, or nearby places.",
+                  )}
+                </p>
+              </div>
+
+              {activeFilterCount > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => applyFilters({ filters: "" })}
+                  className="h-9 rounded-full px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  {t("home.search.clearFilters", undefined, "Clear filters")}
+                </Button>
+              )}
+            </div>
+
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible">
+              {FILTER_OPTIONS.map((filter) => {
+                const Icon = filter.icon;
+                const isActive =
+                  filter.id === "all"
+                    ? selectedFilters.length === 0
+                    : selectedFilters.includes(filter.id);
+
+                return (
+                  <button
+                    type="button"
+                    key={filter.id}
+                    onClick={() => handleQuickFilterToggle(filter.id)}
+                    aria-pressed={isActive}
+                    className={`inline-flex min-h-11 flex-shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
+                      isActive
+                        ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
+                        : "border-border/70 bg-background text-foreground hover:border-primary/60 hover:bg-primary/10"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {t(`home.filter.${filter.id}`, undefined, filter.label)}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -406,17 +496,29 @@ const HomeSearchPage = () => {
               )}
             </p>
           </div>
-        ) : places.length === 0 ? (
+        ) : filteredPlaces.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/70 bg-card/60 px-4 py-10 text-center">
             <p className="font-semibold text-foreground">
-              {t("home.search.emptyTitle", undefined, "No matches yet")}
+              {activeFilterCount > 0
+                ? t(
+                    "home.search.filteredEmptyTitle",
+                    undefined,
+                    "No places match these filters",
+                  )
+                : t("home.search.emptyTitle", undefined, "No matches yet")}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {t(
-                "home.search.emptyDescription",
-                undefined,
-                "Try a different keyword or remove filters",
-              )}
+              {activeFilterCount > 0
+                ? t(
+                    "home.search.filteredEmptyDescription",
+                    undefined,
+                    "Try clearing one or more filters, or refine your search term.",
+                  )
+                : t(
+                    "home.search.emptyDescription",
+                    undefined,
+                    "Try a different keyword or remove filters",
+                  )}
             </p>
           </div>
         ) : (
@@ -424,7 +526,7 @@ const HomeSearchPage = () => {
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
               <span>
                 {t("home.search.resultCount", {
-                  count: formatNumber(totalCount),
+                  count: formatNumber(filteredPlaces.length),
                 })}
               </span>
               <span>
@@ -436,7 +538,7 @@ const HomeSearchPage = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-              {places.map((place) => (
+              {filteredPlaces.map((place) => (
                 <PlaceCard
                   key={place.id}
                   place={place}
