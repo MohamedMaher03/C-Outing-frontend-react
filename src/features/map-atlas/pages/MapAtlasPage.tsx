@@ -195,10 +195,7 @@ export default function MapAtlasPage() {
     ((selectedSource === "curated" || selectedSource === "trending") &&
       isCuratedTrendingLoading);
 
-  const sourceError =
-    selectedSource === "discovery"
-      ? discoveryError
-      : null;
+  const sourceError = selectedSource === "discovery" ? discoveryError : null;
 
   const stats = useMemo(() => computeMapAtlasStats(mapPlaces), [mapPlaces]);
 
@@ -887,7 +884,8 @@ export default function MapAtlasPage() {
               </motion.div>
             )}
 
-            {(selectedSource === "curated" || selectedSource === "trending") && (
+            {(selectedSource === "curated" ||
+              selectedSource === "trending") && (
               <motion.div
                 key={`${selectedSource}-count-controls`}
                 initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
@@ -1098,7 +1096,8 @@ export default function MapAtlasPage() {
                       Math.cos((fromLat * Math.PI) / 180) *
                         Math.cos((toLat * Math.PI) / 180) *
                         Math.sin(deltaLng / 2) ** 2;
-                    const distanceKm = 6371 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+                    const distanceKm =
+                      6371 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 
                     if (!Number.isFinite(distanceKm) || distanceKm < 0) {
                       return null;

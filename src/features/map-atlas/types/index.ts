@@ -1,10 +1,6 @@
 import type { HomePlace } from "@/features/home/types";
 
-export type MapAtlasSource =
-  | "discovery"
-  | "curated"
-  | "trending"
-  | "mood";
+export type MapAtlasSource = "discovery" | "curated" | "trending" | "mood";
 
 export interface MapAtlasSourceOption {
   id: MapAtlasSource;
