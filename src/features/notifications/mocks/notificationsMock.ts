@@ -31,7 +31,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
       "Based on your vibe settings, you might love Ovio Rooftop in Zamalek. Check it out before it gets crowded!",
     isRead: false,
     createdAt: todayMinus(25),
-    actionUrl: "/venue/ovio-rooftop",
+    actionUrl: "/venues/ovio-rooftop",
   },
   {
     id: "n2",
@@ -40,7 +40,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
     message: "Your review on Sequoia Restaurant was liked by Ahmed Hassan.",
     isRead: false,
     createdAt: todayMinus(90),
-    actionUrl: "/venue/sequoia",
+    actionUrl: "/venues/sequoia",
   },
   {
     id: "n3",
@@ -50,7 +50,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
       'The owner of Cairo Jazz Club replied: "Thank you for your kind words! We look forward to seeing you again."',
     isRead: false,
     createdAt: todayMinus(180),
-    actionUrl: "/venue/cairo-jazz-club",
+    actionUrl: "/venues/cairo-jazz-club",
   },
   {
     id: "n4",
@@ -60,7 +60,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
       "A place you saved has changed its opening hours. Now open until 2:00 AM on weekends.",
     isRead: true,
     createdAt: yesterdayMinus(2),
-    actionUrl: "/venue/sequoia",
+    actionUrl: "/venues/sequoia",
   },
   {
     id: "n5",
@@ -70,7 +70,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
       "BABEL Rooftop & Lounge just opened nearby and matches your weekend vibe perfectly.",
     isRead: false,
     createdAt: yesterdayMinus(5),
-    actionUrl: "/venue/babel-rooftop",
+    actionUrl: "/venues/babel-rooftop",
   },
   {
     id: "n6",
@@ -80,7 +80,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
       "Your review on Kazoku Sushi received 3 new likes in the last 24 hours.",
     isRead: true,
     createdAt: yesterdayMinus(9),
-    actionUrl: "/venue/kazoku-sushi",
+    actionUrl: "/venues/kazoku-sushi",
   },
   {
     id: "n7",
@@ -110,7 +110,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
       "A saved place of yours has no available slots this weekend. Consider exploring similar spots.",
     isRead: true,
     createdAt: earlierMinus(6),
-    actionUrl: "/venue/kazoku-sushi",
+    actionUrl: "/venues/kazoku-sushi",
   },
 ];
 

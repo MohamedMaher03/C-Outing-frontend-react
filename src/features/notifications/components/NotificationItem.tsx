@@ -48,6 +48,11 @@ const NotificationItem = ({
   const { t } = useI18n();
   const navigate = useNavigate();
 
+  const destinationUrl = notification.actionUrl?.replace(
+    /^\/venue(\/|$)/,
+    "/venues$1",
+  );
+
   const handleClick = useCallback(() => {
     if (pending) return;
 
@@ -55,12 +60,12 @@ const NotificationItem = ({
       void onMarkRead(notification.id);
     }
 
-    if (notification.actionUrl?.startsWith("/")) {
-      navigate(notification.actionUrl);
+    if (destinationUrl?.startsWith("/")) {
+      navigate(destinationUrl);
     }
   }, [
+    destinationUrl,
     navigate,
-    notification.actionUrl,
     notification.id,
     notification.isRead,
     onMarkRead,

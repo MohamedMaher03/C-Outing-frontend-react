@@ -256,6 +256,7 @@ function App() {
             }
           >
             <Route path="/venue/:id" element={<PlaceDetailPage />} />
+            <Route path="/venues/:id" element={<PlaceDetailPage />} />
             <Route path="/users/:id" element={<PublicProfilePage />} />
             <Route path="/not-found" element={<NotFound />} />
           </Route>

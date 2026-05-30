@@ -28,7 +28,7 @@ const buildNotification = (
   message: "You have updates",
   isRead: false,
   createdAt: "2026-04-16T09:00:00.000Z",
-  actionUrl: "/places/123",
+  actionUrl: "/venue/123",
   ...overrides,
 });
 
@@ -52,7 +52,7 @@ describe("NotificationItem", () => {
     fireEvent.click(screen.getByRole("button", { name: "Welcome" }));
 
     expect(onMarkRead).toHaveBeenCalledWith("n-1");
-    expect(mockNavigate).toHaveBeenCalledWith("/places/123");
+    expect(mockNavigate).toHaveBeenCalledWith("/venues/123");
   });
 
   it("supports keyboard activation and delete action", () => {
