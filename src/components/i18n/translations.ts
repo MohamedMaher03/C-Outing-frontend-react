@@ -377,7 +377,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     // removed unused: "onboarding.district.mohandessin"
     "onboarding.district.dokki": "Dokki",
     "onboarding.district.nasr-city": "Nasr City",
-    
+
     "onboarding.district.6th-of-october": "6th of October",
     "onboarding.district.new-cairo": "New Cairo",
     "onboarding.district.sheikh-zayed": "Sheikh Zayed",
@@ -435,7 +435,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     // removed redundant: "onboarding.district.al-giza"
     "onboarding.district.al-khankah": "Al Khankah",
     "onboarding.district.khusus": "Khusus",
-    
+
     "onboarding.district.qalyub": "Qalyub",
     "onboarding.district.el-qanater": "El Qanater",
     "onboarding.district.15-may-city": "15 May City",
@@ -2137,7 +2137,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     // removed unused: "onboarding.district.mohandessin"
     "onboarding.district.dokki": "الدقي",
     "onboarding.district.nasr-city": "مدينة نصر",
-    
+
     "onboarding.district.6th-of-october": "6 أكتوبر",
     "onboarding.district.new-cairo": "القاهرة الجديدة",
     "onboarding.district.sheikh-zayed": "الشيخ زايد",
@@ -2194,7 +2194,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "onboarding.district.boulaq-al-dakrour": "بولاق الدكرور",
     "onboarding.district.al-khankah": "الخانكة",
     "onboarding.district.khusus": "الخصوص",
-    
+
     "onboarding.district.qalyub": "قليوب",
     "onboarding.district.el-qanater": "القناطر",
     "onboarding.district.15-may-city": "15 مايو",
