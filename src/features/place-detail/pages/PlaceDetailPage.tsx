@@ -18,7 +18,6 @@ import {
   Globe,
   Flag,
   Phone,
-  Clock,
   Wifi,
   Toilet,
   ParkingSquare,
@@ -47,6 +46,7 @@ import { PRICE_LEVEL_META } from "@/features/place-detail/utils/priceLevel";
 import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defaultImages";
 import { formatCountLabel } from "@/features/place-detail/utils/formatters";
 import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleton";
+import { OpenHoursCard } from "@/features/place-detail/components/OpenHoursCard";
 import "@/features/place-detail/placeDetailTypography.css";
 import { useAuth } from "@/features/auth";
 
@@ -79,7 +79,7 @@ const MenuImageGalleryLazy = lazy(() =>
 );
 
 const PlaceDetailPage = () => {
-  const { t, formatNumber } = useI18n();
+  const { t, formatNumber, isArabic } = useI18n();
   const { id } = useParams();
 
   const {
@@ -554,44 +554,12 @@ const PlaceDetailPage = () => {
             )}
 
             {hasHoursData && (
-              <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5">
-                <h2 className="pd-type-kicker text-foreground inline-flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-accent" />
-                  {t("placeDetail.hours.title")}
-                </h2>
-
-                <div className="rounded-xl border border-border/70 bg-background/40 px-3 py-3 sm:px-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="min-w-0 space-y-1">
-                      <p className="pd-type-micro text-muted-foreground">
-                        {t("placeDetail.hours.today")}
-                      </p>
-                      <p
-                        className="pd-type-label text-foreground break-words"
-                        dir="auto"
-                      >
-                        {hoursText || t("placeDetail.hours.unavailable")}
-                      </p>
-                    </div>
-
-                    {place.isOpen !== undefined && (
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "font-semibold",
-                          place.isOpen
-                            ? "border-accent/40 bg-accent/10 text-accent"
-                            : "border-border text-muted-foreground",
-                        )}
-                      >
-                        {place.isOpen
-                          ? t("placeDetail.status.openNow")
-                          : t("home.place.closed")}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </Card>
+              <OpenHoursCard
+                hoursText={hoursText}
+                isOpen={place.isOpen}
+                isArabic={isArabic}
+                t={t}
+              />
             )}
 
             {(place.phone || place.website || place.bookingUrl) && (
