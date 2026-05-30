@@ -85,6 +85,11 @@ const SignUpForm = () => {
       label: t("auth.passwordRuleNumber"),
       satisfied: /\d/.test(passwordValue),
     },
+    {
+      id: "specialChar",
+      label: t("auth.passwordRuleSpecialChar"),
+      satisfied: /[^\w\s]/.test(passwordValue),
+    },
   ];
 
   useEffect(() => {
@@ -249,7 +254,7 @@ const SignUpForm = () => {
                 {t("auth.passwordRulesHint")}
               </span> */}
             </div>
-            <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
               {passwordRules.map((rule) => (
                 <li
                   key={rule.id}

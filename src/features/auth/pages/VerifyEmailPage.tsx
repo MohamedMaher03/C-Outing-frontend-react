@@ -382,7 +382,7 @@ export default function VerifyEmailPage() {
               type="button"
               onClick={handleResend}
               disabled={isResending}
-              className="inline-flex min-h-11 items-center gap-1.5 px-2 text-sm font-medium text-foreground/80 transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-11 items-center gap-1.5 px-2 text-sm font-medium text-secondary transition-colors hover:text-secondary/90 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary dark:hover:text-primary/90"
             >
               {isResending ? (
                 <>
@@ -397,7 +397,7 @@ export default function VerifyEmailPage() {
               )}
             </button>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm font-medium text-secondary dark:text-primary">
               {t("auth.verify.resendIn", {
                 seconds: formatNumber(countdown),
               })}

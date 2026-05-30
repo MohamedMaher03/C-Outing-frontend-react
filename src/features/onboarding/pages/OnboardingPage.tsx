@@ -743,102 +743,58 @@ const OnboardingPage = () => {
                           {t("onboarding.districts.legend")}
                         </legend>
                         <div className="space-y-3">
-                          <div className="space-y-2">
-                            <Input
-                              value={districtSearch}
-                              onChange={(event) => {
-                                setDistrictSearch(event.target.value);
-                                setDistrictPage(1);
-                              }}
-                              placeholder={t(
-                                "onboarding.districts.searchPlaceholder",
-                              )}
-                              className="h-11 rounded-xl border-border/60 bg-background/70"
-                              aria-label={t("onboarding.districts.searchLabel")}
-                            />
-                            <div className="flex flex-wrap items-center justify-between gap-2 text-role-caption text-foreground/60">
-                              <span>
-                                {t("onboarding.districts.resultsSummary", {
-                                  shown: formatNumber(
-                                    displayedDistricts.length,
-                                  ),
-                                  total: formatNumber(filteredDistricts.length),
-                                })}
-                              </span>
-                              {districtTotalPages > 1 ? (
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    disabled={safeDistrictPage <= 1}
-                                    onClick={() =>
-                                      setDistrictPage(
-                                        Math.max(1, safeDistrictPage - 1),
-                                      )
-                                    }
-                                    className="h-8 rounded-full border-border/60 bg-background/60 px-3 text-[11px] font-semibold"
-                                  >
-                                    {t("onboarding.districts.paginationPrev")}
-                                  </Button>
-                                  <span className="text-[11px] font-semibold text-foreground/70">
-                                    {t("onboarding.districts.pageLabel", {
-                                      current: formatNumber(safeDistrictPage),
-                                      total: formatNumber(districtTotalPages),
-                                    })}
-                                  </span>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    disabled={
-                                      safeDistrictPage >= districtTotalPages
-                                    }
-                                    onClick={() =>
-                                      setDistrictPage(
-                                        Math.min(
-                                          districtTotalPages,
-                                          safeDistrictPage + 1,
-                                        ),
-                                      )
-                                    }
-                                    className="h-8 rounded-full border-border/60 bg-background/60 px-3 text-[11px] font-semibold"
-                                  >
-                                    {t("onboarding.districts.paginationNext")}
-                                  </Button>
-                                </div>
-                              ) : null}
-                            </div>
-                          </div>
+                          {/* Search input */}
+                          <Input
+                            value={districtSearch}
+                            onChange={(event) => {
+                              setDistrictSearch(event.target.value);
+                              setDistrictPage(1);
+                            }}
+                            placeholder={t(
+                              "onboarding.districts.searchPlaceholder",
+                            )}
+                            className="h-11 rounded-xl border-border/60 bg-background/70"
+                            aria-label={t("onboarding.districts.searchLabel")}
+                          />
 
+                          {/* Selected districts — dismissible chips */}
                           {selectedDistricts.length > 0 ? (
-                            <div className="rounded-xl border border-border/50 bg-card/60 p-3">
-                              <p className="text-role-caption uppercase tracking-wide text-foreground/60">
+                            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+                              <p className="mb-2 text-role-caption uppercase tracking-wide text-foreground/60">
                                 {t("onboarding.districts.selectedTitle")}
                               </p>
-                              <div className="mt-2 flex flex-wrap gap-2">
+                              <div className="flex flex-wrap gap-2">
                                 {selectedDistricts.map((districtName) => {
                                   const selectedDistrict =
                                     districtLookup.get(districtName) ??
                                     ({ name: districtName } as District);
                                   return (
-                                    <OnboardingOptionButton
+                                    <button
                                       key={`selected-${districtName}`}
-                                      selected
+                                      type="button"
                                       onClick={() =>
                                         toggleDistrict(districtName)
                                       }
-                                      shape="pill"
-                                      className="px-3 py-1.5"
+                                      aria-label={`${t("onboarding.districts.removeLabel", undefined, "Remove")} ${getDistrictLabel(selectedDistrict)}`}
+                                      className="group inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition-all hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                                     >
-                                      {getDistrictLabel(selectedDistrict)}
-                                    </OnboardingOptionButton>
+                                      <span>
+                                        {getDistrictLabel(selectedDistrict)}
+                                      </span>
+                                      <span
+                                        aria-hidden="true"
+                                        className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold leading-none transition-colors group-hover:bg-destructive/20"
+                                      >
+                                        ✕
+                                      </span>
+                                    </button>
                                   );
                                 })}
                               </div>
                             </div>
                           ) : null}
 
+                          {/* District grid */}
                           <div className="rounded-xl border border-border/45 p-2 sm:border-0 sm:p-0">
                             {displayedDistricts.length === 0 ? (
                               <div className="rounded-xl border border-dashed border-border/60 bg-muted/40 px-4 py-6 text-center">
@@ -870,6 +826,68 @@ const OnboardingPage = () => {
                               </div>
                             )}
                           </div>
+
+                          {/* Pagination — below the grid */}
+                          {districtTotalPages > 1 ? (
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-role-caption text-foreground/60">
+                              <span>
+                                {t("onboarding.districts.resultsSummary", {
+                                  shown: formatNumber(
+                                    displayedDistricts.length,
+                                  ),
+                                  total: formatNumber(filteredDistricts.length),
+                                })}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={safeDistrictPage <= 1}
+                                  onClick={() =>
+                                    setDistrictPage(
+                                      Math.max(1, safeDistrictPage - 1),
+                                    )
+                                  }
+                                  className="h-8 rounded-full border-border/60 bg-background/60 px-3 text-[11px] font-semibold"
+                                >
+                                  {t("onboarding.districts.paginationPrev")}
+                                </Button>
+                                <span className="text-[11px] font-semibold text-foreground/70">
+                                  {t("onboarding.districts.pageLabel", {
+                                    current: formatNumber(safeDistrictPage),
+                                    total: formatNumber(districtTotalPages),
+                                  })}
+                                </span>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={
+                                    safeDistrictPage >= districtTotalPages
+                                  }
+                                  onClick={() =>
+                                    setDistrictPage(
+                                      Math.min(
+                                        districtTotalPages,
+                                        safeDistrictPage + 1,
+                                      ),
+                                    )
+                                  }
+                                  className="h-8 rounded-full border-border/60 bg-background/60 px-3 text-[11px] font-semibold"
+                                >
+                                  {t("onboarding.districts.paginationNext")}
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-role-caption text-foreground/60">
+                              {t("onboarding.districts.resultsSummary", {
+                                shown: formatNumber(displayedDistricts.length),
+                                total: formatNumber(filteredDistricts.length),
+                              })}
+                            </div>
+                          )}
                         </div>
                         <p
                           className="mt-3 text-center text-role-caption text-foreground/70"

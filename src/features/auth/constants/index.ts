@@ -7,9 +7,9 @@ export const AUTH_STORAGE_KEYS = {
 export const AUTH_PASSWORD_RULES = {
   MIN_LENGTH: 8,
   MAX_LENGTH: 100,
-  COMPLEXITY_REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+  COMPLEXITY_REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])/,
   COMPLEXITY_MESSAGE:
-    "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+    "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
 } as const;
 
 export const AUTH_AVATAR_RULES = {
