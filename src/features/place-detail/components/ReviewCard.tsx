@@ -1,10 +1,11 @@
 import { memo } from "react";
-import { Star } from "lucide-react";
+import { CalendarDays, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Card } from "@/components/ui/card";
 import { useI18n } from "@/components/i18n";
+import { Card } from "@/components/ui/card";
 import type { ReportPayload, Review } from "../types";
 import { getDefaultAvatarDataUrl } from "../utils/defaultImages";
+import { formatShortDate } from "../utils/formatters";
 import { ReportReviewDialog } from "./ReportReviewDialog";
 
 interface ReviewCardProps {
@@ -22,11 +23,15 @@ const ReviewCardComponent = ({
   const avatarSrc =
     review.userAvatar ?? getDefaultAvatarDataUrl(review.userName);
 
-  const formattedDate = new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(review.createdAt));
+  const formattedDate = formatShortDate(
+    review.createdAt,
+    {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    },
+    locale,
+  );
 
   return (
     <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm">
@@ -59,9 +64,10 @@ const ReviewCardComponent = ({
             >
               {review.userName}
             </Link>
-            <p className="pd-type-micro pd-type-number text-muted-foreground/85">
-              {formattedDate}
-            </p>
+            <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/25 px-2.5 py-1 pd-type-micro pd-type-number text-muted-foreground/90">
+              <CalendarDays className="h-3.5 w-3.5 text-accent" />
+              <span>{formattedDate}</span>
+            </span>
           </div>
         </div>
 

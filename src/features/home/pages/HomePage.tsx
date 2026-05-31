@@ -713,7 +713,8 @@ const HomePage = () => {
         >
           <motion.div className="mb-5 space-y-1.5" variants={heroItemVariants}>
             <p className="text-white/80 text-xs font-medium tracking-widest uppercase">
-              {t(greetingKey)}, {userName} ✦
+              {t(greetingKey)}, {userName}{" "}
+              <Sparkles className="inline-block h-4 w-4 text-cream" />
             </p>
             <h1 className="text-2xl font-semibold leading-tight sm:text-4xl lg:text-[3.2rem] lg:leading-[1.08]">
               <span className="text-cream">{t("home.hero.title")}</span>
@@ -1761,7 +1762,7 @@ const HomePage = () => {
               id="tour-mood"
             >
               <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                <span className="text-xl">✨</span>
+                <Sparkles className="h-5 w-5 text-secondary dark:text-primary" />
                 {t("home.sidebar.moodTitle")}
               </h2>
               <div className="grid grid-cols-2 gap-2">

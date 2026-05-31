@@ -1,14 +1,10 @@
 export interface TourStep {
   id: string;
-  /** null = no spotlight (fullscreen modal step) */
   target: string | null;
   placement: "top" | "bottom" | "left" | "right" | "center";
-  emoji: string;
+  accentIcon: "sparkles" | "heart" | "star" | "map" | "compass" | "wand";
   title: { en: string; ar: string };
   body: { en: string; ar: string };
-  /** Optional icon name used for decoration */
-  accentIcon?: "sparkles" | "heart" | "star" | "map" | "compass" | "wand";
-  /** Interaction badges shown under body */
   badges?: { icon: string; label: { en: string; ar: string } }[];
 }
 
@@ -17,7 +13,6 @@ export const TOUR_STEPS: TourStep[] = [
     id: "tour-welcome",
     target: null,
     placement: "center",
-    emoji: "✨",
     accentIcon: "sparkles",
     title: {
       en: "Your Cairo. Your vibe. Discovered.",
@@ -33,7 +28,6 @@ export const TOUR_STEPS: TourStep[] = [
     id: "tour-interactions",
     target: null,
     placement: "center",
-    emoji: "🎯",
     accentIcon: "heart",
     title: {
       en: "The more you interact, the smarter it gets.",
@@ -45,15 +39,15 @@ export const TOUR_STEPS: TourStep[] = [
     },
     badges: [
       {
-        icon: "❤️",
+        icon: "heart",
         label: { en: "Like a place", ar: "أعجب بمكان" },
       },
       {
-        icon: "🔖",
+        icon: "bookmark",
         label: { en: "Save for later", ar: "احفظه لبعدين" },
       },
       {
-        icon: "⭐",
+        icon: "star",
         label: { en: "Leave a review", ar: "اكتب رأيك" },
       },
     ],
@@ -63,7 +57,6 @@ export const TOUR_STEPS: TourStep[] = [
     id: "tour-curated",
     target: "tour-curated",
     placement: "top",
-    emoji: "🌟",
     accentIcon: "star",
     title: {
       en: "Curated for You — places that truly get you.",
@@ -79,7 +72,6 @@ export const TOUR_STEPS: TourStep[] = [
     id: "tour-discovery",
     target: "tour-discovery",
     placement: "top",
-    emoji: "🧭",
     accentIcon: "compass",
     title: {
       en: "Explore Cairo on your own terms.",
@@ -95,7 +87,6 @@ export const TOUR_STEPS: TourStep[] = [
     id: "tour-mood",
     target: "tour-mood",
     placement: "top",
-    emoji: "🎭",
     accentIcon: "wand",
     title: {
       en: "Pick a mood — we'll handle the rest.",
@@ -111,7 +102,6 @@ export const TOUR_STEPS: TourStep[] = [
     id: "tour-map-nav",
     target: "tour-map-nav",
     placement: "bottom",
-    emoji: "🗺️",
     accentIcon: "map",
     title: {
       en: "See Cairo come alive on the map.",

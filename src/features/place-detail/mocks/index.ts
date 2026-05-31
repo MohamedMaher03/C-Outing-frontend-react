@@ -97,7 +97,7 @@ export const MOCK_SOCIAL_REVIEWS: Record<string, SocialMediaReview[]> = {
       platform: "instagram",
       author: "@cairo_adventures",
       content:
-        "The Nile felucca ride is a MUST when visiting Cairo! The views are unreal 🌅✨ #CairoLife #NileViews",
+        "The Nile felucca ride is a MUST when visiting Cairo! The views are unreal #CairoLife #NileViews",
       sentiment: "positive",
       date: new Date("2026-02-10"),
       likes: 234,
@@ -250,7 +250,7 @@ export const DEFAULT_SOCIAL_REVIEWS: SocialMediaReview[] = [
     id: "dsr1",
     platform: "instagram",
     author: "@cairo_guide",
-    content: "Another great spot to add to your Cairo list! 📍✨",
+    content: "Another great spot to add to your Cairo list!",
     sentiment: "positive",
     date: new Date("2026-01-12"),
     likes: 78,

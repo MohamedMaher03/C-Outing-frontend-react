@@ -499,6 +499,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.search.loadingSubtitle": "Gathering the best matches for you",
     "home.search.backHome": "Back to home",
     "home.search.title": "Search results",
+    "home.search.quickFiltersTitle": "Quick filters",
+    "home.search.quickFiltersSubtitle":
+      "Use the same fast filters from the home page to narrow live, saved, or nearby places.",
     "home.search.subtitle": 'Results for "{query}"',
     "home.search.subtitleEmpty": "Start typing to search for places in Cairo",
     "home.search.countGroup": "Results per page",
@@ -2260,6 +2263,9 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.search.loadingSubtitle": "نجمع أفضل النتائج لك",
     "home.search.backHome": "العودة للرئيسية",
     "home.search.title": "نتائج البحث",
+    "home.search.quickFiltersTitle": "المرشحات السريعة",
+    "home.search.quickFiltersSubtitle":
+      "استخدم نفس المرشحات السريعة من الصفحة الرئيسية لتضييق النتائج إلى الأماكن المتاحة الآن أو المحفوظة أو القريبة.",
     "home.search.subtitle": 'نتائج البحث عن "{query}"',
     "home.search.subtitleEmpty": "ابدأ الكتابة للبحث عن أماكن في القاهرة",
     "home.search.countGroup": "عدد النتائج في الصفحة",

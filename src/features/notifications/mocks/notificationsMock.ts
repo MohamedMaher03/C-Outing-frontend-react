@@ -26,7 +26,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "n1",
     type: "recommendation",
-    title: "New place just for you 🌟",
+    title: "New place just for you",
     message:
       "Based on your vibe settings, you might love Ovio Rooftop in Zamalek. Check it out before it gets crowded!",
     isRead: false,
@@ -65,7 +65,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "n5",
     type: "new_place",
-    title: "New spot in Zamalek! 🗺️",
+    title: "New spot in Zamalek!",
     message:
       "BABEL Rooftop & Lounge just opened nearby and matches your weekend vibe perfectly.",
     isRead: false,
@@ -85,7 +85,7 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "n7",
     type: "system",
-    title: "Welcome to C-Outing 2.0! 🎉",
+    title: "Welcome to C-Outing 2.0!",
     message:
       "We've launched AI-powered recommendations, a refreshed design, and smarter search. Explore what's new!",
     isRead: true,

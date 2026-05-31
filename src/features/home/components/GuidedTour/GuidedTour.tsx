@@ -17,6 +17,7 @@ import {
   Map,
   Compass,
   Wand2,
+  Bookmark,
 } from "lucide-react";
 import { TOUR_STEPS, type TourStep } from "./tourSteps";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,12 @@ const ACCENT_ICON_MAP = {
   map: Map,
   compass: Compass,
   wand: Wand2,
+} as const;
+
+const BADGE_ICON_MAP = {
+  heart: Heart,
+  bookmark: Bookmark,
+  star: Star,
 } as const;
 
 function findTourTarget(stepId: string): HTMLElement | null {
@@ -232,7 +239,7 @@ const TourCard = ({
             repeatDelay: 4,
           }}
         >
-          {step?.emoji}
+          <AccentIcon className="h-6 w-6" />
         </motion.span>
       </div>
 
@@ -269,7 +276,10 @@ const TourCard = ({
               }}
             >
               <span className="text-base leading-none" aria-hidden="true">
-                {badge.icon}
+                {(() => {
+                  const Icon = (BADGE_ICON_MAP as any)[badge.icon];
+                  return Icon ? <Icon className="h-4 w-4" /> : badge.icon;
+                })()}
               </span>
               {getLocalizedLabel(badge.label)}
             </motion.div>

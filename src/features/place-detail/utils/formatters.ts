@@ -60,9 +60,14 @@ export const formatShortDate = (
     month: "short",
     day: "numeric",
   },
+  locale?: string,
 ): string => {
   const date = toValidDate(input);
   if (!date) return "-";
+
+  if (locale) {
+    return new Intl.DateTimeFormat(locale, options).format(date);
+  }
 
   return getDateFormatter(options).format(date);
 };

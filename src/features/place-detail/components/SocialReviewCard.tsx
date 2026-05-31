@@ -1,8 +1,16 @@
 import { memo } from "react";
-import { ThumbsUp, Globe, Instagram, Twitter, Facebook } from "lucide-react";
+import {
+  CalendarDays,
+  ThumbsUp,
+  Globe,
+  Instagram,
+  Twitter,
+  Facebook,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useI18n } from "@/components/i18n";
 import type { SocialMediaReview } from "../types";
+import { formatShortDate } from "../utils/formatters";
 
 const PlatformIcon = ({ platform }: { platform: string }) => {
   const iconClass = "h-4 w-4 text-accent";
@@ -31,12 +39,17 @@ const SocialReviewCardComponent = ({
 }: {
   review: SocialMediaReview;
 }) => {
-  const { t, locale, formatNumber, isArabic } = useI18n();
+  const { t, formatNumber, isArabic, locale } = useI18n();
 
-  const formattedDate = new Intl.DateTimeFormat(locale, {
-    month: "short",
-    day: "numeric",
-  }).format(new Date(review.date));
+  const formattedDate = formatShortDate(
+    review.date,
+    {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    },
+    locale,
+  );
 
   const formattedRating =
     typeof review.rating === "number" && review.rating > 0
@@ -62,10 +75,11 @@ const SocialReviewCardComponent = ({
           </span>
         </div>
         <span
-          className="pd-type-micro pd-type-number text-muted-foreground/85 shrink-0"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/25 px-2.5 py-1 pd-type-micro pd-type-number text-muted-foreground/90 shrink-0"
           dir={isArabic ? "rtl" : "ltr"}
         >
-          {formattedDate}
+          <CalendarDays className="h-3.5 w-3.5 text-accent" />
+          <span>{formattedDate}</span>
         </span>
       </div>
 
@@ -78,15 +92,15 @@ const SocialReviewCardComponent = ({
             source: t("placeDetail.reviews.source.googleMaps"),
           })}
         </span>
-          {formattedRating && (
-            <span
-              className="inline-flex items-center gap-1 pd-type-number text-foreground/85"
-              dir={isArabic ? "rtl" : "ltr"}
-            >
-              <span className="text-accent">★</span>
-              {formattedRating}
-            </span>
-          )}
+        {formattedRating && (
+          <span
+            className="inline-flex items-center gap-1 pd-type-number text-foreground/85"
+            dir={isArabic ? "rtl" : "ltr"}
+          >
+            <span className="text-accent">★</span>
+            {formattedRating}
+          </span>
+        )}
       </div>
 
       <div className="mt-3 border-t border-border/60 pt-3">

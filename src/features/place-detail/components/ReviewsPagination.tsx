@@ -143,6 +143,7 @@ export const ReviewsPagination = ({
           "flex items-center gap-1",
           isArabic ? "flex-row-reverse" : "flex-row",
         )}
+        dir={isArabic ? "rtl" : "ltr"}
       >
         {/* Prev */}
         <Button
@@ -196,14 +197,17 @@ export const ReviewsPagination = ({
                         "hover:bg-accent/10 hover:text-accent hover:border-accent/30",
                 )}
               >
-                {page}
+                {formatNumber(page)}
               </Button>
             ),
           )}
         </div>
 
-        <span className="sm:hidden px-3 pd-type-micro pd-type-number text-foreground tabular-nums select-none">
-          {currentPage} / {totalPages}
+        <span
+          className="sm:hidden px-3 pd-type-micro pd-type-number text-foreground tabular-nums select-none"
+          dir={isArabic ? "rtl" : "ltr"}
+        >
+          {formatNumber(currentPage)} / {formatNumber(totalPages)}
         </span>
 
         <Button
