@@ -6,6 +6,10 @@ import {
   normalizeSearchTerm,
   normalizeTrimmed,
 } from "@/utils/textNormalization";
+import {
+  buildToggleSaveHandler,
+  patchSavedStateInCollection,
+} from "../utils/venueCollectionOps";
 
 interface UseHomeSearchOptions {
   searchTerm: string;
@@ -44,27 +48,19 @@ export const useHomeSearch = ({
   priceRange,
   minRating,
 }: UseHomeSearchOptions): UseHomeSearchReturn => {
-  const normalizedSearch = useMemo(
-    () => normalizeSearchTerm(searchTerm),
-    [searchTerm],
-  );
-  const normalizedDistrict = useMemo(
-    () => normalizeTrimmed(district),
-    [district],
-  );
+  const normalizedSearch = useMemo(() => normalizeSearchTerm(searchTerm), [searchTerm]);
+  const normalizedDistrict = useMemo(() => normalizeTrimmed(district), [district]);
   const normalizedType = useMemo(() => normalizeTrimmed(type), [type]);
-  const normalizedCategory = useMemo(
-    () => normalizeTrimmed(category),
-    [category],
-  );
+  const normalizedCategory = useMemo(() => normalizeTrimmed(category), [category]);
 
-  const hasFilters =
+  const hasActiveFilters =
     Boolean(normalizedDistrict) ||
     Boolean(normalizedType) ||
     Boolean(normalizedCategory) ||
     typeof priceRange === "number" ||
     typeof minRating === "number";
-  const hasSearchCriteria = Boolean(normalizedSearch) || hasFilters;
+
+  const hasSearchCriteria = Boolean(normalizedSearch) || hasActiveFilters;
 
   const [places, setPlaces] = useState<HomePlace[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -77,22 +73,12 @@ export const useHomeSearch = ({
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-  const [savePendingMap, setSavePendingMap] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [savePendingMap, setSavePendingMap] = useState<Record<string, boolean>>({});
   const saveInFlightIds = useRef(new Set<string>());
 
   useEffect(() => {
     setPageIndex(1);
-  }, [
-    normalizedSearch,
-    normalizedDistrict,
-    normalizedType,
-    normalizedCategory,
-    priceRange,
-    minRating,
-    pageSize,
-  ]);
+  }, [normalizedSearch, normalizedDistrict, normalizedType, normalizedCategory, priceRange, minRating, pageSize]);
 
   useEffect(() => {
     if (!hasSearchCriteria) {
@@ -107,7 +93,7 @@ export const useHomeSearch = ({
     }
 
     let cancelled = false;
-    const fetchPlaces = async () => {
+    const fetchMatchingVenues = async () => {
       setIsLoading(true);
       setError(null);
       try {
@@ -139,16 +125,12 @@ export const useHomeSearch = ({
           setHasNextPage(false);
         }
       } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        if (!cancelled) setIsLoading(false);
       }
     };
 
-    void fetchPlaces();
-    return () => {
-      cancelled = true;
-    };
+    void fetchMatchingVenues();
+    return () => { cancelled = true; };
   }, [
     normalizedSearch,
     normalizedDistrict,
@@ -162,54 +144,26 @@ export const useHomeSearch = ({
     hasSearchCriteria,
   ]);
 
-  const retryFetch = useCallback(() => {
-    setReloadKey((prev) => prev + 1);
-  }, []);
-
   const toggleSave = useCallback(
-    async (id: string) => {
-      if (saveInFlightIds.current.has(id)) {
-        return;
-      }
-
-      const place = places.find((item) => item.id === id);
-      if (!place) {
-        return;
-      }
-
-      const nextIsSaved = !place.isSaved;
-
-      try {
-        saveInFlightIds.current.add(id);
-        setSavePendingMap((prev) => ({ ...prev, [id]: true }));
-        setSaveError(null);
-        setPlaces((prev) =>
-          prev.map((item) =>
-            item.id === id ? { ...item, isSaved: nextIsSaved } : item,
-          ),
-        );
-
-        await homeService.togglePlaceSave(id, nextIsSaved);
-      } catch (toggleError) {
-        setPlaces((prev) =>
-          prev.map((item) =>
-            item.id === id ? { ...item, isSaved: !nextIsSaved } : item,
-          ),
-        );
-        setSaveError(
-          getErrorMessage(toggleError, "Could not update favorites."),
-        );
-      } finally {
-        saveInFlightIds.current.delete(id);
-        setSavePendingMap((prev) => {
-          const next = { ...prev };
-          delete next[id];
-          return next;
-        });
-      }
-    },
+    buildToggleSaveHandler({
+      placeCollections: [places],
+      saveInFlightIds,
+      setSaveError,
+      setSavePendingMap,
+      onOptimisticUpdate: (id, nextSaved) =>
+        setPlaces((prev) => patchSavedStateInCollection(prev, id, nextSaved)),
+      onRollback: (id, prevSaved) =>
+        setPlaces((prev) => patchSavedStateInCollection(prev, id, prevSaved)),
+    }),
     [places],
   );
+
+  const retryFetch = useCallback(() => setReloadKey((k) => k + 1), []);
+  const isSavePending = useCallback(
+    (id: string) => Boolean(savePendingMap[id]),
+    [savePendingMap],
+  );
+  const clearSaveError = useCallback(() => setSaveError(null), []);
 
   return {
     places,
@@ -225,7 +179,7 @@ export const useHomeSearch = ({
     setPageIndex,
     retryFetch,
     toggleSave,
-    isSavePending: (id: string) => Boolean(savePendingMap[id]),
-    clearSaveError: () => setSaveError(null),
+    isSavePending,
+    clearSaveError,
   };
 };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
   filterHomePlacesByQuickFilters,
   parseHomeQuickFilters,
 } from "../utils/filters";
+import { safeParsePositiveInt, buildVenueSearchParams } from "../utils/domainHelpers";
 
 const QUICK_FILTER_QUERY_KEY = HOME_QUICK_FILTER_QUERY_KEY;
 
@@ -28,6 +29,7 @@ const HomeSearchPage = () => {
   const navigate = useNavigate();
   const userLocation = useUserLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+
   const searchParam = searchParams.get("q") ?? "";
   const districtParam = searchParams.get("district") ?? "";
   const typeParam = searchParams.get("type") ?? "";
@@ -35,44 +37,16 @@ const HomeSearchPage = () => {
   const priceRangeParam = searchParams.get("priceRange") ?? "";
   const minRatingParam = searchParams.get("minRating") ?? "";
   const filtersParam = searchParams.get(QUICK_FILTER_QUERY_KEY) ?? "";
-  const normalizedSearch = useMemo(
-    () => normalizeSearchTerm(searchParam),
-    [searchParam],
-  );
+
+  const normalizedSearch = useMemo(() => normalizeSearchTerm(searchParam), [searchParam]);
+  const selectedFilters = useMemo(() => parseHomeQuickFilters(filtersParam), [filtersParam]);
+
   const [searchInput, setSearchInput] = useState(searchParam);
   const [districtInput, setDistrictInput] = useState(districtParam);
   const [typeInput, setTypeInput] = useState(typeParam);
   const [categoryInput, setCategoryInput] = useState(categoryParam);
   const [priceRangeInput, setPriceRangeInput] = useState(priceRangeParam);
   const [minRatingInput, setMinRatingInput] = useState(minRatingParam);
-  const selectedFilters = useMemo(
-    () => parseHomeQuickFilters(filtersParam),
-    [filtersParam],
-  );
-
-  useEffect(() => {
-    setSearchInput(searchParam);
-  }, [searchParam]);
-
-  useEffect(() => {
-    setDistrictInput(districtParam);
-  }, [districtParam]);
-
-  useEffect(() => {
-    setTypeInput(typeParam);
-  }, [typeParam]);
-
-  useEffect(() => {
-    setCategoryInput(categoryParam);
-  }, [categoryParam]);
-
-  useEffect(() => {
-    setPriceRangeInput(priceRangeParam);
-  }, [priceRangeParam]);
-
-  useEffect(() => {
-    setMinRatingInput(minRatingParam);
-  }, [minRatingParam]);
 
   const districtOptions = useMemo(
     () =>
@@ -92,14 +66,7 @@ const HomeSearchPage = () => {
     [t],
   );
 
-  const categoryOptions = useMemo(
-    () =>
-      CATEGORIES.map((category) => ({
-        value: category.id,
-        label: getTranslatedText(category.nameKey, category.label, t),
-      })),
-    [t],
-  );
+  const categoryOptions = typeOptions;
 
   const priceRangeOptions = useMemo(
     () =>
@@ -113,29 +80,11 @@ const HomeSearchPage = () => {
   const minRatingOptions = useMemo(
     () => [
       { value: "", label: t("home.search.filter.anyOption", undefined, "Any") },
-      {
-        value: "4",
-        label: t("home.search.filter.minRatingOption4", undefined, "4.0+"),
-      },
-      {
-        value: "4.5",
-        label: t("home.search.filter.minRatingOption45", undefined, "4.5+"),
-      },
+      { value: "4", label: t("home.search.filter.minRatingOption4", undefined, "4.0+") },
+      { value: "4.5", label: t("home.search.filter.minRatingOption45", undefined, "4.5+") },
     ],
     [t],
   );
-
-  const parseNumberParam = (value: string) => {
-    if (!value.trim()) {
-      return undefined;
-    }
-
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  };
-
-  const priceRangeValue = parseNumberParam(priceRangeParam);
-  const minRatingValue = parseNumberParam(minRatingParam);
 
   const {
     places,
@@ -156,13 +105,22 @@ const HomeSearchPage = () => {
     district: districtParam,
     type: typeParam,
     category: categoryParam,
-    priceRange: priceRangeValue,
-    minRating: minRatingValue,
+    priceRange: safeParsePositiveInt(priceRangeParam),
+    minRating: safeParsePositiveInt(minRatingParam),
   });
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    applyFilters();
+  const applyFilters = (overrides?: Partial<Record<string, string>>) => {
+    const nextParams = buildVenueSearchParams({
+      q: overrides?.q ?? searchInput,
+      district: overrides?.district ?? districtInput,
+      type: overrides?.type ?? typeInput,
+      category: overrides?.category ?? categoryInput,
+      priceRange: overrides?.priceRange ?? priceRangeInput,
+      minRating: overrides?.minRating ?? minRatingInput,
+      [QUICK_FILTER_QUERY_KEY]: overrides?.[QUICK_FILTER_QUERY_KEY] ?? filtersParam,
+    });
+    setPageIndex(1);
+    setSearchParams(nextParams);
   };
 
   const handleQuickFilterToggle = (filter: FilterType) => {
@@ -172,41 +130,13 @@ const HomeSearchPage = () => {
         : selectedFilters.includes(filter)
           ? selectedFilters.filter((item) => item !== filter)
           : [...selectedFilters, filter];
-
     applyFilters({ [QUICK_FILTER_QUERY_KEY]: nextFilters.join(",") });
   };
 
-  const applyFilters = (overrides?: Partial<Record<string, string>>) => {
-    const nextQuery = (overrides?.q ?? searchInput).trim();
-    const nextDistrict = (overrides?.district ?? districtInput).trim();
-    const nextType = (overrides?.type ?? typeInput).trim();
-    const nextCategory = (overrides?.category ?? categoryInput).trim();
-    const nextPriceRange = (overrides?.priceRange ?? priceRangeInput).trim();
-    const nextMinRating = (overrides?.minRating ?? minRatingInput).trim();
-    const nextFilters = (
-      overrides?.[QUICK_FILTER_QUERY_KEY] ?? filtersParam
-    ).trim();
-
-    const nextParams = new URLSearchParams();
-    if (nextQuery) nextParams.set("q", nextQuery);
-    if (nextDistrict) nextParams.set("district", nextDistrict);
-    if (nextType) nextParams.set("type", nextType);
-    if (nextCategory) nextParams.set("category", nextCategory);
-    if (nextPriceRange) nextParams.set("priceRange", nextPriceRange);
-    if (nextMinRating) nextParams.set("minRating", nextMinRating);
-    if (nextFilters) nextParams.set(QUICK_FILTER_QUERY_KEY, nextFilters);
-
-    setPageIndex(1);
-    setSearchParams(nextParams);
-  };
-
-  const filteredPlaces = useMemo(() => {
-    return filterHomePlacesByQuickFilters(
-      places,
-      selectedFilters,
-      userLocation,
-    );
-  }, [places, selectedFilters, userLocation]);
+  const filteredPlaces = useMemo(
+    () => filterHomePlacesByQuickFilters(places, selectedFilters, userLocation),
+    [places, selectedFilters, userLocation],
+  );
 
   const activeFilterCount = selectedFilters.length;
 
@@ -214,11 +144,7 @@ const HomeSearchPage = () => {
     return (
       <PageLoading
         text={t("home.search.loading", undefined, "Searching venues")}
-        subText={t(
-          "home.search.loadingSubtitle",
-          undefined,
-          "Gathering the best matches for you",
-        )}
+        subText={t("home.search.loadingSubtitle", undefined, "Gathering the best matches for you")}
       />
     );
   }
@@ -245,26 +171,17 @@ const HomeSearchPage = () => {
             <p className="text-sm text-muted-foreground">
               {normalizedSearch
                 ? t("home.search.subtitle", { query: searchParam })
-                : t(
-                    "home.search.subtitleEmpty",
-                    undefined,
-                    "Start typing to search for places in Cairo",
-                  )}
+                : t("home.search.subtitleEmpty", undefined, "Start typing to search for places in Cairo")}
             </p>
           </div>
         </div>
 
-        <LocationPermissionBanner
-          userLocation={userLocation}
-          onEnableLocation={userLocation.requestLocation}
-        />
+        <LocationPermissionBanner userLocation={userLocation} onEnableLocation={userLocation.requestLocation} />
 
         {saveError && (
           <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-destructive">
-                {saveError}
-              </p>
+              <p className="text-sm font-semibold text-destructive">{saveError}</p>
               <Button
                 type="button"
                 variant="outline"
@@ -278,18 +195,20 @@ const HomeSearchPage = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            applyFilters();
+          }}
+          className="space-y-4"
+        >
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[240px]">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder={t(
-                  "home.search.inputPlaceholder",
-                  undefined,
-                  "Search places, cafes, districts",
-                )}
+                placeholder={t("home.search.inputPlaceholder", undefined, "Search places, cafes, districts")}
                 className="h-12 rounded-2xl border-border/70 bg-card pl-11"
               />
             </div>
@@ -302,11 +221,7 @@ const HomeSearchPage = () => {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="text-sm font-semibold text-foreground">
-                  {t(
-                    "home.search.quickFiltersTitle",
-                    undefined,
-                    "Quick filters",
-                  )}
+                  {t("home.search.quickFiltersTitle", undefined, "Quick filters")}
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {t(
@@ -334,10 +249,7 @@ const HomeSearchPage = () => {
               {FILTER_OPTIONS.map((filter) => {
                 const Icon = filter.icon;
                 const isActive =
-                  filter.id === "all"
-                    ? selectedFilters.length === 0
-                    : selectedFilters.includes(filter.id);
-
+                  filter.id === "all" ? selectedFilters.length === 0 : selectedFilters.includes(filter.id);
                 return (
                   <button
                     type="button"
@@ -359,127 +271,66 @@ const HomeSearchPage = () => {
           </div>
 
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-            <label className="space-y-1 text-xs font-semibold text-muted-foreground">
-              <span>
-                {t("home.search.filter.districtLabel", undefined, "District")}
-              </span>
-              <select
-                value={districtInput}
-                onChange={(event) => {
-                  const nextValue = event.target.value;
-                  setDistrictInput(nextValue);
-                  applyFilters({ district: nextValue });
-                }}
-                className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
-              >
-                <option value="">
-                  {t("home.search.filter.anyOption", undefined, "Any")}
-                </option>
-                {districtOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {(
+              [
+                {
+                  labelKey: "home.search.filter.districtLabel",
+                  labelFallback: "District",
+                  value: districtInput,
+                  options: districtOptions,
+                  onChange: (val: string) => { setDistrictInput(val); applyFilters({ district: val }); },
+                },
+                {
+                  labelKey: "home.search.filter.typeLabel",
+                  labelFallback: "Type",
+                  value: typeInput,
+                  options: typeOptions,
+                  onChange: (val: string) => { setTypeInput(val); applyFilters({ type: val }); },
+                },
+                {
+                  labelKey: "home.search.filter.categoryLabel",
+                  labelFallback: "Category",
+                  value: categoryInput,
+                  options: categoryOptions,
+                  onChange: (val: string) => { setCategoryInput(val); applyFilters({ category: val }); },
+                },
+                {
+                  labelKey: "home.search.filter.priceRangeLabel",
+                  labelFallback: "Price range",
+                  value: priceRangeInput,
+                  options: priceRangeOptions,
+                  onChange: (val: string) => { setPriceRangeInput(val); applyFilters({ priceRange: val }); },
+                },
+              ] as const
+            ).map(({ labelKey, labelFallback, value, options, onChange }) => (
+              <label key={labelKey} className="space-y-1 text-xs font-semibold text-muted-foreground">
+                <span>{t(labelKey, undefined, labelFallback)}</span>
+                <select
+                  value={value}
+                  onChange={(event) => onChange(event.target.value)}
+                  className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
+                >
+                  <option value="">{t("home.search.filter.anyOption", undefined, "Any")}</option>
+                  {options.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </label>
+            ))}
 
             <label className="space-y-1 text-xs font-semibold text-muted-foreground">
-              <span>
-                {t("home.search.filter.typeLabel", undefined, "Type")}
-              </span>
-              <select
-                value={typeInput}
-                onChange={(event) => {
-                  const nextValue = event.target.value;
-                  setTypeInput(nextValue);
-                  applyFilters({ type: nextValue });
-                }}
-                className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
-              >
-                <option value="">
-                  {t("home.search.filter.anyOption", undefined, "Any")}
-                </option>
-                {typeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="space-y-1 text-xs font-semibold text-muted-foreground">
-              <span>
-                {t("home.search.filter.categoryLabel", undefined, "Category")}
-              </span>
-              <select
-                value={categoryInput}
-                onChange={(event) => {
-                  const nextValue = event.target.value;
-                  setCategoryInput(nextValue);
-                  applyFilters({ category: nextValue });
-                }}
-                className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
-              >
-                <option value="">
-                  {t("home.search.filter.anyOption", undefined, "Any")}
-                </option>
-                {categoryOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="space-y-1 text-xs font-semibold text-muted-foreground">
-              <span>
-                {t(
-                  "home.search.filter.priceRangeLabel",
-                  undefined,
-                  "Price range",
-                )}
-              </span>
-              <select
-                value={priceRangeInput}
-                onChange={(event) => {
-                  const nextValue = event.target.value;
-                  setPriceRangeInput(nextValue);
-                  applyFilters({ priceRange: nextValue });
-                }}
-                className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
-              >
-                <option value="">
-                  {t("home.search.filter.anyOption", undefined, "Any")}
-                </option>
-                {priceRangeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="space-y-1 text-xs font-semibold text-muted-foreground">
-              <span>
-                {t(
-                  "home.search.filter.minRatingLabel",
-                  undefined,
-                  "Min rating",
-                )}
-              </span>
+              <span>{t("home.search.filter.minRatingLabel", undefined, "Min rating")}</span>
               <select
                 value={minRatingInput}
                 onChange={(event) => {
-                  const nextValue = event.target.value;
-                  setMinRatingInput(nextValue);
-                  applyFilters({ minRating: nextValue });
+                  const val = event.target.value;
+                  setMinRatingInput(val);
+                  applyFilters({ minRating: val });
                 }}
                 className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
               >
-                {minRatingOptions.map((option) => (
-                  <option key={option.value || "any"} value={option.value}>
-                    {option.label}
-                  </option>
+                {minRatingOptions.map((opt) => (
+                  <option key={opt.value || "any"} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
             </label>
@@ -505,59 +356,30 @@ const HomeSearchPage = () => {
         ) : normalizedSearch.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/70 bg-card/60 px-4 py-10 text-center">
             <p className="font-semibold text-foreground">
-              {t(
-                "home.search.emptyQueryTitle",
-                undefined,
-                "Tell us what you are looking for",
-              )}
+              {t("home.search.emptyQueryTitle", undefined, "Tell us what you are looking for")}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {t(
-                "home.search.emptyQueryDescription",
-                undefined,
-                "Try a venue name, district, or category",
-              )}
+              {t("home.search.emptyQueryDescription", undefined, "Try a venue name, district, or category")}
             </p>
           </div>
         ) : filteredPlaces.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/70 bg-card/60 px-4 py-10 text-center">
             <p className="font-semibold text-foreground">
               {activeFilterCount > 0
-                ? t(
-                    "home.search.filteredEmptyTitle",
-                    undefined,
-                    "No places match these filters",
-                  )
+                ? t("home.search.filteredEmptyTitle", undefined, "No places match these filters")
                 : t("home.search.emptyTitle", undefined, "No matches yet")}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               {activeFilterCount > 0
-                ? t(
-                    "home.search.filteredEmptyDescription",
-                    undefined,
-                    "Try clearing one or more filters, or refine your search term.",
-                  )
-                : t(
-                    "home.search.emptyDescription",
-                    undefined,
-                    "Try a different keyword or remove filters",
-                  )}
+                ? t("home.search.filteredEmptyDescription", undefined, "Try clearing one or more filters, or refine your search term.")
+                : t("home.search.emptyDescription", undefined, "Try a different keyword or remove filters")}
             </p>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-              <span>
-                {t("home.search.resultCount", {
-                  count: formatNumber(filteredPlaces.length),
-                })}
-              </span>
-              <span>
-                {t("home.search.pageLabel", {
-                  page: formatNumber(pageIndex),
-                  total: formatNumber(totalPages),
-                })}
-              </span>
+              <span>{t("home.search.resultCount", { count: formatNumber(filteredPlaces.length) })}</span>
+              <span>{t("home.search.pageLabel", { page: formatNumber(pageIndex), total: formatNumber(totalPages) })}</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">

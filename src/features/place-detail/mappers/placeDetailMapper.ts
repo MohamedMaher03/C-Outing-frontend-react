@@ -1,15 +1,16 @@
+import type { PaginatedResponse } from "@/types";
 import type {
-  PlaceDetail,
   MenuItem,
   MetroStation,
-  VenuePhotos,
+  PlaceDetail,
+  ReportReviewRequest,
   Review,
   ReviewListResponse,
+  ReviewSummary,
+  SocialMediaReview,
   SocialReviewListResponse,
   VenueAverageRating,
-  SocialMediaReview,
-  ReviewSummary,
-  ReportReviewRequest,
+  VenuePhotos,
 } from "../types";
 import {
   getDefaultAvatarDataUrl,
@@ -17,132 +18,22 @@ import {
 } from "../utils/defaultImages";
 import { getReviewIdentity } from "../utils/reviewIdentity";
 import { normalizeOpenStatus } from "@/utils/openStatus";
+import {
+  coerceBoolean,
+  coerceFirstBoolean,
+  coerceFirstFiniteNumber,
+  coerceFirstNonEmptyString,
+  coerceNonNegativeInteger,
+  coerceStringArray,
+  coerceValidDate,
+  dedupeByKey,
+  resolveVenuePriceLevel,
+  unwrapNestedDataPayload,
+} from "@/utils/mapper";
+import { isObjectRecord } from "@/utils/typeGuards";
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const unwrapApiData = (raw: unknown, maxDepth = 3): unknown => {
-  let current: unknown = raw;
-  let depth = 0;
-
-  while (
-    depth < maxDepth &&
-    isRecord(current) &&
-    Object.prototype.hasOwnProperty.call(current, "data")
-  ) {
-    const next = current.data;
-    if (next === undefined || next === null) {
-      break;
-    }
-
-    current = next;
-    depth += 1;
-  }
-
-  return current;
-};
-
-const asString = (...values: unknown[]): string | undefined => {
-  for (const value of values) {
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value;
-    }
-  }
-  return undefined;
-};
-
-const asNumber = (...values: unknown[]): number | undefined => {
-  for (const value of values) {
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return value;
-    }
-    if (typeof value === "string" && value.trim().length > 0) {
-      const parsed = Number(value);
-      if (Number.isFinite(parsed)) return parsed;
-    }
-  }
-  return undefined;
-};
-
-const asBoolean = (...values: unknown[]): boolean | undefined => {
-  for (const value of values) {
-    if (typeof value === "boolean") return value;
-  }
-  return undefined;
-};
-
-const asStringArray = (value: unknown): string[] => {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-};
-
-const toDate = (value: unknown): Date => {
-  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
-
-  if (typeof value === "string" || typeof value === "number") {
-    const date = new Date(value);
-    if (!Number.isNaN(date.getTime())) return date;
-  }
-
-  return new Date();
-};
-
-const clampRating = (...values: unknown[]): number => {
-  const rating = asNumber(...values);
-  if (rating === undefined) return 0;
-  return Math.max(1, Math.min(5, Math.round(rating)));
-};
-
-const toPriceLevel = (raw: unknown): PlaceDetail["priceLevel"] => {
-  if (typeof raw === "string") {
-    const normalized = raw.trim().toLowerCase();
-    const collapsed = normalized.replace(/[\s_-]+/g, "");
-
-    if (collapsed === "pricecheapest" || collapsed === "cheapest") {
-      return "cheapest";
-    }
-
-    if (
-      collapsed === "cheap" ||
-      collapsed === "budget" ||
-      collapsed === "low"
-    ) {
-      return "cheap";
-    }
-
-    if (
-      collapsed === "midrange" ||
-      collapsed === "medium" ||
-      collapsed === "moderate"
-    ) {
-      return "midrange";
-    }
-
-    if (
-      collapsed === "expensive" ||
-      collapsed === "premium" ||
-      collapsed === "high"
-    ) {
-      return "expensive";
-    }
-
-    if (collapsed === "luxury") {
-      return "luxury";
-    }
-  }
-
-  const numeric = asNumber(raw);
-  if (numeric === undefined) return undefined;
-
-  if (numeric <= 1) return "cheapest";
-  if (numeric <= 2) return "cheap";
-  if (numeric <= 3) return "midrange";
-  if (numeric <= 4) return "expensive";
-  return "luxury";
-};
+const clampReviewRating = (...values: unknown[]): number =>
+  Math.max(1, Math.min(5, Math.round(coerceFirstFiniteNumber(...values) ?? 0)));
 
 const normalizeSocialBadges = (
   raw: unknown,
@@ -155,7 +46,7 @@ const normalizeSocialBadges = (
 
   return Array.from(
     new Set(
-      asStringArray(raw)
+      coerceStringArray(raw, Number.MAX_SAFE_INTEGER)
         .map((badge) => badge.toLowerCase())
         .filter((badge) => allowed.has(badge))
         .map((badge) => {
@@ -170,7 +61,7 @@ const normalizeSocialBadges = (
 const normalizeSeatingType = (raw: unknown): Array<"indoor" | "outdoor"> =>
   Array.from(
     new Set(
-      asStringArray(raw)
+      coerceStringArray(raw, Number.MAX_SAFE_INTEGER)
         .map((seat) => seat.toLowerCase())
         .filter((seat) => seat === "indoor" || seat === "outdoor")
         .map((seat) => (seat === "outdoor" ? "outdoor" : "indoor")),
@@ -180,84 +71,56 @@ const normalizeSeatingType = (raw: unknown): Array<"indoor" | "outdoor"> =>
 const resolveSeatingType = (
   data: Record<string, unknown>,
 ): Array<"indoor" | "outdoor"> => {
-  const fromArray = normalizeSeatingType(
-    data.seatingType ?? data.seatingTypes,
-  );
+  const fromArray = normalizeSeatingType(data.seatingType ?? data.seatingTypes);
   if (fromArray.length > 0) return fromArray;
 
-  const resolved: Array<"indoor" | "outdoor"> = [];
-  if (asBoolean(data.hasIndoorSeating)) resolved.push("indoor");
-  if (asBoolean(data.hasOutdoorSeating)) resolved.push("outdoor");
-  return resolved;
+  return [
+    ...(coerceBoolean(data.hasIndoorSeating) ? (["indoor"] as const) : []),
+    ...(coerceBoolean(data.hasOutdoorSeating) ? (["outdoor"] as const) : []),
+  ];
 };
 
 const normalizeMenus = (raw: unknown): MenuItem[] => {
   if (!Array.isArray(raw)) return [];
 
-  const menus: MenuItem[] = [];
-
-  for (const item of raw) {
+  return raw.flatMap((item) => {
     if (typeof item === "string" && item.trim().length > 0) {
-      menus.push({ url: item.trim() });
-      continue;
+      return [{ url: item.trim() }];
     }
 
-    if (!isRecord(item)) continue;
+    if (!isObjectRecord(item)) return [];
 
-    const url = asString(item.url, item.imageUrl, item.image);
-    if (!url) continue;
+    const url = coerceFirstNonEmptyString(item.url, item.imageUrl, item.image);
+    if (!url) return [];
 
-    menus.push({
-      url,
-      date: asString(item.date),
-    });
-  }
-
-  return menus;
+    return [{ url, date: coerceFirstNonEmptyString(item.date) }];
+  });
 };
 
 const normalizeVenuePhotos = (raw: unknown): VenuePhotos | undefined => {
-  if (!isRecord(raw)) return undefined;
-
-  const header = asStringArray(raw.header);
-  if (header.length === 0) return undefined;
-
-  return { header };
-};
-
-const resolvePriceLevel = (data: Record<string, unknown>): PlaceDetail["priceLevel"] => {
-  const fromRange = toPriceLevel(
-    data.priceRange_Display ??
-      data.priceRangeDisplay ??
-      data.priceRange ??
-      data.priceLevel,
-  );
-  if (fromRange) return fromRange;
-
-  if (asBoolean(data.priceLuxury)) return "luxury";
-  if (asBoolean(data.priceExpensive)) return "expensive";
-  if (asBoolean(data.priceMidRange)) return "midrange";
-  if (asBoolean(data.priceCheap)) return "cheap";
-  if (asBoolean(data.priceCheapest)) return "cheapest";
-
-  return undefined;
+  if (!isObjectRecord(raw)) return undefined;
+  const header = coerceStringArray(raw.header, Number.MAX_SAFE_INTEGER);
+  return header.length > 0 ? { header } : undefined;
 };
 
 const normalizeMetroStations = (raw: unknown): MetroStation[] => {
   if (!Array.isArray(raw)) return [];
 
   return raw
-    .filter((item): item is Record<string, unknown> => isRecord(item))
+    .filter((item): item is Record<string, unknown> => isObjectRecord(item))
     .map((station, index) => ({
       rank: Math.max(
         1,
-        Math.round(asNumber(station.rank, station.Rank) ?? index + 1),
+        Math.round(coerceFirstFiniteNumber(station.rank, station.Rank) ?? index + 1),
       ),
       stationName:
-        asString(station.station_name, station.stationName, station.name) ??
-        "",
-      distance: asString(station.Distance, station.distance) ?? "",
-      time: asString(station.Time, station.time) ?? "",
+        coerceFirstNonEmptyString(
+          station.station_name,
+          station.stationName,
+          station.name,
+        ) ?? "",
+      distance: coerceFirstNonEmptyString(station.Distance, station.distance) ?? "",
+      time: coerceFirstNonEmptyString(station.Time, station.time) ?? "",
     }))
     .filter(
       (station) =>
@@ -265,22 +128,22 @@ const normalizeMetroStations = (raw: unknown): MetroStation[] => {
         station.distance.trim().length > 0 ||
         station.time.trim().length > 0,
     )
-    .sort((a, b) => a.rank - b.rank);
+    .sort((left, right) => left.rank - right.rank);
 };
 
 export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
-  const payload = unwrapApiData(raw);
-  const data = isRecord(payload) ? payload : {};
-  const location = isRecord(data.location) ? data.location : undefined;
+  const payload = unwrapNestedDataPayload(raw);
+  const data = isObjectRecord(payload) ? payload : {};
+  const location = isObjectRecord(data.location) ? data.location : undefined;
 
-  const venueName = asString(data.name, data.title) ?? "Unknown Place";
-
-  const imageUrls = asStringArray(data.imageUrls);
+  const venueName = coerceFirstNonEmptyString(data.name, data.title) ?? "Unknown Place";
+  const imageUrls = coerceStringArray(data.imageUrls, Number.MAX_SAFE_INTEGER);
   const venuePhotos = normalizeVenuePhotos(data.venuePhotos);
   const headerPhotos = venuePhotos?.header ?? [];
   const menus = normalizeMenus(data.menus);
-  const legacyMenuUrls = asStringArray(
+  const legacyMenuUrls = coerceStringArray(
     data.menuImagesUrls ?? data.menuImageUrls,
+    Number.MAX_SAFE_INTEGER,
   );
   const menuImagesUrls =
     menus.length > 0 ? menus.map((menu) => menu.url) : legacyMenuUrls;
@@ -291,14 +154,13 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
         ? headerPhotos
         : imageUrls;
   const metroStations = normalizeMetroStations(data.metroStations);
-  const reviewCount = Math.max(
-    0,
-    Math.round(asNumber(data.reviewCount, data.ratingCount) ?? 0),
+  const reviewCount = coerceNonNegativeInteger(
+    coerceFirstFiniteNumber(data.reviewCount, data.ratingCount),
   );
-  const rating = asNumber(data.averageRating, data.rating) ?? 0;
-  const displayImageUrl = asString(data.displayImageUrl);
+  const rating = coerceFirstFiniteNumber(data.averageRating, data.rating) ?? 0;
+  const displayImageUrl = coerceFirstNonEmptyString(data.displayImageUrl);
   const selectedImage =
-    asString(
+    coerceFirstNonEmptyString(
       displayImageUrl,
       mergedImageUrls[0],
       headerPhotos[0],
@@ -309,22 +171,28 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
     ) ?? getDefaultVenueImageDataUrl(venueName);
 
   const resolvedAddress =
-    asString(data.address, location?.address, data.location) ?? "";
+    coerceFirstNonEmptyString(data.address, location?.address, data.location) ?? "";
   const resolvedLocation =
-    asString(data.location, data.district, resolvedAddress) ?? resolvedAddress;
-
-  const rawPriceRange = asString(data.priceRange);
+    coerceFirstNonEmptyString(data.location, data.district, resolvedAddress) ??
+    resolvedAddress;
+  const rawPriceRange = coerceFirstNonEmptyString(data.priceRange);
   const normalizedPriceRangeDisplay =
-    asString(data.priceRange_Display, data.priceRangeDisplay) ?? rawPriceRange;
+    coerceFirstNonEmptyString(data.priceRange_Display, data.priceRangeDisplay) ??
+    rawPriceRange;
 
   return {
-    id: asString(data.id, data.venueId) ?? "",
+    id: coerceFirstNonEmptyString(data.id, data.venueId) ?? "",
     name: venueName,
-    category: asString(data.category, data.type) ?? "Uncategorized",
+    category: coerceFirstNonEmptyString(data.category, data.type) ?? "Uncategorized",
     latitude:
-      asNumber(data.latitude, data.lat, location?.latitude, location?.lat) ?? 0,
+      coerceFirstFiniteNumber(
+        data.latitude,
+        data.lat,
+        location?.latitude,
+        location?.lat,
+      ) ?? 0,
     longitude:
-      asNumber(
+      coerceFirstFiniteNumber(
         data.longitude,
         data.lng,
         data.lon,
@@ -333,139 +201,165 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
       ) ?? 0,
     location: resolvedLocation,
     address: resolvedAddress || resolvedLocation,
-    district: asString(data.district),
-    type: asString(data.type),
+    district: coerceFirstNonEmptyString(data.district),
+    type: coerceFirstNonEmptyString(data.type),
     rating,
     averageRating: rating,
     reviewCount,
-    likeCount: Math.max(0, Math.round(asNumber(data.likeCount) ?? 0)),
-    description: asString(data.description, data.about) ?? "",
+    likeCount: coerceNonNegativeInteger(coerceFirstFiniteNumber(data.likeCount)),
+    description: coerceFirstNonEmptyString(data.description, data.about) ?? "",
     image: selectedImage,
     displayImageUrl: displayImageUrl ?? selectedImage,
     imageUrls: mergedImageUrls,
-    createdAt: asString(data.createdAt),
-    phone: asString(data.phone, data.phoneNumber),
-    website: asString(data.website, data.websiteUrl),
-    menuUrl: asString(data.menuUrl, data.menuLink),
-    bookingUrl: asString(data.bookingUrl, data.bookingLink),
+    createdAt: coerceFirstNonEmptyString(data.createdAt),
+    phone: coerceFirstNonEmptyString(data.phone, data.phoneNumber),
+    website: coerceFirstNonEmptyString(data.website, data.websiteUrl),
+    menuUrl: coerceFirstNonEmptyString(data.menuUrl, data.menuLink),
+    bookingUrl: coerceFirstNonEmptyString(data.bookingUrl, data.bookingLink),
     priceRange: rawPriceRange ?? normalizedPriceRangeDisplay,
     priceRangeDisplay: normalizedPriceRangeDisplay,
-    priceLevel: resolvePriceLevel(data),
-    hours: asString(data.hours, data.openingHours),
+    priceLevel: resolveVenuePriceLevel(data),
+    hours: coerceFirstNonEmptyString(data.hours, data.openingHours),
     isOpen: normalizeOpenStatus(data.isOpen),
     atmosphereTags: Array.from(
       new Set([
-        ...asStringArray(data.atmosphereTags),
-        ...asStringArray(data.atmospheres),
+        ...coerceStringArray(data.atmosphereTags, Number.MAX_SAFE_INTEGER),
+        ...coerceStringArray(data.atmospheres, Number.MAX_SAFE_INTEGER),
       ]),
     ),
     socialBadges: normalizeSocialBadges(data.socialBadges),
-    hasWifi: asBoolean(data.hasWifi),
-    freeWifi: asBoolean(data.freeWifi),
-    hasToilet: asBoolean(data.hasToilet),
+    hasWifi: coerceBoolean(data.hasWifi),
+    freeWifi: coerceBoolean(data.freeWifi),
+    hasToilet: coerceBoolean(data.hasToilet),
     seatingType: resolveSeatingType(data),
-    hasIndoorSeating: asBoolean(data.hasIndoorSeating),
-    hasOutdoorSeating: asBoolean(data.hasOutdoorSeating),
-    hasDriveThrough: asBoolean(data.hasDriveThrough),
-    offersDelivery: asBoolean(data.offersDelivery),
-    parkingAvailable: asBoolean(data.parkingAvailable),
-    streetParking: asBoolean(data.streetParking),
-    lotParking: asBoolean(data.lotParking),
-    valetParking: asBoolean(data.valetParking),
-    garageParking: asBoolean(data.garageParking),
-    multiStoreyParking: asBoolean(data.multiStoreyParking),
-    wheelchairEntrance: asBoolean(data.wheelchairEntrance),
-    wheelchairSeating: asBoolean(data.wheelchairSeating),
-    wheelchairCarPark: asBoolean(data.wheelchairCarPark),
-    wheelchairToilet: asBoolean(data.wheelchairToilet),
-    assistiveHearingLoop: asBoolean(data.assistiveHearingLoop),
-    acceptsCards: asBoolean(data.acceptsCards),
-    acceptsDebitCards: asBoolean(data.acceptsDebitCards),
-    acceptsCreditCards: asBoolean(data.acceptsCreditCards),
-    acceptsNfcMobile: asBoolean(data.acceptsNfcMobile),
-    accessibilityScore: asNumber(data.accessibilityScore),
-    noiseScore: asNumber(data.noiseScore),
+    hasIndoorSeating: coerceBoolean(data.hasIndoorSeating),
+    hasOutdoorSeating: coerceBoolean(data.hasOutdoorSeating),
+    hasDriveThrough: coerceBoolean(data.hasDriveThrough),
+    offersDelivery: coerceBoolean(data.offersDelivery),
+    parkingAvailable: coerceBoolean(data.parkingAvailable),
+    streetParking: coerceBoolean(data.streetParking),
+    lotParking: coerceBoolean(data.lotParking),
+    valetParking: coerceBoolean(data.valetParking),
+    garageParking: coerceBoolean(data.garageParking),
+    multiStoreyParking: coerceBoolean(data.multiStoreyParking),
+    wheelchairEntrance: coerceBoolean(data.wheelchairEntrance),
+    wheelchairSeating: coerceBoolean(data.wheelchairSeating),
+    wheelchairCarPark: coerceBoolean(data.wheelchairCarPark),
+    wheelchairToilet: coerceBoolean(data.wheelchairToilet),
+    assistiveHearingLoop: coerceBoolean(data.assistiveHearingLoop),
+    acceptsCards: coerceBoolean(data.acceptsCards),
+    acceptsDebitCards: coerceBoolean(data.acceptsDebitCards),
+    acceptsCreditCards: coerceBoolean(data.acceptsCreditCards),
+    acceptsNfcMobile: coerceBoolean(data.acceptsNfcMobile),
+    accessibilityScore: coerceFirstFiniteNumber(data.accessibilityScore),
+    noiseScore: coerceFirstFiniteNumber(data.noiseScore),
     menus: menus.length > 0 ? menus : undefined,
     menuImagesCount: Math.max(
-      asNumber(data.menuImagesCount) ?? 0,
+      coerceFirstFiniteNumber(data.menuImagesCount) ?? 0,
       menus.length,
       menuImagesUrls.length,
     ),
     menuImagesUrls,
-    menuCurrency: asString(data.menuCurrency),
+    menuCurrency: coerceFirstNonEmptyString(data.menuCurrency),
     venuePhotos,
-    cuisines: asStringArray(data.cuisines),
-    dietaryAttributes: asStringArray(data.dietaryAttributes),
-    priceMeanPerPerson: asNumber(data.priceMeanPerPerson),
-    googleMapsTotalReviews: asNumber(data.googleMapsTotalReviews),
-    originalGoogleMapsUrl: asString(
+    cuisines: coerceStringArray(data.cuisines, Number.MAX_SAFE_INTEGER),
+    dietaryAttributes: coerceStringArray(
+      data.dietaryAttributes,
+      Number.MAX_SAFE_INTEGER,
+    ),
+    priceMeanPerPerson: coerceFirstFiniteNumber(data.priceMeanPerPerson),
+    googleMapsTotalReviews: coerceFirstFiniteNumber(data.googleMapsTotalReviews),
+    originalGoogleMapsUrl: coerceFirstNonEmptyString(
       data.originalGoogleMapsUrl,
       data.googleMapsUrl,
     ),
-    status: asString(data.status),
-    isDeprecated: asBoolean(data.isDeprecated),
-    personalPriceRange: asString(data.personalPriceRange) ?? null,
-    platformRating: asNumber(data.platformRating),
+    status: coerceFirstNonEmptyString(data.status),
+    isDeprecated: coerceBoolean(data.isDeprecated),
+    personalPriceRange: coerceFirstNonEmptyString(data.personalPriceRange) ?? null,
+    platformRating: coerceFirstFiniteNumber(data.platformRating),
     metroStations: metroStations.length > 0 ? metroStations : undefined,
-    isSaved: asBoolean(data.isSaved, data.isFavorited),
-    isFavorited: asBoolean(data.isFavorited, data.isSaved),
-    isLiked: asBoolean(data.isLiked),
-    matchScore: asNumber(data.matchScore),
-    googleMapsRatingStars: asString(data.googleMapsRatingStars),
-    googleMapsRatingCount: asNumber(data.googleMapsRatingCount, reviewCount),
+    isSaved: coerceFirstBoolean(data.isSaved, data.isFavorited),
+    isFavorited: coerceFirstBoolean(data.isFavorited, data.isSaved),
+    isLiked: coerceBoolean(data.isLiked),
+    matchScore: coerceFirstFiniteNumber(data.matchScore),
+    googleMapsRatingStars: coerceFirstNonEmptyString(data.googleMapsRatingStars),
+    googleMapsRatingCount: coerceFirstFiniteNumber(
+      data.googleMapsRatingCount,
+      reviewCount,
+    ),
   };
 };
 
 export const normalizeReview = (raw: unknown): Review => {
-  const payload = unwrapApiData(raw);
-  const data = isRecord(payload) ? payload : {};
+  const payload = unwrapNestedDataPayload(raw);
+  const data = isObjectRecord(payload) ? payload : {};
 
-  const venueId = asString(data.venueId) ?? "";
+  const venueId = coerceFirstNonEmptyString(data.venueId) ?? "";
   const userId =
-    asString(data.userId, data.authorId, data.reviewerId) ?? "unknown-user";
-  const createdAt = toDate(data.createdAt ?? data.date ?? data.updatedAt);
-  const updatedAtValue = asString(data.updatedAt);
+    coerceFirstNonEmptyString(data.userId, data.authorId, data.reviewerId) ??
+    "unknown-user";
+  const createdAt = coerceValidDate(data.createdAt ?? data.date ?? data.updatedAt);
+  const updatedAtValue = coerceFirstNonEmptyString(data.updatedAt);
   const reviewId =
-    asString(data.id, data.reviewId) ??
+    coerceFirstNonEmptyString(data.id, data.reviewId) ??
     `k:${venueId}:${userId}:${createdAt.toISOString()}`;
 
   return {
     id: reviewId,
     venueId,
-    venueName: asString(data.venueName, data.placeName, data.venueTitle) ?? "",
+    venueName:
+      coerceFirstNonEmptyString(data.venueName, data.placeName, data.venueTitle) ??
+      "",
     userId,
     userName:
-      asString(data.userName, data.authorName, data.reviewerName) ??
-      "Anonymous",
+      coerceFirstNonEmptyString(
+        data.userName,
+        data.authorName,
+        data.reviewerName,
+      ) ?? "Anonymous",
     userAvatar:
-      asString(data.userAvatar, data.avatarUrl, data.authorAvatar) ??
+      coerceFirstNonEmptyString(
+        data.userAvatar,
+        data.avatarUrl,
+        data.authorAvatar,
+      ) ??
       getDefaultAvatarDataUrl(
-        asString(data.userName, data.authorName, data.reviewerName) ??
-          "Anonymous",
+        coerceFirstNonEmptyString(
+          data.userName,
+          data.authorName,
+          data.reviewerName,
+        ) ?? "Anonymous",
       ),
-    rating: clampRating(data.rating, data.stars),
-    comment: asString(data.comment, data.content, data.reviewText) ?? "",
+    rating: clampReviewRating(data.rating, data.stars),
+    comment:
+      coerceFirstNonEmptyString(data.comment, data.content, data.reviewText) ?? "",
     createdAt: createdAt.toISOString(),
-    updatedAt: updatedAtValue ? toDate(updatedAtValue).toISOString() : null,
+    updatedAt: updatedAtValue
+      ? coerceValidDate(updatedAtValue).toISOString()
+      : null,
   };
 };
 
 export const normalizeSocialReview = (raw: unknown): SocialMediaReview => {
-  const payload = unwrapApiData(raw);
-  const data = isRecord(payload) ? payload : {};
+  const payload = unwrapNestedDataPayload(raw);
+  const data = isObjectRecord(payload) ? payload : {};
 
   const fallbackSocialId = [
-    asString(data.venueId) ?? "venue",
-    asString(data.userId, data.userName, data.authorName) ?? "author",
-    asString(data.createdAt, data.date) ?? "date",
-    (asString(data.comment, data.content, data.text) ?? "text").slice(0, 32),
+    coerceFirstNonEmptyString(data.venueId) ?? "venue",
+    coerceFirstNonEmptyString(data.userId, data.userName, data.authorName) ??
+      "author",
+    coerceFirstNonEmptyString(data.createdAt, data.date) ?? "date",
+    (coerceFirstNonEmptyString(data.comment, data.content, data.text) ?? "text").slice(
+      0,
+      32,
+    ),
   ]
     .join("_")
     .toLowerCase()
     .replace(/\s+/g, "-");
 
   const platformCandidate = (
-    asString(data.source, data.platform, data.siteName) ?? "google"
+    coerceFirstNonEmptyString(data.source, data.platform, data.siteName) ?? "google"
   )
     .trim()
     .toLowerCase();
@@ -480,7 +374,7 @@ export const normalizeSocialReview = (raw: unknown): SocialMediaReview => {
           ? "tiktok"
           : platformCandidate.includes("google")
             ? "google"
-            : asString(data.platform, data.source)?.toLowerCase();
+            : coerceFirstNonEmptyString(data.platform, data.source)?.toLowerCase();
 
   const normalizedPlatform: SocialMediaReview["platform"] =
     platform === "instagram" ||
@@ -491,8 +385,11 @@ export const normalizeSocialReview = (raw: unknown): SocialMediaReview => {
       ? platform
       : "google";
 
-  const sentimentScore = asNumber(data.sentimentScore, data.sentiment_value);
-  const sentiment = asString(data.sentiment)?.toLowerCase();
+  const sentimentScore = coerceFirstFiniteNumber(
+    data.sentimentScore,
+    data.sentiment_value,
+  );
+  const sentiment = coerceFirstNonEmptyString(data.sentiment)?.toLowerCase();
   const normalizedSentiment: SocialMediaReview["sentiment"] =
     sentiment === "positive" ||
     sentiment === "neutral" ||
@@ -504,20 +401,25 @@ export const normalizeSocialReview = (raw: unknown): SocialMediaReview => {
           ? "negative"
           : "neutral";
 
-  const normalizedRating = clampRating(data.rating, data.stars);
+  const normalizedRating = clampReviewRating(data.rating, data.stars);
 
   return {
-    id: asString(data.id, data.reviewId, data.externalId) ?? fallbackSocialId,
+    id:
+      coerceFirstNonEmptyString(data.id, data.reviewId, data.externalId) ??
+      fallbackSocialId,
     platform: normalizedPlatform,
-    author: asString(data.author, data.authorName, data.userName) ?? "Unknown",
-    authorAvatar: asString(data.authorAvatar, data.avatarUrl),
-    content: asString(data.content, data.comment, data.text) ?? "",
+    author:
+      coerceFirstNonEmptyString(data.author, data.authorName, data.userName) ??
+      "Unknown",
+    authorAvatar: coerceFirstNonEmptyString(data.authorAvatar, data.avatarUrl),
+    content:
+      coerceFirstNonEmptyString(data.content, data.comment, data.text) ?? "",
     rating: normalizedRating > 0 ? normalizedRating : undefined,
     sentiment: normalizedSentiment,
     sentimentScore: sentimentScore ?? undefined,
-    date: toDate(data.date ?? data.createdAt),
-    likes: asNumber(data.likes, data.likeCount, data.helpfulCount),
-    url: asString(data.url, data.link),
+    date: coerceValidDate(data.date ?? data.createdAt),
+    likes: coerceFirstFiniteNumber(data.likes, data.likeCount, data.helpfulCount),
+    url: coerceFirstNonEmptyString(data.url, data.link),
   };
 };
 
@@ -525,16 +427,8 @@ const normalizePaginatedItems = <TItem>(
   raw: unknown,
   itemMapper: (item: unknown) => TItem,
   keySelector: (item: TItem) => string,
-): {
-  items: TItem[];
-  pageIndex: number;
-  pageSize: number;
-  totalCount: number;
-  totalPages: number;
-  hasPreviousPage: boolean;
-  hasNextPage: boolean;
-} => {
-  const payload = unwrapApiData(raw);
+): PaginatedResponse<TItem> => {
+  const payload = unwrapNestedDataPayload(raw);
 
   if (Array.isArray(payload)) {
     return {
@@ -548,7 +442,7 @@ const normalizePaginatedItems = <TItem>(
     };
   }
 
-  if (!isRecord(payload)) {
+  if (!isObjectRecord(payload)) {
     return {
       items: [],
       pageIndex: 0,
@@ -560,24 +454,18 @@ const normalizePaginatedItems = <TItem>(
     };
   }
 
-  const pageRecord = isRecord(payload.data) ? payload.data : payload;
-
+  const pageRecord = isObjectRecord(payload.data) ? payload.data : payload;
   const itemsRaw = Array.isArray(pageRecord.items)
     ? pageRecord.items
     : Array.isArray(pageRecord.data)
       ? pageRecord.data
       : [];
-
-  const mapped = itemsRaw.map(itemMapper);
-  const uniqueItems = Array.from(
-    new Map(mapped.map((item) => [keySelector(item), item])).values(),
-  );
-
-  const resolvedPageIndex = asNumber(
+  const uniqueItems = dedupeByKey(itemsRaw.map(itemMapper), keySelector);
+  const resolvedPageIndex = coerceFirstFiniteNumber(
     pageRecord.pageIndex,
     pageRecord.currentPageIndex,
   );
-  const resolvedOneBasedPage = asNumber(
+  const resolvedOneBasedPage = coerceFirstFiniteNumber(
     pageRecord.page,
     pageRecord.pageNumber,
     pageRecord.currentPage,
@@ -586,26 +474,28 @@ const normalizePaginatedItems = <TItem>(
     resolvedPageIndex !== undefined
       ? Math.max(0, Math.round(resolvedPageIndex))
       : Math.max(0, Math.round((resolvedOneBasedPage ?? 1) - 1));
-
   const fallbackPageSize = uniqueItems.length > 0 ? uniqueItems.length : 10;
   const pageSize = Math.max(
     1,
     Math.round(
-      asNumber(pageRecord.pageSize, pageRecord.size, pageRecord.limit) ??
+      coerceFirstFiniteNumber(pageRecord.pageSize, pageRecord.size, pageRecord.limit) ??
         fallbackPageSize,
     ),
   );
   const totalCount = Math.max(
     uniqueItems.length,
     Math.round(
-      asNumber(pageRecord.totalCount, pageRecord.count, pageRecord.total) ??
-        uniqueItems.length,
+      coerceFirstFiniteNumber(
+        pageRecord.totalCount,
+        pageRecord.count,
+        pageRecord.total,
+      ) ?? uniqueItems.length,
     ),
   );
   const totalPages = Math.max(
     0,
     Math.round(
-      asNumber(pageRecord.totalPages, pageRecord.pages) ??
+      coerceFirstFiniteNumber(pageRecord.totalPages, pageRecord.pages) ??
         (totalCount > 0 ? Math.ceil(totalCount / pageSize) : 0),
     ),
   );
@@ -617,19 +507,18 @@ const normalizePaginatedItems = <TItem>(
     totalCount,
     totalPages,
     hasPreviousPage:
-      asBoolean(pageRecord.hasPreviousPage) ??
-      (pageIndex > 0 && totalPages > 0),
+      coerceBoolean(pageRecord.hasPreviousPage) ?? (pageIndex > 0 && totalPages > 0),
     hasNextPage:
-      asBoolean(pageRecord.hasNextPage) ??
+      coerceBoolean(pageRecord.hasNextPage) ??
       (totalPages > 0 ? pageIndex + 1 < totalPages : false),
   };
 };
 
 export const normalizeReviewSummary = (raw: unknown): ReviewSummary => {
-  const payload = unwrapApiData(raw);
-  const data = isRecord(payload) ? payload : {};
+  const payload = unwrapNestedDataPayload(raw);
+  const data = isObjectRecord(payload) ? payload : {};
 
-  const sentiment = asString(
+  const sentiment = coerceFirstNonEmptyString(
     data.overallSentiment,
     data.sentiment,
   )?.toLowerCase();
@@ -644,22 +533,20 @@ export const normalizeReviewSummary = (raw: unknown): ReviewSummary => {
 
   return {
     overallSentiment,
-    averageRating: asNumber(data.averageRating, data.avgRating) ?? 0,
-    totalReviews: Math.max(
-      0,
-      Math.round(asNumber(data.totalReviews, data.reviewsCount) ?? 0),
+    averageRating: coerceFirstFiniteNumber(data.averageRating, data.avgRating) ?? 0,
+    totalReviews: coerceNonNegativeInteger(
+      coerceFirstFiniteNumber(data.totalReviews, data.reviewsCount),
     ),
-    summary: asString(data.summary, data.description) ?? "",
-    highlights: asStringArray(data.highlights),
+    summary: coerceFirstNonEmptyString(data.summary, data.description) ?? "",
+    highlights: coerceStringArray(data.highlights, Number.MAX_SAFE_INTEGER),
     commonTopics: rawTopics
-      .filter((topic): topic is Record<string, unknown> => isRecord(topic))
+      .filter((topic): topic is Record<string, unknown> => isObjectRecord(topic))
       .map((topic) => {
-        const topicSentiment = asString(topic.sentiment)?.toLowerCase();
+        const topicSentiment = coerceFirstNonEmptyString(topic.sentiment)?.toLowerCase();
         return {
-          topic: asString(topic.topic, topic.name) ?? "General",
-          count: Math.max(
-            0,
-            Math.round(asNumber(topic.count, topic.mentions) ?? 0),
+          topic: coerceFirstNonEmptyString(topic.topic, topic.name) ?? "General",
+          count: coerceNonNegativeInteger(
+            coerceFirstFiniteNumber(topic.count, topic.mentions),
           ),
           sentiment:
             topicSentiment === "positive" ||
@@ -672,48 +559,44 @@ export const normalizeReviewSummary = (raw: unknown): ReviewSummary => {
   };
 };
 
-export const normalizePaginatedReviews = (raw: unknown): ReviewListResponse => {
-  return normalizePaginatedItems(raw, normalizeReview, getReviewIdentity);
-};
+export const normalizePaginatedReviews = (raw: unknown): ReviewListResponse =>
+  normalizePaginatedItems(raw, normalizeReview, getReviewIdentity);
 
 export const normalizePaginatedSocialReviews = (
   raw: unknown,
-): SocialReviewListResponse => {
-  return normalizePaginatedItems(raw, normalizeSocialReview, (item) => item.id);
-};
+): SocialReviewListResponse =>
+  normalizePaginatedItems(raw, normalizeSocialReview, (item) => item.id);
 
 export const normalizeAverageRating = (
   venueId: string,
   raw: unknown,
 ): VenueAverageRating => {
-  const payload = unwrapApiData(raw);
+  const payload = unwrapNestedDataPayload(raw);
 
   if (typeof payload === "number") {
     return { venueId, averageRating: payload };
   }
 
-  if (!isRecord(payload)) {
+  if (!isObjectRecord(payload)) {
     return { venueId, averageRating: 0 };
   }
 
   return {
-    venueId: asString(payload.venueId) ?? venueId,
-    averageRating: asNumber(payload.averageRating, payload.rating) ?? 0,
+    venueId: coerceFirstNonEmptyString(payload.venueId) ?? venueId,
+    averageRating:
+      coerceFirstFiniteNumber(payload.averageRating, payload.rating) ?? 0,
   };
 };
 
 export const normalizeLikeState = (raw: unknown): boolean | null => {
-  const payload = unwrapApiData(raw);
+  const payload = unwrapNestedDataPayload(raw);
   if (typeof payload === "boolean") return payload;
-  if (!isRecord(payload)) return null;
+  if (!isObjectRecord(payload)) return null;
 
-  const state = asBoolean(
-    payload.isLiked,
-    payload.liked,
-    payload.value,
-    payload.result,
+  return (
+    coerceFirstBoolean(payload.isLiked, payload.liked, payload.value, payload.result) ??
+    null
   );
-  return state ?? null;
 };
 
 export const sanitizeReportPayload = (

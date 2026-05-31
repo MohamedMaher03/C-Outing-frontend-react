@@ -62,6 +62,8 @@ describe("profile mapper", () => {
       vibe: 74,
       districts: ["Maadi", "Downtown"],
       budget: "luxury",
+      favoriteActivities: [],
+      companionTypes: [],
     });
 
     const update = mapPreferenceUpdatePayload({

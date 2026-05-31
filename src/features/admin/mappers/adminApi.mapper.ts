@@ -1,3 +1,15 @@
+import type { PaginatedResponse } from "@/types";
+import {
+  coerceFiniteNumberWithFallback,
+  coerceStringArray,
+  coerceValidDate,
+  extractEnvelopeArray,
+  mapAdminPaginatedResponse,
+  resolveExactCanonicalPriceLevel,
+  resolvePriceLevelFromNumeric,
+  unwrapSuccessEnvelope,
+  type ApiSuccessEnvelope,
+} from "@/utils/mapper";
 import type {
   AdminCategory,
   AdminPlace,
@@ -9,17 +21,9 @@ import type {
   RecentActivity,
   SystemSettings,
 } from "../types";
-import type { PaginatedResponse } from "@/types";
 
-interface ApiEnvelope<T> {
-  success: boolean;
-  statusCode: number;
-  message: string;
-  data: T;
-}
-
-interface PaginatedDto<T> {
-  items: T[];
+interface PaginatedDto<TItem> {
+  items: TItem[];
   pageIndex: number;
   pageSize: number;
   totalCount: number;
@@ -133,110 +137,30 @@ interface AdminCreatedVenueDto {
   website?: string | null;
 }
 
-const asDate = (value: string | null | undefined): Date => {
-  if (!value) {
-    return new Date();
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return new Date();
-  }
-
-  return parsed;
-};
-
 const mapRoleFromNumericCode = (roleCode: number): AdminUserRole => {
-  if (roleCode === 2) {
-    return "moderator";
-  }
-
-  if (roleCode === 3) {
-    return "admin";
-  }
-
+  if (roleCode === 2) return "moderator";
+  if (roleCode === 3) return "admin";
   return "user";
 };
 
 const mapRole = (role: unknown): AdminUserRole => {
-  if (typeof role === "number") {
-    return mapRoleFromNumericCode(role);
-  }
+  if (typeof role === "number") return mapRoleFromNumericCode(role);
 
   if (typeof role === "string") {
     const normalized = role.trim().toLowerCase();
-
-    if (normalized === "admin") {
-      return "admin";
-    }
-
-    if (normalized === "moderator") {
-      return "moderator";
-    }
-
-    if (normalized === "user") {
-      return "user";
-    }
+    if (normalized === "admin") return "admin";
+    if (normalized === "moderator") return "moderator";
+    if (normalized === "user") return "user";
 
     const numericRole = Number(normalized);
-    if (Number.isFinite(numericRole)) {
-      return mapRoleFromNumericCode(numericRole);
-    }
+    if (Number.isFinite(numericRole)) return mapRoleFromNumericCode(numericRole);
   }
 
   return "user";
 };
 
-const mapPriceRange = (priceRange: number): AdminPlace["priceLevel"] => {
-  if (priceRange <= 1) return "cheapest";
-  if (priceRange === 2) return "cheap";
-  if (priceRange === 3) return "midrange";
-  if (priceRange === 4) return "expensive";
-  return "luxury";
-};
-
-const toFiniteNumber = (value: unknown, fallback = 0): number => {
-  const parsed = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
-
-const toStringArray = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter(
-    (item): item is string =>
-      typeof item === "string" && item.trim().length > 0,
-  );
-};
-
-const mapPriceLevelValue = (
-  value: unknown,
-): AdminPlace["priceLevel"] | undefined => {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const normalized = value.trim().toLowerCase();
-
-  if (
-    normalized === "cheapest" ||
-    normalized === "cheap" ||
-    normalized === "midrange" ||
-    normalized === "expensive" ||
-    normalized === "luxury"
-  ) {
-    return normalized;
-  }
-
-  return undefined;
-};
-
 const mapAdminPlaceStatus = (value: unknown): AdminPlace["status"] => {
-  if (typeof value !== "string") {
-    return "active";
-  }
+  if (typeof value !== "string") return "active";
 
   switch (value.trim().toLowerCase()) {
     case "active":
@@ -274,25 +198,16 @@ const mapAdminReviewStatus = (value: unknown): AdminReview["status"] => {
   }
 };
 
-export const unwrapEnvelope = <T>(payload: ApiEnvelope<T> | T): T => {
-  if (
-    payload &&
-    typeof payload === "object" &&
-    "data" in payload &&
-    "success" in payload
-  ) {
-    return (payload as ApiEnvelope<T>).data;
-  }
+const mapAdminPaginatedPage = <TSource, TDomain>(
+  payload: ApiSuccessEnvelope<PaginatedDto<TSource>> | PaginatedDto<TSource>,
+  itemMapper: (item: TSource) => TDomain,
+  zeroBasedPageIndex = true,
+): PaginatedResponse<TDomain> =>
+  mapAdminPaginatedResponse(unwrapSuccessEnvelope(payload), itemMapper, {
+    zeroBasedPageIndex,
+  });
 
-  return payload as T;
-};
-
-const extractArray = <T>(data: T[] | { items: T[] }): T[] => {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray((data as { items: T[] })?.items))
-    return (data as { items: T[] }).items;
-  return [];
-};
+export { unwrapSuccessEnvelope as unwrapEnvelope };
 
 export const mapAdminUser = (dto: AdminUserDto): AdminUser => ({
   userId: dto.id,
@@ -300,46 +215,16 @@ export const mapAdminUser = (dto: AdminUserDto): AdminUser => ({
   email: dto.email,
   role: mapRole(dto.role),
   status: dto.isBanned ? "banned" : "active",
-  joinedDate: asDate(dto.createdAt),
-  lastActive: asDate(dto.updatedAt),
+  joinedDate: coerceValidDate(dto.createdAt),
+  lastActive: coerceValidDate(dto.updatedAt),
   reviewCount: dto.totalInteractions,
   avatar: dto.avatarUrl ?? undefined,
 });
 
 export const mapAdminUsersPage = (
-  payload: ApiEnvelope<PaginatedDto<AdminUserDto>> | PaginatedDto<AdminUserDto>,
-): PaginatedResponse<AdminUser> => {
-  const page = unwrapEnvelope(payload);
-  const mappedItems = page.items.map(mapAdminUser);
-
-  const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
-  const pageIndex = Math.max(1, Math.trunc(toFiniteNumber(page.pageIndex, 1)));
-  const totalCount = Math.max(
-    0,
-    Math.trunc(toFiniteNumber(page.totalCount, mappedItems.length)),
-  );
-  const fallbackTotalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const totalPages = Math.max(
-    1,
-    Math.trunc(toFiniteNumber(page.totalPages, fallbackTotalPages)),
-  );
-
-  return {
-    items: mappedItems,
-    pageIndex,
-    pageSize,
-    totalCount,
-    totalPages,
-    hasPreviousPage:
-      typeof page.hasPreviousPage === "boolean"
-        ? page.hasPreviousPage
-        : pageIndex > 1,
-    hasNextPage:
-      typeof page.hasNextPage === "boolean"
-        ? page.hasNextPage
-        : pageIndex < totalPages,
-  };
-};
+  payload: ApiSuccessEnvelope<PaginatedDto<AdminUserDto>> | PaginatedDto<AdminUserDto>,
+): PaginatedResponse<AdminUser> =>
+  mapAdminPaginatedPage(payload, mapAdminUser, false);
 
 export const mapAdminPlace = (
   dto: AdminVenueDto,
@@ -360,127 +245,51 @@ export const mapAdminPlace = (
             ? statusFallback
             : undefined),
       ),
-  createdAt: asDate(dto.createdAt),
+  createdAt: coerceValidDate(dto.createdAt),
   image: dto.displayImageUrl ?? dto.thumbnailUrl ?? "",
   tags: dto.atmosphereTags,
   description: dto.location,
-  priceLevel: mapPriceRange(dto.priceRange),
+  priceLevel: resolvePriceLevelFromNumeric(dto.priceRange),
 });
 
-export const mapAdminPlacesPage = (
-  payload:
-    | ApiEnvelope<PaginatedDto<AdminVenueDto>>
-    | PaginatedDto<AdminVenueDto>,
+const mapAdminVenuePage = (
+  payload: ApiSuccessEnvelope<PaginatedDto<AdminVenueDto>> | PaginatedDto<AdminVenueDto>,
   reportedVenueIds: Set<string>,
   statusFallback?: AdminPlaceStatusFilter,
-): PaginatedResponse<AdminPlace> => {
-  const page = unwrapEnvelope(payload);
-
-  const mappedItems = page.items.map((item) =>
-    mapAdminPlace(item, reportedVenueIds, statusFallback),
-  );
-
-  const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
-  const rawPageIndex = Math.trunc(toFiniteNumber(page.pageIndex, 0));
-  const pageIndex = rawPageIndex + 1;
-  const totalCount = Math.max(
-    0,
-    Math.trunc(toFiniteNumber(page.totalCount, mappedItems.length)),
-  );
-  const fallbackTotalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const totalPages = Math.max(
-    1,
-    Math.trunc(toFiniteNumber(page.totalPages, fallbackTotalPages)),
-  );
-
-  return {
-    items: mappedItems,
-    pageIndex,
-    pageSize,
-    totalCount,
-    totalPages,
-    hasPreviousPage:
-      typeof page.hasPreviousPage === "boolean"
-        ? page.hasPreviousPage
-        : pageIndex > 1,
-
-    hasNextPage:
-      typeof page.hasNextPage === "boolean"
-        ? page.hasNextPage
-        : pageIndex < totalPages,
-  };
-};
-
-export const mapAdminVenuesPage = (
-  payload:
-    | ApiEnvelope<PaginatedDto<AdminVenueDto>>
-    | PaginatedDto<AdminVenueDto>,
-  reportedVenueIds: Set<string>,
-  statusFallback?: AdminPlaceStatusFilter,
-): PaginatedResponse<AdminPlace> => {
-  const page = unwrapEnvelope(payload);
-
-  const mappedItems = page.items.map((venue) =>
+): PaginatedResponse<AdminPlace> =>
+  mapAdminPaginatedPage(payload, (venue) =>
     mapAdminPlace(venue, reportedVenueIds, statusFallback),
   );
 
-  const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
+export const mapAdminPlacesPage = mapAdminVenuePage;
 
-  const rawPageIndex = Math.trunc(toFiniteNumber(page.pageIndex, 0));
-  const pageIndex = rawPageIndex + 1;
-
-  const totalCount = Math.max(
-    0,
-    Math.trunc(toFiniteNumber(page.totalCount, mappedItems.length)),
-  );
-
-  const fallbackTotalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const totalPages = Math.max(
-    1,
-    Math.trunc(toFiniteNumber(page.totalPages, fallbackTotalPages)),
-  );
-
-  return {
-    items: mappedItems,
-    pageIndex,
-    pageSize,
-    totalCount,
-    totalPages,
-    hasPreviousPage:
-      typeof page.hasPreviousPage === "boolean"
-        ? page.hasPreviousPage
-        : pageIndex > 1,
-    hasNextPage:
-      typeof page.hasNextPage === "boolean"
-        ? page.hasNextPage
-        : pageIndex < totalPages,
-  };
-};
+export const mapAdminVenuesPage = mapAdminVenuePage;
 
 export const mapReportedVenueIds = (
-  payload: ApiEnvelope<ReportedVenueDto[]> | ReportedVenueDto[],
-): Set<string> => {
-  const venues = extractArray(unwrapEnvelope(payload));
-  return new Set(venues.map((venue) => venue.id));
-};
+  payload: ApiSuccessEnvelope<ReportedVenueDto[]> | ReportedVenueDto[],
+): Set<string> =>
+  new Set(extractEnvelopeArray(unwrapSuccessEnvelope(payload)).map((venue) => venue.id));
 
 export const mapCreatedAdminPlace = (
-  payload: ApiEnvelope<AdminCreatedVenueDto> | AdminCreatedVenueDto,
+  payload: ApiSuccessEnvelope<AdminCreatedVenueDto> | AdminCreatedVenueDto,
 ): AdminPlace => {
-  const place = unwrapEnvelope(payload);
-  const explicitPriceLevel = mapPriceLevelValue(place.priceLevel);
-  const explicitTags = toStringArray(place.tags);
-  const fallbackTags = toStringArray(place.atmosphereTags);
+  const place = unwrapSuccessEnvelope(payload);
+  const explicitPriceLevel = resolveExactCanonicalPriceLevel(place.priceLevel);
+  const explicitTags = coerceStringArray(place.tags);
+  const fallbackTags = coerceStringArray(place.atmosphereTags);
 
   return {
     id: place.id,
     name: place.name,
     category: place.category,
     district: place.district,
-    rating: toFiniteNumber(place.rating ?? place.averageRating, 0),
-    reviewCount: Math.max(0, Math.trunc(toFiniteNumber(place.reviewCount, 0))),
+    rating: coerceFiniteNumberWithFallback(place.rating ?? place.averageRating),
+    reviewCount: Math.max(
+      0,
+      Math.trunc(coerceFiniteNumberWithFallback(place.reviewCount)),
+    ),
     status: mapAdminPlaceStatus(place.status ?? "pending"),
-    createdAt: asDate(place.createdAt),
+    createdAt: coerceValidDate(place.createdAt),
     image: place.image ?? place.thumbnailUrl ?? place.displayImageUrl ?? "",
     tags: explicitTags.length > 0 ? explicitTags : fallbackTags,
     description:
@@ -489,7 +298,7 @@ export const mapCreatedAdminPlace = (
     priceLevel:
       explicitPriceLevel ??
       (typeof place.priceRange === "number"
-        ? mapPriceRange(place.priceRange)
+        ? resolvePriceLevelFromNumeric(place.priceRange)
         : undefined),
     phone: place.phone ?? undefined,
     website: place.website ?? undefined,
@@ -503,58 +312,30 @@ const mapAdminReview = (dto: AdminReviewDto): AdminReview => ({
   userAvatar: dto.userAvatarUrl ?? dto.userAvatar ?? undefined,
   venueId: dto.venueId,
   venueName: dto.venueName,
-  rating: Math.max(0, Math.min(5, Math.round(toFiniteNumber(dto.rating, 0)))),
+  rating: Math.max(
+    0,
+    Math.min(5, Math.round(coerceFiniteNumberWithFallback(dto.rating))),
+  ),
   comment: dto.comment,
   status: mapAdminReviewStatus(dto.status),
-  reportCount: Math.max(0, Math.trunc(toFiniteNumber(dto.reportCount, 0))),
-  createdAt: asDate(dto.createdAt),
+  reportCount: Math.max(
+    0,
+    Math.trunc(coerceFiniteNumberWithFallback(dto.reportCount)),
+  ),
+  createdAt: coerceValidDate(dto.createdAt),
 });
 
 export const mapAdminReviews = (
   payload:
-    | ApiEnvelope<PaginatedDto<AdminReviewDto>>
+    | ApiSuccessEnvelope<PaginatedDto<AdminReviewDto>>
     | PaginatedDto<AdminReviewDto>,
-): PaginatedResponse<AdminReview> => {
-  const page = unwrapEnvelope(payload);
-
-  const mappedItems = page.items.map(mapAdminReview);
-
-  const pageSize = Math.max(1, Math.trunc(toFiniteNumber(page.pageSize, 10)));
-  const rawPageIndex = Math.trunc(toFiniteNumber(page.pageIndex, 0));
-  const pageIndex = rawPageIndex + 1;
-
-  const totalCount = Math.max(
-    0,
-    Math.trunc(toFiniteNumber(page.totalCount, mappedItems.length)),
-  );
-
-  const fallbackTotalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const totalPages = Math.max(
-    1,
-    Math.trunc(toFiniteNumber(page.totalPages, fallbackTotalPages)),
-  );
-
-  return {
-    items: mappedItems,
-    pageIndex,
-    pageSize,
-    totalCount,
-    totalPages,
-    hasPreviousPage:
-      typeof page.hasPreviousPage === "boolean"
-        ? page.hasPreviousPage
-        : pageIndex > 1,
-    hasNextPage:
-      typeof page.hasNextPage === "boolean"
-        ? page.hasNextPage
-        : pageIndex < totalPages,
-  };
-};
+): PaginatedResponse<AdminReview> =>
+  mapAdminPaginatedPage(payload, mapAdminReview);
 
 export const mapAdminCategories = (
-  payload: ApiEnvelope<AdminCategoryDto[]> | AdminCategoryDto[],
+  payload: ApiSuccessEnvelope<AdminCategoryDto[]> | AdminCategoryDto[],
 ): AdminCategory[] => {
-  const categories = unwrapEnvelope(payload);
+  const categories = unwrapSuccessEnvelope(payload);
 
   return categories.map((category, index) => {
     const label =
@@ -574,7 +355,10 @@ export const mapAdminCategories = (
         typeof category.icon === "string" && category.icon.trim().length > 0
           ? category.icon
           : "MapPin",
-      count: Math.max(0, Math.trunc(toFiniteNumber(category.count, 0))),
+      count: Math.max(
+        0,
+        Math.trunc(coerceFiniteNumberWithFallback(category.count)),
+      ),
       color:
         typeof category.color === "string" && category.color.trim().length > 0
           ? category.color
@@ -585,12 +369,12 @@ export const mapAdminCategories = (
 };
 
 export const mapStats = (
-  statsPayload: ApiEnvelope<AdminStatsDto> | AdminStatsDto,
-  healthPayload: ApiEnvelope<SystemHealthDto> | SystemHealthDto,
+  statsPayload: ApiSuccessEnvelope<AdminStatsDto> | AdminStatsDto,
+  healthPayload: ApiSuccessEnvelope<SystemHealthDto> | SystemHealthDto,
   reportsCount: number,
 ): AdminStats => {
-  const stats = unwrapEnvelope(statsPayload);
-  const health = unwrapEnvelope(healthPayload);
+  const stats = unwrapSuccessEnvelope(statsPayload);
+  const health = unwrapSuccessEnvelope(healthPayload);
 
   return {
     totalUsers: stats.totalUsers,
@@ -608,11 +392,11 @@ export const mapStats = (
 };
 
 export const toRecentActivity = (
-  statsPayload: ApiEnvelope<AdminStatsDto> | AdminStatsDto,
-  healthPayload: ApiEnvelope<SystemHealthDto> | SystemHealthDto,
+  statsPayload: ApiSuccessEnvelope<AdminStatsDto> | AdminStatsDto,
+  healthPayload: ApiSuccessEnvelope<SystemHealthDto> | SystemHealthDto,
 ): RecentActivity[] => {
-  const stats = unwrapEnvelope(statsPayload);
-  const health = unwrapEnvelope(healthPayload);
+  const stats = unwrapSuccessEnvelope(statsPayload);
+  const health = unwrapSuccessEnvelope(healthPayload);
   const now = new Date();
 
   return [
@@ -635,15 +419,15 @@ export const toRecentActivity = (
       id: "health-status",
       type: "report_filed",
       description: `System status is ${health.Status} (snapshot ${health.Timestamp})`,
-      timestamp: asDate(health.Timestamp),
+      timestamp: coerceValidDate(health.Timestamp),
     },
   ];
 };
 
 export const toSystemSettings = (
-  healthPayload: ApiEnvelope<SystemHealthDto> | SystemHealthDto,
+  healthPayload: ApiSuccessEnvelope<SystemHealthDto> | SystemHealthDto,
 ): SystemSettings => {
-  const health = unwrapEnvelope(healthPayload);
+  const health = unwrapSuccessEnvelope(healthPayload);
 
   return {
     siteName: "C-Outing",
@@ -658,19 +442,18 @@ export const toSystemSettings = (
 };
 
 export const toDerivedCategories = (places: AdminPlace[]): AdminCategory[] => {
-  const byCategory = new Map<string, number>();
+  const venueCountByCategory = places.reduce<Map<string, number>>(
+    (counts, place) =>
+      counts.set(place.category, (counts.get(place.category) ?? 0) + 1),
+    new Map(),
+  );
 
-  places.forEach((place) => {
-    const current = byCategory.get(place.category) ?? 0;
-    byCategory.set(place.category, current + 1);
-  });
-
-  return Array.from(byCategory.entries()).map(([category, count]) => ({
+  return Array.from(venueCountByCategory.entries()).map(([category, count]) => ({
     id: category.toLowerCase().replace(/\s+/g, "-"),
     label: category,
     icon: "MapPin",
     count,
     color: "bg-slate-100",
-    status: "active",
+    status: "active" as const,
   }));
 };

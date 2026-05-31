@@ -1,15 +1,7 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
-  ChevronLeft,
   ChevronRight,
   Flame,
   Compass,
@@ -29,6 +21,13 @@ import { GuidedTour } from "@/features/home/components/GuidedTour";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useHome } from "@/features/home/hooks/useHomeHook";
 import { useGuidedTour } from "@/features/home/hooks/useGuidedTour";
+import { useSimilarVenueStudio } from "@/features/home/hooks/useSimilarVenueStudio";
+import {
+  useScrollRestoration,
+  useGreetingKey,
+  useSectionScrollIntoView,
+  useScrollKeyTracker,
+} from "@/features/home/hooks/usePageBehaviors";
 import { cn } from "@/lib/utils";
 import {
   FILTER_OPTIONS,
@@ -36,186 +35,32 @@ import {
   MOOD_ICON_MAP,
   VENUE_PRICE_RANGE_OPTIONS,
 } from "@/features/home/mocks";
-import type { HomePlace, VenuePriceRange } from "@/features/home/types";
+import type { VenuePriceRange } from "@/features/home/types";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
-import { getErrorMessage } from "@/utils/apiError";
 import { getTranslatedText } from "@/utils/helpers";
-import {
-  getHorizontalScrollState,
-  scrollHorizontally,
-  scrollToHorizontalStart,
-} from "@/utils/horizontalScroll";
+import HorizontalScroller from "@/features/home/components/HorizontalScroller";
 import { GroupSessionWidget } from "@/features/session/components/GroupSessionWidget";
-import { homeService } from "@/features/home/services/homeService";
 import { authService } from "@/features/auth";
-
-const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const;
-const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
-
-interface HorizontalScrollerProps {
-  children: ReactNode;
-  ariaLabel: string;
-  className?: string;
-  scrollKey?: string | number;
-  /** When false, only touch / trackpad / scrollbar scrolling (no nav arrows). */
-  showArrows?: boolean;
-}
-
-const HorizontalScroller = ({
-  children,
-  ariaLabel,
-  className,
-  scrollKey,
-  showArrows = true,
-}: HorizontalScrollerProps) => {
-  const { t, direction } = useI18n();
-  const isRtl = direction === "rtl";
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const shouldReduceMotion = useReducedMotion();
-  const [canScrollPrevious, setCanScrollPrevious] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(false);
-
-  const updateScrollButtons = useCallback(() => {
-    if (!showArrows) {
-      return;
-    }
-
-    const element = scrollRef.current;
-    if (!element) {
-      return;
-    }
-
-    const { canScrollBack, canScrollForward } =
-      getHorizontalScrollState(element);
-    setCanScrollPrevious(canScrollBack);
-    setCanScrollNext(canScrollForward);
-  }, [showArrows]);
-
-  useEffect(() => {
-    const element = scrollRef.current;
-    if (!element) return;
-    scrollToHorizontalStart(element);
-    if (showArrows) {
-      requestAnimationFrame(updateScrollButtons);
-    }
-  }, [scrollKey, updateScrollButtons, isRtl, showArrows]);
-
-  useEffect(() => {
-    if (!showArrows) {
-      return;
-    }
-
-    const element = scrollRef.current;
-    if (!element) {
-      return;
-    }
-
-    element.addEventListener("scroll", updateScrollButtons, { passive: true });
-
-    const resizeObserver = new ResizeObserver(updateScrollButtons);
-    resizeObserver.observe(element);
-
-    return () => {
-      element.removeEventListener("scroll", updateScrollButtons);
-      resizeObserver.disconnect();
-    };
-  }, [updateScrollButtons, showArrows]);
-
-  useEffect(() => {
-    updateScrollButtons();
-  }, [children, updateScrollButtons]);
-
-  const scrollByStep = (step: "previous" | "next") => {
-    const element = scrollRef.current;
-    if (!element) {
-      return;
-    }
-
-    const amount = Math.max(Math.round(element.clientWidth * 0.8), 280);
-    scrollHorizontally(
-      element,
-      step === "previous" ? "back" : "forward",
-      amount,
-      shouldReduceMotion ? "auto" : "smooth",
-    );
-  };
-
-  const PreviousIcon = isRtl ? ChevronRight : ChevronLeft;
-  const NextIcon = isRtl ? ChevronLeft : ChevronRight;
-
-  const trackClassName = cn(
-    "flex gap-3 overflow-x-auto pb-4 pt-1 horizontal-scroller-scrollbar sm:gap-4 md:pb-5",
-    showArrows
-      ? "min-w-0 flex-1 snap-x snap-mandatory scroll-px-2"
-      : "-mx-2 snap-x snap-mandatory px-2",
-    className,
-  );
-
-  const arrowButtonClassName =
-    "hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-md transition-opacity hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none md:inline-flex";
-
-  if (!showArrows) {
-    return (
-      <div dir={direction}>
-        <div
-          ref={scrollRef}
-          dir={direction}
-          className={trackClassName}
-          aria-label={ariaLabel}
-        >
-          {children}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="-mx-4 flex items-center gap-1 px-4 md:gap-2"
-      dir={direction}
-    >
-      <button
-        type="button"
-        onClick={() => scrollByStep("previous")}
-        aria-label={t("home.scroller.scrollPrevious", { label: ariaLabel })}
-        aria-hidden={!canScrollPrevious}
-        disabled={!canScrollPrevious}
-        tabIndex={canScrollPrevious ? 0 : -1}
-        className={cn(arrowButtonClassName, !canScrollPrevious && "invisible")}
-      >
-        <PreviousIcon className="h-4 w-4" aria-hidden />
-      </button>
-
-      <div
-        ref={scrollRef}
-        dir={direction}
-        className={trackClassName}
-        aria-label={ariaLabel}
-      >
-        {children}
-      </div>
-
-      <button
-        type="button"
-        onClick={() => scrollByStep("next")}
-        aria-label={t("home.scroller.scrollNext", { label: ariaLabel })}
-        aria-hidden={!canScrollNext}
-        disabled={!canScrollNext}
-        tabIndex={canScrollNext ? 0 : -1}
-        className={cn(arrowButtonClassName, !canScrollNext && "invisible")}
-      >
-        <NextIcon className="h-4 w-4" aria-hidden />
-      </button>
-    </div>
-  );
-};
+import {
+  buildHeroContainerVariants,
+  buildHeroItemVariants,
+  buildStateTransition,
+  buildStaggeredCardDelay,
+  EASE_OUT_QUART,
+  EASE_OUT_EXPO,
+} from "@/features/home/utils/motionVariants";
 
 const HomePage = () => {
   const { t, formatNumber } = useI18n();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const shouldReduceMotion = useReducedMotion() ?? false;
+
   const [searchInput, setSearchInput] = useState("");
+  const greetingKey = useGreetingKey();
+  useScrollRestoration();
+
   const {
     tourActive,
     currentStep,
@@ -275,63 +120,50 @@ const HomePage = () => {
     popularDistricts,
   } = useHome();
 
-  const prevDiscoveryKeyRef = useRef<string>(`${activeDiscoverySource}`);
-  const [discoveryScrollKey, setDiscoveryScrollKey] = useState(0);
-  useEffect(() => {
-    const next = `${activeDiscoverySource}`;
-    if (next !== prevDiscoveryKeyRef.current) {
-      prevDiscoveryKeyRef.current = next;
-      setDiscoveryScrollKey((k) => k + 1);
-    }
-  }, [activeDiscoverySource]);
+  const discoveryScrollKey = useScrollKeyTracker(`${activeDiscoverySource}`);
+  const filterScrollKey = useScrollKeyTracker(selectedFilters.join(","));
+  const moodSectionRef = useRef<HTMLElement | null>(null);
+  const scrollMoodIntoView = useSectionScrollIntoView(moodSectionRef);
 
-  const prevFiltersKeyRef = useRef(selectedFilters.join(","));
-  const [filterScrollKey, setFilterScrollKey] = useState(0);
-  useEffect(() => {
-    const next = selectedFilters.join(",");
-    if (next !== prevFiltersKeyRef.current) {
-      prevFiltersKeyRef.current = next;
-      setFilterScrollKey((k) => k + 1);
-    }
-  }, [selectedFilters]);
+  const studioProps = useSimilarVenueStudio({
+    selectedSimilarSeedId,
+    selectPlaceForSimilar,
+    seedCandidatePool: similarSeedPlaces,
+    defaultSeedOptions: curatedPlaces.slice(0, 6),
+  });
 
-  const HOME_SCROLL_KEY = "home_page_scroll_y";
-  const pageScrollRef = useRef<number>(0);
+  const {
+    seedSearchQuery,
+    setSeedSearchQuery,
+    isSeedSearchLoading,
+    seedSearchError,
+    setIsSeedInputFocused,
+    commitSeedSelection,
+    resolvedSeedPlace,
+    effectiveSuggestions,
+    showSuggestionDropdown,
+  } = studioProps;
 
-  useEffect(() => {
-    const onScroll = () => {
-      pageScrollRef.current = window.scrollY;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  const stateTransition = useMemo(
+    () => buildStateTransition(shouldReduceMotion),
+    [shouldReduceMotion],
+  );
 
-  useEffect(() => {
-    return () => {
-      try {
-        sessionStorage.setItem(HOME_SCROLL_KEY, String(pageScrollRef.current));
-      } catch {
-        // sessionStorage unavailable — ignore
-      }
-    };
-  }, []);
+  const heroContainerVariants = useMemo(
+    () => buildHeroContainerVariants(shouldReduceMotion),
+    [shouldReduceMotion],
+  );
 
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(HOME_SCROLL_KEY);
-      if (saved) {
-        const y = Number(saved);
-        if (y > 0) {
-          requestAnimationFrame(() => {
-            window.scrollTo({ top: y, behavior: "instant" });
-          });
-        }
-        sessionStorage.removeItem(HOME_SCROLL_KEY);
-      }
-    } catch {
-      // sessionStorage unavailable — ignore
-    }
-  }, []);
+  const heroItemVariants = useMemo(
+    () => buildHeroItemVariants(shouldReduceMotion),
+    [shouldReduceMotion],
+  );
+
+  const cardDelay = useCallback(
+    (index: number, base = 0) =>
+      buildStaggeredCardDelay(index, shouldReduceMotion, base),
+    [shouldReduceMotion],
+  );
 
   const localizedFilters = useMemo(
     () =>
@@ -380,100 +212,11 @@ const HomePage = () => {
     (activeDiscoverySource === "top-rated-area" && isTopRatedInAreaLoading);
 
   const discoveryResultCount = discoveryPlaces.length;
-  const [similarSearchInput, setSimilarSearchInput] = useState("");
-  const [similarSearchResults, setSimilarSearchResults] = useState<HomePlace[]>(
-    [],
-  );
-  const [isSimilarSearchLoading, setIsSimilarSearchLoading] = useState(false);
-  const [similarSearchError, setSimilarSearchError] = useState<string | null>(
-    null,
-  );
-  const [hasSelectedSimilarSeed, setHasSelectedSimilarSeed] = useState(false);
-  const [selectedSimilarSeedFromSearch, setSelectedSimilarSeedFromSearch] =
-    useState<HomePlace | null>(null);
-  const [isSimilarInputFocused, setIsSimilarInputFocused] = useState(false);
-  const moodSectionRef = useRef<HTMLElement | null>(null);
-
-  const defaultSimilarSeedOptions = useMemo(
-    () => curatedPlaces.slice(0, 6),
-    [curatedPlaces],
-  );
-  const similarSeedOptions = hasSelectedSimilarSeed
-    ? similarSeedPlaces
-    : defaultSimilarSeedOptions;
-  const defaultSimilarSearchResults = useMemo(
-    () => similarSeedOptions.slice(0, 8),
-    [similarSeedOptions],
-  );
-
-  const selectedSimilarSeedPlace = useMemo(() => {
-    if (!selectedSimilarSeedId || !hasSelectedSimilarSeed) {
-      return null;
-    }
-
-    return (
-      similarSeedOptions.find((place) => place.id === selectedSimilarSeedId) ??
-      (selectedSimilarSeedFromSearch?.id === selectedSimilarSeedId
-        ? selectedSimilarSeedFromSearch
-        : null)
-    );
-  }, [
-    selectedSimilarSeedId,
-    hasSelectedSimilarSeed,
-    similarSeedOptions,
-    selectedSimilarSeedFromSearch,
-  ]);
 
   const selectedMoodOption = useMemo(
     () => moodOptions.find((mood) => mood.id === selectedMood) ?? null,
     [moodOptions, selectedMood],
   );
-
-  const trimmedSimilarQuery = similarSearchInput.trim();
-  const effectiveSimilarResults = trimmedSimilarQuery
-    ? similarSearchResults
-    : defaultSimilarSearchResults;
-
-  useEffect(() => {
-    if (!trimmedSimilarQuery) {
-      setIsSimilarSearchLoading(false);
-      setSimilarSearchError(null);
-      return;
-    }
-
-    let cancelled = false;
-    const timeoutId = window.setTimeout(async () => {
-      setIsSimilarSearchLoading(true);
-      setSimilarSearchError(null);
-      try {
-        const response = await homeService.searchVenues({
-          searchTerm: trimmedSimilarQuery,
-          page: 1,
-          pageSize: 8,
-        });
-
-        if (!cancelled) {
-          setSimilarSearchResults(response.items);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setSimilarSearchError(
-            getErrorMessage(err, "Failed to search venues"),
-          );
-          setSimilarSearchResults([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setIsSimilarSearchLoading(false);
-        }
-      }
-    }, 250);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [trimmedSimilarQuery]);
 
   const getMoodLabel = useCallback(
     (moodId: string, fallback: string) =>
@@ -485,58 +228,6 @@ const HomePage = () => {
     (moodId: string, fallback: string) =>
       t(`home.mood.${moodId}.description`, undefined, fallback),
     [t],
-  );
-
-  const showSimilarSuggestions =
-    isSimilarInputFocused ||
-    (trimmedSimilarQuery.length > 0 &&
-      trimmedSimilarQuery !== selectedSimilarSeedPlace?.name);
-  const shouldReduceMotion = useReducedMotion();
-
-  const stateTransition = useMemo(
-    () => ({
-      duration: shouldReduceMotion ? 0.01 : 0.24,
-      ease: EASE_OUT_QUART,
-    }),
-    [shouldReduceMotion],
-  );
-
-  const heroContainerVariants = useMemo(
-    () => ({
-      hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 16 },
-      visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-          duration: shouldReduceMotion ? 0.01 : 0.62,
-          ease: EASE_OUT_EXPO,
-          staggerChildren: shouldReduceMotion ? 0 : 0.12,
-          delayChildren: shouldReduceMotion ? 0 : 0.08,
-        },
-      },
-    }),
-    [shouldReduceMotion],
-  );
-
-  const heroItemVariants = useMemo(
-    () => ({
-      hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 14 },
-      visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-          duration: shouldReduceMotion ? 0.01 : 0.48,
-          ease: EASE_OUT_QUART,
-        },
-      },
-    }),
-    [shouldReduceMotion],
-  );
-
-  const cardDelay = useCallback(
-    (index: number, base = 0) =>
-      shouldReduceMotion ? 0 : base + Math.min(index * 0.06, 0.28),
-    [shouldReduceMotion],
   );
 
   const openVenueInNewTab = useCallback((id: string) => {
@@ -553,52 +244,9 @@ const HomePage = () => {
 
   const handleSearchNavigate = useCallback(() => {
     const trimmed = searchInput.trim();
-    if (!trimmed) {
-      return;
-    }
-
+    if (!trimmed) return;
     navigate(`/home/search?q=${encodeURIComponent(trimmed)}`);
   }, [navigate, searchInput]);
-
-  const scrollMoodSectionIntoView = useCallback(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    const maxAttempts = 8;
-    const offset = 96;
-    let attempts = 0;
-
-    const tryScroll = () => {
-      const moodSection = moodSectionRef.current;
-      if (moodSection) {
-        const rect = moodSection.getBoundingClientRect();
-        const viewportHeight =
-          window.innerHeight || document.documentElement.clientHeight;
-        const isMostlyVisible =
-          rect.top >= offset && rect.bottom <= viewportHeight - offset;
-
-        if (!isMostlyVisible) {
-          const targetTop = Math.max(0, rect.top + window.scrollY - offset);
-          window.scrollTo({
-            top: targetTop,
-            behavior: prefersReducedMotion ? "auto" : "smooth",
-          });
-        }
-        return;
-      }
-
-      attempts += 1;
-      if (attempts < maxAttempts) {
-        window.requestAnimationFrame(tryScroll);
-      }
-    };
-
-    window.requestAnimationFrame(tryScroll);
-  }, []);
 
   const handleMoodOptionSelect = useCallback(
     (moodId: string, isActive: boolean) => {
@@ -606,34 +254,13 @@ const HomePage = () => {
         setSelectedMood(null);
         return;
       }
-
       setSelectedMood(moodId);
-      scrollMoodSectionIntoView();
+      scrollMoodIntoView();
     },
-    [scrollMoodSectionIntoView, setSelectedMood],
+    [scrollMoodIntoView, setSelectedMood],
   );
 
-  const getGreetingKey = (hour: number) => {
-    if (hour >= 6 && hour < 12) return "home.greeting.morning";
-    if (hour >= 12 && hour < 18) return "home.greeting.afternoon";
-    return "home.greeting.evening";
-  };
-
-  const [greetingKey, setGreetingKey] = useState(() =>
-    getGreetingKey(new Date().getHours()),
-  );
-
-  useEffect(() => {
-    const updateGreeting = () => {
-      setGreetingKey(getGreetingKey(new Date().getHours()));
-    };
-
-    updateGreeting();
-    const intervalId = window.setInterval(updateGreeting, 60_000);
-    return () => window.clearInterval(intervalId);
-  }, []);
-
-  const userName = user?.name?.split(" ")[0] || t("home.user.explorer");
+  const userName = user?.name?.split(" ")[0] ?? t("home.user.explorer");
 
   if (isLoading) {
     return (
@@ -682,7 +309,6 @@ const HomePage = () => {
                     <RotateCcw className="h-4 w-4" />
                     {t("common.retry")}
                   </Button>
-
                   <Button
                     type="button"
                     onClick={() => window.location.reload()}
@@ -698,7 +324,6 @@ const HomePage = () => {
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("home.error.quickCheck")}
                 </h2>
-
                 <ul className="mt-4 space-y-3">
                   <li className="rounded-2xl border border-border/70 bg-card/70 p-3 text-sm text-foreground">
                     <span className="flex items-center gap-2 font-semibold text-foreground">
@@ -742,6 +367,7 @@ const HomePage = () => {
           />
         )}
       </AnimatePresence>
+
       <div className="relative h-[310px] overflow-hidden sm:h-[380px] lg:h-[430px]">
         <motion.div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -787,9 +413,7 @@ const HomePage = () => {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  handleSearchNavigate();
-                }
+                if (event.key === "Enter") handleSearchNavigate();
               }}
               aria-label={t("home.hero.searchAria")}
               className="h-12 rounded-2xl border border-white/25 bg-white/85 pl-11 pr-[5.5rem] text-sm text-slate-900 shadow-lg transition-colors placeholder:text-slate-500 focus:border-secondary/70 focus:bg-white focus:ring-secondary/20 backdrop-blur-md dark:bg-black/45 dark:text-white dark:placeholder:text-white/65 dark:focus:bg-black/55 sm:h-14 sm:pl-12 sm:pr-28 sm:text-base"
@@ -905,10 +529,8 @@ const HomePage = () => {
         )}
       </AnimatePresence>
 
-      {/*  here we split -> TWO-COLUMN LAYOUT  */}
       <div className="mx-auto max-w-7xl px-4 pt-5 [padding-bottom:max(2.5rem,calc(env(safe-area-inset-bottom,0px)+2.5rem))] sm:py-6 sm:pb-12 md:py-8 md:pb-8">
         <div className="grid grid-cols-1 items-start gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
-          {/* ── LEFT: Main Feed ── */}
           <div
             className="flex-1 min-w-0 space-y-8 sm:space-y-10 lg:space-y-12"
             style={{ isolation: "isolate" }}
@@ -943,7 +565,6 @@ const HomePage = () => {
                     {t("home.mobile.moodSelectorHint")}
                   </span>
                 </div>
-
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {moodOptions.map((mood) => {
                     const isActive = selectedMood === mood.id;
@@ -980,7 +601,6 @@ const HomePage = () => {
               </div>
             </section>
 
-            {/* ──here is Venue Discovery ── */}
             <section
               className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm"
               style={{ isolation: "isolate" }}
@@ -1055,7 +675,7 @@ const HomePage = () => {
                 >
                   {popularDistricts.map((district) => {
                     const isActive = selectedDistrict === district.name;
-                    const translatedDistrictName = getTranslatedText(
+                    const translatedName = getTranslatedText(
                       district.nameKey,
                       district.name,
                       t,
@@ -1074,7 +694,7 @@ const HomePage = () => {
                             : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                         }`}
                       >
-                        {translatedDistrictName}
+                        {translatedName}
                       </button>
                     );
                   })}
@@ -1085,7 +705,6 @@ const HomePage = () => {
                 <div className="flex flex-wrap gap-2">
                   {typeDiscoveryOptions.map((option) => {
                     const isActive = selectedVenueType === option.id;
-
                     return (
                       <button
                         type="button"
@@ -1123,20 +742,12 @@ const HomePage = () => {
                         }`}
                       >
                         <p
-                          className={`text-sm font-semibold tracking-tight ${
-                            isActive
-                              ? "text-primary-foreground"
-                              : "text-foreground"
-                          }`}
+                          className={`text-sm font-semibold tracking-tight ${isActive ? "text-primary-foreground" : "text-foreground"}`}
                         >
                           {option.label}
                         </p>
                         <p
-                          className={`text-[11px] font-medium ${
-                            isActive
-                              ? "text-primary-foreground/85"
-                              : "text-muted-foreground"
-                          }`}
+                          className={`text-[11px] font-medium ${isActive ? "text-primary-foreground/85" : "text-muted-foreground"}`}
                         >
                           {option.caption}
                         </p>
@@ -1161,7 +772,7 @@ const HomePage = () => {
                   >
                     {popularDistricts.map((district) => {
                       const isActive = selectedArea === district.name;
-                      const translatedDistrictName = getTranslatedText(
+                      const translatedName = getTranslatedText(
                         district.nameKey,
                         district.name,
                         t,
@@ -1180,7 +791,7 @@ const HomePage = () => {
                               : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
                           }`}
                         >
-                          {translatedDistrictName}
+                          {translatedName}
                         </button>
                       );
                     })}
@@ -1318,7 +929,6 @@ const HomePage = () => {
               </div>
             </section>
 
-            {/* ── Mood Picks ── */}
             <AnimatePresence initial={false} mode="wait">
               {selectedMood && (
                 <motion.section
@@ -1448,7 +1058,6 @@ const HomePage = () => {
               )}
             </AnimatePresence>
 
-            {/* ── Curated For You ── */}
             <section
               className="space-y-4"
               data-tour="tour-curated"
@@ -1495,7 +1104,6 @@ const HomePage = () => {
               </HorizontalScroller>
             </section>
 
-            {/* ── Trending Now ── */}
             {trendingPlaces.length > 0 && (
               <section className="space-y-4">
                 <div className="flex items-start justify-between gap-2">
@@ -1540,7 +1148,6 @@ const HomePage = () => {
               </section>
             )}
 
-            {/* ── Similar Places Studio ── */}
             <section
               className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm"
               style={{ isolation: "isolate" }}
@@ -1562,13 +1169,13 @@ const HomePage = () => {
                       </p>
                     </div>
                   </div>
-                  {selectedSimilarSeedPlace && (
+                  {resolvedSeedPlace && (
                     <span
                       className="self-start truncate rounded-full border border-secondary/25 bg-secondary/10 px-3 py-1 text-xs font-medium text-foreground max-w-full"
-                      title={selectedSimilarSeedPlace.name}
+                      title={resolvedSeedPlace.name}
                     >
                       {t("home.similar.selected", {
-                        name: selectedSimilarSeedPlace.name,
+                        name: resolvedSeedPlace.name,
                       })}
                     </span>
                   )}
@@ -1578,18 +1185,18 @@ const HomePage = () => {
                   <div className="relative">
                     <Search className="pointer-events-none absolute top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground/75 [inset-inline-start:1rem]" />
                     <Input
-                      value={similarSearchInput}
-                      onChange={(e) => setSimilarSearchInput(e.target.value)}
-                      onFocus={() => setIsSimilarInputFocused(true)}
+                      value={seedSearchQuery}
+                      onChange={(e) => setSeedSearchQuery(e.target.value)}
+                      onFocus={() => setIsSeedInputFocused(true)}
                       onBlur={() => {
-                        setTimeout(() => setIsSimilarInputFocused(false), 120);
+                        setTimeout(() => setIsSeedInputFocused(false), 120);
                       }}
                       placeholder={t("home.similar.searchPlaceholder")}
                       className="h-12 rounded-2xl border-border/70 bg-card/90 [padding-inline-start:2.75rem] focus-visible:ring-secondary/30"
                     />
 
                     <AnimatePresence>
-                      {showSimilarSuggestions && (
+                      {showSuggestionDropdown && (
                         <motion.div
                           key="similar-suggestions"
                           initial={{
@@ -1601,7 +1208,7 @@ const HomePage = () => {
                           transition={stateTransition}
                           className="absolute z-20 mt-2 max-h-52 w-full overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-lg sm:max-h-72"
                         >
-                          {isSimilarSearchLoading ? (
+                          {isSeedSearchLoading ? (
                             <p className="px-3 py-2 text-xs text-muted-foreground">
                               {t(
                                 "home.similar.searching",
@@ -1609,49 +1216,35 @@ const HomePage = () => {
                                 "Searching...",
                               )}
                             </p>
-                          ) : similarSearchError ? (
+                          ) : seedSearchError ? (
                             <p className="px-3 py-2 text-xs text-destructive">
-                              {similarSearchError}
+                              {seedSearchError}
                             </p>
-                          ) : effectiveSimilarResults.length > 0 ? (
-                            effectiveSimilarResults.map((place) => {
-                              const isActive =
+                          ) : effectiveSuggestions.length > 0 ? (
+                            effectiveSuggestions.map((place) => {
+                              const isActiveSeed =
                                 selectedSimilarSeedId === place.id;
                               return (
                                 <button
                                   type="button"
                                   key={`suggestion-${place.id}`}
-                                  onMouseDown={(event) => {
-                                    event.preventDefault();
-                                  }}
-                                  onClick={() => {
-                                    setSimilarSearchInput(place.name);
-                                    setSelectedSimilarSeedFromSearch(place);
-                                    selectPlaceForSimilar(place.id);
-                                    setHasSelectedSimilarSeed(true);
-                                    setIsSimilarInputFocused(false);
-                                  }}
+                                  onMouseDown={(event) =>
+                                    event.preventDefault()
+                                  }
+                                  onClick={() => commitSeedSelection(place)}
                                   className={`w-full rounded-xl px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                                    isActive
+                                    isActiveSeed
                                       ? "bg-primary text-primary-foreground dark:text-cream"
                                       : "hover:bg-primary/12 hover:text-primary dark:hover:bg-primary/24 dark:hover:text-cream"
                                   }`}
                                 >
                                   <p
-                                    className={`text-sm font-semibold ${
-                                      isActive
-                                        ? "text-primary-foreground dark:text-cream"
-                                        : "text-foreground"
-                                    }`}
+                                    className={`text-sm font-semibold ${isActiveSeed ? "text-primary-foreground dark:text-cream" : "text-foreground"}`}
                                   >
                                     {place.name}
                                   </p>
                                   <p
-                                    className={`mt-0.5 truncate text-xs ${
-                                      isActive
-                                        ? "text-primary-foreground/90 dark:text-cream/90"
-                                        : "text-muted-foreground"
-                                    }`}
+                                    className={`mt-0.5 truncate text-xs ${isActiveSeed ? "text-primary-foreground/90 dark:text-cream/90" : "text-muted-foreground"}`}
                                   >
                                     {place.address}
                                   </p>
@@ -1669,29 +1262,28 @@ const HomePage = () => {
                   </div>
 
                   <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 scrollbar-hide sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
-                    {similarSeedOptions.slice(0, 6).map((place) => {
-                      const isActive = selectedSimilarSeedId === place.id;
-                      return (
-                        <button
-                          type="button"
-                          key={`quick-seed-${place.id}`}
-                          onClick={() => {
-                            setSimilarSearchInput(place.name);
-                            setSelectedSimilarSeedFromSearch(place);
-                            selectPlaceForSimilar(place.id);
-                            setHasSelectedSimilarSeed(true);
-                            setIsSimilarInputFocused(false);
-                          }}
-                          className={`flex-shrink-0 rounded-full border px-4 py-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                            isActive
-                              ? "border-primary/85 bg-primary text-primary-foreground shadow-sm dark:text-cream"
-                              : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
-                          }`}
-                        >
-                          {place.name}
-                        </button>
-                      );
-                    })}
+                    {(studioProps.hasManuallySelectedSeed
+                      ? similarSeedPlaces
+                      : curatedPlaces.slice(0, 6)
+                    )
+                      .slice(0, 6)
+                      .map((place) => {
+                        const isActiveSeed = selectedSimilarSeedId === place.id;
+                        return (
+                          <button
+                            type="button"
+                            key={`quick-seed-${place.id}`}
+                            onClick={() => commitSeedSelection(place)}
+                            className={`flex-shrink-0 rounded-full border px-4 py-2.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                              isActiveSeed
+                                ? "border-primary/85 bg-primary text-primary-foreground shadow-sm dark:text-cream"
+                                : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12 dark:hover:bg-primary/24 dark:hover:text-cream"
+                            }`}
+                          >
+                            {place.name}
+                          </button>
+                        );
+                      })}
                   </div>
                 </div>
 
@@ -1792,7 +1384,7 @@ const HomePage = () => {
                               userLocation={userLocation}
                               onToggleSave={toggleSave}
                               isSavePending={isPlaceSavePending(place.id)}
-                              hideTopRatedBadge={showSimilarSuggestions}
+                              hideTopRatedBadge={showSuggestionDropdown}
                               onClick={openVenueInNewTab}
                             />
                           </motion.div>
@@ -1805,14 +1397,11 @@ const HomePage = () => {
             </section>
           </div>
 
-          {/* ── RIGHT SIDEBAR ── */}
           <aside className="sticky top-6 hidden w-[280px] flex-shrink-0 flex-col gap-6 lg:flex">
-            {/* Group Session Card */}
             <div data-tour="tour-group" id="tour-group-desktop">
               <GroupSessionWidget variant="sidebar" />
             </div>
 
-            {/* Mood Selector Card */}
             <div
               className="bg-card rounded-3xl border border-border/50 shadow-sm p-5 space-y-4"
               data-tour="tour-mood"

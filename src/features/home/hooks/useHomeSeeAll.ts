@@ -5,11 +5,11 @@ import type {
   HomePlace,
   HomeRecommendationCollection,
 } from "@/features/home/types";
-import {
-  INTERACTION_ACTION_TYPES,
-  trackVenueInteractionSafe,
-} from "@/features/interactions";
 import { getErrorMessage } from "@/utils/apiError";
+import {
+  buildToggleSaveHandler,
+  patchSavedStateInCollection,
+} from "../utils/venueCollectionOps";
 
 interface UseHomeSeeAllOptions {
   collection?: string;
@@ -32,6 +32,16 @@ interface UseHomeSeeAllReturn {
   userLocation: ReturnType<typeof useUserLocation>;
 }
 
+type CollectionFetcher = () => Promise<HomePlace[]>;
+
+const COLLECTION_FETCHERS: Record<
+  Exclude<HomeRecommendationCollection, "mood">,
+  (count: number) => CollectionFetcher
+> = {
+  curated: (count) => () => homeService.fetchPersonalizedRecommendations({ count }),
+  trending: (count) => () => homeService.fetchTrendingRecommendations({ count }),
+};
+
 export const useHomeSeeAll = ({
   collection,
   moodId,
@@ -42,9 +52,7 @@ export const useHomeSeeAll = ({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [count, setCount] = useState<number>(20);
   const [reloadKey, setReloadKey] = useState(0);
-  const [savePendingMap, setSavePendingMap] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [savePendingMap, setSavePendingMap] = useState<Record<string, boolean>>({});
   const userLocation = useUserLocation();
   const saveInFlightIds = useRef(new Set<string>());
 
@@ -60,84 +68,48 @@ export const useHomeSeeAll = ({
     if (safeCollection === "mood" && !moodId) return;
 
     let cancelled = false;
-    const fetchPlaces = async () => {
+    const resolveCollection = (): CollectionFetcher => {
+      if (safeCollection === "mood") {
+        const key = moodId ?? "";
+        return () => homeService.fetchMoodRecommendations(key, count);
+      }
+      return COLLECTION_FETCHERS[safeCollection](count);
+    };
+
+    const fetchCollectionData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        let data: HomePlace[];
-
-        if (safeCollection === "curated") {
-          data = await homeService.fetchPersonalizedRecommendations({ count });
-        } else if (safeCollection === "trending") {
-          data = await homeService.fetchTrendingRecommendations({ count });
-        } else {
-          const moodKey = moodId ?? "";
-          data = await homeService.fetchMoodRecommendations(moodKey, count);
-        }
-
-        if (!cancelled) {
-          setPlaces(data);
-        }
+        const data = await resolveCollection()();
+        if (!cancelled) setPlaces(data);
       } catch (err) {
-        if (!cancelled) {
-          setError(getErrorMessage(err, "Failed to load recommendations"));
-        }
+        if (!cancelled) setError(getErrorMessage(err, "Failed to load recommendations"));
       } finally {
         if (!cancelled) setIsLoading(false);
       }
     };
 
-    fetchPlaces();
-    return () => {
-      cancelled = true;
-    };
+    fetchCollectionData();
+    return () => { cancelled = true; };
   }, [safeCollection, count, reloadKey, moodId]);
 
   const toggleSave = useCallback(
-    async (id: string) => {
-      if (saveInFlightIds.current.has(id)) {
-        return;
-      }
-
-      const place = places.find((item) => item.id === id);
-      if (!place) {
-        return;
-      }
-
-      const nextIsSaved = !place.isSaved;
-
-      try {
-        saveInFlightIds.current.add(id);
-        setSavePendingMap((prev) => ({ ...prev, [id]: true }));
-        setSaveError(null);
-        setPlaces((prev) =>
-          prev.map((item) =>
-            item.id === id ? { ...item, isSaved: nextIsSaved } : item,
-          ),
-        );
-
-        await homeService.togglePlaceSave(id, nextIsSaved);
-        void trackVenueInteractionSafe(id, INTERACTION_ACTION_TYPES.favorite);
-      } catch (toggleError) {
-        setPlaces((prev) =>
-          prev.map((item) =>
-            item.id === id ? { ...item, isSaved: !nextIsSaved } : item,
-          ),
-        );
-        setSaveError(
-          getErrorMessage(toggleError, "Could not update favorites."),
-        );
-      } finally {
-        saveInFlightIds.current.delete(id);
-        setSavePendingMap((prev) => {
-          const next = { ...prev };
-          delete next[id];
-          return next;
-        });
-      }
-    },
+    buildToggleSaveHandler({
+      placeCollections: [places],
+      saveInFlightIds,
+      setSaveError,
+      setSavePendingMap,
+      onOptimisticUpdate: (id, nextSaved) =>
+        setPlaces((prev) => patchSavedStateInCollection(prev, id, nextSaved)),
+      onRollback: (id, prevSaved) =>
+        setPlaces((prev) => patchSavedStateInCollection(prev, id, prevSaved)),
+      trackInteraction: true,
+    }),
     [places],
   );
+
+  const clearSaveError = useCallback(() => setSaveError(null), []);
+  const retryFetch = useCallback(() => setReloadKey((k) => k + 1), []);
 
   return {
     safeCollection,
@@ -145,12 +117,12 @@ export const useHomeSeeAll = ({
     isLoading,
     error,
     saveError,
-    clearSaveError: () => setSaveError(null),
+    clearSaveError,
     count,
     setCount,
     toggleSave,
     savePendingMap,
-    retryFetch: () => setReloadKey((prev) => prev + 1),
+    retryFetch,
     requestUserLocation: userLocation.requestLocation,
     userLocation,
   };

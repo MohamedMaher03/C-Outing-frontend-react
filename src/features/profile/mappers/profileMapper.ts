@@ -9,12 +9,21 @@ import type {
   UserProfile,
 } from "../types";
 import { isNonEmptyString } from "@/utils/typeGuards";
-import { INTERESTS, POPULAR_DISTRICTS } from "@/mocks/mockData";
-import {
-  FAVORITE_ACTIVITIES,
-  COMPANION_TYPES,
-} from "@/features/onboarding/mocks";
 import type { PriceLevel } from "@/features/place-detail";
+import {
+  preferenceActivityIdToLabel,
+  preferenceCompanionIdToLabel,
+  preferenceDistrictNameToLabel,
+  preferenceInterestIdToLabel,
+  preferenceLevelToStoredBudget,
+  resolvePreferenceIdToLabel,
+  resolveStoredLabelToId,
+  storedActivityLabelToId,
+  storedBudgetToPreferenceLevel,
+  storedCompanionLabelToId,
+  storedDistrictLabelToName,
+  storedInterestLabelToId,
+} from "../utils/preferenceLabelMapping";
 
 const DEFAULT_NAME = "Guest User";
 const MAX_NAME_LENGTH = 100;
@@ -67,9 +76,7 @@ const sanitizePhone = (value: unknown): string => {
 };
 
 const sanitizeStringList = (input: unknown, maxItems: number): string[] => {
-  if (!Array.isArray(input)) {
-    return [];
-  }
+  if (!Array.isArray(input)) return [];
 
   const normalized: string[] = [];
   const seen = new Set<string>();
@@ -84,7 +91,6 @@ const sanitizeStringList = (input: unknown, maxItems: number): string[] => {
 
     normalized.push(trimmed);
     seen.add(dedupeKey);
-
     if (normalized.length >= maxItems) break;
   }
 
@@ -95,7 +101,6 @@ const normalizeBudget = (value: unknown): UserPreferences["budget"] => {
   if (typeof value === "string" && PRICE_LEVEL_SET.has(value.trim())) {
     return value.trim() as UserPreferences["budget"];
   }
-
   return "midrange";
 };
 
@@ -159,23 +164,16 @@ export const mapProfileToEditProfile = (
   avatarUrl: profile.avatarUrl,
 });
 
-export const mapEditProfileToUpdatePayload = (
+const buildProfileUpdatePayload = (
   input: Partial<EditProfileData>,
 ): UpdateUserProfileRequest => {
   const payload: UpdateUserProfileRequest = {};
 
-  if (input.name !== undefined) {
-    payload.name = sanitizeName(input.name);
-  }
-
-  if (input.bio !== undefined) {
-    payload.bio = sanitizeBio(input.bio);
-  }
-
+  if (input.name !== undefined) payload.name = sanitizeName(input.name);
+  if (input.bio !== undefined) payload.bio = sanitizeBio(input.bio);
   if (input.phoneNumber !== undefined) {
     payload.phoneNumber = sanitizePhone(input.phoneNumber);
   }
-
   if (input.birthDate !== undefined) {
     payload.birthDate = normalizeBirthDateForInput(input.birthDate);
   }
@@ -183,45 +181,9 @@ export const mapEditProfileToUpdatePayload = (
   return payload;
 };
 
-export const mapUpdateProfilePayload = (
-  input: UpdateUserProfileRequest,
-): UpdateUserProfileRequest => {
-  const payload: UpdateUserProfileRequest = {};
+export const mapEditProfileToUpdatePayload = buildProfileUpdatePayload;
 
-  if (input.name !== undefined) {
-    payload.name = sanitizeName(input.name);
-  }
-
-  if (input.bio !== undefined) {
-    payload.bio = sanitizeBio(input.bio);
-  }
-
-  if (input.phoneNumber !== undefined) {
-    payload.phoneNumber = sanitizePhone(input.phoneNumber);
-  }
-
-  if (input.birthDate !== undefined) {
-    payload.birthDate = normalizeBirthDateForInput(input.birthDate);
-  }
-
-  return payload;
-};
-
-const storedBudgetToPreferenceLevel: Record<string, PriceLevel> = {
-  Economy: "cheapest",
-  Value: "cheap",
-  Standard: "midrange",
-  Premium: "expensive",
-  Luxury: "luxury",
-};
-
-const preferenceLevelToStoredBudget: Record<PriceLevel, string> = {
-  cheapest: "Economy",
-  cheap: "Value",
-  midrange: "Standard",
-  expensive: "Premium",
-  luxury: "Luxury",
-};
+export const mapUpdateProfilePayload = buildProfileUpdatePayload;
 
 export interface StoredOutingPreferences {
   loveInterests: string[];
@@ -256,112 +218,45 @@ export const mapPreferenceUpdatePayload = (
   payload: UpdatePreferencesRequest,
 ): UpdatePreferencesRequest => {
   const normalized = normalizePreferences(payload);
-
   const mapped: UpdatePreferencesRequest = {};
 
   if (payload.interests !== undefined) mapped.interests = normalized.interests;
   if (payload.vibe !== undefined) mapped.vibe = normalized.vibe;
   if (payload.districts !== undefined) mapped.districts = normalized.districts;
   if (payload.budget !== undefined) mapped.budget = normalized.budget;
-  if (payload.favoriteActivities !== undefined)
+  if (payload.favoriteActivities !== undefined) {
     mapped.favoriteActivities = normalized.favoriteActivities;
-  if (payload.companionTypes !== undefined)
+  }
+  if (payload.companionTypes !== undefined) {
     mapped.companionTypes = normalized.companionTypes;
+  }
 
   return mapped;
 };
 
-// Stored labels to app selection ids.
-const storedInterestLabelToId = new Map<string, string>();
-INTERESTS.forEach((item) =>
-  storedInterestLabelToId.set(item.label.toLowerCase(), item.id),
-);
-
-const storedActivityLabelToId = new Map<string, string>();
-FAVORITE_ACTIVITIES.forEach((item) =>
-  storedActivityLabelToId.set(item.label.toLowerCase(), item.id),
-);
-
-const storedCompanionLabelToId = new Map<string, string>();
-COMPANION_TYPES.forEach((item) =>
-  storedCompanionLabelToId.set(item.label.toLowerCase(), item.id),
-);
-
-const storedDistrictLabelToName = new Map<string, string>();
-POPULAR_DISTRICTS.forEach((item) => {
-  storedDistrictLabelToName.set(item.name.toLowerCase(), item.name);
-  if (item.name === "Downtown") {
-    storedDistrictLabelToName.set("downtown cairo", "Downtown");
-  }
-});
-
-// App selection ids to stored labels.
-const preferenceInterestIdToLabel = new Map<string, string>();
-INTERESTS.forEach((item) =>
-  preferenceInterestIdToLabel.set(item.id, item.label),
-);
-
-const preferenceActivityIdToLabel = new Map<string, string>();
-FAVORITE_ACTIVITIES.forEach((item) =>
-  preferenceActivityIdToLabel.set(item.id, item.label),
-);
-
-const preferenceCompanionIdToLabel = new Map<string, string>();
-COMPANION_TYPES.forEach((item) =>
-  preferenceCompanionIdToLabel.set(item.id, item.label),
-);
-
-const preferenceDistrictNameToLabel = new Map<string, string>();
-POPULAR_DISTRICTS.forEach((item) => {
-  preferenceDistrictNameToLabel.set(item.name, item.name);
-  if (item.name === "Downtown") {
-    preferenceDistrictNameToLabel.set("Downtown", "Downtown Cairo");
-  }
-});
-
 export const mapStoredOutingPreferencesToUserPreferences = (
   storedPreferences: Partial<StoredOutingPreferences> | null | undefined,
 ): UserPreferences => {
-  const loveInterests = (storedPreferences?.loveInterests || []).map((val) => {
-    const clean = val.trim();
-    return storedInterestLabelToId.get(clean.toLowerCase()) || clean;
-  });
-
-  const vibeLevel =
-    storedPreferences?.vibeLevel != null ? storedPreferences.vibeLevel : 50;
-
-  const preferredDistricts = (storedPreferences?.preferredDistricts || []).map(
-    (val) => {
-      const clean = val.trim();
-      return storedDistrictLabelToName.get(clean.toLowerCase()) || clean;
-    },
-  );
-
-  const preferredBudget = storedPreferences?.preferredBudget || "Standard";
-
-  const favoriteActivities = (storedPreferences?.favoriteActivities || []).map(
-    (val) => {
-      const clean = val.trim();
-      return storedActivityLabelToId.get(clean.toLowerCase()) || clean;
-    },
-  );
-
-  const companionType = (storedPreferences?.companionType || []).map((val) => {
-    const clean = val.trim();
-    return storedCompanionLabelToId.get(clean.toLowerCase()) || clean;
-  });
-
+  const preferredBudget = storedPreferences?.preferredBudget ?? "Standard";
   const budgetVal = PRICE_LEVEL_SET.has(preferredBudget)
     ? (preferredBudget as PriceLevel)
-    : storedBudgetToPreferenceLevel[preferredBudget] || "midrange";
+    : storedBudgetToPreferenceLevel[preferredBudget] ?? "midrange";
 
   return normalizePreferences({
-    interests: loveInterests,
-    vibe: vibeLevel,
-    districts: preferredDistricts,
+    interests: (storedPreferences?.loveInterests ?? []).map((value) =>
+      resolveStoredLabelToId(storedInterestLabelToId, value),
+    ),
+    vibe: storedPreferences?.vibeLevel ?? 50,
+    districts: (storedPreferences?.preferredDistricts ?? []).map((value) =>
+      resolveStoredLabelToId(storedDistrictLabelToName, value),
+    ),
     budget: budgetVal,
-    favoriteActivities: favoriteActivities,
-    companionTypes: companionType,
+    favoriteActivities: (storedPreferences?.favoriteActivities ?? []).map((value) =>
+      resolveStoredLabelToId(storedActivityLabelToId, value),
+    ),
+    companionTypes: (storedPreferences?.companionType ?? []).map((value) =>
+      resolveStoredLabelToId(storedCompanionLabelToId, value),
+    ),
   });
 };
 
@@ -371,30 +266,28 @@ export const mapUserPreferencesToStoredOutingPreferences = (
   const mapped: Partial<StoredOutingPreferences> = {};
 
   if (payload.interests !== undefined) {
-    mapped.loveInterests = payload.interests.map(
-      (id) => preferenceInterestIdToLabel.get(id) || id,
+    mapped.loveInterests = payload.interests.map((id) =>
+      resolvePreferenceIdToLabel(preferenceInterestIdToLabel, id),
     );
   }
-  if (payload.vibe !== undefined) {
-    mapped.vibeLevel = payload.vibe;
-  }
+  if (payload.vibe !== undefined) mapped.vibeLevel = payload.vibe;
   if (payload.districts !== undefined) {
-    mapped.preferredDistricts = payload.districts.map(
-      (name) => preferenceDistrictNameToLabel.get(name) || name,
+    mapped.preferredDistricts = payload.districts.map((name) =>
+      resolvePreferenceIdToLabel(preferenceDistrictNameToLabel, name),
     );
   }
   if (payload.budget !== undefined) {
     mapped.preferredBudget =
-      preferenceLevelToStoredBudget[payload.budget] || "Standard";
+      preferenceLevelToStoredBudget[payload.budget] ?? "Standard";
   }
   if (payload.favoriteActivities !== undefined) {
-    mapped.favoriteActivities = payload.favoriteActivities.map(
-      (id) => preferenceActivityIdToLabel.get(id) || id,
+    mapped.favoriteActivities = payload.favoriteActivities.map((id) =>
+      resolvePreferenceIdToLabel(preferenceActivityIdToLabel, id),
     );
   }
   if (payload.companionTypes !== undefined) {
-    mapped.companionType = payload.companionTypes.map(
-      (id) => preferenceCompanionIdToLabel.get(id) || id,
+    mapped.companionType = payload.companionTypes.map((id) =>
+      resolvePreferenceIdToLabel(preferenceCompanionIdToLabel, id),
     );
   }
 
@@ -418,8 +311,7 @@ export const normalizeNotificationSettings = (
       input?.email?.monthlyDigest ??
       DEFAULT_NOTIFICATION_SETTINGS.email.monthlyDigest,
     promotions:
-      input?.email?.promotions ??
-      DEFAULT_NOTIFICATION_SETTINGS.email.promotions,
+      input?.email?.promotions ?? DEFAULT_NOTIFICATION_SETTINGS.email.promotions,
     tips: input?.email?.tips ?? DEFAULT_NOTIFICATION_SETTINGS.email.tips,
   },
 });

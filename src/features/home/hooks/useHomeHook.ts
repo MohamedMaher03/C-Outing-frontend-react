@@ -14,13 +14,14 @@ import type {
   VenuePriceRange,
 } from "@/features/home/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import {
-  INTERACTION_ACTION_TYPES,
-  trackVenueInteractionSafe,
-} from "@/features/interactions";
 import { getErrorMessage } from "@/utils/apiError";
 import { useUserLocation } from "@/features/home/hooks/useUserLocation";
 import { filterHomePlacesByQuickFilters } from "../utils/filters";
+import {
+  patchSavedStateInCollection,
+  buildToggleSaveHandler,
+  deduplicateVenuePool,
+} from "../utils/venueCollectionOps";
 
 interface UseHomeReturn {
   selectedFilters: FilterType[];
@@ -77,6 +78,7 @@ interface UseHomeReturn {
 export const useHome = (): UseHomeReturn => {
   const { user } = useAuth();
   const userLocation = useUserLocation();
+
   const [selectedFilters, setSelectedFilters] = useState<FilterType[]>([]);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,9 +86,7 @@ export const useHome = (): UseHomeReturn => {
   const [moodPlaces, setMoodPlaces] = useState<HomePlace[]>([]);
   const [isMoodLoading, setIsMoodLoading] = useState(false);
   const [moodError, setMoodError] = useState<string | null>(null);
-  const [selectedSimilarSeedId, setSelectedSimilarSeedId] = useState<
-    string | null
-  >(null);
+  const [selectedSimilarSeedId, setSelectedSimilarSeedId] = useState<string | null>(null);
   const [similarSeedPlaces, setSimilarSeedPlaces] = useState<HomePlace[]>([]);
   const [similarPlaces, setSimilarPlaces] = useState<HomePlace[]>([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
@@ -94,84 +94,51 @@ export const useHome = (): UseHomeReturn => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [similarReloadKey, setSimilarReloadKey] = useState(0);
   const [moodReloadKey, setMoodReloadKey] = useState(0);
-  const [savePendingMap, setSavePendingMap] = useState<Record<string, boolean>>(
-    {},
-  );
-
+  const [savePendingMap, setSavePendingMap] = useState<Record<string, boolean>>({});
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
-  const [selectedVenueType, setSelectedVenueType] = useState<string | null>(
-    null,
-  );
-  const [selectedPriceRange, setSelectedPriceRange] =
-    useState<VenuePriceRange | null>(null);
+  const [selectedVenueType, setSelectedVenueType] = useState<string | null>(null);
+  const [selectedPriceRange, setSelectedPriceRange] = useState<VenuePriceRange | null>(null);
   const [selectedArea, setSelectedArea] = useState<string>("");
-  const [activeDiscoverySource, setActiveDiscoverySource] =
-    useState<DiscoverySource>("top-rated");
+  const [activeDiscoverySource, setActiveDiscoverySource] = useState<DiscoverySource>("top-rated");
   const [discoveryPlaces, setDiscoveryPlaces] = useState<HomePlace[]>([]);
   const [discoveryError, setDiscoveryError] = useState<string | null>(null);
   const [isDiscoveryLoading, setIsDiscoveryLoading] = useState(false);
-  const [globalTopRatedVenues, setGlobalTopRatedVenues] = useState<HomePlace[]>(
-    [],
-  );
-  const [topRatedInAreaVenues, setTopRatedInAreaVenues] = useState<HomePlace[]>(
-    [],
-  );
+  const [globalTopRatedVenues, setGlobalTopRatedVenues] = useState<HomePlace[]>([]);
+  const [topRatedInAreaVenues, setTopRatedInAreaVenues] = useState<HomePlace[]>([]);
   const [isGlobalTopRatedLoading, setIsGlobalTopRatedLoading] = useState(false);
   const [isTopRatedInAreaLoading, setIsTopRatedInAreaLoading] = useState(false);
-  const [topRatedInAreaError, setTopRatedInAreaError] = useState<string | null>(
-    null,
-  );
+  const [topRatedInAreaError, setTopRatedInAreaError] = useState<string | null>(null);
   const [discoveryReloadKey, setDiscoveryReloadKey] = useState(0);
-  const saveInFlightIds = useRef<Set<string>>(new Set());
-
   const [rawCurated, setRawCurated] = useState<HomePlace[]>([]);
   const [rawTrending, setRawTrending] = useState<HomePlace[]>([]);
 
-  const replaceSavedPlaceById = useCallback(
-    (list: HomePlace[], id: string, isSaved: boolean) =>
-      list.map((place) => (place.id === id ? { ...place, isSaved } : place)),
-    [],
-  );
+  const saveInFlightIds = useRef<Set<string>>(new Set());
 
-  const updateSavedPlaceAcrossCollections = useCallback(
-    (id: string, isSaved: boolean) => {
-      setRawCurated((prev) => replaceSavedPlaceById(prev, id, isSaved));
-      setRawTrending((prev) => replaceSavedPlaceById(prev, id, isSaved));
-      setDiscoveryPlaces((prev) => replaceSavedPlaceById(prev, id, isSaved));
-      setGlobalTopRatedVenues((prev) =>
-        replaceSavedPlaceById(prev, id, isSaved),
-      );
-      setTopRatedInAreaVenues((prev) =>
-        replaceSavedPlaceById(prev, id, isSaved),
-      );
-      setMoodPlaces((prev) => replaceSavedPlaceById(prev, id, isSaved));
-      setSimilarSeedPlaces((prev) => replaceSavedPlaceById(prev, id, isSaved));
-      setSimilarPlaces((prev) => replaceSavedPlaceById(prev, id, isSaved));
-    },
-    [replaceSavedPlaceById],
-  );
+  const broadcastSavedStateChange = useCallback((id: string, isSaved: boolean) => {
+    const patch = (list: HomePlace[]) => patchSavedStateInCollection(list, id, isSaved);
+    setRawCurated(patch);
+    setRawTrending(patch);
+    setDiscoveryPlaces(patch);
+    setGlobalTopRatedVenues(patch);
+    setTopRatedInAreaVenues(patch);
+    setMoodPlaces(patch);
+    setSimilarSeedPlaces(patch);
+    setSimilarPlaces(patch);
+  }, []);
 
   const loadPlaces = useCallback(async () => {
     if (!user) return;
     try {
       setIsLoading(true);
       setError(null);
-      const [homeData, personalizedSeedPool, trendingSeedPool] =
-        await Promise.all([
-          homeService.fetchHomePageData({ count: 10 }),
-          homeService.fetchPersonalizedRecommendations({ count: 20 }),
-          homeService.fetchTrendingRecommendations({ count: 20 }),
-        ]);
-      const { curatedPlaces, trendingPlaces } = homeData;
-      setRawCurated(curatedPlaces);
-      setRawTrending(trendingPlaces);
-      const combinedSeedPool = [...personalizedSeedPool, ...trendingSeedPool]
-        .filter(
-          (place, index, arr) =>
-            arr.findIndex((candidate) => candidate.id === place.id) === index,
-        )
-        .slice(0, 60);
-      setSimilarSeedPlaces(combinedSeedPool);
+      const [homeData, personalizedPool, trendingPool] = await Promise.all([
+        homeService.fetchHomePageData({ count: 10 }),
+        homeService.fetchPersonalizedRecommendations({ count: 20 }),
+        homeService.fetchTrendingRecommendations({ count: 20 }),
+      ]);
+      setRawCurated(homeData.curatedPlaces);
+      setRawTrending(homeData.trendingPlaces);
+      setSimilarSeedPlaces(deduplicateVenuePool([personalizedPool, trendingPool]));
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load places"));
     } finally {
@@ -189,9 +156,8 @@ export const useHome = (): UseHomeReturn => {
       setSimilarError(null);
       return;
     }
-
     let cancelled = false;
-    const fetchSimilarPlaces = async () => {
+    const fetchSimilar = async () => {
       setIsSimilarLoading(true);
       setSimilarError(null);
       try {
@@ -201,20 +167,14 @@ export const useHome = (): UseHomeReturn => {
         });
         if (!cancelled) setSimilarPlaces(places);
       } catch (err) {
-        if (!cancelled) {
-          setSimilarError(
-            getErrorMessage(err, "Failed to load similar recommendations"),
-          );
-        }
+        if (!cancelled)
+          setSimilarError(getErrorMessage(err, "Failed to load similar recommendations"));
       } finally {
         if (!cancelled) setIsSimilarLoading(false);
       }
     };
-
-    fetchSimilarPlaces();
-    return () => {
-      cancelled = true;
-    };
+    fetchSimilar();
+    return () => { cancelled = true; };
   }, [selectedSimilarSeedId, similarReloadKey]);
 
   useEffect(() => {
@@ -224,7 +184,7 @@ export const useHome = (): UseHomeReturn => {
       return;
     }
     let cancelled = false;
-    const fetchMoodPlaces = async () => {
+    const fetchMood = async () => {
       setIsMoodLoading(true);
       setMoodError(null);
       try {
@@ -239,10 +199,8 @@ export const useHome = (): UseHomeReturn => {
         if (!cancelled) setIsMoodLoading(false);
       }
     };
-    fetchMoodPlaces();
-    return () => {
-      cancelled = true;
-    };
+    fetchMood();
+    return () => { cancelled = true; };
   }, [selectedMood, moodReloadKey]);
 
   useEffect(() => {
@@ -260,18 +218,14 @@ export const useHome = (): UseHomeReturn => {
         }
       } catch (err) {
         if (!cancelled && activeDiscoverySource === "top-rated") {
-          setDiscoveryError(
-            getErrorMessage(err, "Failed to load top-rated venues"),
-          );
+          setDiscoveryError(getErrorMessage(err, "Failed to load top-rated venues"));
         }
       } finally {
         if (!cancelled) setIsGlobalTopRatedLoading(false);
       }
     };
     fetchTopRated();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [activeDiscoverySource, discoveryReloadKey]);
 
   useEffect(() => {
@@ -281,30 +235,22 @@ export const useHome = (): UseHomeReturn => {
       setDiscoveryError(null);
       return;
     }
-
     let cancelled = false;
     const fetchByDistrict = async () => {
       setIsDiscoveryLoading(true);
       setDiscoveryError(null);
       try {
-        const places = await homeService.fetchVenuesByDistrict({
-          district: selectedDistrict,
-        });
+        const places = await homeService.fetchVenuesByDistrict({ district: selectedDistrict });
         if (!cancelled) setDiscoveryPlaces(places);
       } catch (err) {
-        if (!cancelled) {
-          setDiscoveryError(
-            getErrorMessage(err, "Failed to load district venues"),
-          );
-        }
+        if (!cancelled)
+          setDiscoveryError(getErrorMessage(err, "Failed to load district venues"));
       } finally {
         if (!cancelled) setIsDiscoveryLoading(false);
       }
     };
     fetchByDistrict();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [selectedDistrict, activeDiscoverySource, discoveryReloadKey]);
 
   useEffect(() => {
@@ -314,28 +260,22 @@ export const useHome = (): UseHomeReturn => {
       setDiscoveryError(null);
       return;
     }
-
     let cancelled = false;
     const fetchByType = async () => {
       setIsDiscoveryLoading(true);
       setDiscoveryError(null);
       try {
-        const places = await homeService.fetchVenuesByType({
-          type: selectedVenueType,
-        });
+        const places = await homeService.fetchVenuesByType({ type: selectedVenueType });
         if (!cancelled) setDiscoveryPlaces(places);
       } catch (err) {
-        if (!cancelled) {
+        if (!cancelled)
           setDiscoveryError(getErrorMessage(err, "Failed to load venue types"));
-        }
       } finally {
         if (!cancelled) setIsDiscoveryLoading(false);
       }
     };
     fetchByType();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [selectedVenueType, activeDiscoverySource, discoveryReloadKey]);
 
   useEffect(() => {
@@ -345,42 +285,32 @@ export const useHome = (): UseHomeReturn => {
       setDiscoveryError(null);
       return;
     }
-
     let cancelled = false;
-    const fetchByPriceRange = async () => {
+    const fetchByBudget = async () => {
       setIsDiscoveryLoading(true);
       setDiscoveryError(null);
       try {
-        const places = await homeService.fetchVenuesByPriceRange({
-          priceRange: selectedPriceRange,
-        });
+        const places = await homeService.fetchVenuesByPriceRange({ priceRange: selectedPriceRange });
         if (!cancelled) setDiscoveryPlaces(places);
       } catch (err) {
-        if (!cancelled) {
-          setDiscoveryError(
-            getErrorMessage(err, "Failed to load venues for this budget"),
-          );
-        }
+        if (!cancelled)
+          setDiscoveryError(getErrorMessage(err, "Failed to load venues for this budget"));
       } finally {
         if (!cancelled) setIsDiscoveryLoading(false);
       }
     };
-    fetchByPriceRange();
-    return () => {
-      cancelled = true;
-    };
+    fetchByBudget();
+    return () => { cancelled = true; };
   }, [selectedPriceRange, activeDiscoverySource, discoveryReloadKey]);
 
   useEffect(() => {
     if (!selectedArea) return;
     let cancelled = false;
-    const fetchTopRatedInArea = async () => {
+    const fetchAreaTopRated = async () => {
       setIsTopRatedInAreaLoading(true);
       setTopRatedInAreaError(null);
       try {
-        const places = await homeService.fetchVenueTopRatedInArea({
-          area: selectedArea,
-        });
+        const places = await homeService.fetchVenueTopRatedInArea({ area: selectedArea });
         if (!cancelled) {
           setTopRatedInAreaVenues(places);
           if (activeDiscoverySource === "top-rated-area") {
@@ -390,99 +320,57 @@ export const useHome = (): UseHomeReturn => {
         }
       } catch (err) {
         if (!cancelled) {
-          const message = getErrorMessage(
-            err,
-            "Failed to load top-rated venues in area",
-          );
+          const message = getErrorMessage(err, "Failed to load top-rated venues in area");
           setTopRatedInAreaError(message);
-          if (activeDiscoverySource === "top-rated-area") {
-            setDiscoveryError(message);
-          }
+          if (activeDiscoverySource === "top-rated-area") setDiscoveryError(message);
         }
       } finally {
         if (!cancelled) setIsTopRatedInAreaLoading(false);
       }
     };
-    fetchTopRatedInArea();
-    return () => {
-      cancelled = true;
-    };
+    fetchAreaTopRated();
+    return () => { cancelled = true; };
   }, [selectedArea, activeDiscoverySource, discoveryReloadKey]);
 
   useEffect(() => {
     if (activeDiscoverySource === "top-rated") {
       setDiscoveryPlaces(globalTopRatedVenues);
       setDiscoveryError(null);
-      return;
-    }
-    if (activeDiscoverySource === "top-rated-area") {
+    } else if (activeDiscoverySource === "top-rated-area") {
       setDiscoveryPlaces(topRatedInAreaVenues);
       setDiscoveryError(topRatedInAreaError);
     }
-  }, [
-    activeDiscoverySource,
-    globalTopRatedVenues,
-    topRatedInAreaVenues,
-    topRatedInAreaError,
-  ]);
+  }, [activeDiscoverySource, globalTopRatedVenues, topRatedInAreaVenues, topRatedInAreaError]);
 
   const toggleFilter = useCallback((filter: FilterType) => {
     if (filter === "all") {
       setSelectedFilters([]);
     } else {
       setSelectedFilters((prev) =>
-        prev.includes(filter)
-          ? prev.filter((f) => f !== filter)
-          : [...prev, filter],
+        prev.includes(filter) ? prev.filter((f) => f !== filter) : [...prev, filter],
       );
     }
   }, []);
 
   const toggleSave = useCallback(
-    async (id: string) => {
-      if (saveInFlightIds.current.has(id)) {
-        return;
-      }
-
-      const place =
-        rawCurated.find((p) => p.id === id) ||
-        rawTrending.find((p) => p.id === id) ||
-        discoveryPlaces.find((p) => p.id === id) ||
-        globalTopRatedVenues.find((p) => p.id === id) ||
-        topRatedInAreaVenues.find((p) => p.id === id) ||
-        moodPlaces.find((p) => p.id === id) ||
-        similarSeedPlaces.find((p) => p.id === id) ||
-        similarPlaces.find((p) => p.id === id);
-
-      if (!place) {
-        return;
-      }
-
-      const previousIsSaved = Boolean(place.isSaved);
-      const nextIsSaved = !previousIsSaved;
-
-      try {
-        setSaveError(null);
-        saveInFlightIds.current.add(id);
-        setSavePendingMap((prev) => ({ ...prev, [id]: true }));
-        updateSavedPlaceAcrossCollections(id, nextIsSaved);
-
-        await homeService.togglePlaceSave(id, nextIsSaved);
-        void trackVenueInteractionSafe(id, INTERACTION_ACTION_TYPES.favorite);
-      } catch (toggleError) {
-        updateSavedPlaceAcrossCollections(id, previousIsSaved);
-        setSaveError(
-          getErrorMessage(toggleError, "Could not update favorites right now."),
-        );
-      } finally {
-        saveInFlightIds.current.delete(id);
-        setSavePendingMap((prev) => {
-          const next = { ...prev };
-          delete next[id];
-          return next;
-        });
-      }
-    },
+    buildToggleSaveHandler({
+      placeCollections: [
+        rawCurated,
+        rawTrending,
+        discoveryPlaces,
+        globalTopRatedVenues,
+        topRatedInAreaVenues,
+        moodPlaces,
+        similarSeedPlaces,
+        similarPlaces,
+      ],
+      saveInFlightIds,
+      setSaveError,
+      setSavePendingMap,
+      onOptimisticUpdate: (id, nextSaved) => broadcastSavedStateChange(id, nextSaved),
+      onRollback: (id, prevSaved) => broadcastSavedStateChange(id, prevSaved),
+      trackInteraction: true,
+    }),
     [
       rawCurated,
       rawTrending,
@@ -492,58 +380,31 @@ export const useHome = (): UseHomeReturn => {
       moodPlaces,
       similarSeedPlaces,
       similarPlaces,
-      updateSavedPlaceAcrossCollections,
+      broadcastSavedStateChange,
     ],
   );
 
-  const applyFilters = useCallback(
-    (list: HomePlace[]): HomePlace[] => {
-      let result = [...list];
-
-      result = filterHomePlacesByQuickFilters(
-        result,
-        selectedFilters,
-        userLocation,
-      );
-
-      return result;
-    },
+  const applyQuickFilters = useCallback(
+    (list: HomePlace[]): HomePlace[] =>
+      filterHomePlacesByQuickFilters(list, selectedFilters, userLocation),
     [selectedFilters, userLocation],
   );
 
-  const curatedPlaces = useMemo(
-    () => applyFilters(rawCurated),
-    [rawCurated, applyFilters],
-  );
-  const trendingPlaces = useMemo(
-    () => applyFilters(rawTrending),
-    [rawTrending, applyFilters],
-  );
+  const curatedPlaces = useMemo(() => applyQuickFilters(rawCurated), [rawCurated, applyQuickFilters]);
+  const trendingPlaces = useMemo(() => applyQuickFilters(rawTrending), [rawTrending, applyQuickFilters]);
   const filteredDiscoveryPlaces = useMemo(
-    () => applyFilters(discoveryPlaces),
-    [discoveryPlaces, applyFilters],
+    () => applyQuickFilters(discoveryPlaces),
+    [discoveryPlaces, applyQuickFilters],
   );
 
-  const retryDiscovery = useCallback(() => {
-    setDiscoveryReloadKey((prev) => prev + 1);
-  }, []);
-
-  const retrySimilar = useCallback(() => {
-    setSimilarReloadKey((prev) => prev + 1);
-  }, []);
-
-  const retryMood = useCallback(() => {
-    setMoodReloadKey((prev) => prev + 1);
-  }, []);
-
+  const retryDiscovery = useCallback(() => setDiscoveryReloadKey((k) => k + 1), []);
+  const retrySimilar = useCallback(() => setSimilarReloadKey((k) => k + 1), []);
+  const retryMood = useCallback(() => setMoodReloadKey((k) => k + 1), []);
+  const clearSaveError = useCallback(() => setSaveError(null), []);
   const isPlaceSavePending = useCallback(
     (id: string) => Boolean(savePendingMap[id]),
     [savePendingMap],
   );
-
-  const clearSaveError = useCallback(() => {
-    setSaveError(null);
-  }, []);
 
   return {
     selectedFilters,
@@ -556,7 +417,6 @@ export const useHome = (): UseHomeReturn => {
     isSimilarLoading,
     similarError,
     saveError,
-
     selectedDistrict,
     selectedVenueType,
     selectedPriceRange,
@@ -570,19 +430,16 @@ export const useHome = (): UseHomeReturn => {
     isGlobalTopRatedLoading,
     isTopRatedInAreaLoading,
     topRatedInAreaError,
-
     curatedPlaces,
     trendingPlaces,
     moodPlaces,
     isMoodLoading,
     moodError,
     userLocation,
-
     categories: CATEGORIES,
     moodOptions: MOOD_OPTIONS,
     trendingTags: TRENDING_TAGS,
     popularDistricts: POPULAR_DISTRICTS,
-
     toggleFilter,
     setSelectedMood,
     setSelectedDistrict,

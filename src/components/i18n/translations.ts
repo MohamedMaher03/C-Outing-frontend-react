@@ -504,7 +504,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "home.hero.title": "Discover Cairo",
     "home.hero.subtitle":
-      "AI-powered spots curated for your vibe. Where are we heading today?",
+      "Powered spots curated for your vibe. Where are we heading today?",
     "home.hero.searchPlaceholder": "Search places, districts, or tags...",
     "home.hero.searchAria": "Search Cairo venues",
     "home.hero.searchAction": "Search",

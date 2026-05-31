@@ -1,9 +1,23 @@
-import type { CanonicalPriceLevel } from "@/utils/priceLevels";
-import { normalizeOpenStatus } from "@/utils/openStatus";
 import type { PaginatedResponse } from "@/types";
+import { normalizeOpenStatus } from "@/utils/openStatus";
+import {
+  coerceBoolean,
+  coerceBoundedRating,
+  coerceFiniteNumber,
+  coerceFirstNonEmptyString,
+  coerceNonNegativeInteger,
+  coerceStringArray,
+  coerceTrimmedString,
+  extractPayloadCollection,
+  mapLoosePaginatedPayload,
+  mapPayloadCollection,
+  resolveCanonicalPriceLevel,
+  unwrapNestedDataPayload,
+} from "@/utils/mapper";
+import { isObjectRecord } from "@/utils/typeGuards";
 import type { HomePlace } from "../types";
 
-type HomeVenueDto = {
+interface HomeVenueDto {
   id?: unknown;
   name?: unknown;
   location?: unknown;
@@ -26,347 +40,86 @@ type HomeVenueDto = {
   hasWifi?: unknown;
   isSaved?: unknown;
   matchScore?: unknown;
-};
+}
 
-type MoodRecommendationDto = {
+interface MoodRecommendationDto {
   rank?: unknown;
   venue?: unknown;
-};
-
-const PRICE_LEVEL_VALUES: CanonicalPriceLevel[] = [
-  "cheapest",
-  "cheap",
-  "midrange",
-  "expensive",
-  "luxury",
-];
-
-const PRICE_LEVEL_SET = new Set<CanonicalPriceLevel>(PRICE_LEVEL_VALUES);
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const toTrimmedString = (value: unknown): string | undefined => {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-};
-
-const toFiniteNumber = (value: unknown): number | undefined => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const parsed = Number.parseFloat(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return undefined;
-};
-
-const toBoolean = (value: unknown): boolean | undefined => {
-  if (typeof value === "boolean") {
-    return value;
-  }
-
-  if (typeof value === "number") {
-    if (value === 1) {
-      return true;
-    }
-    if (value === 0) {
-      return false;
-    }
-  }
-
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (normalized === "true" || normalized === "1") {
-      return true;
-    }
-    if (normalized === "false" || normalized === "0") {
-      return false;
-    }
-  }
-
-  return undefined;
-};
-
-const toStringArray = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0)
-    .slice(0, 25);
-};
-
-const unwrapDataPayload = (raw: unknown, maxDepth = 2): unknown => {
-  let current: unknown = raw;
-  let depth = 0;
-
-  while (depth < maxDepth && isRecord(current) && "data" in current) {
-    const next = current.data;
-    if (next === undefined || next === null) {
-      break;
-    }
-
-    current = next;
-    depth += 1;
-  }
-
-  return current;
-};
-
-const extractCollection = (raw: unknown): unknown[] => {
-  const payload = unwrapDataPayload(raw);
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (!isRecord(payload)) {
-    return [];
-  }
-
-  if (Array.isArray(payload.items)) {
-    return payload.items;
-  }
-
-  if (Array.isArray(payload.results)) {
-    return payload.results;
-  }
-
-  if (Array.isArray(payload.venues)) {
-    return payload.venues;
-  }
-
-  return [];
-};
+}
 
 const extractMoodRecommendations = (
   raw: unknown,
 ): Array<{ rank: number; venue: unknown }> => {
-  const payload = unwrapDataPayload(raw);
-  if (!isRecord(payload)) {
-    return [];
-  }
+  const payload = unwrapNestedDataPayload(raw, 2);
+  if (!isObjectRecord(payload)) return [];
 
   const recommendations = payload.recommendations;
-  if (!Array.isArray(recommendations)) {
-    return [];
-  }
+  if (!Array.isArray(recommendations)) return [];
 
   return recommendations
-    .filter((item): item is MoodRecommendationDto => isRecord(item))
+    .filter((item): item is MoodRecommendationDto => isObjectRecord(item))
     .map((item) => ({
-      rank: toFiniteNumber(item.rank) ?? Number.POSITIVE_INFINITY,
+      rank: coerceFiniteNumber(item.rank) ?? Number.POSITIVE_INFINITY,
       venue: item.venue,
     }));
 };
 
-const toCanonicalPriceFromNumber = (
-  value: number,
-): CanonicalPriceLevel | undefined => {
-  if (!Number.isFinite(value)) {
-    return undefined;
-  }
-
-  if (value <= 1) return "cheapest";
-  if (value <= 2) return "cheap";
-  if (value <= 3) return "midrange";
-  if (value <= 4) return "expensive";
-  return "luxury";
-};
-
-const toCanonicalPriceFromString = (
-  value: string,
-): CanonicalPriceLevel | undefined => {
-  const normalized = value.trim().toLowerCase();
-
-  if (
-    normalized.length === 0 ||
-    normalized === "unknown" ||
-    normalized === "n/a" ||
-    normalized === "na"
-  ) {
-    return undefined;
-  }
-
-  const underscored = normalized.replace(/[\s-]+/g, "_");
-  if (PRICE_LEVEL_SET.has(underscored as CanonicalPriceLevel)) {
-    return underscored as CanonicalPriceLevel;
-  }
-
-  const collapsed = normalized.replace(/[\s_-]+/g, "");
-
-  if (
-    collapsed === "pricecheapest" ||
-    collapsed === "cheapest" ||
-    collapsed === "free" ||
-    collapsed === "verycheap"
-  ) {
-    return "cheapest";
-  }
-
-  if (
-    collapsed === "cheap" ||
-    collapsed === "budget" ||
-    collapsed === "value" ||
-    collapsed === "low"
-  ) {
-    return "cheap";
-  }
-
-  if (
-    collapsed === "midrange" ||
-    collapsed === "medium" ||
-    collapsed === "moderate" ||
-    collapsed === "standard"
-  ) {
-    return "midrange";
-  }
-
-  if (
-    collapsed === "expensive" ||
-    collapsed === "premium" ||
-    collapsed === "high"
-  ) {
-    return "expensive";
-  }
-
-  if (
-    collapsed === "luxury" ||
-    collapsed === "highend" ||
-    collapsed === "vip"
-  ) {
-    return "luxury";
-  }
-
-  return undefined;
-};
-
-const toCanonicalPriceLevel = (
-  ...values: unknown[]
-): CanonicalPriceLevel | undefined => {
-  for (const value of values) {
-    const parsedNumber = toFiniteNumber(value);
-    if (parsedNumber !== undefined) {
-      const fromNumber = toCanonicalPriceFromNumber(parsedNumber);
-      if (fromNumber) {
-        return fromNumber;
-      }
-    }
-
-    if (typeof value === "string") {
-      const fromString = toCanonicalPriceFromString(value);
-      if (fromString) {
-        return fromString;
-      }
-    }
-  }
-
-  return undefined;
-};
-
 export const mapHomeVenueToPlace = (raw: unknown): HomePlace | null => {
-  if (!isRecord(raw)) {
-    return null;
-  }
+  if (!isObjectRecord(raw)) return null;
 
   const venue = raw as HomeVenueDto;
-  const id = toTrimmedString(venue.id);
-  if (!id) {
-    return null;
-  }
-
-  const rating = Math.max(
-    0,
-    Math.min(5, toFiniteNumber(venue.averageRating ?? venue.rating) ?? 0),
-  );
+  const id = coerceTrimmedString(venue.id);
+  if (!id) return null;
 
   return {
     id,
-    name: toTrimmedString(venue.name) ?? "Untitled venue",
+    name: coerceTrimmedString(venue.name) ?? "Untitled venue",
     category:
-      toTrimmedString(venue.category) ?? toTrimmedString(venue.type) ?? "Venue",
-    latitude: toFiniteNumber(venue.latitude) ?? Number.NaN,
-    longitude: toFiniteNumber(venue.longitude) ?? Number.NaN,
+      coerceTrimmedString(venue.category) ??
+      coerceTrimmedString(venue.type) ??
+      "Venue",
+    latitude: coerceFiniteNumber(venue.latitude) ?? Number.NaN,
+    longitude: coerceFiniteNumber(venue.longitude) ?? Number.NaN,
     address:
-      toTrimmedString(venue.address) ??
-      toTrimmedString(venue.location) ??
-      toTrimmedString(venue.district) ??
-      "Address unavailable",
-    rating,
-    reviewCount: Math.max(
-      0,
-      Math.trunc(toFiniteNumber(venue.reviewCount) ?? 0),
-    ),
+      coerceFirstNonEmptyString(
+        venue.address,
+        venue.location,
+        venue.district,
+      ) ?? "Address unavailable",
+    rating: coerceBoundedRating(venue.averageRating ?? venue.rating),
+    reviewCount: coerceNonNegativeInteger(venue.reviewCount),
     image:
-      toTrimmedString(venue.image) ??
-      toTrimmedString(venue.displayImageUrl) ??
-      toTrimmedString(venue.thumbnailUrl) ??
-      "",
-    priceLevel: toCanonicalPriceLevel(venue.priceLevel, venue.priceRange),
+      coerceFirstNonEmptyString(
+        venue.image,
+        venue.displayImageUrl,
+        venue.thumbnailUrl,
+      ) ?? "",
+    priceLevel: resolveCanonicalPriceLevel(venue.priceLevel, venue.priceRange),
     isOpen: normalizeOpenStatus(venue.isOpen),
-    atmosphereTags: toStringArray(venue.atmosphereTags),
-    hasWifi: toBoolean(venue.hasWifi) ?? false,
-    isSaved: toBoolean(venue.isSaved) ?? false,
-    matchScore: toFiniteNumber(venue.matchScore),
+    atmosphereTags: coerceStringArray(venue.atmosphereTags),
+    hasWifi: coerceBoolean(venue.hasWifi) ?? false,
+    isSaved: coerceBoolean(venue.isSaved) ?? false,
+    matchScore: coerceFiniteNumber(venue.matchScore),
   };
 };
 
-export const mapHomePlacesPayload = (raw: unknown): HomePlace[] => {
-  const collection = extractCollection(raw);
-  const seenIds = new Set<string>();
-  const mapped: HomePlace[] = [];
-
-  for (const item of collection) {
-    const place = mapHomeVenueToPlace(item);
-    if (!place) {
-      continue;
-    }
-
-    if (seenIds.has(place.id)) {
-      continue;
-    }
-
-    seenIds.add(place.id);
-    mapped.push(place);
-  }
-
-  return mapped;
-};
+export const mapHomePlacesPayload = (raw: unknown): HomePlace[] =>
+  mapPayloadCollection(
+    extractPayloadCollection(raw),
+    mapHomeVenueToPlace,
+    (place) => place.id,
+  );
 
 const mapRankedRecommendationsPayload = (raw: unknown): HomePlace[] => {
   const recommendations = extractMoodRecommendations(raw).sort(
-    (a, b) => a.rank - b.rank,
+    (left, right) => left.rank - right.rank,
   );
-  const seenIds = new Set<string>();
-  const mapped: HomePlace[] = [];
 
-  for (const item of recommendations) {
-    const place = mapHomeVenueToPlace(item.venue);
-    if (!place) {
-      continue;
-    }
-
-    if (seenIds.has(place.id)) {
-      continue;
-    }
-
-    seenIds.add(place.id);
-    mapped.push(place);
-  }
-
-  return mapped;
+  return mapPayloadCollection(
+    recommendations.map((item) => item.venue),
+    mapHomeVenueToPlace,
+    (place) => place.id,
+  );
 };
 
 export const mapHomeRankedRecommendationsPayload = (
@@ -379,47 +132,12 @@ export const mapHomeMoodRecommendationsPayload = (raw: unknown): HomePlace[] =>
 export const mapHomePaginatedPlacesPayload = (
   raw: unknown,
 ): PaginatedResponse<HomePlace> => {
-  const payload = unwrapDataPayload(raw);
+  const payload = unwrapNestedDataPayload(raw, 2);
   const items = mapHomePlacesPayload(payload);
 
-  if (!isRecord(payload)) {
-    return {
-      items,
-      pageIndex: 1,
-      pageSize: items.length,
-      totalCount: items.length,
-      totalPages: 1,
-      hasPreviousPage: false,
-      hasNextPage: false,
-    };
+  if (!isObjectRecord(payload)) {
+    return mapLoosePaginatedPayload({}, items);
   }
 
-  const pageIndex = Math.max(
-    1,
-    Math.trunc(toFiniteNumber(payload.pageIndex) ?? 1),
-  );
-  const pageSize = Math.max(
-    1,
-    Math.trunc(toFiniteNumber(payload.pageSize) ?? (items.length || 1)),
-  );
-  const totalCount = Math.max(
-    0,
-    Math.trunc(toFiniteNumber(payload.totalCount) ?? items.length),
-  );
-  const totalPages = Math.max(
-    1,
-    Math.trunc(toFiniteNumber(payload.totalPages) ?? 1),
-  );
-  const hasPreviousPage = toBoolean(payload.hasPreviousPage) ?? pageIndex > 1;
-  const hasNextPage = toBoolean(payload.hasNextPage) ?? pageIndex < totalPages;
-
-  return {
-    items,
-    pageIndex,
-    pageSize,
-    totalCount,
-    totalPages,
-    hasPreviousPage,
-    hasNextPage,
-  };
+  return mapLoosePaginatedPayload(payload, items);
 };
