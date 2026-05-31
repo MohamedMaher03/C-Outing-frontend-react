@@ -327,6 +327,43 @@
     display: none;
   }
 
+  .horizontal-scroller-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .horizontal-scroller-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .horizontal-scroller-scrollbar {
+      -ms-overflow-style: auto;
+      scrollbar-width: thin;
+      scrollbar-color: hsl(var(--gold)) hsl(var(--muted));
+    }
+
+    .horizontal-scroller-scrollbar::-webkit-scrollbar {
+      display: block;
+      height: 6px;
+    }
+
+    .horizontal-scroller-scrollbar::-webkit-scrollbar-track {
+      background: hsl(var(--muted));
+      border-radius: 10px;
+    }
+
+    .horizontal-scroller-scrollbar::-webkit-scrollbar-thumb {
+      background: hsl(var(--gold));
+      border-radius: 10px;
+      transition: background 0.3s;
+    }
+
+    .horizontal-scroller-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: hsl(var(--navy));
+    }
+  }
+
   /* Premium scrollbar for main content */
   .scrollbar-premium::-webkit-scrollbar {
     width: 6px;

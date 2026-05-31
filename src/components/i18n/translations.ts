@@ -466,6 +466,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "home.scroller.scrollLeft": "Scroll {label} left",
     "home.scroller.scrollRight": "Scroll {label} right",
+    "home.scroller.scrollPrevious": "Scroll {label} backward",
+    "home.scroller.scrollNext": "Scroll {label} forward",
     "home.scroller.label.discovery": "discovery venues",
     "home.scroller.label.mood": "mood venues",
     "home.scroller.label.curated": "curated venues",
@@ -2233,6 +2235,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "home.scroller.scrollLeft": "تمرير {label} لليسار",
     "home.scroller.scrollRight": "تمرير {label} لليمين",
+    "home.scroller.scrollPrevious": "عرض {label} السابق",
+    "home.scroller.scrollNext": "عرض {label} التالي",
     "home.scroller.label.discovery": "أماكن الاستكشاف",
     "home.scroller.label.mood": "أماكن الأجواء",
     "home.scroller.label.curated": "أماكن مختارة لك",

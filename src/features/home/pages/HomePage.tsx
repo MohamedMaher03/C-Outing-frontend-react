@@ -41,6 +41,11 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
 import { getErrorMessage } from "@/utils/apiError";
 import { getTranslatedText } from "@/utils/helpers";
+import {
+  getHorizontalScrollState,
+  scrollHorizontally,
+  scrollToHorizontalStart,
+} from "@/utils/horizontalScroll";
 import { GroupSessionWidget } from "@/features/session/components/GroupSessionWidget";
 import { homeService } from "@/features/home/services/homeService";
 import { authService } from "@/features/auth";
@@ -53,6 +58,8 @@ interface HorizontalScrollerProps {
   ariaLabel: string;
   className?: string;
   scrollKey?: string | number;
+  /** When false, only touch / trackpad / scrollbar scrolling (no nav arrows). */
+  showArrows?: boolean;
 }
 
 const HorizontalScroller = ({
@@ -60,32 +67,44 @@ const HorizontalScroller = ({
   ariaLabel,
   className,
   scrollKey,
+  showArrows = true,
 }: HorizontalScrollerProps) => {
-  const { t } = useI18n();
+  const { t, direction } = useI18n();
+  const isRtl = direction === "rtl";
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const shouldReduceMotion = useReducedMotion();
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [canScrollPrevious, setCanScrollPrevious] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
 
   const updateScrollButtons = useCallback(() => {
+    if (!showArrows) {
+      return;
+    }
+
     const element = scrollRef.current;
     if (!element) {
       return;
     }
 
-    const maxScrollLeft = element.scrollWidth - element.clientWidth;
-    setCanScrollLeft(element.scrollLeft > 8);
-    setCanScrollRight(element.scrollLeft < maxScrollLeft - 8);
-  }, []);
+    const { canScrollBack, canScrollForward } = getHorizontalScrollState(element);
+    setCanScrollPrevious(canScrollBack);
+    setCanScrollNext(canScrollForward);
+  }, [showArrows]);
 
   useEffect(() => {
     const element = scrollRef.current;
     if (!element) return;
-    element.scrollTo({ left: 0, behavior: "instant" });
-    requestAnimationFrame(updateScrollButtons);
-  }, [scrollKey, updateScrollButtons]);
+    scrollToHorizontalStart(element);
+    if (showArrows) {
+      requestAnimationFrame(updateScrollButtons);
+    }
+  }, [scrollKey, updateScrollButtons, isRtl, showArrows]);
 
   useEffect(() => {
+    if (!showArrows) {
+      return;
+    }
+
     const element = scrollRef.current;
     if (!element) {
       return;
@@ -100,50 +119,80 @@ const HorizontalScroller = ({
       element.removeEventListener("scroll", updateScrollButtons);
       resizeObserver.disconnect();
     };
-  }, [updateScrollButtons]);
+  }, [updateScrollButtons, showArrows]);
 
   useEffect(() => {
     updateScrollButtons();
   }, [children, updateScrollButtons]);
 
-  const scrollByDirection = (direction: "left" | "right") => {
+  const scrollByStep = (step: "previous" | "next") => {
     const element = scrollRef.current;
     if (!element) {
       return;
     }
 
     const amount = Math.max(Math.round(element.clientWidth * 0.8), 280);
-    element.scrollBy({
-      left: direction === "left" ? -amount : amount,
-      behavior: shouldReduceMotion ? "auto" : "smooth",
-    });
+    scrollHorizontally(
+      element,
+      step === "previous" ? "back" : "forward",
+      amount,
+      shouldReduceMotion ? "auto" : "smooth",
+    );
   };
 
+  const PreviousIcon = isRtl ? ChevronRight : ChevronLeft;
+  const NextIcon = isRtl ? ChevronLeft : ChevronRight;
+
+  const trackClassName = cn(
+    "flex gap-3 overflow-x-auto pb-4 pt-1 horizontal-scroller-scrollbar sm:gap-4 md:pb-5",
+    showArrows
+      ? "min-w-0 flex-1 snap-x snap-mandatory scroll-px-2"
+      : "-mx-2 snap-x snap-mandatory px-2",
+    className,
+  );
+
+  const arrowButtonClassName =
+    "hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-md transition-opacity hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none md:inline-flex";
+
+  if (!showArrows) {
+    return (
+      <div dir={direction}>
+        <div
+          ref={scrollRef}
+          dir={direction}
+          className={trackClassName}
+          aria-label={ariaLabel}
+        >
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative overflow-hidden">
-      <div
-        aria-hidden="true"
-        className={cn(
-          "pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-background to-transparent transition-opacity duration-200",
-          canScrollLeft ? "opacity-100" : "opacity-0",
-        )}
-      />
+    <div
+      className="-mx-4 flex items-center gap-1 px-4 md:gap-2"
+      dir={direction}
+    >
       <button
         type="button"
-        onClick={() => scrollByDirection("left")}
-        aria-label={t("home.scroller.scrollLeft", { label: ariaLabel })}
-        disabled={!canScrollLeft}
-        className="absolute left-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-md transition-opacity hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
+        onClick={() => scrollByStep("previous")}
+        aria-label={t("home.scroller.scrollPrevious", { label: ariaLabel })}
+        aria-hidden={!canScrollPrevious}
+        disabled={!canScrollPrevious}
+        tabIndex={canScrollPrevious ? 0 : -1}
+        className={cn(
+          arrowButtonClassName,
+          !canScrollPrevious && "invisible",
+        )}
       >
-        <ChevronLeft className="h-4 w-4" />
+        <PreviousIcon className="h-4 w-4" aria-hidden />
       </button>
 
       <div
         ref={scrollRef}
-        className={cn(
-          "-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 pt-1 scrollbar-hide sm:gap-4 md:px-20",
-          className,
-        )}
+        dir={direction}
+        className={trackClassName}
         aria-label={ariaLabel}
       >
         {children}
@@ -151,20 +200,15 @@ const HorizontalScroller = ({
 
       <button
         type="button"
-        onClick={() => scrollByDirection("right")}
-        aria-label={t("home.scroller.scrollRight", { label: ariaLabel })}
-        disabled={!canScrollRight}
-        className="absolute right-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-md transition-opacity hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-30 md:inline-flex"
+        onClick={() => scrollByStep("next")}
+        aria-label={t("home.scroller.scrollNext", { label: ariaLabel })}
+        aria-hidden={!canScrollNext}
+        disabled={!canScrollNext}
+        tabIndex={canScrollNext ? 0 : -1}
+        className={cn(arrowButtonClassName, !canScrollNext && "invisible")}
       >
-        <ChevronRight className="h-4 w-4 " />
+        <NextIcon className="h-4 w-4" aria-hidden />
       </button>
-      <div
-        aria-hidden="true"
-        className={cn(
-          "pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-background to-transparent transition-opacity duration-200",
-          canScrollRight ? "opacity-100" : "opacity-0",
-        )}
-      />
     </div>
   );
 };
@@ -997,7 +1041,7 @@ const HomePage = () => {
                     undefined,
                     "Popular districts",
                   )}
-                  className="-mx-2 px-2"
+                  showArrows={false}
                 >
                   {popularDistricts.map((district) => {
                     const isActive = selectedDistrict === district.name;
@@ -1103,7 +1147,7 @@ const HomePage = () => {
                       undefined,
                       "Popular areas",
                     )}
-                    className="-mx-2 px-2"
+                    showArrows={false}
                   >
                     {popularDistricts.map((district) => {
                       const isActive = selectedArea === district.name;
