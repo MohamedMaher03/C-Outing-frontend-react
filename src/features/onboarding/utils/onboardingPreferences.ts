@@ -73,42 +73,82 @@ export const normalizeBudget = (value: unknown): CanonicalPriceLevel | null => {
     : null;
 };
 
-export const normalizeOnboardingPreferences = (
+export type PreferenceValidationCode =
+  | "interests_min"
+  | "districts_min"
+  | "budget_required"
+  | "activities_min"
+  | "companions_min";
+
+export type PreferenceValidationField = keyof OnboardingPreferences;
+
+export interface PreferenceValidationIssue {
+  code: PreferenceValidationCode;
+  field: PreferenceValidationField;
+}
+
+const VALIDATION_THROW_MESSAGES: Record<PreferenceValidationCode, string> = {
+  interests_min: "Please choose at least two interests.",
+  districts_min: "Please choose at least one district.",
+  budget_required: "Please choose a budget range.",
+  activities_min: "Please choose at least one favorite activity.",
+  companions_min: "Please choose at least one companion type.",
+};
+
+export const normalizeOnboardingPreferenceFields = (
   preferences: OnboardingPreferences,
-): OnboardingPreferences => {
-  const normalized: OnboardingPreferences = {
-    interests: normalizeStringList(preferences.interests, MAX_INTERESTS),
-    vibe: normalizeVibe(preferences.vibe),
-    districts: normalizeStringList(preferences.districts, MAX_DISTRICTS),
-    budget: normalizeBudget(preferences.budget),
-    favoriteActivities: normalizeStringList(
-      preferences.favoriteActivities,
-      MAX_ACTIVITIES,
-    ),
-    companionTypes: normalizeStringList(
-      preferences.companionTypes,
-      MAX_COMPANIONS,
-    ),
-  };
+): OnboardingPreferences => ({
+  interests: normalizeStringList(preferences.interests, MAX_INTERESTS),
+  vibe: normalizeVibe(preferences.vibe),
+  districts: normalizeStringList(preferences.districts, MAX_DISTRICTS),
+  budget: normalizeBudget(preferences.budget),
+  favoriteActivities: normalizeStringList(
+    preferences.favoriteActivities,
+    MAX_ACTIVITIES,
+  ),
+  companionTypes: normalizeStringList(
+    preferences.companionTypes,
+    MAX_COMPANIONS,
+  ),
+});
+
+export const validateOnboardingPreferences = (
+  preferences: OnboardingPreferences,
+): PreferenceValidationIssue[] => {
+  const normalized = normalizeOnboardingPreferenceFields(preferences);
+  const issues: PreferenceValidationIssue[] = [];
 
   if (normalized.interests.length < 2) {
-    throw new Error("Please choose at least two interests.");
+    issues.push({ code: "interests_min", field: "interests" });
   }
 
   if (normalized.districts.length < 1) {
-    throw new Error("Please choose at least one district.");
+    issues.push({ code: "districts_min", field: "districts" });
   }
 
   if (!normalized.budget) {
-    throw new Error("Please choose a budget range.");
+    issues.push({ code: "budget_required", field: "budget" });
   }
 
   if (normalized.favoriteActivities.length < 1) {
-    throw new Error("Please choose at least one favorite activity.");
+    issues.push({ code: "activities_min", field: "favoriteActivities" });
   }
 
   if (normalized.companionTypes.length < 1) {
-    throw new Error("Please choose at least one companion type.");
+    issues.push({ code: "companions_min", field: "companionTypes" });
+  }
+
+  return issues;
+};
+
+export const normalizeOnboardingPreferences = (
+  preferences: OnboardingPreferences,
+): OnboardingPreferences => {
+  const normalized = normalizeOnboardingPreferenceFields(preferences);
+  const issues = validateOnboardingPreferences(preferences);
+
+  if (issues.length > 0) {
+    throw new Error(VALIDATION_THROW_MESSAGES[issues[0].code]);
   }
 
   return normalized;

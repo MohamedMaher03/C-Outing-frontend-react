@@ -4,6 +4,7 @@ import {
   normalizePartialOnboardingPreferences,
   normalizeUserId,
   normalizeVibe,
+  validateOnboardingPreferences,
 } from "@/features/onboarding/utils/onboardingPreferences";
 import {
   mapSubmitPreferences,
@@ -44,6 +45,25 @@ describe("onboarding preference normalization", () => {
       favoriteActivities: ["Cafe", "Restaurant"],
       companionTypes: ["solo", "Couple"],
     });
+  });
+
+  it("returns structured validation issues for incomplete preferences", () => {
+    const issues = validateOnboardingPreferences({
+      interests: ["OnlyOne"],
+      vibe: 50,
+      districts: [],
+      budget: null,
+      favoriteActivities: [],
+      companionTypes: [],
+    });
+
+    expect(issues.map((issue) => issue.code)).toEqual([
+      "interests_min",
+      "districts_min",
+      "budget_required",
+      "activities_min",
+      "companions_min",
+    ]);
   });
 
   it("throws when required preference selections are missing", () => {

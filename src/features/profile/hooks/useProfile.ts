@@ -9,6 +9,11 @@ import type { UserProfile, UserPreferences } from "@/features/profile/types";
 import type { PriceLevel } from "@/features/admin/types";
 import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
+import type { OnboardingPreferences } from "@/features/onboarding/types";
+import {
+  validateOnboardingPreferences,
+  type PreferenceValidationIssue,
+} from "@/features/onboarding/utils/onboardingPreferences";
 
 interface UseProfileReturn {
   profile: UserProfile | null;
@@ -16,6 +21,8 @@ interface UseProfileReturn {
   loading: boolean;
   saving: boolean;
   error: string | null;
+  saveSuccess: boolean;
+  saveValidationIssues: PreferenceValidationIssue[];
 
   selectedInterests: string[];
   vibe: number[];
@@ -42,6 +49,10 @@ export const useProfile = (): UseProfileReturn => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveValidationIssues, setSaveValidationIssues] = useState<
+    PreferenceValidationIssue[]
+  >([]);
   const latestLoadRunRef = useRef(0);
   const saveInFlightRef = useRef(false);
   const signOutInFlightRef = useRef(false);
@@ -53,7 +64,11 @@ export const useProfile = (): UseProfileReturn => {
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [selectedCompanionTypes, setSelectedCompanionTypes] = useState<string[]>([]);
 
-  const clearError = () => setError(null);
+  const clearSaveFeedback = () => {
+    setError(null);
+    setSaveSuccess(false);
+    setSaveValidationIssues([]);
+  };
 
   const fetchProfileData = useCallback(async () => {
     const runId = ++latestLoadRunRef.current;
@@ -98,14 +113,14 @@ export const useProfile = (): UseProfileReturn => {
   }, [fetchProfileData]);
 
   const toggleInterest = (id: string) => {
-    clearError();
+    clearSaveFeedback();
     setSelectedInterests((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
   const toggleDistrict = (district: string) => {
-    clearError();
+    clearSaveFeedback();
     setSelectedDistricts((prev) =>
       prev.includes(district)
         ? prev.filter((d) => d !== district)
@@ -114,21 +129,41 @@ export const useProfile = (): UseProfileReturn => {
   };
 
   const toggleActivity = (id: string) => {
-    clearError();
+    clearSaveFeedback();
     setSelectedActivities((prev) =>
       prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
     );
   };
 
   const toggleCompanionType = (id: string) => {
-    clearError();
+    clearSaveFeedback();
     setSelectedCompanionTypes((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
     );
   };
 
+  const buildPreferencesPayload = (): OnboardingPreferences => ({
+    interests: selectedInterests,
+    vibe: vibe[0],
+    districts: selectedDistricts,
+    budget: selectedBudget,
+    favoriteActivities: selectedActivities,
+    companionTypes: selectedCompanionTypes,
+  });
+
   const savePreferences = async () => {
     if (saveInFlightRef.current || saving) {
+      return;
+    }
+
+    const validationIssues = validateOnboardingPreferences(
+      buildPreferencesPayload(),
+    );
+
+    if (validationIssues.length > 0) {
+      setSaveSuccess(false);
+      setSaveValidationIssues(validationIssues);
+      setError(null);
       return;
     }
 
@@ -137,6 +172,8 @@ export const useProfile = (): UseProfileReturn => {
     try {
       setSaving(true);
       setError(null);
+      setSaveValidationIssues([]);
+      setSaveSuccess(false);
 
       const updatedPreferences = await updateUserPreferences({
         interests: selectedInterests,
@@ -148,7 +185,9 @@ export const useProfile = (): UseProfileReturn => {
       });
 
       setPreferences(updatedPreferences);
+      setSaveSuccess(true);
     } catch (err) {
+      setSaveSuccess(false);
       setError(
         getErrorMessage(err, t("profile.error.savePreferencesFallback")),
       );
@@ -179,12 +218,24 @@ export const useProfile = (): UseProfileReturn => {
     await fetchProfileData();
   };
 
+  const handleSetVibe = (value: number[]) => {
+    clearSaveFeedback();
+    setVibe(value);
+  };
+
+  const handleSetSelectedBudget = (budget: PriceLevel) => {
+    clearSaveFeedback();
+    setSelectedBudget(budget);
+  };
+
   return {
     profile,
     preferences,
     loading,
     saving,
     error,
+    saveSuccess,
+    saveValidationIssues,
     selectedInterests,
     vibe,
     selectedDistricts,
@@ -192,12 +243,9 @@ export const useProfile = (): UseProfileReturn => {
     selectedActivities,
     selectedCompanionTypes,
     toggleInterest,
-    setVibe,
+    setVibe: handleSetVibe,
     toggleDistrict,
-    setSelectedBudget: (budget: PriceLevel) => {
-      clearError();
-      setSelectedBudget(budget);
-    },
+    setSelectedBudget: handleSetSelectedBudget,
     toggleActivity,
     toggleCompanionType,
     savePreferences,

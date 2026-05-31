@@ -1080,9 +1080,19 @@ const OnboardingPage = () => {
               >
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="flex flex-wrap items-center gap-2">
-                  <span className="min-w-0 flex-1 break-words" dir="auto">
-                    {error}
-                  </span>
+                  {error.includes("\n") ? (
+                    <ul className="min-w-0 flex-1 list-disc space-y-1 ps-5">
+                      {error.split("\n").map((line) => (
+                        <li key={line} className="break-words" dir="auto">
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="min-w-0 flex-1 break-words" dir="auto">
+                      {error}
+                    </span>
+                  )}
                   {step === ONBOARDING_STEPS.length - 1 && (
                     <Button
                       size="sm"

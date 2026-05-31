@@ -10,6 +10,7 @@ import {
   Search,
   X,
   Check,
+  CheckCircle2,
   type LucideIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -35,6 +36,9 @@ import {
   FAVORITE_ACTIVITIES,
   COMPANION_TYPES,
 } from "@/features/onboarding/mocks";
+import { PreferenceValidationAlert } from "@/features/onboarding/components/PreferenceValidationAlert";
+import { PreferenceSectionHint } from "@/features/onboarding/components/PreferenceSectionHint";
+import type { PreferenceValidationField } from "@/features/onboarding/utils/onboardingPreferences";
 
 const BUDGET_OPTIONS: Array<{ value: PriceLevel; label: string }> =
   SHARED_BUDGET_OPTIONS as Array<{ value: PriceLevel; label: string }>;
@@ -122,6 +126,8 @@ const ProfilePage = () => {
     loading,
     saving,
     error,
+    saveSuccess,
+    saveValidationIssues,
     selectedInterests,
     vibe,
     selectedDistricts,
@@ -239,6 +245,38 @@ const ProfilePage = () => {
     await savePreferences().catch(() => undefined);
   };
 
+  const savePreferencesFooter = (
+    <div className="space-y-2">
+      <Button
+        onClick={handleSave}
+        disabled={saving}
+        className="w-full min-h-11 bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
+      >
+        {saving
+          ? t("profile.preferences.saving")
+          : t("profile.preferences.save")}
+      </Button>
+      {saveSuccess ? (
+        <p
+          role="status"
+          aria-live="polite"
+          className="flex items-center justify-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400"
+        >
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          {t("profile.preferences.saveSuccess")}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  const hasValidationIssue = (field: PreferenceValidationField) =>
+    saveValidationIssues.some((issue) => issue.field === field);
+
+  const sectionIssueClass = (field: PreferenceValidationField) =>
+    hasValidationIssue(field)
+      ? "rounded-2xl ring-2 ring-destructive/50 ring-offset-2 ring-offset-background"
+      : "";
+
   if (loading) {
     return (
       <LoadingSpinner size="md" text={t("profile.loading")} fullScreen={true} />
@@ -270,19 +308,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 pb-24 pt-[clamp(1rem,2vw,1.5rem)] sm:pb-6 sm:pt-[clamp(1.25rem,2.5vw,2rem)] space-y-[clamp(1rem,2.4vw,2rem)] text-foreground">
-      {error ? (
-        <div
-          className="rounded-md border border-destructive/30 bg-destructive/5 p-3"
-          role="alert"
-          aria-live="assertive"
-        >
-          <p className="text-sm text-destructive text-center break-words">
-            {error}
-          </p>
-        </div>
-      ) : null}
-
+    <div className="max-w-5xl mx-auto px-4 pb-24 pt-[clamp(1rem,2vw,1.5rem)] md:pb-6 md:pt-[clamp(1.25rem,2.5vw,2rem)] space-y-[clamp(1rem,2.4vw,2rem)] text-foreground">
       <div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-card/60 p-4 sm:p-5">
         <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
           <img
@@ -391,9 +417,18 @@ const ProfilePage = () => {
             value="preferences"
             className="space-y-[clamp(1.25rem,2.5vw,2.25rem)] pt-4"
           >
+            {saveValidationIssues.length > 0 ||
+            (error && isPreferencesTabActive) ? (
+              <PreferenceValidationAlert
+                variant="error"
+                validationIssues={saveValidationIssues}
+                errorMessage={error}
+              />
+            ) : null}
+
             {/* 1. Explore Interests */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
+            <div className={cn("space-y-3 p-1", sectionIssueClass("interests"))}>
+              <div className="flex items-center justify-between gap-3">
                 <h3 className="text-role-caption text-foreground uppercase tracking-wider font-semibold">
                   {t("profile.preferences.interests")}
                 </h3>
@@ -403,6 +438,7 @@ const ProfilePage = () => {
                   </Badge>
                 )}
               </div>
+              <PreferenceSectionHint hintKey="onboarding.interests.hint" />
               <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
                 {INTERESTS.map((item) => {
                   const selected = selectedInterests.includes(item.id);
@@ -424,10 +460,11 @@ const ProfilePage = () => {
             </div>
 
             {/* 2. Vibe Level */}
-            <div className="space-y-3">
+            <div className={cn("space-y-3 p-1", sectionIssueClass("vibe"))}>
               <h3 className="text-role-caption text-foreground uppercase tracking-wider font-semibold">
                 {t("profile.preferences.vibe")}
               </h3>
+              <PreferenceSectionHint hintKey="onboarding.vibe.hint" />
               <div className="space-y-4 rounded-2xl border border-border/70 bg-card/40 p-4 shadow-sm sm:p-5">
                 {/* Vibe cards */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -530,10 +567,11 @@ const ProfilePage = () => {
             </div>
 
             {/* 3. Preferred Districts/Areas */}
-            <div className="space-y-3">
+            <div className={cn("space-y-3 p-1", sectionIssueClass("districts"))}>
               <h3 className="text-role-caption text-foreground uppercase tracking-wider font-semibold">
                 {t("profile.preferences.areas")}
               </h3>
+              <PreferenceSectionHint hintKey="onboarding.districts.hint" />
 
               <div className="space-y-3 rounded-2xl border border-border/70 bg-card/45 p-4 shadow-sm">
                 {/* Search input */}
@@ -644,10 +682,11 @@ const ProfilePage = () => {
             </div>
 
             {/* 4. Preferred Budget */}
-            <div className="space-y-3">
+            <div className={cn("space-y-3 p-1", sectionIssueClass("budget"))}>
               <h3 className="text-role-caption text-foreground uppercase tracking-wider font-semibold">
                 {t("profile.preferences.budget")}
               </h3>
+              <PreferenceSectionHint hintKey="onboarding.budget.hint" />
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {BUDGET_OPTIONS.map((option) => (
                   <ProfilePreferenceOptionButton
@@ -668,8 +707,13 @@ const ProfilePage = () => {
             </div>
 
             {/* 5. Favorite Activities */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
+            <div
+              className={cn(
+                "space-y-3 p-1",
+                sectionIssueClass("favoriteActivities"),
+              )}
+            >
+              <div className="flex items-center justify-between gap-3">
                 <h3 className="text-role-caption text-foreground uppercase tracking-wider font-semibold">
                   {t("onboarding.step.activities")}
                 </h3>
@@ -679,6 +723,7 @@ const ProfilePage = () => {
                   </Badge>
                 )}
               </div>
+              <PreferenceSectionHint hintKey="onboarding.activities.hint" />
               <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
                 {FAVORITE_ACTIVITIES.map((activity) => {
                   const selected = selectedActivities.includes(activity.id);
@@ -697,8 +742,13 @@ const ProfilePage = () => {
             </div>
 
             {/* 6. Companion Types */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
+            <div
+              className={cn(
+                "space-y-3 p-1",
+                sectionIssueClass("companionTypes"),
+              )}
+            >
+              <div className="flex items-center justify-between gap-3">
                 <h3 className="text-role-caption text-foreground uppercase tracking-wider font-semibold">
                   {t("onboarding.step.companions")}
                 </h3>
@@ -708,6 +758,7 @@ const ProfilePage = () => {
                   </Badge>
                 )}
               </div>
+              <PreferenceSectionHint hintKey="onboarding.companions.hint" />
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {COMPANION_TYPES.map((companion) => {
                   const selected = selectedCompanionTypes.includes(
@@ -727,15 +778,7 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="hidden w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold sm:inline-flex"
-            >
-              {saving
-                ? t("profile.preferences.saving")
-                : t("profile.preferences.save")}
-            </Button>
+            {savePreferencesFooter}
           </TabsContent>
 
           <TabsContent value="account" className="space-y-2.5 pt-4">
@@ -796,22 +839,6 @@ const ProfilePage = () => {
           </p>
         </aside>
       </div>
-
-      {isPreferencesTabActive ? (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur-sm sm:hidden">
-          <div className="mx-auto max-w-5xl px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="w-full bg-primary text-primary-foreground hover:bg-navy-light font-semibold"
-            >
-              {saving
-                ? t("profile.preferences.saving")
-                : t("profile.preferences.save")}
-            </Button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 };

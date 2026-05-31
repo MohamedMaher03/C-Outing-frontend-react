@@ -5,7 +5,11 @@ import type { OnboardingPreferences } from "@/features/onboarding/types";
 import type { PriceLevel } from "@/features/admin/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { getErrorMessage } from "@/utils/apiError";
-import { normalizeVibe } from "../utils/onboardingPreferences";
+import {
+  normalizeVibe,
+  validateOnboardingPreferences,
+} from "../utils/onboardingPreferences";
+import { formatPreferenceValidationIssues } from "../utils/preferenceValidationI18n";
 import { useI18n } from "@/components/i18n";
 
 interface UseOnboardingReturn {
@@ -148,6 +152,14 @@ export const useOnboarding = (): UseOnboardingReturn => {
         favoriteActivities: selectedActivities,
         companionTypes: selectedCompanionTypes,
       };
+
+      const validationIssues = validateOnboardingPreferences(preferences);
+      if (validationIssues.length > 0) {
+        setError(
+          formatPreferenceValidationIssues(validationIssues, t).join("\n"),
+        );
+        return;
+      }
 
       await submitOnboardingPreferences(user.userId, preferences);
 

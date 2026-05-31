@@ -292,7 +292,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "Ideal for nightlife, packed venues, and high-energy experiences.",
 
     "onboarding.districts.title": "Where in Cairo?",
-    "onboarding.districts.hint": "Select your favorite districts.",
+    "onboarding.districts.hint":
+      "Select your favorite districts. (Must select at least 1)",
     "onboarding.districts.legend": "Select your preferred districts",
     "onboarding.districts.searchPlaceholder": "Search districts...",
     "onboarding.districts.searchLabel": "Search districts",
@@ -323,7 +324,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "Choose at least {count} activity to continue",
 
     "onboarding.companions.title": "Who do you usually go out with?",
-    "onboarding.companions.hint": "Select all that match your usual plans.",
+    "onboarding.companions.hint":
+      "Select all that match your usual plans. (Must select at least 1)",
     "onboarding.companions.legend": "Select your companion types",
     "onboarding.companions.selected": "{count} companion types selected",
     "onboarding.companions.remaining":
@@ -339,6 +341,17 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "onboarding.error.completeStep":
       "Please complete this step before continuing.",
     "onboarding.error.submitFailed": "Failed to submit preferences",
+
+    "preferences.validation.interestsMin": "Select at least 2 interests.",
+    "preferences.validation.districtsMin": "Select at least 1 area.",
+    "preferences.validation.budgetRequired": "Choose a budget level.",
+    "preferences.validation.activitiesMin":
+      "Select at least 1 favorite activity.",
+    "preferences.validation.companionsMin": "Select at least 1 companion type.",
+    "preferences.validation.fixBeforeSave":
+      "Please fix the following before saving:",
+    "preferences.save.successTitle": "Saved",
+    "preferences.save.failedTitle": "Could not save preferences",
 
     "onboarding.interest.felucca": "Felucca Rides",
     "onboarding.interest.street-food": "Street Food",
@@ -895,7 +908,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "placeDetail.contact.bookTable": "Book a Table",
     "placeDetail.contact.googleMaps": "View on Google Maps",
     "placeDetail.price.perPerson": "~{amount} per person",
-    "placeDetail.price.perPersonWithCurrency": "~{amount} {currency} per person",
+    "placeDetail.price.perPersonWithCurrency":
+      "~{amount} {currency} per person",
     "placeDetail.hours.title": "Hours",
     "placeDetail.hours.today": "Today's schedule",
     "placeDetail.hours.showAll": "See full schedule",
@@ -1560,6 +1574,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.preferences.budget": "Budget",
     "profile.preferences.save": "Save preference changes",
     "profile.preferences.saving": "Saving changes...",
+    "profile.preferences.saveSuccess":
+      "Your preferences were saved successfully.",
     "profile.account.appearanceTitle": "Appearance",
     "profile.account.appearanceDescription": "Choose your default app theme.",
     "profile.account.item.edit.label": "Edit Profile",
@@ -2084,7 +2100,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "مثالي للحياة الليلية والأماكن المزدحمة والتجارب النشطة.",
 
     "onboarding.districts.title": "أي مناطق في القاهرة؟",
-    "onboarding.districts.hint": "اختر المناطق المفضلة لديك.",
+    "onboarding.districts.hint":
+      "اختر المناطق المفضلة لديك. (اختر منطقة واحدة على الأقل)",
     "onboarding.districts.legend": "اختر المناطق المفضلة",
     "onboarding.districts.searchPlaceholder": "ابحث عن منطقة...",
     "onboarding.districts.searchLabel": "بحث المناطق",
@@ -2114,7 +2131,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "onboarding.activities.remaining": "اختر نشاطًا واحدًا على الأقل للمتابعة",
 
     "onboarding.companions.title": "مع من تخرج عادة؟",
-    "onboarding.companions.hint": "اختر كل ما يناسب خططك المعتادة.",
+    "onboarding.companions.hint":
+      "اختر كل ما يناسب خططك المعتادة. (يجب اختيار خيار واحد على الأقل)",
     "onboarding.companions.legend": "اختر أنواع الصحبة",
     "onboarding.companions.selected": "تم اختيار {count} أنواع صحبة",
     "onboarding.companions.remaining":
@@ -2129,6 +2147,16 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
       "انتهت صلاحية الجلسة. برجاء تسجيل الدخول مرة أخرى.",
     "onboarding.error.completeStep": "يرجى إكمال هذه الخطوة قبل المتابعة.",
     "onboarding.error.submitFailed": "تعذر إرسال التفضيلات",
+
+    "preferences.validation.interestsMin": "اختر اهتمامين على الأقل.",
+    "preferences.validation.districtsMin": "اختر منطقة واحدة على الأقل.",
+    "preferences.validation.budgetRequired": "اختر مستوى ميزانية.",
+    "preferences.validation.activitiesMin":
+      "اختر نشاطًا مفضلًا واحدًا على الأقل.",
+    "preferences.validation.companionsMin": "اختر نوع صحبة واحدًا على الأقل.",
+    "preferences.validation.fixBeforeSave": "يرجى إصلاح التالي قبل الحفظ:",
+    "preferences.save.successTitle": "تم الحفظ",
+    "preferences.save.failedTitle": "تعذر حفظ التفضيلات",
 
     "onboarding.interest.felucca": "رحلات الفلوكة",
     "onboarding.interest.street-food": "أكل الشارع",
@@ -3248,6 +3276,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.preferences.budget": "الميزانية",
     "profile.preferences.save": "حفظ تغييرات التفضيلات",
     "profile.preferences.saving": "جارٍ حفظ التغييرات...",
+    "profile.preferences.saveSuccess": "تم حفظ تفضيلاتك بنجاح.",
     "profile.account.appearanceTitle": "المظهر",
     "profile.account.appearanceDescription": "اختر نمط التطبيق الافتراضي.",
     "profile.account.item.edit.label": "تعديل الملف الشخصي",
