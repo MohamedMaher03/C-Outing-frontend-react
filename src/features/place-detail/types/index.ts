@@ -30,6 +30,15 @@ export interface MetroStation {
   time: string;
 }
 
+export interface MenuItem {
+  url: string;
+  date?: string;
+}
+
+export interface VenuePhotos {
+  header?: string[];
+}
+
 export interface PlaceBase {
   id: string;
   name: string;
@@ -63,14 +72,44 @@ export interface PlaceBase {
     "Good for Solo" | "Good for Couples" | "Good for Groups"
   >;
   hasWifi?: boolean;
+  freeWifi?: boolean;
   hasToilet?: boolean;
   seatingType?: Array<"indoor" | "outdoor">;
+  hasIndoorSeating?: boolean;
+  hasOutdoorSeating?: boolean;
+  hasDriveThrough?: boolean;
+  offersDelivery?: boolean;
   parkingAvailable?: boolean;
+  streetParking?: boolean;
+  lotParking?: boolean;
+  valetParking?: boolean;
+  garageParking?: boolean;
+  multiStoreyParking?: boolean;
+  wheelchairEntrance?: boolean;
+  wheelchairSeating?: boolean;
+  wheelchairCarPark?: boolean;
+  wheelchairToilet?: boolean;
+  assistiveHearingLoop?: boolean;
+  acceptsCards?: boolean;
+  acceptsDebitCards?: boolean;
+  acceptsCreditCards?: boolean;
+  acceptsNfcMobile?: boolean;
   accessibilityScore?: number;
   noiseScore?: number;
+  menus?: MenuItem[];
   menuImagesCount?: number;
   menuImagesUrls?: string[];
   menuCurrency?: string;
+  venuePhotos?: VenuePhotos;
+  cuisines?: string[];
+  dietaryAttributes?: string[];
+  priceMeanPerPerson?: number | null;
+  googleMapsTotalReviews?: number | null;
+  originalGoogleMapsUrl?: string;
+  status?: string;
+  isDeprecated?: boolean;
+  personalPriceRange?: string | null;
+  platformRating?: number | null;
   metroStations?: MetroStation[];
   isSaved?: boolean;
   isFavorited?: boolean;

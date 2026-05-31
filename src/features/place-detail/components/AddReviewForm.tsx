@@ -90,7 +90,7 @@ export const AddReviewForm = ({
   };
 
   return (
-    <Card className="rounded-2xl border-border/70 bg-card/95 p-5 space-y-4 shadow-sm">
+    <Card className="rounded-2xl border-border/70 bg-card/95 p-4 space-y-4 shadow-sm sm:p-5 max-w-full overflow-hidden">
       <h3 className="text-role-subheading text-foreground flex items-center gap-2">
         <MessageSquare className="h-4 w-4 text-accent" />
         {mode === "edit"

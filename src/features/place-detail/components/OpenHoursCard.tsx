@@ -60,9 +60,9 @@ export const OpenHoursCard = ({
 
   return (
     <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="pd-type-kicker text-foreground inline-flex items-center gap-2">
-          <Clock className="h-4 w-4 text-accent" />
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h2 className="pd-type-kicker text-foreground inline-flex items-center gap-2 min-w-0">
+          <Clock className="h-4 w-4 text-accent shrink-0" />
           {t("placeDetail.hours.title")}
         </h2>
         {openStatusCopy && (
@@ -79,7 +79,7 @@ export const OpenHoursCard = ({
           >
             <span
               className={cn(
-                "inline-block h-1.5 w-1.5 rounded-full mr-1.5",
+                "inline-block h-1.5 w-1.5 rounded-full me-1.5",
                 isOpen === true
                   ? "bg-accent"
                   : isOpen === false
@@ -122,15 +122,15 @@ export const OpenHoursCard = ({
                 <div
                   key={idx}
                   className={cn(
-                    "flex items-center justify-between gap-3 px-3 py-2.5 sm:px-4",
+                    "flex flex-col items-start gap-1 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4",
                     group.isToday
-                      ? "bg-accent/8 border-l-2 border-l-accent"
+                      ? "bg-accent/8 border-s-2 border-s-accent"
                       : "hover:bg-muted/30 transition-colors",
                   )}
                 >
                   <span
                     className={cn(
-                      "pd-type-micro shrink-0 flex items-center gap-1.5",
+                      "pd-type-micro shrink-0 flex flex-wrap items-center gap-1.5 min-w-0",
                       group.isToday
                         ? "text-accent font-semibold"
                         : "text-muted-foreground",
@@ -145,7 +145,7 @@ export const OpenHoursCard = ({
                   </span>
                   <span
                     className={cn(
-                      "pd-type-micro pd-type-number text-right",
+                      "pd-type-micro pd-type-number text-start sm:text-end break-words",
                       group.isToday
                         ? "text-foreground font-semibold"
                         : "text-muted-foreground",

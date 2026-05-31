@@ -65,10 +65,10 @@ const SocialReviewCardComponent = ({
   return (
     <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex items-center gap-2.5 min-w-0 max-w-full">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <PlatformIcon platform={review.platform} />
           <span
-            className="pd-type-label text-foreground font-semibold break-words line-clamp-1 max-w-[11rem] sm:max-w-none"
+            className="pd-type-label text-foreground font-semibold break-words line-clamp-2 min-w-0"
             dir="auto"
           >
             {review.author}

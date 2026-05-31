@@ -112,6 +112,41 @@ describe("place-detail utilities and mapper", () => {
     expect(normalized.metroStations?.[0]?.stationName).toBe("Sadat");
   });
 
+  it("normalizes menus with dates and seating flags from the API", () => {
+    const normalized = normalizePlaceDetail({
+      data: {
+        id: "v3",
+        name: "Murano Cafe",
+        category: "Cafe",
+        menus: [
+          {
+            url: "https://example.com/menu-1.jpg",
+            date: "May 2025",
+          },
+          "https://example.com/menu-legacy.jpg",
+        ],
+        hasIndoorSeating: true,
+        hasOutdoorSeating: true,
+        menuImagesCount: 11,
+        priceRange: "MidRange",
+        atmospheres: ["Cozy"],
+      },
+    });
+
+    expect(normalized.menus).toEqual([
+      { url: "https://example.com/menu-1.jpg", date: "May 2025" },
+      { url: "https://example.com/menu-legacy.jpg", date: undefined },
+    ]);
+    expect(normalized.menuImagesUrls).toEqual([
+      "https://example.com/menu-1.jpg",
+      "https://example.com/menu-legacy.jpg",
+    ]);
+    expect(normalized.menuImagesCount).toBe(11);
+    expect(normalized.seatingType).toEqual(["indoor", "outdoor"]);
+    expect(normalized.atmosphereTags).toContain("Cozy");
+    expect(normalized.priceLevel).toBe("midrange");
+  });
+
   it("preserves a null open-state on place detail payloads", () => {
     const normalized = normalizePlaceDetail({
       data: {

@@ -26,12 +26,16 @@ import {
   Users,
   Accessibility,
   Images,
-  TrainFront,
-  Route,
-  Timer,
   Mail,
   Share2,
+  Truck,
+  Car,
+  CreditCard,
+  Smartphone,
+  ChefHat,
+  Ear,
 } from "lucide-react";
+import type { MenuItem } from "@/features/place-detail/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,10 +48,13 @@ import { usePlaceDetail } from "@/features/place-detail/hooks/usePlaceDetail";
 import { INTERACTION_ACTION_TYPES } from "@/features/interactions";
 import { PRICE_LEVEL_META } from "@/features/place-detail/utils/priceLevel";
 import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defaultImages";
-import { formatCountLabel } from "@/features/place-detail/utils/formatters";
+import {
+  formatCountLabel,
+} from "@/features/place-detail/utils/formatters";
 import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleton";
 import { ReviewsPagination } from "@/features/place-detail/components/ReviewsPagination";
 import { OpenHoursCard } from "@/features/place-detail/components/OpenHoursCard";
+import { MetroStationsCard } from "@/features/place-detail/components/MetroStationsCard";
 import "@/features/place-detail/placeDetailTypography.css";
 import { useAuth } from "@/features/auth";
 
@@ -168,15 +175,6 @@ const PlaceDetailPage = () => {
     : place?.googleMapsRatingCount !== undefined
       ? formatNumber(place.googleMapsRatingCount)
       : "...";
-  const socialCountVerbose = socialReviewsLoaded
-    ? t("placeDetail.reviews.countLabel", {
-        count: formatNumber(socialTotalCount),
-      })
-    : place?.googleMapsRatingCount !== undefined
-      ? t("placeDetail.reviews.countLabel", {
-          count: formatNumber(place.googleMapsRatingCount),
-        })
-      : t("common.loading");
 
   const onDeleteMyReview = useCallback(async () => {
     await handleDeleteMyReview();
@@ -195,15 +193,62 @@ const PlaceDetailPage = () => {
     /(restaurant|cafe|coffee|food|drink|bar|bakery|kitchen|grill|bistro|diner|pub|brunch|dessert|juice|tea|lounge|shawarma|pizza)/.test(
       venueCategoryType,
     );
+  const menuItems = useMemo((): MenuItem[] => {
+    if (!place) return [];
+    if ((place.menus?.length ?? 0) > 0) {
+      return place.menus ?? [];
+    }
+    return (place.menuImagesUrls ?? []).filter(Boolean).map((url) => ({ url }));
+  }, [place]);
   const menuImagesCount = Math.max(
     place?.menuImagesCount ?? 0,
+    menuItems.length,
     place?.menuImagesUrls?.length ?? 0,
   );
-  const menuImages = useMemo(
-    () => Array.from(new Set((place?.menuImagesUrls ?? []).filter(Boolean))),
-    [place],
+  const hasMenuData =
+    Boolean(place?.menuUrl) || menuImagesCount > 0 || menuItems.length > 0;
+  const tagLabels = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...(place?.cuisines ?? []),
+          ...(place?.dietaryAttributes ?? []),
+        ]),
+      ).filter(Boolean),
+    [place?.cuisines, place?.dietaryAttributes],
   );
-  const hasMenuData = Boolean(place?.menuUrl) || menuImagesCount > 0;
+  const hasWheelchairAccess = Boolean(
+    place?.wheelchairEntrance ||
+    place?.wheelchairSeating ||
+    place?.wheelchairCarPark ||
+    place?.wheelchairToilet,
+  );
+  const acceptsAnyPayment = Boolean(
+    place?.acceptsCards ||
+    place?.acceptsDebitCards ||
+    place?.acceptsCreditCards ||
+    place?.acceptsNfcMobile,
+  );
+  const showFacilitiesCard = Boolean(
+    place &&
+    (place.hasWifi ||
+      place.freeWifi ||
+      place.hasToilet ||
+      (place.seatingType?.length ?? 0) > 0 ||
+      place.hasIndoorSeating ||
+      place.hasOutdoorSeating ||
+      place.parkingAvailable ||
+      place.streetParking ||
+      place.lotParking ||
+      place.valetParking ||
+      place.garageParking ||
+      place.multiStoreyParking ||
+      place.hasDriveThrough ||
+      place.offersDelivery ||
+      acceptsAnyPayment ||
+      place.assistiveHearingLoop ||
+      hasWheelchairAccess),
+  );
   const shouldShowMenuCard = hasMenuData || isFoodOrDrinkVenue;
   const nearestMetroStations = useMemo(
     () =>
@@ -304,10 +349,10 @@ const PlaceDetailPage = () => {
         : "border-accent/35 bg-accent text-accent-foreground";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:pb-10">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-background via-background to-muted/30 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:pb-10">
       {notification.show && (
         <div
-          className="fixed top-6 left-1/2 z-50 -translate-x-1/2 px-4"
+          className="fixed top-[calc(1rem+env(safe-area-inset-top))] left-1/2 z-50 -translate-x-1/2 px-4 w-full max-w-[min(92vw,32rem)]"
           role="status"
           aria-live="polite"
           aria-atomic="true"
@@ -342,9 +387,9 @@ const PlaceDetailPage = () => {
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6 lg:px-8">
-        <Card className="overflow-hidden rounded-3xl border-border/60 shadow-xl">
-          <div className="relative h-[clamp(15rem,48vw,24rem)]">
+      <div className="mx-auto w-full max-w-6xl min-w-0 px-4 pt-4 sm:px-6 lg:px-8">
+        <Card className="overflow-hidden rounded-3xl border-border/60 shadow-xl max-w-full">
+          <div className="relative h-[clamp(12rem,44vw,24rem)] sm:h-[clamp(15rem,48vw,24rem)]">
             <img
               src={place.image}
               alt={place.name}
@@ -366,13 +411,13 @@ const PlaceDetailPage = () => {
               size="icon"
               aria-label={t("placeDetail.action.goBack")}
               onClick={goBack}
-              className="absolute left-4 top-4 h-11 w-11 rounded-full border-border/60 bg-card/90 text-foreground backdrop-blur-sm"
+              className="absolute start-3 top-3 h-10 w-10 rounded-full border-border/60 bg-card/90 text-foreground backdrop-blur-sm sm:start-4 sm:top-4 sm:h-11 sm:w-11"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
 
             {!isPrivilegedUser && (
-              <div className="absolute right-4 top-4 flex items-center gap-2">
+              <div className="absolute end-3 top-3 flex items-center gap-1.5 sm:end-4 sm:top-4 sm:gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -385,7 +430,7 @@ const PlaceDetailPage = () => {
                       : t("placeDetail.action.like")
                   }
                   aria-pressed={isLiked}
-                  className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
+                  className="h-10 w-10 rounded-full border-border/60 bg-card/90 backdrop-blur-sm sm:h-11 sm:w-11"
                   title={
                     isLiked
                       ? t("placeDetail.action.unlike")
@@ -405,7 +450,7 @@ const PlaceDetailPage = () => {
                   size="icon"
                   onClick={() => void handleSharePlace()}
                   aria-label={t("placeDetail.action.share")}
-                  className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
+                  className="h-10 w-10 rounded-full border-border/60 bg-card/90 backdrop-blur-sm sm:h-11 sm:w-11"
                   title={t("placeDetail.action.share")}
                 >
                   <Share2 className="h-5 w-5" />
@@ -422,7 +467,7 @@ const PlaceDetailPage = () => {
                       : t("home.place.addFavorite")
                   }
                   aria-pressed={isFavorite}
-                  className="h-11 w-11 rounded-full border-border/60 bg-card/90 backdrop-blur-sm"
+                  className="h-10 w-10 rounded-full border-border/60 bg-card/90 backdrop-blur-sm sm:h-11 sm:w-11"
                   title={
                     isFavorite
                       ? t("home.place.removeFavorite")
@@ -443,19 +488,19 @@ const PlaceDetailPage = () => {
           </div>
         </Card>
 
-        <div className="mt-6 space-y-5">
-          <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm sm:p-5">
+        <div className="mt-6 space-y-5 min-w-0 max-w-full">
+          <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm sm:p-5 max-w-full overflow-hidden">
             <div className="space-y-4">
-              <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between sm:gap-4">
+              <div className="flex flex-row flex-wrap items-start justify-between gap-x-3 gap-y-2">
                 <h1
-                  className="text-role-heading text-foreground break-words min-w-0"
+                  className="text-role-heading text-foreground break-words min-w-0 flex-1 basis-[min(100%,12rem)]"
                   dir="auto"
                 >
                   {place.name}
                 </h1>
                 <Badge
                   variant="outline"
-                  className="gap-1 border-accent/40 text-accent shrink-0 pd-type-number"
+                  className="gap-1 border-accent/40 text-accent shrink-0 pd-type-number self-start"
                 >
                   <Star className="h-3 w-3 fill-accent text-accent" />
                   {formattedAverageRating}
@@ -491,14 +536,52 @@ const PlaceDetailPage = () => {
                 </div>
               )}
 
-              {priceMeta && (
+              {(priceMeta ||
+                place.priceRangeDisplay ||
+                place.priceMeanPerPerson) && (
                 <div className="flex items-center gap-3 flex-wrap text-role-secondary text-muted-foreground">
-                  <span className="inline-flex items-center gap-1 font-semibold text-accent">
-                    <span>{priceMeta.label}</span>
-                    <span className="pd-type-micro text-accent/90">
-                      {priceMeta.symbol}
+                  {priceMeta && (
+                    <span className="inline-flex items-center gap-1 font-semibold text-accent">
+                      <span>{priceMeta.label}</span>
+                      <span className="pd-type-micro text-accent/90">
+                        {priceMeta.symbol}
+                      </span>
                     </span>
-                  </span>
+                  )}
+                  {!priceMeta && place.priceRangeDisplay && (
+                    <span className="font-semibold text-accent">
+                      {place.priceRangeDisplay}
+                    </span>
+                  )}
+                  {typeof place.priceMeanPerPerson === "number" &&
+                    Number.isFinite(place.priceMeanPerPerson) && (
+                      <span className="pd-type-micro text-muted-foreground">
+                        {place.menuCurrency?.trim()
+                          ? t("placeDetail.price.perPersonWithCurrency", {
+                              amount: formatNumber(place.priceMeanPerPerson),
+                              currency: place.menuCurrency.trim(),
+                            })
+                          : t("placeDetail.price.perPerson", {
+                              amount: formatNumber(place.priceMeanPerPerson),
+                            })}
+                      </span>
+                    )}
+                </div>
+              )}
+
+              {tagLabels.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {tagLabels.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="outline"
+                      className="gap-1 pd-type-micro border-border/80 bg-muted/50 text-muted-foreground"
+                      dir="auto"
+                    >
+                      <ChefHat className="h-3 w-3 shrink-0" />
+                      {tag}
+                    </Badge>
+                  ))}
                 </div>
               )}
 
@@ -529,28 +612,29 @@ const PlaceDetailPage = () => {
                       {item}
                     </Badge>
                   ))}
-                  {place.accessibilityScore !== undefined &&
-                    place.accessibilityScore >= 0.7 && (
-                      <Badge
-                        variant="outline"
-                        className="gap-1 border-accent/35 bg-accent/10 text-accent"
-                      >
-                        <Accessibility className="h-3 w-3" />
-                        {t("placeDetail.badge.accessible")}
-                      </Badge>
-                    )}
+                  {(hasWheelchairAccess ||
+                    (place.accessibilityScore !== undefined &&
+                      place.accessibilityScore >= 0.7)) && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-accent/35 bg-accent/10 text-accent"
+                    >
+                      <Accessibility className="h-3 w-3" />
+                      {t("placeDetail.badge.accessible")}
+                    </Badge>
+                  )}
                 </div>
               )}
             </div>
           </Card>
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid gap-5 min-w-0 max-w-full lg:grid-cols-2">
             {hasDescription && (
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-2 sm:p-5 lg:col-span-2">
                 <h2 className="pd-type-kicker text-foreground">
                   {t("placeDetail.about")}
                 </h2>
-                <p className="pd-type-body pd-measure text-muted-foreground break-words">
+                <p className="pd-type-body pd-measure pd-contain-width text-muted-foreground break-words">
                   {descriptionText}
                 </p>
               </Card>
@@ -565,7 +649,10 @@ const PlaceDetailPage = () => {
               />
             )}
 
-            {(place.phone || place.website || place.bookingUrl) && (
+            {(place.phone ||
+              place.website ||
+              place.bookingUrl ||
+              place.originalGoogleMapsUrl) && (
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5">
                 <h2 className="pd-type-kicker text-foreground inline-flex items-center gap-2">
                   <Mail className="h-4 w-4 text-accent" />
@@ -575,7 +662,7 @@ const PlaceDetailPage = () => {
                   {place.phone && (
                     <a
                       href={`tel:${place.phone}`}
-                      className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-muted-foreground hover:text-foreground transition-colors break-all"
+                      className="inline-flex min-h-11 w-full min-w-0 items-center gap-2 pd-type-label pd-focus-ring text-muted-foreground hover:text-foreground transition-colors break-all"
                     >
                       <Phone className="h-4 w-4 text-accent shrink-0" />
                       {place.phone}
@@ -587,7 +674,7 @@ const PlaceDetailPage = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={trackExternalClick}
-                      className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-accent hover:underline break-all"
+                      className="inline-flex min-h-11 w-full min-w-0 items-center gap-2 pd-type-label pd-focus-ring text-accent hover:underline break-all"
                     >
                       <Globe className="h-4 w-4 shrink-0" />
                       {t("placeDetail.contact.visitWebsite")}
@@ -600,10 +687,23 @@ const PlaceDetailPage = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={trackExternalClick}
-                      className="inline-flex min-h-11 items-center gap-2 pd-type-label pd-focus-ring text-accent hover:underline"
+                      className="inline-flex min-h-11 w-full min-w-0 items-center gap-2 pd-type-label pd-focus-ring text-accent hover:underline"
                     >
                       <CalendarCheck className="h-4 w-4 shrink-0" />
                       {t("placeDetail.contact.bookTable")}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                  {place.originalGoogleMapsUrl && (
+                    <a
+                      href={place.originalGoogleMapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={trackExternalClick}
+                      className="inline-flex min-h-11 w-full min-w-0 items-center gap-2 pd-type-label pd-focus-ring text-accent hover:underline break-all"
+                    >
+                      <MapPin className="h-4 w-4 shrink-0" />
+                      {t("placeDetail.contact.googleMaps")}
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
@@ -633,14 +733,14 @@ const PlaceDetailPage = () => {
                   </div>
                 </div>
 
-                {menuImages.length > 0 && (
+                {menuItems.length > 0 && (
                   <Suspense
                     fallback={
                       <div className="h-28 rounded-xl bg-muted/50 animate-pulse" />
                     }
                   >
                     <MenuImageGalleryLazy
-                      images={menuImages}
+                      items={menuItems}
                       placeName={place.name}
                       onImageOpen={trackPhotoView}
                     />
@@ -675,72 +775,25 @@ const PlaceDetailPage = () => {
             )}
 
             {nearestMetroStations.length > 0 && (
-              <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5 lg:col-span-2">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <h2 className="pd-type-kicker text-foreground inline-flex items-center gap-2">
-                      <TrainFront className="h-4 w-4 text-accent" />
-                      {t("placeDetail.metro.title")}
-                    </h2>
-                    <p className="pd-type-micro text-muted-foreground">
-                      {t("placeDetail.metro.subtitle")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  {nearestMetroStations.map((station) => (
-                    <div
-                      key={`${station.rank}-${station.stationName}`}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-background/40 px-3 py-2.5"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-accent pd-type-number pd-type-micro">
-                          {station.rank}
-                        </span>
-                        <span
-                          className="pd-type-label text-foreground break-words"
-                          dir="auto"
-                        >
-                          {station.stationName}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Badge
-                          variant="outline"
-                          className="gap-1 border-border bg-muted/40 text-muted-foreground pd-type-micro pd-type-number"
-                        >
-                          <Route className="h-3.5 w-3.5" />
-                          {station.distance}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className="gap-1 border-accent/30 bg-accent/10 text-accent pd-type-micro pd-type-number"
-                        >
-                          <Timer className="h-3.5 w-3.5" />
-                          {station.time}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
+              <MetroStationsCard stations={nearestMetroStations} />
             )}
 
-            {(place.hasWifi ||
-              place.hasToilet ||
-              (place.seatingType?.length ?? 0) > 0 ||
-              place.parkingAvailable) && (
+            {showFacilitiesCard && (
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5 lg:col-span-2">
                 <h2 className="pd-type-kicker text-foreground">
                   {t("placeDetail.facilities")}
                 </h2>
                 <div className="flex flex-wrap gap-2">
-                  {place.hasWifi && (
+                  {place.freeWifi && (
                     <Badge variant="outline" className={facilityBadgeClass}>
                       <Wifi className="h-3.5 w-3.5" />
                       {t("placeDetail.facilities.wifi")}
+                    </Badge>
+                  )}
+                  {place.hasWifi && !place.freeWifi && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <Wifi className="h-3.5 w-3.5" />
+                      {t("placeDetail.facilities.wifiAvailable")}
                     </Badge>
                   )}
                   {place.hasToilet && (
@@ -749,10 +802,52 @@ const PlaceDetailPage = () => {
                       {t("placeDetail.facilities.restrooms")}
                     </Badge>
                   )}
+                  {place.offersDelivery && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <Truck className="h-3.5 w-3.5" />
+                      {t("placeDetail.facilities.delivery")}
+                    </Badge>
+                  )}
+                  {place.hasDriveThrough && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <Car className="h-3.5 w-3.5" />
+                      {t("placeDetail.facilities.driveThrough")}
+                    </Badge>
+                  )}
                   {place.parkingAvailable && (
                     <Badge variant="outline" className={facilityBadgeClass}>
                       <ParkingSquare className="h-3.5 w-3.5" />
                       {t("placeDetail.facilities.parking")}
+                    </Badge>
+                  )}
+                  {place.lotParking && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <ParkingSquare className="h-3.5 w-3.5" />
+                      {t("placeDetail.facilities.lotParking")}
+                    </Badge>
+                  )}
+                  {place.streetParking && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <ParkingSquare className="h-3.5 w-3.5" />
+                      {t("placeDetail.facilities.streetParking")}
+                    </Badge>
+                  )}
+                  {place.valetParking && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <ParkingSquare className="h-3.5 w-3.5" />
+                      {t("placeDetail.facilities.valetParking")}
+                    </Badge>
+                  )}
+                  {place.garageParking && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <ParkingSquare className="h-3.5 w-3.5" />
+                      {t("placeDetail.facilities.garageParking")}
+                    </Badge>
+                  )}
+                  {place.multiStoreyParking && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <ParkingSquare className="h-3.5 w-3.5" />
+                      {t("placeDetail.facilities.multiStoreyParking")}
                     </Badge>
                   )}
                   {(place.seatingType ?? []).map((seat) => (
@@ -761,15 +856,41 @@ const PlaceDetailPage = () => {
                       variant="outline"
                       className={facilityBadgeClass}
                     >
-                      {`${seat} ${t("placeDetail.facilities.seatingSuffix")}`}
+                      {seat === "indoor"
+                        ? t("placeDetail.facilities.indoorSeating")
+                        : t("placeDetail.facilities.outdoorSeating")}
                     </Badge>
                   ))}
+                  {acceptsAnyPayment && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <CreditCard className="h-3.5 w-3.5" />
+                      {t("placeDetail.facilities.cardPayment")}
+                    </Badge>
+                  )}
+                  {place.acceptsNfcMobile && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <Smartphone className="h-3.5 w-3.5" />
+                      {t("placeDetail.facilities.nfcPayment")}
+                    </Badge>
+                  )}
+                  {hasWheelchairAccess && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <Accessibility className="h-3.5 w-3.5" />
+                      {t("placeDetail.badge.accessible")}
+                    </Badge>
+                  )}
+                  {place.assistiveHearingLoop && (
+                    <Badge variant="outline" className={facilityBadgeClass}>
+                      <Ear className="h-3.5 w-3.5" />
+                      {t("placeDetail.facilities.hearingLoop")}
+                    </Badge>
+                  )}
                 </div>
               </Card>
             )}
           </div>
 
-          <Card className="rounded-2xl border-border/70 bg-card/95 p-5 shadow-sm space-y-4">
+          <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-4 sm:p-5 max-w-full overflow-hidden">
             <h2 className="pd-type-kicker text-foreground flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-accent" />
               {t("placeDetail.reviews.title")}
@@ -782,36 +903,26 @@ const PlaceDetailPage = () => {
               }
               className="w-full"
             >
-              <TabsList className="w-full bg-muted/60 grid grid-cols-2 h-auto p-1">
+              <TabsList className="w-full bg-muted/60 grid grid-cols-2 h-auto p-1 gap-1">
                 <TabsTrigger
                   value="website"
-                  className="min-h-11 gap-1 px-2 pd-type-micro sm:gap-1.5 sm:px-3"
+                  className="min-h-11 flex flex-col items-center justify-center gap-0.5 px-1 py-2 text-center leading-tight text-[0.6875rem] sm:flex-row sm:gap-1.5 sm:px-3 sm:text-sm"
                 >
-                  <Star className="h-3.5 w-3.5" />
-                  <span className="sm:hidden whitespace-nowrap pd-type-number">
+                  <Star className="h-3.5 w-3.5 shrink-0" />
+                  <span className="pd-type-number break-words min-w-0">
                     {t("placeDetail.reviews.usersShort", {
-                      count: formatNumber(websiteTotalCount),
-                    })}
-                  </span>
-                  <span className="hidden sm:inline whitespace-nowrap pd-type-number">
-                    {t("placeDetail.reviews.usersLong", {
                       count: formatNumber(websiteTotalCount),
                     })}
                   </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="social"
-                  className="min-h-11 gap-1 px-2 pd-type-micro sm:gap-1.5 sm:px-3"
+                  className="min-h-11 flex flex-col items-center justify-center gap-0.5 px-1 py-2 text-center leading-tight text-[0.6875rem] sm:flex-row sm:gap-1.5 sm:px-3 sm:text-sm"
                 >
-                  <Globe className="h-3.5 w-3.5" />
-                  <span className="sm:hidden whitespace-nowrap pd-type-number">
+                  <Globe className="h-3.5 w-3.5 shrink-0" />
+                  <span className="pd-type-number break-words min-w-0">
                     {t("placeDetail.reviews.socialShort", {
                       count: socialCountCompact,
-                    })}
-                  </span>
-                  <span className="hidden sm:inline whitespace-nowrap pd-type-number">
-                    {t("placeDetail.reviews.socialLong", {
-                      count: socialCountVerbose,
                     })}
                   </span>
                 </TabsTrigger>

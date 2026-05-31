@@ -32,6 +32,7 @@ const clonePlace = (place: PlaceDetail): PlaceDetail => ({
   seatingType: place.seatingType ? [...place.seatingType] : undefined,
   imageUrls: place.imageUrls ? [...place.imageUrls] : undefined,
   menuImagesUrls: place.menuImagesUrls ? [...place.menuImagesUrls] : undefined,
+  menus: place.menus?.map((menu) => ({ ...menu })),
 });
 
 const sanitizePositiveInt = (value: unknown, fallback: number): number => {

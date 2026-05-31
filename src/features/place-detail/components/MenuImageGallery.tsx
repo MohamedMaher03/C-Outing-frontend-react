@@ -2,15 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/components/i18n";
+import type { MenuItem } from "@/features/place-detail/types";
 
 interface MenuImageGalleryProps {
-  images: string[];
+  items: MenuItem[];
   placeName: string;
   onImageOpen?: () => void;
 }
 
 export function MenuImageGallery({
-  images,
+  items,
   placeName,
   onImageOpen,
 }: MenuImageGalleryProps) {
@@ -18,11 +19,15 @@ export function MenuImageGallery({
   const [activeIndex, setActiveIndex] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const safeImages = useMemo(
-    () =>
-      Array.from(new Set(images.filter((image) => image.trim().length > 0))),
-    [images],
-  );
+  const safeItems = useMemo(() => {
+    const seen = new Set<string>();
+    return items.filter((item) => {
+      const url = item.url.trim();
+      if (!url || seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
+  }, [items]);
 
   useEffect(() => {
     if (!previewOpen) return;
@@ -33,15 +38,15 @@ export function MenuImageGallery({
         return;
       }
 
-      if (safeImages.length <= 1) return;
+      if (safeItems.length <= 1) return;
 
       if (event.key === "ArrowRight") {
-        setActiveIndex((prev) => (prev + 1) % safeImages.length);
+        setActiveIndex((prev) => (prev + 1) % safeItems.length);
       }
 
       if (event.key === "ArrowLeft") {
         setActiveIndex((prev) =>
-          prev === 0 ? safeImages.length - 1 : prev - 1,
+          prev === 0 ? safeItems.length - 1 : prev - 1,
         );
       }
     };
@@ -50,9 +55,11 @@ export function MenuImageGallery({
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [previewOpen, safeImages.length]);
+  }, [previewOpen, safeItems.length]);
 
-  if (safeImages.length === 0) return null;
+  if (safeItems.length === 0) return null;
+
+  const activeItem = safeItems[activeIndex];
 
   const openPreview = (index: number) => {
     setActiveIndex(index);
@@ -61,27 +68,26 @@ export function MenuImageGallery({
   };
 
   const showPrevious = () => {
-    setActiveIndex((prev) => (prev === 0 ? safeImages.length - 1 : prev - 1));
+    setActiveIndex((prev) => (prev === 0 ? safeItems.length - 1 : prev - 1));
   };
 
   const showNext = () => {
-    setActiveIndex((prev) => (prev + 1) % safeImages.length);
+    setActiveIndex((prev) => (prev + 1) % safeItems.length);
   };
 
   return (
     <>
-      <div className="overflow-x-auto pb-1">
-        <div className="flex min-w-max gap-2">
-          {safeImages.map((image, index) => (
-            <button
-              key={`${image}-${index}`}
-              type="button"
-              onClick={() => openPreview(index)}
-              className="group relative h-28 w-40 shrink-0 overflow-hidden rounded-xl border border-border/70 bg-muted/30"
-              aria-label={t("placeDetail.menu.openPreview")}
-            >
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 min-w-0">
+        {safeItems.map((item, index) => (
+          <button
+            key={`${item.url}-${index}`}
+            type="button"
+            onClick={() => openPreview(index)}
+            className="group relative aspect-[4/3] w-full min-w-0 overflow-hidden rounded-xl border border-border/70 bg-muted/30"
+            aria-label={t("placeDetail.menu.openPreview")}
+          >
               <img
-                src={image}
+                src={item.url}
                 alt={t("placeDetail.menu.photoAlt", {
                   place: placeName,
                   index: index + 1,
@@ -92,31 +98,40 @@ export function MenuImageGallery({
                 referrerPolicy="no-referrer"
               />
               <span className="pointer-events-none absolute inset-x-0 bottom-0 inline-flex items-center justify-between gap-1 bg-background/80 px-2 py-1 pd-type-micro pd-type-number text-foreground backdrop-blur-sm">
-                <span>
-                  {t("placeDetail.menu.previewCount", {
-                    current: index + 1,
-                    total: safeImages.length,
-                  })}
+                <span className="min-w-0 truncate">
+                  {item.date?.trim() ||
+                    t("placeDetail.menu.previewCount", {
+                      current: index + 1,
+                      total: safeItems.length,
+                    })}
                 </span>
-                <Expand className="h-3.5 w-3.5 text-accent" />
+                <Expand className="h-3.5 w-3.5 shrink-0 text-accent" />
               </span>
             </button>
           ))}
-        </div>
       </div>
 
       {previewOpen && (
         <div className="fixed inset-0 z-[70] bg-background/95 backdrop-blur-sm">
           <div className="mx-auto flex h-full max-w-6xl flex-col px-4 py-4 sm:px-6 sm:py-5">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <p className="pd-type-label text-foreground">
-                {t("placeDetail.menu.fullscreenTitle")}
-              </p>
+              <div className="min-w-0 space-y-0.5">
+                <p className="pd-type-label text-foreground">
+                  {t("placeDetail.menu.fullscreenTitle")}
+                </p>
+                {activeItem.date?.trim() && (
+                  <p className="pd-type-micro text-muted-foreground">
+                    {t("placeDetail.menu.capturedOn", {
+                      date: activeItem.date.trim(),
+                    })}
+                  </p>
+                )}
+              </div>
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                className="h-11 w-11"
+                className="h-11 w-11 shrink-0"
                 onClick={() => setPreviewOpen(false)}
                 aria-label={t("placeDetail.menu.closePreview")}
               >
@@ -126,7 +141,7 @@ export function MenuImageGallery({
 
             <div className="relative flex flex-1 items-center justify-center">
               <img
-                src={safeImages[activeIndex]}
+                src={activeItem.url}
                 alt={t("placeDetail.menu.photoAlt", {
                   place: placeName,
                   index: activeIndex + 1,
@@ -136,7 +151,7 @@ export function MenuImageGallery({
                 decoding="async"
               />
 
-              {safeImages.length > 1 && (
+              {safeItems.length > 1 && (
                 <>
                   <Button
                     type="button"
@@ -161,6 +176,13 @@ export function MenuImageGallery({
                 </>
               )}
             </div>
+
+            <p className="mt-3 text-center pd-type-micro pd-type-number text-muted-foreground">
+              {t("placeDetail.menu.previewCount", {
+                current: activeIndex + 1,
+                total: safeItems.length,
+              })}
+            </p>
           </div>
         </div>
       )}

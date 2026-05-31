@@ -34,6 +34,8 @@ export { favoriteAdapter } from "./services/favoriteAdapter";
 export type {
   PlaceDetail,
   PlaceBase,
+  MenuItem,
+  VenuePhotos,
   MetroStation,
   PriceLevel,
   InteractionActionType,

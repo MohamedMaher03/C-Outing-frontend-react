@@ -40,3 +40,15 @@
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
+
+@media (max-width: 639px) {
+  .pd-measure {
+    max-width: none;
+  }
+}
+
+.pd-contain-width {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}

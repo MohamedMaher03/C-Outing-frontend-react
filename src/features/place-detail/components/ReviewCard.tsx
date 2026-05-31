@@ -35,8 +35,8 @@ const ReviewCardComponent = ({
 
   return (
     <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex flex-col gap-3 min-w-0 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <Link
             to={`/users/${review.userId}`}
             className="h-9 w-9 rounded-full overflow-hidden bg-accent/15 flex items-center justify-center text-sm font-semibold text-accent hover:bg-accent/20 transition-colors flex-shrink-0 pd-focus-ring"
@@ -71,7 +71,7 @@ const ReviewCardComponent = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 self-start">
           <div className="flex items-center gap-0.5">
             {Array.from({ length: 5 }).map((_, i) => (
               <Star
@@ -97,7 +97,7 @@ const ReviewCardComponent = ({
       </div>
       <div className="mt-3 border-t border-border/60 pt-3">
         <p
-          className="pd-type-body pd-measure text-foreground break-words whitespace-pre-wrap leading-7 rounded-xl border border-border/50 bg-muted/20 px-3 py-2.5"
+          className="pd-type-body w-full max-w-full text-start text-foreground break-words whitespace-pre-wrap leading-7 rounded-xl border border-border/50 bg-muted/20 px-3 py-2.5"
           dir="auto"
         >
           {review.comment}

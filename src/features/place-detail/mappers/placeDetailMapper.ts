@@ -1,6 +1,8 @@
 import type {
   PlaceDetail,
+  MenuItem,
   MetroStation,
+  VenuePhotos,
   Review,
   ReviewListResponse,
   SocialReviewListResponse,
@@ -175,6 +177,72 @@ const normalizeSeatingType = (raw: unknown): Array<"indoor" | "outdoor"> =>
     ),
   );
 
+const resolveSeatingType = (
+  data: Record<string, unknown>,
+): Array<"indoor" | "outdoor"> => {
+  const fromArray = normalizeSeatingType(
+    data.seatingType ?? data.seatingTypes,
+  );
+  if (fromArray.length > 0) return fromArray;
+
+  const resolved: Array<"indoor" | "outdoor"> = [];
+  if (asBoolean(data.hasIndoorSeating)) resolved.push("indoor");
+  if (asBoolean(data.hasOutdoorSeating)) resolved.push("outdoor");
+  return resolved;
+};
+
+const normalizeMenus = (raw: unknown): MenuItem[] => {
+  if (!Array.isArray(raw)) return [];
+
+  const menus: MenuItem[] = [];
+
+  for (const item of raw) {
+    if (typeof item === "string" && item.trim().length > 0) {
+      menus.push({ url: item.trim() });
+      continue;
+    }
+
+    if (!isRecord(item)) continue;
+
+    const url = asString(item.url, item.imageUrl, item.image);
+    if (!url) continue;
+
+    menus.push({
+      url,
+      date: asString(item.date),
+    });
+  }
+
+  return menus;
+};
+
+const normalizeVenuePhotos = (raw: unknown): VenuePhotos | undefined => {
+  if (!isRecord(raw)) return undefined;
+
+  const header = asStringArray(raw.header);
+  if (header.length === 0) return undefined;
+
+  return { header };
+};
+
+const resolvePriceLevel = (data: Record<string, unknown>): PlaceDetail["priceLevel"] => {
+  const fromRange = toPriceLevel(
+    data.priceRange_Display ??
+      data.priceRangeDisplay ??
+      data.priceRange ??
+      data.priceLevel,
+  );
+  if (fromRange) return fromRange;
+
+  if (asBoolean(data.priceLuxury)) return "luxury";
+  if (asBoolean(data.priceExpensive)) return "expensive";
+  if (asBoolean(data.priceMidRange)) return "midrange";
+  if (asBoolean(data.priceCheap)) return "cheap";
+  if (asBoolean(data.priceCheapest)) return "cheapest";
+
+  return undefined;
+};
+
 const normalizeMetroStations = (raw: unknown): MetroStation[] => {
   if (!Array.isArray(raw)) return [];
 
@@ -187,10 +255,16 @@ const normalizeMetroStations = (raw: unknown): MetroStation[] => {
       ),
       stationName:
         asString(station.station_name, station.stationName, station.name) ??
-        "Unknown Station",
-      distance: asString(station.Distance, station.distance) ?? "-",
-      time: asString(station.Time, station.time) ?? "-",
+        "",
+      distance: asString(station.Distance, station.distance) ?? "",
+      time: asString(station.Time, station.time) ?? "",
     }))
+    .filter(
+      (station) =>
+        station.stationName.trim().length > 0 ||
+        station.distance.trim().length > 0 ||
+        station.time.trim().length > 0,
+    )
     .sort((a, b) => a.rank - b.rank);
 };
 
@@ -202,9 +276,20 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
   const venueName = asString(data.name, data.title) ?? "Unknown Place";
 
   const imageUrls = asStringArray(data.imageUrls);
-  const menuImagesUrls = asStringArray(
+  const venuePhotos = normalizeVenuePhotos(data.venuePhotos);
+  const headerPhotos = venuePhotos?.header ?? [];
+  const menus = normalizeMenus(data.menus);
+  const legacyMenuUrls = asStringArray(
     data.menuImagesUrls ?? data.menuImageUrls,
   );
+  const menuImagesUrls =
+    menus.length > 0 ? menus.map((menu) => menu.url) : legacyMenuUrls;
+  const mergedImageUrls =
+    imageUrls.length > 0
+      ? imageUrls
+      : headerPhotos.length > 0
+        ? headerPhotos
+        : imageUrls;
   const metroStations = normalizeMetroStations(data.metroStations);
   const reviewCount = Math.max(
     0,
@@ -215,7 +300,8 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
   const selectedImage =
     asString(
       displayImageUrl,
-      imageUrls[0],
+      mergedImageUrls[0],
+      headerPhotos[0],
       data.image,
       data.imageUrl,
       data.thumbnailUrl,
@@ -256,7 +342,7 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
     description: asString(data.description, data.about) ?? "",
     image: selectedImage,
     displayImageUrl: displayImageUrl ?? selectedImage,
-    imageUrls,
+    imageUrls: mergedImageUrls,
     createdAt: asString(data.createdAt),
     phone: asString(data.phone, data.phoneNumber),
     website: asString(data.website, data.websiteUrl),
@@ -264,28 +350,62 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
     bookingUrl: asString(data.bookingUrl, data.bookingLink),
     priceRange: rawPriceRange ?? normalizedPriceRangeDisplay,
     priceRangeDisplay: normalizedPriceRangeDisplay,
-    priceLevel: toPriceLevel(
-      data.priceRange_Display ??
-        data.priceRangeDisplay ??
-        data.priceRange ??
-        data.priceLevel,
-    ),
+    priceLevel: resolvePriceLevel(data),
     hours: asString(data.hours, data.openingHours),
     isOpen: normalizeOpenStatus(data.isOpen),
-    atmosphereTags: asStringArray(data.atmosphereTags),
+    atmosphereTags: Array.from(
+      new Set([
+        ...asStringArray(data.atmosphereTags),
+        ...asStringArray(data.atmospheres),
+      ]),
+    ),
     socialBadges: normalizeSocialBadges(data.socialBadges),
     hasWifi: asBoolean(data.hasWifi),
+    freeWifi: asBoolean(data.freeWifi),
     hasToilet: asBoolean(data.hasToilet),
-    seatingType: normalizeSeatingType(data.seatingType),
+    seatingType: resolveSeatingType(data),
+    hasIndoorSeating: asBoolean(data.hasIndoorSeating),
+    hasOutdoorSeating: asBoolean(data.hasOutdoorSeating),
+    hasDriveThrough: asBoolean(data.hasDriveThrough),
+    offersDelivery: asBoolean(data.offersDelivery),
     parkingAvailable: asBoolean(data.parkingAvailable),
+    streetParking: asBoolean(data.streetParking),
+    lotParking: asBoolean(data.lotParking),
+    valetParking: asBoolean(data.valetParking),
+    garageParking: asBoolean(data.garageParking),
+    multiStoreyParking: asBoolean(data.multiStoreyParking),
+    wheelchairEntrance: asBoolean(data.wheelchairEntrance),
+    wheelchairSeating: asBoolean(data.wheelchairSeating),
+    wheelchairCarPark: asBoolean(data.wheelchairCarPark),
+    wheelchairToilet: asBoolean(data.wheelchairToilet),
+    assistiveHearingLoop: asBoolean(data.assistiveHearingLoop),
+    acceptsCards: asBoolean(data.acceptsCards),
+    acceptsDebitCards: asBoolean(data.acceptsDebitCards),
+    acceptsCreditCards: asBoolean(data.acceptsCreditCards),
+    acceptsNfcMobile: asBoolean(data.acceptsNfcMobile),
     accessibilityScore: asNumber(data.accessibilityScore),
     noiseScore: asNumber(data.noiseScore),
+    menus: menus.length > 0 ? menus : undefined,
     menuImagesCount: Math.max(
       asNumber(data.menuImagesCount) ?? 0,
+      menus.length,
       menuImagesUrls.length,
     ),
     menuImagesUrls,
     menuCurrency: asString(data.menuCurrency),
+    venuePhotos,
+    cuisines: asStringArray(data.cuisines),
+    dietaryAttributes: asStringArray(data.dietaryAttributes),
+    priceMeanPerPerson: asNumber(data.priceMeanPerPerson),
+    googleMapsTotalReviews: asNumber(data.googleMapsTotalReviews),
+    originalGoogleMapsUrl: asString(
+      data.originalGoogleMapsUrl,
+      data.googleMapsUrl,
+    ),
+    status: asString(data.status),
+    isDeprecated: asBoolean(data.isDeprecated),
+    personalPriceRange: asString(data.personalPriceRange) ?? null,
+    platformRating: asNumber(data.platformRating),
     metroStations: metroStations.length > 0 ? metroStations : undefined,
     isSaved: asBoolean(data.isSaved, data.isFavorited),
     isFavorited: asBoolean(data.isFavorited, data.isSaved),
