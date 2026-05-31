@@ -86,7 +86,8 @@ const HorizontalScroller = ({
       return;
     }
 
-    const { canScrollBack, canScrollForward } = getHorizontalScrollState(element);
+    const { canScrollBack, canScrollForward } =
+      getHorizontalScrollState(element);
     setCanScrollPrevious(canScrollBack);
     setCanScrollNext(canScrollForward);
   }, [showArrows]);
@@ -181,10 +182,7 @@ const HorizontalScroller = ({
         aria-hidden={!canScrollPrevious}
         disabled={!canScrollPrevious}
         tabIndex={canScrollPrevious ? 0 : -1}
-        className={cn(
-          arrowButtonClassName,
-          !canScrollPrevious && "invisible",
-        )}
+        className={cn(arrowButtonClassName, !canScrollPrevious && "invisible")}
       >
         <PreviousIcon className="h-4 w-4" aria-hidden />
       </button>
@@ -218,8 +216,16 @@ const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchInput, setSearchInput] = useState("");
-  const { tourActive, currentStep, totalSteps, next, skip, finish } =
-    useGuidedTour();
+  const {
+    tourActive,
+    currentStep,
+    totalSteps,
+    next,
+    prev,
+    skip,
+    finish,
+    jumpTo,
+  } = useGuidedTour();
 
   const {
     selectedFilters,
@@ -729,8 +735,10 @@ const HomePage = () => {
             currentStep={currentStep}
             totalSteps={totalSteps}
             onNext={next}
+            onPrev={prev}
             onSkip={skip}
             onFinish={finish}
+            onJumpTo={jumpTo}
           />
         )}
       </AnimatePresence>
@@ -908,6 +916,8 @@ const HomePage = () => {
             <section
               className="lg:hidden"
               aria-label={t("session.widget.ariaLabel")}
+              data-tour="tour-group"
+              id="tour-group"
             >
               <GroupSessionWidget variant="banner" />
             </section>
@@ -1534,6 +1544,8 @@ const HomePage = () => {
             <section
               className="rounded-3xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm"
               style={{ isolation: "isolate" }}
+              data-tour="tour-similar"
+              id="tour-similar"
             >
               <div className="space-y-5">
                 <div className="flex flex-col gap-2">
@@ -1796,7 +1808,9 @@ const HomePage = () => {
           {/* ── RIGHT SIDEBAR ── */}
           <aside className="sticky top-6 hidden w-[280px] flex-shrink-0 flex-col gap-6 lg:flex">
             {/* Group Session Card */}
-            <GroupSessionWidget variant="sidebar" />
+            <div data-tour="tour-group" id="tour-group-desktop">
+              <GroupSessionWidget variant="sidebar" />
+            </div>
 
             {/* Mood Selector Card */}
             <div

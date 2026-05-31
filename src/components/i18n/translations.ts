@@ -258,7 +258,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "tour.skip": "Skip tour",
     "tour.next": "Next",
-    "tour.done": "Let's explore! 🚀",
+    "tour.done": "Let's explore!",
     "tour.stepCounter": "{current} / {total}",
     "tour.ariaLabel": "Guided tour — step {current} of {total}",
 
@@ -2067,7 +2067,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "tour.skip": "تخطي الجولة",
     "tour.next": "التالي",
-    "tour.done": "هيّا نكتشف! 🚀",
+    "tour.done": "هيّا نكتشف!",
     "tour.stepCounter": "{current} من {total}",
     "tour.ariaLabel": "جولة إرشادية — خطوة {current} من {total}",
 

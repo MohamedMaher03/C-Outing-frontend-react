@@ -5,45 +5,33 @@ export interface TourStep {
   accentIcon: "sparkles" | "heart" | "star" | "map" | "compass" | "wand";
   title: { en: string; ar: string };
   body: { en: string; ar: string };
-  badges?: { icon: string; label: { en: string; ar: string } }[];
+  badges?: {
+    icon: "like" | "heart" | "star";
+    label: { en: string; ar: string };
+  }[];
 }
 
 export const TOUR_STEPS: TourStep[] = [
   {
-    id: "tour-welcome",
-    target: null,
-    placement: "center",
-    accentIcon: "sparkles",
+    id: "tour-curated",
+    target: "tour-curated",
+    placement: "top",
+    accentIcon: "star",
     title: {
-      en: "Your Cairo. Your vibe. Discovered.",
-      ar: "القاهرة على مزاجك — اكتشفها بطريقتك.",
+      en: "Your personal Cairo radar.",
+      ar: "رادارك الشخصي في القاهرة.",
     },
     body: {
-      en: "C-Outing learns what you love — from cafés to rooftops, budget bites to fine dining — and turns that into hand-picked recommendations that feel made just for you.",
-      ar: "C-Outing بيتعلم ذوقك كويس — من المقاهي والروفتوب لحد المطاعم الفاخرة — وبيحولها في توصيات مخصوصة ليك إنت بالظبط، مش زيّ أي حد.",
-    },
-  },
-
-  {
-    id: "tour-interactions",
-    target: null,
-    placement: "center",
-    accentIcon: "heart",
-    title: {
-      en: "The more you interact, the smarter it gets.",
-      ar: "كل ما تتفاعل أكتر، كل ما التوصيات بقت أذكى وأدق.",
-    },
-    body: {
-      en: "Every action you take teaches the system your taste. Like a place, save it, or drop a review — and watch your recommendations sharpen over time.",
-      ar: "كل حاجة بتعملها بتعلّم النظام ذوقك. أعجب بمكان، احفظه، أو اكتب رأيك — وهتلاقي التوصيات بتتحسن مع كل خطوة.",
+      en: "Every card here is picked specifically for you — not random, not generic. Like, save, or review places and these recommendations sharpen over time.",
+      ar: "كل بطاقة هنا اتختارت ليك إنت بالظبط — مش عشوائي ومش لحد تاني. أعجب، احفظ، أو قيّم وهتلاقي التوصيات بتتحسن مع كل خطوة.",
     },
     badges: [
       {
-        icon: "heart",
+        icon: "like",
         label: { en: "Like a place", ar: "أعجب بمكان" },
       },
       {
-        icon: "bookmark",
+        icon: "heart",
         label: { en: "Save for later", ar: "احفظه لبعدين" },
       },
       {
@@ -51,36 +39,6 @@ export const TOUR_STEPS: TourStep[] = [
         label: { en: "Leave a review", ar: "اكتب رأيك" },
       },
     ],
-  },
-
-  {
-    id: "tour-curated",
-    target: "tour-curated",
-    placement: "top",
-    accentIcon: "star",
-    title: {
-      en: "Curated for You — places that truly get you.",
-      ar: "مختار ليك — أماكن بتفهمك من غير ما تشرح.",
-    },
-    body: {
-      en: "This section is your personal radar. Every card here is picked specifically for you not random, not generic.",
-      ar: "القسم ده هو رادارك الشخصي خالص. كل بطاقة فيه اتختارت ليك إنت مش عشوائي ولا موجّه لحد تاني غيرك.",
-    },
-  },
-
-  {
-    id: "tour-discovery",
-    target: "tour-discovery",
-    placement: "top",
-    accentIcon: "compass",
-    title: {
-      en: "Explore Cairo on your own terms.",
-      ar: "استكشف القاهرة على مزاجك إنت.",
-    },
-    body: {
-      en: "Switch between Top-Rated city-wide, best by district, by venue type, or by budget. Results update live — no refresh, no waiting.",
-      ar: "غيّر بين الأعلى تقييماً في القاهرة كلها، أو الأفضل في حيّك، أو حسب النوع والميزانية. النتايج بتتحدث على طول — من غير ما تعمل ريفريش.",
-    },
   },
 
   {
@@ -93,8 +51,53 @@ export const TOUR_STEPS: TourStep[] = [
       ar: "إختار حالتك دلوقتي — وأحنا هنكمّل الشغل.",
     },
     body: {
-      en: "Romantic evening? Lazy chill? Solo adventure? Pick your vibe and we instantly curate a playlist of places that match your energy — perfectly.",
-      ar: "سهرة رومانسية؟ يوم راحة وكسل؟ طلعة لوحدك؟ اختار حالتك وهنجهزلك قايمة من الأماكن اللي بتناسب مزاجك بالظبط — على الفور.",
+      en: "Romantic evening? Lazy chill? Solo adventure? Pick your vibe and we instantly surface a lineup of places that match your energy — perfectly.",
+      ar: "سهرة رومانسية؟ يوم راحة؟ طلعة لوحدك؟ اختار مزاجك وهنجهزلك على الفور قايمة أماكن بتتناسب مع حالتك بالظبط.",
+    },
+  },
+
+  {
+    id: "tour-discovery",
+    target: "tour-discovery",
+    placement: "top",
+    accentIcon: "compass",
+    title: {
+      en: "5 ways to explore.",
+      ar: "٥ طرق للاستكشاف.",
+    },
+    body: {
+      en: "Switch between Top-Rated city-wide, Near Me, By District, By Venue Type, or By Budget. Every switch updates the feed instantly.",
+      ar: "غيّر بين الأعلى تقييماً، الأقرب ليك، حسب الحي، نوع المكان، أو الميزانية. كل اختيار بيغيّر النتايج على الفور.",
+    },
+  },
+
+  {
+    id: "tour-similar",
+    target: "tour-similar",
+    placement: "top",
+    accentIcon: "sparkles",
+    title: {
+      en: "Love a place? Find more places just like it.",
+      ar: "عجبك مكان؟ هنجبلك أماكن تانية زيّه .",
+    },
+    body: {
+      en: "Type any venue name in the Similar Places Studio and we instantly finds places that share the same vibe, quality, and price range.",
+      ar: "اكتب اسم أي مكان في ستوديو الأماكن المشابهة واحنا هنجبلك أماكن بنفس الجو والجودة والسعر.",
+    },
+  },
+
+  {
+    id: "tour-group",
+    target: "tour-group",
+    placement: "bottom",
+    accentIcon: "heart",
+    title: {
+      en: "Can't agree on where to go? Plan together.",
+      ar: "مش قادرين تتفقوا فين تروحوا؟ خططوا مع بعض.",
+    },
+    body: {
+      en: "Start a Group Session, invite your friends, and let everyone vote on venues in real time. The winning spot rises to the top — no arguments, just plans.",
+      ar: "ابدأ جلسة جماعية، ادعوا أصحابك، وخلّوا كل واحد يصوّت على الأماكن في نفس الوقت. المكان اللي عجب الكل بيطلع فوق — من غير جدال، بس تخطيط.",
     },
   },
 
