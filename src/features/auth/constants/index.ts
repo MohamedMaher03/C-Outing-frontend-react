@@ -4,6 +4,8 @@ export const AUTH_STORAGE_KEYS = {
   PENDING_VERIFICATION_EMAIL: "authPendingVerificationEmail",
 } as const;
 
+export const AUTH_SESSION_CLEARED_EVENT = "auth:session-cleared";
+
 export const AUTH_PASSWORD_RULES = {
   MIN_LENGTH: 8,
   MAX_LENGTH: 100,

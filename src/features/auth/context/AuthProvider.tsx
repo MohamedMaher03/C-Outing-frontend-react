@@ -4,6 +4,7 @@ import { authService } from "../services/authService";
 import type { RegisterRequest } from "../types";
 import { AuthContext } from "./AuthContext";
 import type { AuthContextType } from "./AuthContext";
+import { AUTH_SESSION_CLEARED_EVENT } from "../constants";
 import { normalizeEmail } from "@/utils/textNormalization";
 
 export interface AuthProviderProps {
@@ -33,6 +34,22 @@ export function AuthProvider({
     };
 
     init();
+  }, []);
+
+  useEffect(() => {
+    const handleSessionCleared = () => {
+      setUser(null);
+      setToken(null);
+    };
+
+    window.addEventListener(AUTH_SESSION_CLEARED_EVENT, handleSessionCleared);
+
+    return () => {
+      window.removeEventListener(
+        AUTH_SESSION_CLEARED_EVENT,
+        handleSessionCleared,
+      );
+    };
   }, []);
 
   const login = useCallback(

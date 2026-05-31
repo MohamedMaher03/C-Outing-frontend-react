@@ -1,22 +1,3 @@
-/**
- * Axios Configuration
- * Shared axios instance with request / response interceptors.
- *
- * Request interceptor  — injects the JWT access token on every outgoing call.
- *
- * Response interceptor (SUCCESS) — unwraps our standard ApiResponse envelope.
- *   Backend sends: { success: true, statusCode: 200, data: T, message: "OK" }
- *   Caller receives: response.data === T   (envelope is transparent to the UI)
- *
- * Response interceptor (ERROR) — converts any HTTP error into a typed ApiError.
- *   Backend sends: { success: false, statusCode: 4xx, message: "...", data: null }
- *   Caller receives: Promise.reject(new ApiError(message, statusCode))
- *
- * This means ALL feature API files can type their calls as:
- *   axiosInstance.get<T>(url)  →  AxiosResponse<T>  →  { data: T }
- * without any manual .data.data access.
- */
-
 import axios from "axios";
 import type {
   AxiosInstance,
@@ -24,6 +5,10 @@ import type {
   AxiosError,
   InternalAxiosRequestConfig,
 } from "axios";
+import {
+  AUTH_STORAGE_KEYS,
+  AUTH_SESSION_CLEARED_EVENT,
+} from "@/features/auth/constants";
 import {
   ApiError,
   extractBackendErrorMessage,
@@ -33,8 +18,6 @@ import {
   extractValidationErrors,
 } from "@/utils/apiError";
 import type { ApiResponse } from "@/types";
-
-// ── Instance ─────────────────────────────────────────────────
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
@@ -53,12 +36,26 @@ const AUTH_FLOW_PATHS = new Set([
   "/reset-password",
 ]);
 
-// ── Request Interceptor ──────────────────────────────────────
-// Attach the stored JWT bearer token to every outgoing request.
+const readStoredAuthToken = (): string | null => {
+  const localToken = localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN);
+  if (localToken) return localToken;
+
+  return sessionStorage.getItem(AUTH_STORAGE_KEYS.TOKEN);
+};
+
+const clearStoredAuthSession = (): void => {
+  localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
+  localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
+  sessionStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
+  sessionStorage.removeItem(AUTH_STORAGE_KEYS.USER);
+};
+
+const notifyAuthSessionCleared = (): void => {
+  window.dispatchEvent(new Event(AUTH_SESSION_CLEARED_EVENT));
+};
 
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Let the browser set multipart boundaries for FormData payloads.
     if (typeof FormData !== "undefined" && config.data instanceof FormData) {
       if (config.headers && typeof config.headers.set === "function") {
         config.headers.set("Content-Type", undefined);
@@ -69,7 +66,7 @@ axiosInstance.interceptors.request.use(
       }
     }
 
-    const token = localStorage.getItem("authToken");
+    const token = readStoredAuthToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -78,15 +75,7 @@ axiosInstance.interceptors.request.use(
   (error: AxiosError) => Promise.reject(error),
 );
 
-// ── Response Interceptor ─────────────────────────────────────
-
 axiosInstance.interceptors.response.use(
-  // ── SUCCESS: unwrap the ApiResponse envelope ────────────────
-  // The backend always wraps responses in ApiResponse<T>.
-  // On success=true  → strip the envelope, expose T directly.
-  // On success=false → the backend returned an application error on a 2xx
-  //                    HTTP status; reject with ApiError so hooks handle it
-  //                    the same way as a 4xx/5xx response.
   (response: AxiosResponse) => {
     const body = response.data as ApiResponse<unknown>;
     if (body !== null && typeof body === "object" && "success" in body) {
@@ -105,22 +94,17 @@ axiosInstance.interceptors.response.use(
           ),
         );
       }
-      // Replace the envelope with the inner payload.
       response.data = body.data;
     }
     return response;
   },
 
-  // ── ERROR: standardize into ApiError ────────────────────────
-  // The backend may embed its own statusCode inside the body that can
-  // differ from the HTTP transport code, so prefer body.statusCode.
   (error: AxiosError) => {
     const httpStatus = error.response?.status;
 
-    // 401: clear stale session and redirect to login.
     if (httpStatus === 401) {
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("authUser");
+      clearStoredAuthSession();
+      notifyAuthSessionCleared();
       const isInAuthFlow = AUTH_FLOW_PATHS.has(window.location.pathname);
       if (!isInAuthFlow) {
         window.location.href = "/login";
@@ -129,7 +113,6 @@ axiosInstance.interceptors.response.use(
 
     const body = error.response?.data;
     const validationErrors = extractValidationErrors(body);
-    // Prefer the status code embedded in the backend body.
     const statusCode = extractBackendStatusCode(body) ?? httpStatus;
 
     const backendMessage = extractBackendErrorMessage(body);
