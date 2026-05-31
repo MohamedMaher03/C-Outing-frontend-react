@@ -14,6 +14,7 @@ import {
   getDefaultVenueImageDataUrl,
 } from "../utils/defaultImages";
 import { getReviewIdentity } from "../utils/reviewIdentity";
+import { normalizeOpenStatus } from "@/utils/openStatus";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -270,7 +271,7 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
         data.priceLevel,
     ),
     hours: asString(data.hours, data.openingHours),
-    isOpen: asBoolean(data.isOpen),
+    isOpen: normalizeOpenStatus(data.isOpen),
     atmosphereTags: asStringArray(data.atmosphereTags),
     socialBadges: normalizeSocialBadges(data.socialBadges),
     hasWifi: asBoolean(data.hasWifi),

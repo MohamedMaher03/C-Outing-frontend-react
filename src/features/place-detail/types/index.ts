@@ -57,7 +57,7 @@ export interface PlaceBase {
   priceRangeDisplay?: string;
   priceLevel?: PriceLevel;
   hours?: string;
-  isOpen?: boolean;
+  isOpen?: boolean | null;
   atmosphereTags?: string[];
   socialBadges?: Array<
     "Good for Solo" | "Good for Couples" | "Good for Groups"

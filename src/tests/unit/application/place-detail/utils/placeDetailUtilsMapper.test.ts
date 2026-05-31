@@ -112,6 +112,19 @@ describe("place-detail utilities and mapper", () => {
     expect(normalized.metroStations?.[0]?.stationName).toBe("Sadat");
   });
 
+  it("preserves a null open-state on place detail payloads", () => {
+    const normalized = normalizePlaceDetail({
+      data: {
+        id: "v2",
+        name: "Unknown Hours Venue",
+        category: "Cafe",
+        isOpen: null,
+      },
+    });
+
+    expect(normalized.isOpen).toBeNull();
+  });
+
   it("normalizes reviews and paginated review pages", () => {
     const review = normalizeReview({
       venueId: "v1",

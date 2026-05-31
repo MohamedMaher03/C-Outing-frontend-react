@@ -1,4 +1,5 @@
 import type { CanonicalPriceLevel } from "@/utils/priceLevels";
+import { normalizeOpenStatus } from "@/utils/openStatus";
 import type { PaginatedResponse } from "@/types";
 import type { HomePlace } from "../types";
 
@@ -314,7 +315,7 @@ export const mapHomeVenueToPlace = (raw: unknown): HomePlace | null => {
       toTrimmedString(venue.thumbnailUrl) ??
       "",
     priceLevel: toCanonicalPriceLevel(venue.priceLevel, venue.priceRange),
-    isOpen: toBoolean(venue.isOpen),
+    isOpen: normalizeOpenStatus(venue.isOpen),
     atmosphereTags: toStringArray(venue.atmosphereTags),
     hasWifi: toBoolean(venue.hasWifi) ?? false,
     isSaved: toBoolean(venue.isSaved) ?? false,

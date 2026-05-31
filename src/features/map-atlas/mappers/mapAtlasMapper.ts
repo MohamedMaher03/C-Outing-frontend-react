@@ -53,7 +53,7 @@ const mapMapAtlasPlace = (place: HomePlace): HomePlace | null => {
     latitude: toSafeFiniteNumber(place?.latitude, Number.NaN),
     longitude: toSafeFiniteNumber(place?.longitude, Number.NaN),
     atmosphereTags: toSafeTags(place?.atmosphereTags),
-    isOpen: place?.isOpen === true,
+    isOpen: place?.isOpen,
     hasWifi: place?.hasWifi === true,
     isSaved: place?.isSaved === true,
   };

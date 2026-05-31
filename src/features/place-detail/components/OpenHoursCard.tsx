@@ -12,7 +12,7 @@ import {
 
 interface OpenHoursCardProps {
   hoursText: string;
-  isOpen?: boolean;
+  isOpen?: boolean | null;
   isArabic: boolean;
   t: (
     key: string,
@@ -28,6 +28,14 @@ export const OpenHoursCard = ({
   t,
 }: OpenHoursCardProps) => {
   const [expanded, setExpanded] = useState(false);
+  const openStatusCopy =
+    isOpen === true
+      ? t("placeDetail.status.openNow")
+      : isOpen === false
+        ? t("home.place.closed")
+        : isOpen === null
+          ? t("placeDetail.status.unknown")
+          : null;
 
   const dayLabelByEnglishName: Record<string, string> = {
     Saturday: t("placeDetail.hours.day.saturday"),
@@ -57,23 +65,29 @@ export const OpenHoursCard = ({
           <Clock className="h-4 w-4 text-accent" />
           {t("placeDetail.hours.title")}
         </h2>
-        {isOpen !== undefined && (
+        {openStatusCopy && (
           <Badge
             variant="outline"
             className={cn(
               "font-semibold shrink-0",
-              isOpen
+              isOpen === true
                 ? "border-accent/40 bg-accent/10 text-accent"
-                : "border-border text-muted-foreground bg-muted/40",
+                : isOpen === false
+                  ? "border-border text-muted-foreground bg-muted/40"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
             )}
           >
             <span
               className={cn(
                 "inline-block h-1.5 w-1.5 rounded-full mr-1.5",
-                isOpen ? "bg-accent" : "bg-muted-foreground",
+                isOpen === true
+                  ? "bg-accent"
+                  : isOpen === false
+                    ? "bg-muted-foreground"
+                    : "bg-amber-500",
               )}
             />
-            {isOpen ? t("placeDetail.status.openNow") : t("home.place.closed")}
+            {openStatusCopy}
           </Badge>
         )}
       </div>

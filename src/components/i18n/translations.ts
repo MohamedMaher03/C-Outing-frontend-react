@@ -636,6 +636,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.place.addFavorite": "Add to favorites",
     "home.place.open": "Open",
     "home.place.closed": "Closed",
+    "home.place.unknown": "Unknown",
     "home.place.budgetLevel": "Budget level: {label}",
     "home.place.priceUnknown": "Price unknown",
 
@@ -884,6 +885,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "placeDetail.action.openMaps": "Open in Google Maps",
     "placeDetail.share.text": "Check out {name} on C-Outing",
     "placeDetail.status.openNow": "Open Now",
+    "placeDetail.status.unknown": "Unknown",
     "placeDetail.badge.accessible": "Accessible",
     "placeDetail.about": "About",
     "placeDetail.contact": "Contact",
@@ -2396,6 +2398,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "home.place.addFavorite": "إضافة إلى المحفوظات",
     "home.place.open": "مفتوح",
     "home.place.closed": "مغلق",
+    "home.place.unknown": "غير معروف",
     "home.place.budgetLevel": "مستوى الميزانية: {label}",
     "home.place.priceUnknown": "سعر غير معروف",
 
@@ -2561,6 +2564,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "placeDetail.action.openMaps": "فتح في خرائط جوجل",
     "placeDetail.share.text": "شاهد {name} على C-Outing",
     "placeDetail.status.openNow": "مفتوح الآن",
+    "placeDetail.status.unknown": "غير معروف",
     "placeDetail.badge.accessible": "سهل الوصول",
     "placeDetail.about": "نبذة",
     "placeDetail.contact": "التواصل",

@@ -52,7 +52,7 @@ export const buildClusterFeatures = (
       placeId: place.id,
       name: place.name,
       rating: place.rating,
-      isOpen: place.isOpen === true,
+      isOpen: place.isOpen === undefined ? null : place.isOpen,
       isSaved: place.isSaved === true,
     },
   }));

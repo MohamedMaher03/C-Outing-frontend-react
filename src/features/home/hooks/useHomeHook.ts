@@ -23,7 +23,6 @@ import { useUserLocation } from "@/features/home/hooks/useUserLocation";
 import { filterHomePlacesByQuickFilters } from "../utils/filters";
 
 interface UseHomeReturn {
-  search: string;
   selectedFilters: FilterType[];
   selectedMood: string | null;
   isLoading: boolean;
@@ -57,7 +56,6 @@ interface UseHomeReturn {
   moodOptions: typeof MOOD_OPTIONS;
   trendingTags: typeof TRENDING_TAGS;
   popularDistricts: typeof POPULAR_DISTRICTS;
-  setSearch: (search: string) => void;
   toggleFilter: (filter: FilterType) => void;
   setSelectedMood: (mood: string | null) => void;
   setSelectedDistrict: (district: string | null) => void;
@@ -79,7 +77,6 @@ interface UseHomeReturn {
 export const useHome = (): UseHomeReturn => {
   const { user } = useAuth();
   const userLocation = useUserLocation();
-  const [search, setSearch] = useState("");
   const [selectedFilters, setSelectedFilters] = useState<FilterType[]>([]);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -503,19 +500,6 @@ export const useHome = (): UseHomeReturn => {
     (list: HomePlace[]): HomePlace[] => {
       let result = [...list];
 
-      if (search) {
-        const q = search.toLowerCase();
-        const toSafeLower = (value: unknown) =>
-          typeof value === "string" ? value.toLowerCase() : "";
-        result = result.filter(
-          (p) =>
-            toSafeLower(p.name).includes(q) ||
-            toSafeLower(p.address).includes(q) ||
-            toSafeLower(p.category).includes(q) ||
-            (p.atmosphereTags ?? []).some((t) => toSafeLower(t).includes(q)),
-        );
-      }
-
       result = filterHomePlacesByQuickFilters(
         result,
         selectedFilters,
@@ -524,7 +508,7 @@ export const useHome = (): UseHomeReturn => {
 
       return result;
     },
-    [search, selectedFilters, userLocation],
+    [selectedFilters, userLocation],
   );
 
   const curatedPlaces = useMemo(
@@ -562,7 +546,6 @@ export const useHome = (): UseHomeReturn => {
   }, []);
 
   return {
-    search,
     selectedFilters,
     selectedMood,
     isLoading,
@@ -600,7 +583,6 @@ export const useHome = (): UseHomeReturn => {
     trendingTags: TRENDING_TAGS,
     popularDistricts: POPULAR_DISTRICTS,
 
-    setSearch,
     toggleFilter,
     setSelectedMood,
     setSelectedDistrict,

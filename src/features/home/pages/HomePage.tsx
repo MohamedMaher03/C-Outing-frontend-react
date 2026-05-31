@@ -173,12 +173,11 @@ const HomePage = () => {
   const { t, formatNumber } = useI18n();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchInput, setSearchInput] = useState("");
   const { tourActive, currentStep, totalSteps, next, skip, finish } =
     useGuidedTour();
 
   const {
-    search,
-    setSearch,
     selectedFilters,
     toggleFilter,
     selectedMood,
@@ -503,13 +502,13 @@ const HomePage = () => {
   };
 
   const handleSearchNavigate = useCallback(() => {
-    const trimmed = search.trim();
+    const trimmed = searchInput.trim();
     if (!trimmed) {
       return;
     }
 
     navigate(`/home/search?q=${encodeURIComponent(trimmed)}`);
-  }, [navigate, search]);
+  }, [navigate, searchInput]);
 
   const scrollMoodSectionIntoView = useCallback(() => {
     if (typeof window === "undefined") {
@@ -733,8 +732,8 @@ const HomePage = () => {
             <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-4.5 w-4.5 -translate-y-1/2 text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
             <Input
               placeholder={t("home.hero.searchPlaceholder")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   handleSearchNavigate();

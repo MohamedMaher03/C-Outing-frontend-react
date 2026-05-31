@@ -85,6 +85,15 @@ const RATING_FILTERS = [
   { value: 4.5, key: "45plus", label: "4.5+" },
 ] as const;
 
+const getOpenStatusCopy = (
+  isOpen: boolean | null | undefined,
+  t: (key: string) => string,
+): string => {
+  if (isOpen === true) return t("home.place.open");
+  else if (isOpen === false) return t("home.place.closed");
+  else return t("home.place.unknown");
+};
+
 export default function MapAtlasPage() {
   const navigate = useNavigate();
   const { t, formatNumber } = useI18n();
@@ -1175,19 +1184,32 @@ export default function MapAtlasPage() {
                         )}
 
                         <div className="text-role-micro mt-2 flex flex-wrap items-center gap-1.5 font-semibold">
-                          <span
-                            className={cn(
-                              "rounded-full border px-2 py-0.5",
-                              place.isOpen
-                                ? "border-emerald-300/70 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                                : "border-border/70 bg-muted/60 text-muted-foreground",
-                            )}
-                          >
-                            <Clock3 className="mr-1 inline h-3 w-3" />
-                            {place.isOpen
-                              ? t("home.place.open")
-                              : t("home.place.closed")}
-                          </span>
+                          {(() => {
+                            const openStatusCopy = getOpenStatusCopy(
+                              place.isOpen,
+                              t,
+                            );
+
+                            if (!openStatusCopy) {
+                              return null;
+                            }
+
+                            return (
+                              <span
+                                className={cn(
+                                  "rounded-full border px-2 py-0.5",
+                                  place.isOpen === true
+                                    ? "border-emerald-300/70 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                    : place.isOpen === false
+                                      ? "border-border/70 bg-muted/60 text-muted-foreground"
+                                      : "border-amber-300/70 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                                )}
+                              >
+                                <Clock3 className="mr-1 inline h-3 w-3" />
+                                {openStatusCopy}
+                              </span>
+                            );
+                          })()}
 
                           {place.hasWifi && (
                             <span className="rounded-full border border-border/70 bg-muted/55 px-2 py-0.5 text-foreground">

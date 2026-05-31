@@ -12,6 +12,15 @@ import { motion, useReducedMotion } from "framer-motion";
 
 const TOP_RATED_MIN_RATING = 4.7;
 
+const getOpenStatusCopy = (
+  isOpen: boolean | null | undefined,
+  t: (key: string) => string,
+): string => {
+  if (isOpen === true) return t("home.place.open");
+  else if (isOpen === false) return t("home.place.closed");
+  else return t("home.place.unknown");
+};
+
 const toSafeNumber = (value: unknown, fallback = 0) => {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -67,6 +76,7 @@ const PlaceCard = ({
     name: safeName,
     rating: ratingDisplay,
   });
+  const openStatusCopy = getOpenStatusCopy(place.isOpen, t);
   const distanceState = getDistanceDisplayState(
     userLocation,
     place.latitude,
@@ -326,17 +336,19 @@ const PlaceCard = ({
               {safeAddress}
             </span>
           </div>
-          {place.isOpen !== undefined && (
+          {openStatusCopy && (
             <div
               className={cn(
                 "ml-1 flex flex-shrink-0 items-center gap-1 text-xs font-semibold",
-                place.isOpen
+                place.isOpen === true
                   ? "text-emerald-600 dark:text-emerald-300"
-                  : "text-muted-foreground dark:text-foreground/75",
+                  : place.isOpen === false
+                    ? "text-muted-foreground dark:text-foreground/75"
+                    : "text-amber-700 dark:text-amber-300",
               )}
             >
               <Clock className="h-3 w-3" />
-              {place.isOpen ? t("home.place.open") : t("home.place.closed")}
+              {openStatusCopy}
             </div>
           )}
         </div>

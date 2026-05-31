@@ -13,7 +13,7 @@ export interface ClusterPointProperties {
   placeId: string;
   name: string;
   rating: number;
-  isOpen: boolean;
+  isOpen: boolean | null;
   isSaved: boolean;
 }
 

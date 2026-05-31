@@ -30,7 +30,7 @@ export interface Place {
 
   // Hours & open status
   hours?: string; // e.g., "Daily 9:00 AM – 11:00 PM"
-  isOpen?: boolean; // derived for UI filter support
+  isOpen?: boolean | null; // derived for UI filter support
 
   // Feature values — UI-friendly (derived from GNN features)
   atmosphereTags?: string[]; // from atmosphere feature

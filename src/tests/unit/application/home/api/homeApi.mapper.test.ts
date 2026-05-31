@@ -49,6 +49,15 @@ describe("homeApi.mapper", () => {
     );
   });
 
+  it("preserves a null open-state as unknown", () => {
+    const mapped = mapHomeVenueToPlace({
+      ...backendVenueFixture,
+      isOpen: null,
+    });
+
+    expect(mapped?.isOpen).toBeNull();
+  });
+
   it("supports array payloads inside data wrappers", () => {
     const mapped = mapHomePlacesPayload({ data: [backendVenueFixture] });
 
