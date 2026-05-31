@@ -11,30 +11,24 @@ export interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+// Restore session synchronously at module evaluation time so the very first
+// render already has the correct auth state — no loading flash on new tabs.
+const restoredSession = authService.restoreSession();
+const restoredPendingEmail = authService.getPendingVerificationEmail();
+
 export function AuthProvider({
   children,
 }: AuthProviderProps): React.ReactElement {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(restoredSession?.user ?? null);
+  const [token, setToken] = useState<string | null>(
+    restoredSession?.token ?? null,
+  );
   const [pendingVerificationEmail, setPendingVerificationEmailState] = useState<
     string | null
-  >(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const init = async () => {
-      const session = authService.restoreSession();
-      const pendingEmail = authService.getPendingVerificationEmail();
-      if (session) {
-        setToken(session.token);
-        setUser(session.user);
-      }
-      setPendingVerificationEmailState(pendingEmail);
-      setIsLoading(false);
-    };
-
-    init();
-  }, []);
+  >(restoredPendingEmail);
+  // Session is restored synchronously above, so we never need to show a
+  // loading state for auth on initial render.
+  const [isLoading] = useState(false);
 
   useEffect(() => {
     const handleSessionCleared = () => {

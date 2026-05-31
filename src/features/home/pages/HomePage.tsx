@@ -43,6 +43,7 @@ import { getErrorMessage } from "@/utils/apiError";
 import { getTranslatedText } from "@/utils/helpers";
 import { GroupSessionWidget } from "@/features/session/components/GroupSessionWidget";
 import { homeService } from "@/features/home/services/homeService";
+import { authService } from "@/features/auth";
 
 const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const;
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
@@ -488,6 +489,11 @@ const HomePage = () => {
       shouldReduceMotion ? 0 : base + Math.min(index * 0.06, 0.28),
     [shouldReduceMotion],
   );
+
+  const openVenueInNewTab = useCallback((id: string) => {
+    authService.promoteSessionForNewTab();
+    window.open(`/venue/${id}`, "_blank", "noopener,noreferrer");
+  }, []);
 
   const handlePriceRangeSelect = (priceRange: VenuePriceRange) => {
     setSelectedPriceRange(
@@ -1246,13 +1252,7 @@ const HomePage = () => {
                                 userLocation={userLocation}
                                 onToggleSave={toggleSave}
                                 isSavePending={isPlaceSavePending(place.id)}
-                                onClick={(id) =>
-                                  window.open(
-                                    `/venue/${id}`,
-                                    "_blank",
-                                    "noopener,noreferrer",
-                                  )
-                                }
+                                onClick={openVenueInNewTab}
                               />
                             </motion.div>
                           ))}
@@ -1384,13 +1384,7 @@ const HomePage = () => {
                             userLocation={userLocation}
                             onToggleSave={toggleSave}
                             isSavePending={isPlaceSavePending(place.id)}
-                            onClick={(id) =>
-                              window.open(
-                                `/venue/${id}`,
-                                "_blank",
-                                "noopener,noreferrer",
-                              )
-                            }
+                            onClick={openVenueInNewTab}
                           />
                         </div>
                       ))}
@@ -1440,13 +1434,7 @@ const HomePage = () => {
                       userLocation={userLocation}
                       onToggleSave={toggleSave}
                       isSavePending={isPlaceSavePending(place.id)}
-                      onClick={(id) =>
-                        window.open(
-                          `/venue/${id}`,
-                          "_blank",
-                          "noopener,noreferrer",
-                        )
-                      }
+                      onClick={openVenueInNewTab}
                     />
                   </div>
                 ))}
@@ -1490,13 +1478,7 @@ const HomePage = () => {
                         userLocation={userLocation}
                         onToggleSave={toggleSave}
                         isSavePending={isPlaceSavePending(place.id)}
-                        onClick={(id) =>
-                          window.open(
-                            `/venue/${id}`,
-                            "_blank",
-                            "noopener,noreferrer",
-                          )
-                        }
+                        onClick={openVenueInNewTab}
                       />
                     </div>
                   ))}
@@ -1755,13 +1737,7 @@ const HomePage = () => {
                               onToggleSave={toggleSave}
                               isSavePending={isPlaceSavePending(place.id)}
                               hideTopRatedBadge={showSimilarSuggestions}
-                              onClick={(id) =>
-                                window.open(
-                                  `/venue/${id}`,
-                                  "_blank",
-                                  "noopener,noreferrer",
-                                )
-                              }
+                              onClick={openVenueInNewTab}
                             />
                           </motion.div>
                         ))}

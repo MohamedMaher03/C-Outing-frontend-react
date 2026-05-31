@@ -56,9 +56,7 @@ const HomeSearchPage = lazy(
 const FavoritesPage = lazy(
   () => import("@/features/favorites/pages/FavoritesPage"),
 );
-const PlaceDetailPage = lazy(
-  () => import("@/features/place-detail/pages/PlaceDetailPage"),
-);
+import PlaceDetailPage from "@/features/place-detail/pages/PlaceDetailPage";
 const ProfilePage = lazy(() => import("@/features/profile/pages/ProfilePage"));
 const EditProfilePage = lazy(
   () => import("@/features/profile/pages/EditProfilePage"),

@@ -130,6 +130,30 @@ export const useHome = (): UseHomeReturn => {
   const [rawCurated, setRawCurated] = useState<HomePlace[]>([]);
   const [rawTrending, setRawTrending] = useState<HomePlace[]>([]);
 
+  const replaceSavedPlaceById = useCallback(
+    (list: HomePlace[], id: string, isSaved: boolean) =>
+      list.map((place) => (place.id === id ? { ...place, isSaved } : place)),
+    [],
+  );
+
+  const updateSavedPlaceAcrossCollections = useCallback(
+    (id: string, isSaved: boolean) => {
+      setRawCurated((prev) => replaceSavedPlaceById(prev, id, isSaved));
+      setRawTrending((prev) => replaceSavedPlaceById(prev, id, isSaved));
+      setDiscoveryPlaces((prev) => replaceSavedPlaceById(prev, id, isSaved));
+      setGlobalTopRatedVenues((prev) =>
+        replaceSavedPlaceById(prev, id, isSaved),
+      );
+      setTopRatedInAreaVenues((prev) =>
+        replaceSavedPlaceById(prev, id, isSaved),
+      );
+      setMoodPlaces((prev) => replaceSavedPlaceById(prev, id, isSaved));
+      setSimilarSeedPlaces((prev) => replaceSavedPlaceById(prev, id, isSaved));
+      setSimilarPlaces((prev) => replaceSavedPlaceById(prev, id, isSaved));
+    },
+    [replaceSavedPlaceById],
+  );
+
   const loadPlaces = useCallback(async () => {
     if (!user) return;
     try {
@@ -423,32 +447,33 @@ export const useHome = (): UseHomeReturn => {
         return;
       }
 
+      const place =
+        rawCurated.find((p) => p.id === id) ||
+        rawTrending.find((p) => p.id === id) ||
+        discoveryPlaces.find((p) => p.id === id) ||
+        globalTopRatedVenues.find((p) => p.id === id) ||
+        topRatedInAreaVenues.find((p) => p.id === id) ||
+        moodPlaces.find((p) => p.id === id) ||
+        similarSeedPlaces.find((p) => p.id === id) ||
+        similarPlaces.find((p) => p.id === id);
+
+      if (!place) {
+        return;
+      }
+
+      const previousIsSaved = Boolean(place.isSaved);
+      const nextIsSaved = !previousIsSaved;
+
       try {
         setSaveError(null);
         saveInFlightIds.current.add(id);
         setSavePendingMap((prev) => ({ ...prev, [id]: true }));
-        const place =
-          rawCurated.find((p) => p.id === id) ||
-          rawTrending.find((p) => p.id === id);
+        updateSavedPlaceAcrossCollections(id, nextIsSaved);
 
-        if (!place) return;
-
-        await homeService.togglePlaceSave(id, !place.isSaved);
-
-        const toggle = (list: HomePlace[]) =>
-          list.map((p) => (p.id === id ? { ...p, isSaved: !p.isSaved } : p));
-
-        setRawCurated((prev) => toggle(prev));
-        setRawTrending((prev) => toggle(prev));
-
-        setDiscoveryPlaces((prev) => toggle(prev));
-        setGlobalTopRatedVenues((prev) => toggle(prev));
-        setTopRatedInAreaVenues((prev) => toggle(prev));
-        setMoodPlaces((prev) => toggle(prev));
-        setSimilarSeedPlaces((prev) => toggle(prev));
-        setSimilarPlaces((prev) => toggle(prev));
+        await homeService.togglePlaceSave(id, nextIsSaved);
         void trackVenueInteractionSafe(id, INTERACTION_ACTION_TYPES.favorite);
       } catch (toggleError) {
+        updateSavedPlaceAcrossCollections(id, previousIsSaved);
         setSaveError(
           getErrorMessage(toggleError, "Could not update favorites right now."),
         );
@@ -461,7 +486,17 @@ export const useHome = (): UseHomeReturn => {
         });
       }
     },
-    [rawCurated, rawTrending],
+    [
+      rawCurated,
+      rawTrending,
+      discoveryPlaces,
+      globalTopRatedVenues,
+      topRatedInAreaVenues,
+      moodPlaces,
+      similarSeedPlaces,
+      similarPlaces,
+      updateSavedPlaceAcrossCollections,
+    ],
   );
 
   const applyFilters = useCallback(

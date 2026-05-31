@@ -297,10 +297,34 @@ export const authService = {
   },
 
   updateStoredUser(user: User): void {
-    const storage = getLocalStorage();
-    if (!storage) return;
+    const local = getLocalStorage();
+    const session = getSessionStorage();
 
-    setStorageItem(storage, AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+    const activeStorage =
+      local && getStorageItem(local, AUTH_STORAGE_KEYS.TOKEN)
+        ? local
+        : session && getStorageItem(session, AUTH_STORAGE_KEYS.TOKEN)
+          ? session
+          : null;
+
+    if (!activeStorage) return;
+    setStorageItem(activeStorage, AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
+  },
+
+  promoteSessionForNewTab(): void {
+    const session = getSessionStorage();
+    if (!session) return;
+
+    const token = getStorageItem(session, AUTH_STORAGE_KEYS.TOKEN);
+    const userRaw = getStorageItem(session, AUTH_STORAGE_KEYS.USER);
+
+    // Only promote if session lives in sessionStorage (not already in localStorage)
+    const local = getLocalStorage();
+    if (!token || !userRaw || !local) return;
+    if (getStorageItem(local, AUTH_STORAGE_KEYS.TOKEN)) return; // already in localStorage
+
+    setStorageItem(local, AUTH_STORAGE_KEYS.TOKEN, token);
+    setStorageItem(local, AUTH_STORAGE_KEYS.USER, userRaw);
   },
 
   async forgotPassword(payload: ForgotPasswordRequest): Promise<void> {

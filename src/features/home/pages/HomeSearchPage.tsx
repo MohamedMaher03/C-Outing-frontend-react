@@ -141,12 +141,16 @@ const HomeSearchPage = () => {
     places,
     isLoading,
     error,
+    saveError,
+    clearSaveError,
     pageIndex,
     totalPages,
     hasPreviousPage,
     hasNextPage,
     setPageIndex,
     retryFetch,
+    toggleSave,
+    isSavePending,
   } = useHomeSearch({
     searchTerm: searchParam,
     district: districtParam,
@@ -254,6 +258,25 @@ const HomeSearchPage = () => {
           userLocation={userLocation}
           onEnableLocation={userLocation.requestLocation}
         />
+
+        {saveError && (
+          <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-destructive">
+                {saveError}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={clearSaveError}
+                className="h-8 rounded-full border-destructive/30 px-3 text-xs font-semibold text-destructive hover:bg-destructive/5 hover:text-destructive"
+              >
+                {t("common.dismiss")}
+              </Button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -544,6 +567,8 @@ const HomeSearchPage = () => {
                   place={place}
                   variant="grid"
                   userLocation={userLocation}
+                  onToggleSave={toggleSave}
+                  isSavePending={isSavePending(place.id)}
                   onClick={(id) => navigate(`/venue/${id}`)}
                 />
               ))}

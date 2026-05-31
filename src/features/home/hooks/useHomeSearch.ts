@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { homeService } from "@/features/home/services/homeService";
 import type { HomePlace } from "@/features/home/types";
 import { getErrorMessage } from "@/utils/apiError";
@@ -20,6 +20,7 @@ interface UseHomeSearchReturn {
   places: HomePlace[];
   isLoading: boolean;
   error: string | null;
+  saveError: string | null;
   pageIndex: number;
   pageSize: number;
   totalCount: number;
@@ -28,6 +29,9 @@ interface UseHomeSearchReturn {
   hasNextPage: boolean;
   setPageIndex: (pageIndex: number) => void;
   retryFetch: () => void;
+  toggleSave: (id: string) => Promise<void>;
+  isSavePending: (id: string) => boolean;
+  clearSaveError: () => void;
 }
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -65,6 +69,7 @@ export const useHomeSearch = ({
   const [places, setPlaces] = useState<HomePlace[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize] = useState(DEFAULT_PAGE_SIZE);
   const [totalCount, setTotalCount] = useState(0);
@@ -72,6 +77,10 @@ export const useHomeSearch = ({
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [savePendingMap, setSavePendingMap] = useState<Record<string, boolean>>(
+    {},
+  );
+  const saveInFlightIds = useRef(new Set<string>());
 
   useEffect(() => {
     setPageIndex(1);
@@ -157,10 +166,56 @@ export const useHomeSearch = ({
     setReloadKey((prev) => prev + 1);
   }, []);
 
+  const toggleSave = useCallback(
+    async (id: string) => {
+      if (saveInFlightIds.current.has(id)) {
+        return;
+      }
+
+      const place = places.find((item) => item.id === id);
+      if (!place) {
+        return;
+      }
+
+      const nextIsSaved = !place.isSaved;
+
+      try {
+        saveInFlightIds.current.add(id);
+        setSavePendingMap((prev) => ({ ...prev, [id]: true }));
+        setSaveError(null);
+        setPlaces((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, isSaved: nextIsSaved } : item,
+          ),
+        );
+
+        await homeService.togglePlaceSave(id, nextIsSaved);
+      } catch (toggleError) {
+        setPlaces((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, isSaved: !nextIsSaved } : item,
+          ),
+        );
+        setSaveError(
+          getErrorMessage(toggleError, "Could not update favorites."),
+        );
+      } finally {
+        saveInFlightIds.current.delete(id);
+        setSavePendingMap((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+      }
+    },
+    [places],
+  );
+
   return {
     places,
     isLoading,
     error,
+    saveError,
     pageIndex,
     pageSize,
     totalCount,
@@ -169,5 +224,8 @@ export const useHomeSearch = ({
     hasNextPage,
     setPageIndex,
     retryFetch,
+    toggleSave,
+    isSavePending: (id: string) => Boolean(savePendingMap[id]),
+    clearSaveError: () => setSaveError(null),
   };
 };
