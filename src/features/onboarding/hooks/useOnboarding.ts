@@ -11,6 +11,11 @@ import {
 } from "../utils/onboardingPreferences";
 import { formatPreferenceValidationIssues } from "../utils/preferenceValidationI18n";
 import { useI18n } from "@/components/i18n";
+import { flipListMembership } from "../utils/listMembership";
+import {
+  canAdvanceOnboardingStep,
+  ONBOARDING_LAST_STEP_INDEX,
+} from "../utils/onboardingStepGate";
 
 interface UseOnboardingReturn {
   step: number;
@@ -52,30 +57,21 @@ export const useOnboarding = (): UseOnboardingReturn => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const clearError = () => {
-    setError(null);
-  };
+  const clearError = () => setError(null);
 
   const toggleInterest = (id: string) => {
     clearError();
-    setSelectedInterests((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
+    setSelectedInterests((prev) => flipListMembership(prev, id));
   };
 
   const setVibe = (value: number[]) => {
     clearError();
-    const nextVibe = normalizeVibe(value?.[0]);
-    setVibeState([nextVibe]);
+    setVibeState([normalizeVibe(value?.[0])]);
   };
 
   const toggleDistrict = (district: string) => {
     clearError();
-    setSelectedDistricts((prev) =>
-      prev.includes(district)
-        ? prev.filter((d) => d !== district)
-        : [...prev, district],
-    );
+    setSelectedDistricts((prev) => flipListMembership(prev, district));
   };
 
   const setBudget = (nextBudget: PriceLevel) => {
@@ -85,32 +81,27 @@ export const useOnboarding = (): UseOnboardingReturn => {
 
   const toggleActivity = (activityId: string) => {
     clearError();
-    setSelectedActivities((prev) =>
-      prev.includes(activityId)
-        ? prev.filter((id) => id !== activityId)
-        : [...prev, activityId],
-    );
+    setSelectedActivities((prev) => flipListMembership(prev, activityId));
   };
 
   const toggleCompanionType = (companionId: string) => {
     clearError();
     setSelectedCompanionTypes((prev) =>
-      prev.includes(companionId)
-        ? prev.filter((id) => id !== companionId)
-        : [...prev, companionId],
+      flipListMembership(prev, companionId),
     );
   };
 
-  const canGoNext =
-    (step === 0 && selectedInterests.length >= 2) ||
-    step === 1 ||
-    (step === 2 && selectedDistricts.length >= 1) ||
-    (step === 3 && budget !== null) ||
-    (step === 4 && selectedActivities.length >= 1) ||
-    (step === 5 && selectedCompanionTypes.length >= 1);
+  const canGoNext = canAdvanceOnboardingStep({
+    step,
+    interestCount: selectedInterests.length,
+    districtCount: selectedDistricts.length,
+    budget,
+    activityCount: selectedActivities.length,
+    companionCount: selectedCompanionTypes.length,
+  });
 
   const goToNextStep = () => {
-    if (step < 5 && canGoNext) {
+    if (step < ONBOARDING_LAST_STEP_INDEX && canGoNext) {
       clearError();
       setStep((prev) => prev + 1);
     }
@@ -124,9 +115,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
   };
 
   const handleComplete = async () => {
-    if (submitInFlightRef.current || isSubmitting) {
-      return;
-    }
+    if (submitInFlightRef.current || isSubmitting) return;
 
     if (!user) {
       setError(t("onboarding.error.sessionExpired"));
@@ -162,9 +151,7 @@ export const useOnboarding = (): UseOnboardingReturn => {
       }
 
       await submitOnboardingPreferences(user.userId, preferences);
-
       updateUser({ ...user, hasCompletedOnboarding: true });
-
       navigate("/");
     } catch (err) {
       setError(getErrorMessage(err, t("onboarding.error.submitFailed")));

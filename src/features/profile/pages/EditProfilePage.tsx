@@ -7,21 +7,16 @@ import {
   Loader2,
   Calendar,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { useEditProfile } from "@/features/profile/hooks/useEditProfile";
-import { buildDefaultAvatarDataUrl } from "@/features/profile/utils/defaultAvatar";
-import { useI18n } from "@/components/i18n";
+import { useEditProfilePage } from "@/features/profile/hooks/useEditProfilePage";
 
 const EditProfilePage = () => {
-  const navigate = useNavigate();
-  const { t } = useI18n();
   const {
+    t,
     formData,
-    avatarPreview,
     loading,
     saving,
     error,
@@ -31,9 +26,11 @@ const EditProfilePage = () => {
     handleChange,
     handleSubmit,
     reloadProfile,
-  } = useEditProfile();
-
-  const maxBirthDate = new Date().toISOString().slice(0, 10);
+    avatarDisplaySrc,
+    photoHintKey,
+    maxBirthDate,
+    returnToProfile,
+  } = useEditProfilePage();
 
   if (loading) {
     return (
@@ -51,7 +48,7 @@ const EditProfilePage = () => {
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/profile")}
+            onClick={returnToProfile}
             aria-label={t("profile.edit.backToProfileAria")}
             className="h-11 w-11 rounded-full"
           >
@@ -96,12 +93,7 @@ const EditProfilePage = () => {
             <div className="relative">
               <div className="h-24 w-24 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
                 <img
-                  src={
-                    avatarPreview ||
-                    buildDefaultAvatarDataUrl(
-                      formData.name || t("profile.userFallback"),
-                    )
-                  }
+                  src={avatarDisplaySrc}
                   alt={t("profile.edit.avatarAlt")}
                   className="h-full w-full object-cover"
                 />
@@ -128,9 +120,7 @@ const EditProfilePage = () => {
               </button>
             </div>
             <p className="text-role-secondary text-muted-foreground">
-              {avatarPreview
-                ? t("profile.edit.photoHint.withPhoto")
-                : t("profile.edit.photoHint.withoutPhoto")}
+              {t(photoHintKey)}
             </p>
           </section>
 
@@ -267,7 +257,7 @@ const EditProfilePage = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => navigate("/profile")}
+              onClick={returnToProfile}
               className="flex-1"
             >
               {t("profile.edit.cancel")}
@@ -289,7 +279,7 @@ const EditProfilePage = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => navigate("/profile")}
+              onClick={returnToProfile}
               className="flex-1"
             >
               {t("profile.edit.cancel")}

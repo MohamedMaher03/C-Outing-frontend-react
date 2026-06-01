@@ -1,5 +1,4 @@
-import { ArrowLeft, Shield, Eye, Database, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Shield, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -16,61 +15,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { usePrivacy } from "@/features/profile/hooks/usePrivacy";
-import type { PrivacySettings } from "@/features/profile/types";
-import { useI18n } from "@/components/i18n";
-
-type PrivacySettingKey = keyof PrivacySettings;
-
-type PrivacySection = {
-  titleKey: string;
-  icon: typeof Eye | typeof Database;
-  items: Array<{
-    key: PrivacySettingKey;
-    labelKey: string;
-    descriptionKey: string;
-  }>;
-};
-
-const PRIVACY_SECTIONS: PrivacySection[] = [
-  {
-    titleKey: "profile.privacy.section.visibility",
-    icon: Eye,
-    items: [
-      {
-        key: "showFavorites",
-        labelKey: "profile.privacy.item.showFavorites.label",
-        descriptionKey: "profile.privacy.item.showFavorites.description",
-      },
-      {
-        key: "showActivity",
-        labelKey: "profile.privacy.item.showActivity.label",
-        descriptionKey: "profile.privacy.item.showActivity.description",
-      },
-    ],
-  },
-  {
-    titleKey: "profile.privacy.section.data",
-    icon: Database,
-    items: [
-      {
-        key: "dataCollection",
-        labelKey: "profile.privacy.item.dataCollection.label",
-        descriptionKey: "profile.privacy.item.dataCollection.description",
-      },
-      {
-        key: "personalization",
-        labelKey: "profile.privacy.item.personalization.label",
-        descriptionKey: "profile.privacy.item.personalization.description",
-      },
-    ],
-  },
-];
+import { usePrivacyPage } from "@/features/profile/hooks/usePrivacyPage";
+import { PRIVACY_SUPPORT_MAILTO } from "@/features/profile/utils/privacyCatalog";
 
 const PrivacyPage = () => {
-  const navigate = useNavigate();
-  const { t } = useI18n();
   const {
+    t,
     privacySettings,
     loading,
     saving,
@@ -80,7 +30,9 @@ const PrivacyPage = () => {
     handleSave,
     handleDeleteAccount,
     reloadSettings,
-  } = usePrivacy();
+    catalog,
+    returnToProfile,
+  } = usePrivacyPage();
 
   if (loading) {
     return (
@@ -98,7 +50,7 @@ const PrivacyPage = () => {
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/profile")}
+            onClick={returnToProfile}
             aria-label={t("profile.privacy.backToProfileAria")}
             className="h-11 w-11 rounded-full"
           >
@@ -138,7 +90,7 @@ const PrivacyPage = () => {
         )}
         <div className="grid gap-[clamp(1rem,2vw,1.75rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
           <div className="space-y-[clamp(1rem,2.2vw,1.75rem)]">
-            {PRIVACY_SECTIONS.map((section) => (
+            {catalog.map((section) => (
               <section key={section.titleKey} className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
@@ -254,7 +206,7 @@ const PrivacyPage = () => {
               </span>{" "}
               {t("profile.privacy.info.descriptionPrefix")}{" "}
               <a
-                href="mailto:support@cairo-outing.com?subject=Privacy%20Policy%20Request"
+                href={PRIVACY_SUPPORT_MAILTO}
                 className="text-secondary underline"
               >
                 {t("profile.privacy.info.link")}
@@ -268,7 +220,7 @@ const PrivacyPage = () => {
           <Button
             type="button"
             variant="ghost"
-            onClick={() => navigate("/profile")}
+            onClick={returnToProfile}
             className="flex-1"
           >
             {t("profile.privacy.cancel")}
@@ -289,7 +241,7 @@ const PrivacyPage = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => navigate("/profile")}
+              onClick={returnToProfile}
               className="flex-1"
             >
               {t("profile.privacy.cancel")}

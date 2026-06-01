@@ -1,158 +1,26 @@
-import { useCallback, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  HelpCircle,
-  Mail,
-  ChevronRight,
-  Search,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowLeft, HelpCircle, ChevronRight, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { normalizeSearchTerm } from "@/utils/textNormalization";
-import { useI18n } from "@/components/i18n";
-
-const SUPPORT_EMAIL = "support@cairo-outing.com";
-const SUPPORT_EMAIL_HREF = `mailto:${SUPPORT_EMAIL}`;
-
-type ContactOption = {
-  icon: LucideIcon;
-  labelKey: string;
-  action: () => void;
-  available: boolean;
-};
-
-const openSupportEmail = () => {
-  window.location.href = SUPPORT_EMAIL_HREF;
-};
-
-const CONTACT_OPTIONS: ContactOption[] = [
-  {
-    icon: Mail,
-    labelKey: "profile.help.contact.emailLabel",
-    action: openSupportEmail,
-    available: true,
-  },
-];
-
-type FaqItem = {
-  id: string;
-  questionKey: string;
-  answerKey: string;
-};
-
-const FAQS: FaqItem[] = [
-  {
-    id: "recommendations",
-    questionKey: "profile.help.faq.recommendations.question",
-    answerKey: "profile.help.faq.recommendations.answer",
-  },
-  {
-    id: "update-preferences",
-    questionKey: "profile.help.faq.updatePreferences.question",
-    answerKey: "profile.help.faq.updatePreferences.answer",
-  },
-  {
-    id: "price-levels",
-    questionKey: "profile.help.faq.priceLevels.question",
-    answerKey: "profile.help.faq.priceLevels.answer",
-  },
-  {
-    id: "manage-favorites",
-    questionKey: "profile.help.faq.manageFavorites.question",
-    answerKey: "profile.help.faq.manageFavorites.answer",
-  },
-  {
-    id: "write-review",
-    questionKey: "profile.help.faq.writeReview.question",
-    answerKey: "profile.help.faq.writeReview.answer",
-  },
-  {
-    id: "notifications",
-    questionKey: "profile.help.faq.notifications.question",
-    answerKey: "profile.help.faq.notifications.answer",
-  },
-  {
-    id: "privacy-settings",
-    questionKey: "profile.help.faq.privacySettings.question",
-    answerKey: "profile.help.faq.privacySettings.answer",
-  },
-  {
-    id: "delete-account",
-    questionKey: "profile.help.faq.deleteAccount.question",
-    answerKey: "profile.help.faq.deleteAccount.answer",
-  },
-];
-
-const QUICK_TOPICS = [
-  {
-    id: "recommendations",
-    labelKey: "profile.help.topic.recommendations.label",
-    queryKey: "profile.help.topic.recommendations.query",
-  },
-  {
-    id: "reviews",
-    labelKey: "profile.help.topic.reviews.label",
-    queryKey: "profile.help.topic.reviews.query",
-  },
-  {
-    id: "privacy",
-    labelKey: "profile.help.topic.privacy.label",
-    queryKey: "profile.help.topic.privacy.query",
-  },
-  {
-    id: "account",
-    labelKey: "profile.help.topic.account.label",
-    queryKey: "profile.help.topic.account.query",
-  },
-];
+import { useHelpSupportPage } from "@/features/profile/hooks/useHelpSupportPage";
 
 const HelpSupportPage = () => {
-  const navigate = useNavigate();
-  const { t, direction } = useI18n();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
-
-  const quickTopics = useMemo(
-    () =>
-      QUICK_TOPICS.map((topic) => ({
-        ...topic,
-        label: t(topic.labelKey),
-        query: t(topic.queryKey),
-      })),
-    [t],
-  );
-
-  const localizedFaqs = useMemo(
-    () =>
-      FAQS.map((faq) => ({
-        id: faq.id,
-        question: t(faq.questionKey),
-        answer: t(faq.answerKey),
-      })),
-    [t],
-  );
-
-  const normalizedQuery = normalizeSearchTerm(searchQuery);
-
-  const filteredFaqs = useMemo(() => {
-    if (!normalizedQuery) {
-      return localizedFaqs;
-    }
-
-    return localizedFaqs.filter(
-      (faq) =>
-        faq.question.toLowerCase().includes(normalizedQuery) ||
-        faq.answer.toLowerCase().includes(normalizedQuery),
-    );
-  }, [localizedFaqs, normalizedQuery]);
-
-  const toggleFaq = useCallback((faqId: string) => {
-    setExpandedFaq((previous) => (previous === faqId ? null : faqId));
-  }, []);
+  const {
+    t,
+    direction,
+    searchQuery,
+    setSearchQuery,
+    expandedFaqId,
+    toggleFaqPanel,
+    quickTopics,
+    filteredFaqs,
+    contactOptions,
+    supportEmail,
+    openSupportEmail,
+    applyTopicSearch,
+    returnToProfile,
+  } = useHelpSupportPage();
 
   return (
     <div className="min-h-screen bg-background">
@@ -162,7 +30,7 @@ const HelpSupportPage = () => {
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/profile")}
+            onClick={returnToProfile}
             aria-label={t("profile.help.backToProfileAria")}
             className="h-11 w-11 rounded-full"
           >
@@ -183,7 +51,7 @@ const HelpSupportPage = () => {
             {t("profile.help.contactTitle")}
           </h2>
           <div className="grid gap-3">
-            {CONTACT_OPTIONS.map((option) => (
+            {contactOptions.map((option) => (
               <Card
                 key={option.labelKey}
                 className={cn(
@@ -196,7 +64,7 @@ const HelpSupportPage = () => {
                 <CardContent className="p-0">
                   <button
                     type="button"
-                    onClick={option.action}
+                    onClick={openSupportEmail}
                     disabled={!option.available}
                     className="flex w-full items-center justify-between p-4 text-left transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
                   >
@@ -214,7 +82,7 @@ const HelpSupportPage = () => {
                           )}
                         </p>
                         <p className="text-role-caption text-muted-foreground break-all">
-                          {SUPPORT_EMAIL}
+                          {supportEmail}
                         </p>
                       </div>
                     </div>
@@ -255,7 +123,7 @@ const HelpSupportPage = () => {
             />
             <Input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
               placeholder={t("profile.help.searchPlaceholder")}
               maxLength={120}
               className={cn(direction === "rtl" ? "pr-10" : "pl-10")}
@@ -269,7 +137,7 @@ const HelpSupportPage = () => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setSearchQuery(topic.query)}
+                onClick={() => applyTopicSearch(topic.query)}
                 className="rounded-full border-border/80 bg-card/60 px-3"
               >
                 {topic.label}
@@ -281,7 +149,7 @@ const HelpSupportPage = () => {
             {filteredFaqs.length > 0 ? (
               filteredFaqs.map((faq) => {
                 const panelId = `faq-panel-${faq.id}`;
-                const isExpanded = expandedFaq === faq.id;
+                const isExpanded = expandedFaqId === faq.id;
 
                 return (
                   <div
@@ -290,7 +158,7 @@ const HelpSupportPage = () => {
                   >
                     <button
                       type="button"
-                      onClick={() => toggleFaq(faq.id)}
+                      onClick={() => toggleFaqPanel(faq.id)}
                       aria-expanded={isExpanded}
                       aria-controls={panelId}
                       className="w-full flex items-center justify-between px-4 py-4 hover:bg-muted/25 transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"

@@ -1,4 +1,5 @@
 export { useOnboarding } from "./hooks/useOnboarding";
+export { useOnboardingPage } from "./hooks/useOnboardingPage";
 export { onboardingApi } from "./api/onboardingApi";
 export {
   onboardingService,

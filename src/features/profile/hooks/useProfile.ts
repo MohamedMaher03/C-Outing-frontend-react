@@ -11,9 +11,11 @@ import { getErrorMessage } from "@/utils/apiError";
 import { useI18n } from "@/components/i18n";
 import type { OnboardingPreferences } from "@/features/onboarding/types";
 import {
+  normalizeVibe,
   validateOnboardingPreferences,
   type PreferenceValidationIssue,
 } from "@/features/onboarding/utils/onboardingPreferences";
+import { flipListMembership } from "@/features/onboarding/utils/listMembership";
 
 interface UseProfileReturn {
   profile: UserProfile | null;
@@ -114,32 +116,22 @@ export const useProfile = (): UseProfileReturn => {
 
   const toggleInterest = (id: string) => {
     clearSaveFeedback();
-    setSelectedInterests((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
+    setSelectedInterests((prev) => flipListMembership(prev, id));
   };
 
   const toggleDistrict = (district: string) => {
     clearSaveFeedback();
-    setSelectedDistricts((prev) =>
-      prev.includes(district)
-        ? prev.filter((d) => d !== district)
-        : [...prev, district],
-    );
+    setSelectedDistricts((prev) => flipListMembership(prev, district));
   };
 
   const toggleActivity = (id: string) => {
     clearSaveFeedback();
-    setSelectedActivities((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
-    );
+    setSelectedActivities((prev) => flipListMembership(prev, id));
   };
 
   const toggleCompanionType = (id: string) => {
     clearSaveFeedback();
-    setSelectedCompanionTypes((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
-    );
+    setSelectedCompanionTypes((prev) => flipListMembership(prev, id));
   };
 
   const buildPreferencesPayload = (): OnboardingPreferences => ({
@@ -220,7 +212,7 @@ export const useProfile = (): UseProfileReturn => {
 
   const handleSetVibe = (value: number[]) => {
     clearSaveFeedback();
-    setVibe(value);
+    setVibe([normalizeVibe(value?.[0])]);
   };
 
   const handleSetSelectedBudget = (budget: PriceLevel) => {

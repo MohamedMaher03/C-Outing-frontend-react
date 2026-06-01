@@ -1,106 +1,24 @@
-import { ArrowLeft, Bell, Mail, type LucideIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { useNotifications } from "@/features/profile/hooks/useNotifications";
-import type { NotificationSettings } from "@/features/profile/types";
-import { useI18n } from "@/components/i18n";
-
-type PushNotificationKey = keyof NotificationSettings["push"];
-type EmailNotificationKey = keyof NotificationSettings["email"];
-
-type NotificationItem = {
-  key: PushNotificationKey | EmailNotificationKey;
-  labelKey: string;
-  descriptionKey: string;
-};
-
-type NotificationGroup = {
-  id: "push" | "email";
-  titleKey: string;
-  descriptionKey: string;
-  icon: LucideIcon;
-  items: NotificationItem[];
-  type: "push" | "email";
-};
-
-const NOTIFICATION_GROUPS: NotificationGroup[] = [
-  {
-    id: "push",
-    titleKey: "profile.notifications.group.push.title",
-    descriptionKey: "profile.notifications.group.push.description",
-    icon: Bell,
-    items: [
-      {
-        key: "recommendations",
-        labelKey: "profile.notifications.group.push.recommendations.label",
-        descriptionKey:
-          "profile.notifications.group.push.recommendations.description",
-      },
-      {
-        key: "favorites",
-        labelKey: "profile.notifications.group.push.favorites.label",
-        descriptionKey:
-          "profile.notifications.group.push.favorites.description",
-      },
-      {
-        key: "reviews",
-        labelKey: "profile.notifications.group.push.reviews.label",
-        descriptionKey: "profile.notifications.group.push.reviews.description",
-      },
-      {
-        key: "updates",
-        labelKey: "profile.notifications.group.push.updates.label",
-        descriptionKey: "profile.notifications.group.push.updates.description",
-      },
-    ],
-    type: "push",
-  },
-  {
-    id: "email",
-    titleKey: "profile.notifications.group.email.title",
-    descriptionKey: "profile.notifications.group.email.description",
-    icon: Mail,
-    items: [
-      {
-        key: "monthlyDigest",
-        labelKey: "profile.notifications.group.email.monthlyDigest.label",
-        descriptionKey:
-          "profile.notifications.group.email.monthlyDigest.description",
-      },
-      {
-        key: "promotions",
-        labelKey: "profile.notifications.group.email.promotions.label",
-        descriptionKey:
-          "profile.notifications.group.email.promotions.description",
-      },
-      {
-        key: "tips",
-        labelKey: "profile.notifications.group.email.tips.label",
-        descriptionKey: "profile.notifications.group.email.tips.description",
-      },
-    ],
-    type: "email",
-  },
-];
+import { useNotificationsPage } from "@/features/profile/hooks/useNotificationsPage";
 
 const NotificationsPage = () => {
-  const navigate = useNavigate();
-  const { t } = useI18n();
   const {
-    pushNotifications,
-    emailNotifications,
+    t,
     loading,
     saving,
     error,
-    togglePush,
-    toggleEmail,
     handleSave,
     reloadSettings,
-  } = useNotifications();
+    catalog,
+    returnToProfile,
+    flipNotificationPreference,
+    resolveToggleChecked,
+  } = useNotificationsPage();
 
   if (loading) {
     return (
@@ -118,7 +36,7 @@ const NotificationsPage = () => {
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/profile")}
+            onClick={returnToProfile}
             aria-label={t("profile.notifications.backToProfileAria")}
             className="h-11 w-11 rounded-full"
           >
@@ -154,7 +72,7 @@ const NotificationsPage = () => {
           </div>
         )}
         <div className="grid gap-[clamp(1rem,2vw,1.75rem)] xl:grid-cols-2">
-          {NOTIFICATION_GROUPS.map((group) => (
+          {catalog.map((group) => (
             <section key={group.id} className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
@@ -174,18 +92,6 @@ const NotificationsPage = () => {
                 <CardContent className="divide-y divide-border/70 p-0">
                   {group.items.map((item) => {
                     const itemId = `${group.id}-${item.key}`;
-                    const isChecked =
-                      group.type === "push"
-                        ? pushNotifications[item.key as PushNotificationKey]
-                        : emailNotifications[item.key as EmailNotificationKey];
-
-                    const handleToggle = () => {
-                      if (group.type === "push") {
-                        togglePush(item.key as PushNotificationKey);
-                      } else {
-                        toggleEmail(item.key as EmailNotificationKey);
-                      }
-                    };
 
                     return (
                       <div
@@ -194,8 +100,10 @@ const NotificationsPage = () => {
                       >
                         <Checkbox
                           id={itemId}
-                          checked={Boolean(isChecked)}
-                          onCheckedChange={handleToggle}
+                          checked={resolveToggleChecked(group.channel, item.key)}
+                          onCheckedChange={() =>
+                            flipNotificationPreference(group.channel, item.key)
+                          }
                           className="mt-1 h-5 w-5"
                         />
                         <div className="flex-1 min-w-0 space-y-1">
@@ -233,7 +141,7 @@ const NotificationsPage = () => {
           <Button
             type="button"
             variant="ghost"
-            onClick={() => navigate("/profile")}
+            onClick={returnToProfile}
             className="flex-1"
           >
             {t("profile.notifications.cancel")}
@@ -256,7 +164,7 @@ const NotificationsPage = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => navigate("/profile")}
+              onClick={returnToProfile}
               className="flex-1"
             >
               {t("profile.notifications.cancel")}

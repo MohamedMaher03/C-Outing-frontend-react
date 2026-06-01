@@ -1,7 +1,12 @@
 export { useProfile } from "./hooks/useProfile";
+export { useProfilePage } from "./hooks/useProfilePage";
 export { useEditProfile } from "./hooks/useEditProfile";
+export { useEditProfilePage } from "./hooks/useEditProfilePage";
 export { usePrivacy } from "./hooks/usePrivacy";
+export { usePrivacyPage } from "./hooks/usePrivacyPage";
 export { useNotifications } from "./hooks/useNotifications";
+export { useNotificationsPage } from "./hooks/useNotificationsPage";
+export { useHelpSupportPage } from "./hooks/useHelpSupportPage";
 
 export { profileApi } from "./api/profileApi";
 
