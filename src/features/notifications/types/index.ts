@@ -1,5 +1,7 @@
 import type { PaginatedResponse } from "@/types";
 
+export type NotificationFilterTab = "all" | "unread";
+
 export type NotificationType =
   | "recommendation"
   | "favorite_update"

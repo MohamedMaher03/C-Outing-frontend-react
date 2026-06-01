@@ -1,5 +1,5 @@
 export { useNotifications } from "./hooks/useNotifications";
-export type { NotificationFilterTab } from "./hooks/useNotifications";
+export type { NotificationFilterTab } from "./types";
 export { useNotificationsCount } from "./hooks/useNotificationsCount";
 
 export { NotificationsCountProvider } from "./context/NotificationsCountContext";

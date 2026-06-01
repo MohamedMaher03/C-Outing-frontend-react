@@ -1,12 +1,21 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { notificationsService } from "@/features/notifications/services/notificationsService";
 import { useNotificationsCount } from "@/features/notifications/hooks/useNotificationsCount";
-import type { Notification } from "@/features/notifications/types";
-import { getErrorMessage, isApiError } from "@/utils/apiError";
+import type {
+  Notification,
+  NotificationFilterTab,
+} from "@/features/notifications/types";
+import { resolveNotificationFailureMessage } from "@/features/notifications/utils/notificationErrorMessages";
+import {
+  filterNotificationsByTab,
+  normalizeNotificationId,
+  tallyUnreadNotifications,
+} from "@/features/notifications/utils/notificationFeedOps";
+import { omitRecordKey } from "@/utils/record";
 
-export type NotificationFilterTab = "all" | "unread";
+export type { NotificationFilterTab };
 
-interface RefreshNotificationsOptions {
+export interface RefreshNotificationsOptions {
   showLoader?: boolean;
   showPageError?: boolean;
   forceRefresh?: boolean;
@@ -34,40 +43,6 @@ interface UseNotificationsReturn {
   refresh: (options?: RefreshNotificationsOptions) => Promise<void>;
 }
 
-const toFriendlyErrorMessage = (error: unknown, fallback: string): string => {
-  if (typeof navigator !== "undefined" && navigator.onLine === false) {
-    return "You are offline. Reconnect and try again.";
-  }
-
-  if (isApiError(error)) {
-    if (error.statusCode === 401) {
-      return "Your session expired. Sign in again to load notifications.";
-    }
-    if (error.statusCode === 403) {
-      return "This account does not have permission to access notifications.";
-    }
-    if (error.statusCode === 404) {
-      return "Notifications are unavailable right now. Please try again shortly.";
-    }
-    if (error.statusCode === 429) {
-      return "Too many requests. Please wait a few seconds and retry.";
-    }
-    if (typeof error.statusCode === "number" && error.statusCode >= 500) {
-      return "We are having trouble loading notifications. Please try again shortly.";
-    }
-  }
-
-  return getErrorMessage(error, fallback);
-};
-
-const normalizeNotificationId = (rawId: string): string => rawId.trim();
-
-const countUnreadFromFeed = (items: Notification[]): number =>
-  items.reduce(
-    (total, notification) => total + (notification.isRead ? 0 : 1),
-    0,
-  );
-
 export const useNotifications = (
   options: UseNotificationsOptions = {},
 ): UseNotificationsReturn => {
@@ -89,7 +64,7 @@ export const useNotifications = (
   const { unreadCount, setUnreadCount: setGlobalUnreadCount } =
     useNotificationsCount();
 
-  const syncCount = useCallback(
+  const syncUnreadBadge = useCallback(
     (count: number) => {
       if (!mountedRef.current) return;
       setGlobalUnreadCount(Math.max(0, count));
@@ -97,10 +72,9 @@ export const useNotifications = (
     [setGlobalUnreadCount],
   );
 
-  const decrementUnreadCount = useCallback(
+  const decrementUnreadBadge = useCallback(
     (delta = 1) => {
       if (!mountedRef.current) return;
-
       setGlobalUnreadCount((prev) => Math.max(0, prev - delta));
     },
     [setGlobalUnreadCount],
@@ -115,20 +89,16 @@ export const useNotifications = (
       const requestId = ++fetchRequestIdRef.current;
 
       try {
-        if (showLoader && mountedRef.current) {
-          setLoading(true);
-        }
-        if (showPageError && mountedRef.current) {
-          setError(null);
-        }
+        if (showLoader && mountedRef.current) setLoading(true);
+        if (showPageError && mountedRef.current) setError(null);
 
         const data = await notificationsService.getNotifications(undefined, {
           forceRefresh,
         });
 
-        const unread = data.hasNextPage
+        const unreadTotal = data.hasNextPage
           ? await notificationsService.getUnreadCount({ forceRefresh })
-          : countUnreadFromFeed(data.items ?? []);
+          : tallyUnreadNotifications(data.items ?? []);
 
         if (!mountedRef.current || requestId !== fetchRequestIdRef.current) {
           return;
@@ -136,23 +106,18 @@ export const useNotifications = (
 
         hasFetchedOnceRef.current = true;
         setNotifications(data.items ?? []);
-        syncCount(unread ?? 0);
+        syncUnreadBadge(unreadTotal ?? 0);
       } catch (err) {
         if (!mountedRef.current || requestId !== fetchRequestIdRef.current) {
           return;
         }
 
         if (showPageError) {
-          setError(
-            toFriendlyErrorMessage(
-              err,
-              "We could not load your notifications.",
-            ),
-          );
+          setError(resolveNotificationFailureMessage(err, "load"));
 
           if (!hasFetchedOnceRef.current) {
             setNotifications([]);
-            syncCount(0);
+            syncUnreadBadge(0);
           }
         }
       } finally {
@@ -165,20 +130,16 @@ export const useNotifications = (
         }
       }
     },
-    [syncCount],
+    [syncUnreadBadge],
   );
 
   useEffect(() => {
     mountedRef.current = true;
     const itemActionsInFlight = itemActionsInFlightRef.current;
 
-    try {
-      if (autoFetch && !hasFetchedOnceRef.current) {
-        void fetchNotifications();
-      } else if (!autoFetch) {
-        setLoading(false);
-      }
-    } catch {
+    if (autoFetch && !hasFetchedOnceRef.current) {
+      void fetchNotifications();
+    } else if (!autoFetch) {
       setLoading(false);
     }
 
@@ -195,9 +156,7 @@ export const useNotifications = (
       const id = normalizeNotificationId(rawId);
       if (!id || itemActionsInFlightRef.current.has(id)) return;
 
-      const target = notifications.find(
-        (notification) => notification.id === id,
-      );
+      const target = notifications.find((entry) => entry.id === id);
       if (!target || target.isRead) return;
 
       try {
@@ -207,35 +166,24 @@ export const useNotifications = (
         setItemPendingMap((prev) => ({ ...prev, [id]: true }));
 
         setNotifications((prev) =>
-          prev.map((notification) =>
-            notification.id === id
-              ? { ...notification, isRead: true }
-              : notification,
+          prev.map((entry) =>
+            entry.id === id ? { ...entry, isRead: true } : entry,
           ),
         );
-        decrementUnreadCount(1);
+        decrementUnreadBadge(1);
 
         await notificationsService.markAsRead(id);
       } catch (err) {
-        setActionError(
-          toFriendlyErrorMessage(
-            err,
-            "We could not mark this notification as read.",
-          ),
-        );
+        setActionError(resolveNotificationFailureMessage(err, "read"));
         await fetchNotifications({ showLoader: false, showPageError: false });
       } finally {
         itemActionsInFlightRef.current.delete(id);
         if (mountedRef.current) {
-          setItemPendingMap((prev) => {
-            const next = { ...prev };
-            delete next[id];
-            return next;
-          });
+          setItemPendingMap((prev) => omitRecordKey(prev, id));
         }
       }
     },
-    [decrementUnreadCount, fetchNotifications, notifications],
+    [decrementUnreadBadge, fetchNotifications, notifications],
   );
 
   const markAllRead = useCallback(async () => {
@@ -248,38 +196,26 @@ export const useNotifications = (
       setMarkAllPending(true);
 
       setNotifications((prev) =>
-        prev.map((notification) => ({
-          ...notification,
-          isRead: true,
-        })),
+        prev.map((entry) => ({ ...entry, isRead: true })),
       );
-      syncCount(0);
+      syncUnreadBadge(0);
 
       await notificationsService.markAllAsRead();
     } catch (err) {
-      setActionError(
-        toFriendlyErrorMessage(
-          err,
-          "We could not mark all notifications as read.",
-        ),
-      );
+      setActionError(resolveNotificationFailureMessage(err, "read-all"));
       await fetchNotifications({ showLoader: false, showPageError: false });
     } finally {
       markAllInFlightRef.current = false;
-      if (mountedRef.current) {
-        setMarkAllPending(false);
-      }
+      if (mountedRef.current) setMarkAllPending(false);
     }
-  }, [fetchNotifications, syncCount, unreadCount]);
+  }, [fetchNotifications, syncUnreadBadge, unreadCount]);
 
   const removeNotification = useCallback(
     async (rawId: string) => {
       const id = normalizeNotificationId(rawId);
       if (!id || itemActionsInFlightRef.current.has(id)) return;
 
-      const target = notifications.find(
-        (notification) => notification.id === id,
-      );
+      const target = notifications.find((entry) => entry.id === id);
       if (!target) return;
 
       try {
@@ -288,43 +224,28 @@ export const useNotifications = (
         itemActionsInFlightRef.current.add(id);
         setItemPendingMap((prev) => ({ ...prev, [id]: true }));
 
-        setNotifications((prev) =>
-          prev.filter((notification) => notification.id !== id),
-        );
+        setNotifications((prev) => prev.filter((entry) => entry.id !== id));
 
-        if (!target.isRead) {
-          decrementUnreadCount(1);
-        }
+        if (!target.isRead) decrementUnreadBadge(1);
 
         await notificationsService.deleteNotification(id);
       } catch (err) {
-        setActionError(
-          toFriendlyErrorMessage(err, "We could not delete this notification."),
-        );
+        setActionError(resolveNotificationFailureMessage(err, "delete"));
         await fetchNotifications({ showLoader: false, showPageError: false });
       } finally {
         itemActionsInFlightRef.current.delete(id);
         if (mountedRef.current) {
-          setItemPendingMap((prev) => {
-            const next = { ...prev };
-            delete next[id];
-            return next;
-          });
+          setItemPendingMap((prev) => omitRecordKey(prev, id));
         }
       }
     },
-    [decrementUnreadCount, fetchNotifications, notifications],
+    [decrementUnreadBadge, fetchNotifications, notifications],
   );
 
-  const clearActionError = useCallback(() => {
-    setActionError(null);
-  }, []);
+  const clearActionError = useCallback(() => setActionError(null), []);
 
   const filteredNotifications = useMemo(
-    () =>
-      filterTab === "unread"
-        ? notifications.filter((n) => !n.isRead)
-        : notifications,
+    () => filterNotificationsByTab(notifications, filterTab),
     [filterTab, notifications],
   );
 

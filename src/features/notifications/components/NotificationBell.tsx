@@ -1,162 +1,53 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { Bell, CheckCheck, Inbox, RefreshCw, X } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import NotificationItem from "@/features/notifications/components/NotificationItem";
-import { useNotifications } from "@/features/notifications/hooks/useNotifications";
-import { useI18n } from "@/components/i18n";
+import { useNotificationBell } from "@/features/notifications/hooks/useNotificationBell";
+import {
+  NOTIFICATION_FILTER_TAB_LABEL_KEY,
+  NOTIFICATION_FILTER_TABS,
+} from "@/features/notifications/utils/notificationFilterTabs";
 
 interface NotificationBellProps {
   mobile?: boolean;
 }
 
 const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
-  const { t, formatNumber } = useI18n();
-  const location = useLocation();
-  const shouldReduceMotion = useReducedMotion();
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const hasLoadedOnceRef = useRef(false);
-  const dialogId = mobile
-    ? "notifications-panel-mobile"
-    : "notifications-panel-desktop";
-  const [openState, setOpenState] = useState({
-    path: location.pathname,
-    open: false,
-  });
-  const open = openState.path === location.pathname && openState.open;
-
-  const setOpenForCurrentPath = useCallback(
-    (nextOpen: boolean) => {
-      setOpenState({ path: location.pathname, open: nextOpen });
-    },
-    [location.pathname],
-  );
-
   const {
-    filteredNotifications,
-    unreadCount,
-    loading,
-    error,
-    filterTab,
-    setFilterTab,
-    markAsRead,
-    markAllRead,
-    removeNotification,
-    markAllPending,
-    itemPendingMap,
-    actionError,
-    clearActionError,
-    refresh,
-  } = useNotifications({ autoFetch: false });
-
-  const panelError = actionError ?? error;
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handlePointer = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as Node;
-      if (rootRef.current && !rootRef.current.contains(target)) {
-        setOpenForCurrentPath(false);
-      }
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpenForCurrentPath(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handlePointer);
-    document.addEventListener("touchstart", handlePointer);
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.removeEventListener("mousedown", handlePointer);
-      document.removeEventListener("touchstart", handlePointer);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [open, setOpenForCurrentPath]);
-
-  useEffect(() => {
-    if (!open || !mobile) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [mobile, open]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    panelRef.current?.focus();
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const shouldShowLoader = !hasLoadedOnceRef.current;
-    hasLoadedOnceRef.current = true;
-
-    void refresh({
-      showLoader: shouldShowLoader,
-      showPageError: true,
-    });
-  }, [open, refresh]);
-
-  useEffect(() => {
-    if (open) return;
-    clearActionError();
-  }, [clearActionError, open]);
-
-  const handleRetry = useCallback(() => {
-    clearActionError();
-    void refresh({
-      showLoader: true,
-      showPageError: true,
-      forceRefresh: true,
-    });
-  }, [clearActionError, refresh]);
-
-  const panelTransition = shouldReduceMotion
-    ? { duration: 0 }
-    : { duration: 0.2 };
-  const unreadDisplay =
-    unreadCount > 99 ? "99+" : formatNumber(Math.max(0, unreadCount));
-  const unreadLabel = t("notifications.unread", {
-    count: unreadDisplay,
-  });
+    t,
+    rootRef,
+    panelRef,
+    dialogId,
+    panelOpen,
+    togglePanel,
+    closePanel,
+    feed,
+    panelError,
+    retryPanelLoad,
+    unreadDisplay,
+    unreadLabel,
+    liveUnreadMessage,
+    panelTransition,
+    spinMarkAllIcon,
+  } = useNotificationBell({ mobile });
 
   return (
     <div ref={rootRef} className="relative h-full">
       <p className="sr-only" aria-live="polite" aria-atomic="true">
-        {unreadCount > 0
-          ? t("notifications.unreadStatus", {
-              count: unreadDisplay,
-            })
-          : t("notifications.noUnreadStatus")}
+        {liveUnreadMessage}
       </p>
       <button
         type="button"
-        aria-expanded={open}
+        aria-expanded={panelOpen}
         aria-haspopup="dialog"
         aria-controls={dialogId}
-        aria-label={`${t("nav.notifications")}${unreadCount > 0 ? `, ${unreadLabel}` : ""}`}
-        onClick={() => setOpenForCurrentPath(!open)}
+        aria-label={`${t("nav.notifications")}${feed.unreadCount > 0 ? `, ${unreadLabel}` : ""}`}
+        onClick={togglePanel}
         className={cn(
-          "relative transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "relative touch-manipulation transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           mobile
             ? "flex h-full w-full min-h-11 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1.5 py-1.5 text-muted-foreground hover:text-foreground"
             : "flex min-h-10 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -165,7 +56,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
         <Bell
           className={cn(
             mobile ? "h-5 w-5" : "h-4 w-4",
-            open && "text-secondary",
+            panelOpen && "text-secondary",
           )}
         />
         <span
@@ -178,10 +69,10 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
           {t("nav.notifications")}
         </span>
 
-        {unreadCount > 0 && (
+        {feed.unreadCount > 0 && (
           <span
             className={cn(
-              "absolute h-4 min-w-4 px-1 rounded-full bg-secondary text-primary text-[11px] font-bold flex items-center justify-center leading-none shadow-sm",
+              "absolute flex h-4 min-w-4 items-center justify-center rounded-full bg-secondary px-1 text-[11px] font-bold leading-none text-primary shadow-sm",
               mobile
                 ? "top-0 [inset-inline-end:0.375rem]"
                 : "-top-1 [inset-inline-end:-0.25rem]",
@@ -193,7 +84,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
       </button>
 
       <AnimatePresence>
-        {open && (
+        {panelOpen && (
           <>
             {mobile && (
               <motion.div
@@ -201,7 +92,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-50 bg-background/72 md:hidden"
-                onClick={() => setOpenForCurrentPath(false)}
+                onClick={closePanel}
               />
             )}
 
@@ -210,7 +101,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
               id={dialogId}
               role="dialog"
               aria-modal={mobile || undefined}
-              aria-busy={loading}
+              aria-busy={feed.loading}
               aria-label={t("notifications.panel")}
               tabIndex={-1}
               initial={
@@ -222,10 +113,10 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
               }
               transition={panelTransition}
               className={cn(
-                "border border-border bg-card z-[60] overflow-hidden",
+                "z-[60] overflow-hidden border border-border bg-card",
                 mobile
-                  ? "fixed inset-x-0 bottom-0 rounded-t-2xl max-h-[min(84svh,36rem)] pb-[max(env(safe-area-inset-bottom),0.75rem)] md:hidden"
-                  : "absolute top-[calc(100%+10px)] w-[min(92vw,22.5rem)] lg:w-[24rem] rounded-2xl shadow-2xl [inset-inline-end:0]",
+                  ? "fixed inset-x-0 bottom-0 max-h-[min(84svh,36rem)] rounded-t-2xl pb-[max(env(safe-area-inset-bottom),0.75rem)] md:hidden"
+                  : "absolute top-[calc(100%+10px)] w-[min(92vw,22.5rem)] rounded-2xl shadow-2xl lg:w-[24rem] [inset-inline-end:0]",
               )}
             >
               <div className="border-b border-border bg-background px-4 py-3">
@@ -233,7 +124,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                   <p className="text-role-secondary font-semibold text-foreground">
                     {t("nav.notifications")}
                   </p>
-                  {unreadCount > 0 && (
+                  {feed.unreadCount > 0 && (
                     <p className="text-role-caption text-muted-foreground text-numeric-tabular">
                       {unreadLabel}
                     </p>
@@ -241,26 +132,26 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                 </div>
 
                 <div className="mt-2 flex items-center justify-end gap-2">
-                  {unreadCount > 0 && (
+                  {feed.unreadCount > 0 && (
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={markAllRead}
-                      disabled={markAllPending || loading}
-                      className="min-h-11 items-center gap-1.5 rounded-md px-2 text-xs font-semibold text-secondary dark:text-accent hover:bg-secondary/10 dark:hover:bg-accent/10 hover:text-secondary/80 dark:hover:text-accent/80"
+                      onClick={feed.markAllRead}
+                      disabled={feed.markAllPending || feed.loading}
+                      className="min-h-11 items-center gap-1.5 rounded-md px-2 text-xs font-semibold text-secondary hover:bg-secondary/10 hover:text-secondary/80 dark:text-accent dark:hover:bg-accent/10 dark:hover:text-accent/80"
                     >
-                      {markAllPending ? (
+                      {feed.markAllPending ? (
                         <RefreshCw
                           className={cn(
                             "h-3.5 w-3.5",
-                            !shouldReduceMotion && "animate-spin",
+                            spinMarkAllIcon && "animate-spin",
                           )}
                         />
                       ) : (
                         <CheckCheck className="h-3.5 w-3.5" />
                       )}
-                      {markAllPending
+                      {feed.markAllPending
                         ? t("notifications.updating")
                         : t("notifications.markAllRead")}
                     </Button>
@@ -270,7 +161,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => setOpenForCurrentPath(false)}
+                      onClick={closePanel}
                       className="h-11 w-11 rounded-full"
                       aria-label={t("notifications.close")}
                     >
@@ -280,24 +171,22 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                 </div>
               </div>
 
-              <div className="px-4 py-2 border-b border-border bg-muted/30">
+              <div className="border-b border-border bg-muted/30 px-4 py-2">
                 <div className="grid grid-cols-2 rounded-full bg-background p-1">
-                  {(["all", "unread"] as const).map((tab) => (
+                  {NOTIFICATION_FILTER_TABS.map((tab) => (
                     <button
                       key={tab}
                       type="button"
-                      aria-pressed={filterTab === tab}
-                      onClick={() => setFilterTab(tab)}
+                      aria-pressed={feed.filterTab === tab}
+                      onClick={() => feed.setFilterTab(tab)}
                       className={cn(
                         "min-h-11 rounded-full px-3 py-1 text-xs font-medium transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        filterTab === tab
+                        feed.filterTab === tab
                           ? "bg-foreground text-background"
                           : "text-muted-foreground hover:text-foreground",
                       )}
                     >
-                      {tab === "all"
-                        ? t("notifications.filter.all")
-                        : t("notifications.filter.unread")}
+                      {t(NOTIFICATION_FILTER_TAB_LABEL_KEY[tab])}
                     </button>
                   ))}
                 </div>
@@ -309,7 +198,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                   mobile ? "max-h-[min(60svh,24rem)]" : "max-h-[420px]",
                 )}
               >
-                {loading && (
+                {feed.loading && (
                   <div className="py-10">
                     <LoadingSpinner
                       size="sm"
@@ -318,13 +207,13 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                   </div>
                 )}
 
-                {!loading && panelError && (
+                {!feed.loading && panelError && (
                   <Alert
                     variant="destructive"
                     className="m-4 border-destructive/30"
                   >
                     <AlertTitle className="text-role-secondary">
-                      {actionError
+                      {feed.actionError
                         ? t("notifications.updateError")
                         : t("notifications.loadError")}
                     </AlertTitle>
@@ -336,7 +225,7 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                           variant="outline"
                           size="sm"
                           className="min-h-10"
-                          onClick={handleRetry}
+                          onClick={retryPanelLoad}
                         >
                           {t("common.retry")}
                         </Button>
@@ -345,15 +234,15 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                   </Alert>
                 )}
 
-                {!loading &&
+                {!feed.loading &&
                   !panelError &&
-                  filteredNotifications.length === 0 && (
-                    <div className="py-12 px-6 text-center space-y-2">
-                      <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                  feed.filteredNotifications.length === 0 && (
+                    <div className="space-y-2 px-6 py-12 text-center">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                         <Inbox className="h-6 w-6 text-muted-foreground/60" />
                       </div>
                       <p className="text-role-secondary font-semibold text-foreground">
-                        {filterTab === "unread"
+                        {feed.filterTab === "unread"
                           ? t("notifications.empty.unread")
                           : t("notifications.empty.all")}
                       </p>
@@ -363,17 +252,19 @@ const NotificationBell = ({ mobile = false }: NotificationBellProps) => {
                     </div>
                   )}
 
-                {!loading &&
+                {!feed.loading &&
                   !panelError &&
-                  filteredNotifications.length > 0 && (
+                  feed.filteredNotifications.length > 0 && (
                     <div className="space-y-2 p-3 [content-visibility:auto] [contain-intrinsic-size:420px]">
-                      {filteredNotifications.map((notification) => (
+                      {feed.filteredNotifications.map((notification) => (
                         <NotificationItem
                           key={notification.id}
                           notification={notification}
-                          onMarkRead={markAsRead}
-                          onDelete={removeNotification}
-                          pending={Boolean(itemPendingMap[notification.id])}
+                          onMarkRead={feed.markAsRead}
+                          onDelete={feed.removeNotification}
+                          pending={Boolean(
+                            feed.itemPendingMap[notification.id],
+                          )}
                         />
                       ))}
                     </div>

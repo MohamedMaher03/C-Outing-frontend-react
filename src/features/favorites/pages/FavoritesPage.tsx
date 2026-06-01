@@ -1,73 +1,33 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { AlertCircle, Heart, RefreshCw } from "lucide-react";
-import { useReducedMotion } from "framer-motion";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
-import { useFavorites } from "@/features/favorites/hooks/useFavorites";
-import { useI18n } from "@/components/i18n";
+import { useFavoritesPage } from "@/features/favorites/hooks/useFavoritesPage";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { useUserLocation } from "@/features/home/hooks/useUserLocation";
-import type { HomePlace } from "@/features/home/types";
 import { cn } from "@/lib/utils";
 
 const FavoritesPage = () => {
-  const { t, formatNumber } = useI18n();
-  const navigate = useNavigate();
-  const shouldReduceMotion = useReducedMotion();
-  const [isRefreshPending, setIsRefreshPending] = useState(false);
   const {
-    favorites,
-    loading,
-    error,
-    totalCount,
-    savePendingMap,
+    t,
+    userLocation,
+    viewPhase,
+    loadError,
     actionError,
-    toggleSave,
-    refreshFavorites,
+    savedPlaces,
+    savePendingMap,
+    listRefreshInFlight,
+    countLabel,
+    liveStatusMessage,
+    spinRefreshIcon,
+    runListRefresh,
+    unsavePlace,
+    openVenueDetail,
+    routeToHomeFeed,
     clearActionError,
-  } = useFavorites();
-  const userLocation = useUserLocation();
-  const formattedTotalCount = formatNumber(Math.max(0, totalCount));
-  const countLabel = t("favorites.countLabel", {
-    count: formattedTotalCount,
-  });
-  const pendingSaveCount = Object.keys(savePendingMap).length;
+  } = useFavoritesPage();
 
-  const favoritePlaces: HomePlace[] = favorites.map((favorite) => ({
-    ...favorite.venue,
-    isSaved: true,
-  }));
-
-  const handleToggleSave = async (id: string) => {
-    await toggleSave(id).catch(() => undefined);
-  };
-
-  const handleOpenVenue = (id: string) => {
-    navigate(`/venue/${id}`);
-  };
-
-  const handleNavigateHome = () => {
-    navigate("/");
-  };
-
-  const handleRetryLoad = async ({
-    showLoader = false,
-    showPageError = true,
-  }: {
-    showLoader?: boolean;
-    showPageError?: boolean;
-  } = {}) => {
-    setIsRefreshPending(true);
-    await refreshFavorites({ showLoader, showPageError }).catch(
-      () => undefined,
-    );
-    setIsRefreshPending(false);
-  };
-
-  if (loading && favorites.length === 0) {
+  if (viewPhase === "initial-loading") {
     return (
       <PageLoading
         text={t("favorites.loading.title")}
@@ -76,31 +36,26 @@ const FavoritesPage = () => {
     );
   }
 
-  if (error && favorites.length === 0) {
+  if (viewPhase === "fatal-error") {
     return (
       <div className="min-h-screen bg-background">
         <div className="mx-auto w-full max-w-2xl px-4 py-10">
           <Alert variant="destructive" className="border-destructive/30">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>{t("favorites.error.load")}</AlertTitle>
-            <AlertDescription className="break-words">{error}</AlertDescription>
+            <AlertDescription className="break-words">{loadError}</AlertDescription>
           </Alert>
 
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
-              onClick={() =>
-                handleRetryLoad({ showLoader: false, showPageError: true })
-              }
-              disabled={isRefreshPending}
+              onClick={() => runListRefresh()}
+              disabled={listRefreshInFlight}
               className="min-h-11 w-full rounded-xl px-4 sm:w-auto"
             >
               <RefreshCw
-                className={cn(
-                  "h-4 w-4",
-                  isRefreshPending && !shouldReduceMotion && "animate-spin",
-                )}
+                className={cn("h-4 w-4", spinRefreshIcon && "animate-spin")}
               />
               {t("common.retry")}
             </Button>
@@ -108,7 +63,7 @@ const FavoritesPage = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={handleNavigateHome}
+              onClick={routeToHomeFeed}
               className="min-h-11 w-full rounded-xl px-4 sm:w-auto"
             >
               {t("home.seeAll.backHome")}
@@ -120,16 +75,10 @@ const FavoritesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background" aria-busy={isRefreshPending}>
+    <div className="min-h-screen bg-background" aria-busy={listRefreshInFlight}>
       <div className="mx-auto w-full max-w-7xl px-4 py-8">
         <p className="sr-only" aria-live="polite" aria-atomic="true">
-          {isRefreshPending
-            ? t("favorites.live.refreshing")
-            : pendingSaveCount > 0
-              ? t("favorites.live.updating", {
-                  count: formatNumber(pendingSaveCount),
-                })
-              : t("favorites.live.upToDate")}
+          {liveStatusMessage}
         </p>
 
         <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 pb-4">
@@ -149,41 +98,28 @@ const FavoritesPage = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() =>
-              handleRetryLoad({
-                showLoader: false,
-                showPageError: true,
-              })
-            }
-            disabled={isRefreshPending}
+            onClick={() => runListRefresh()}
+            disabled={listRefreshInFlight}
             className="min-h-11 w-full rounded-xl px-4 sm:w-auto"
           >
             <RefreshCw
-              className={cn(
-                "h-4 w-4",
-                isRefreshPending && !shouldReduceMotion && "animate-spin",
-              )}
+              className={cn("h-4 w-4", spinRefreshIcon && "animate-spin")}
             />
             {t("favorites.action.refreshList")}
           </Button>
         </header>
 
-        {error && favorites.length > 0 && (
+        {loadError && savedPlaces.length > 0 && (
           <Alert variant="destructive" className="mt-4 border-destructive/30">
             <AlertTitle>{t("favorites.error.refresh")}</AlertTitle>
             <AlertDescription className="mt-2 space-y-2 text-role-secondary">
-              <p className="break-words">{error}</p>
+              <p className="break-words">{loadError}</p>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  handleRetryLoad({
-                    showLoader: false,
-                    showPageError: true,
-                  })
-                }
-                disabled={isRefreshPending}
+                onClick={() => runListRefresh()}
+                disabled={listRefreshInFlight}
                 className="min-h-10"
               >
                 {t("common.retry")}
@@ -217,7 +153,7 @@ const FavoritesPage = () => {
           />
         </div>
 
-        {favorites.length === 0 ? (
+        {savedPlaces.length === 0 ? (
           <section className="py-16 text-center">
             <Heart className="mx-auto h-10 w-10 text-muted-foreground/50" />
             <p className="mt-4 text-role-subheading text-foreground">
@@ -230,7 +166,7 @@ const FavoritesPage = () => {
               type="button"
               variant="secondary"
               size="lg"
-              onClick={handleNavigateHome}
+              onClick={routeToHomeFeed}
               className="mt-5 min-h-11 w-full rounded-xl px-6 sm:w-auto"
             >
               {t("favorites.empty.explore")}
@@ -238,14 +174,14 @@ const FavoritesPage = () => {
           </section>
         ) : (
           <section className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {favoritePlaces.map((place, index) => (
+            {savedPlaces.map((place, index) => (
               <PlaceCard
                 key={`${place.id}-${index}`}
                 place={place}
                 userLocation={userLocation}
-                onToggleSave={handleToggleSave}
+                onToggleSave={unsavePlace}
                 isSavePending={Boolean(savePendingMap[place.id])}
-                onClick={handleOpenVenue}
+                onClick={openVenueDetail}
               />
             ))}
           </section>

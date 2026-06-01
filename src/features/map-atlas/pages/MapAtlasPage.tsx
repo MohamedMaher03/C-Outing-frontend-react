@@ -464,28 +464,6 @@ export default function MapAtlasPage() {
                 )}
               </p>
             </div>
-
-            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 rounded-full px-4 max-sm:flex-1"
-                onClick={handleFitResults}
-              >
-                <Layers3 className="h-4 w-4" />
-                {t("mapAtlas.action.fit", undefined, "Fit results")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 rounded-full px-4 max-sm:flex-1"
-                onClick={handleCenterOnMe}
-                disabled={userLocation.status === "loading"}
-              >
-                <LocateFixed className="h-4 w-4" />
-                {t("mapAtlas.action.centerMe", undefined, "Center on me")}
-              </Button>
-            </div>
           </div>
 
           <div className="mt-4 grid gap-3 lg:grid-cols-[1.1fr_1fr]">
@@ -971,6 +949,45 @@ export default function MapAtlasPage() {
           className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,20rem)] 2xl:grid-cols-[minmax(0,1fr)_minmax(20rem,22rem)]"
         >
           <div className="space-y-3">
+            <div className="rounded-2xl border border-border/70 bg-card/85 px-3.5 py-3 shadow-sm backdrop-blur">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-role-caption uppercase text-muted-foreground">
+                    {t("mapAtlas.map.toolsLabel", undefined, "Map tools")}
+                  </p>
+                  <p className="mt-1 text-role-secondary text-muted-foreground">
+                    {t(
+                      "mapAtlas.map.toolsHint",
+                      undefined,
+                      "Refit the map or jump back to your location.",
+                    )}
+                  </p>
+                </div>
+
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11 flex-1 rounded-full px-4 sm:flex-none"
+                    onClick={handleFitResults}
+                  >
+                    <Layers3 className="h-4 w-4" />
+                    {t("mapAtlas.action.fit", undefined, "Fit results")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11 flex-1 rounded-full px-4 sm:flex-none"
+                    onClick={handleCenterOnMe}
+                    disabled={userLocation.status === "loading"}
+                  >
+                    <LocateFixed className="h-4 w-4" />
+                    {t("mapAtlas.action.centerMe", undefined, "Center on me")}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
             <MapAtlasCanvas
               places={mapPlaces}
               selectedPlaceId={selectedPlaceId}
@@ -1286,9 +1303,14 @@ export default function MapAtlasPage() {
             </p>
             <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
               <div>
-                <p className="text-role-subheading text-foreground">
+                <a
+                  href={`/venue/${selectedPlace.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-left text-role-subheading text-foreground underline-offset-4 transition hover:underline focus-visible:underline"
+                >
                   {selectedPlace.name}
-                </p>
+                </a>
                 <p className="text-role-secondary text-muted-foreground">
                   {selectedPlace.address}
                 </p>

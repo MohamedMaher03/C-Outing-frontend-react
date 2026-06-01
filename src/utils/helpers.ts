@@ -1,7 +1,3 @@
-/**
- * Helper Utilities
- * Shared utility functions used across the application
- */
 
 const getCurrentLocale = (): string => {
   if (typeof document !== "undefined") {
@@ -18,23 +14,14 @@ const getCurrentLocale = (): string => {
   return "en-US";
 };
 
-/**
- * Format rating value to display string
- */
 export function formatRating(rating: number, decimals: number = 2): string {
   return rating.toFixed(decimals);
 }
 
-/**
- * Format sentiment score (0-1) to percentage
- */
 export function formatSentiment(score: number): string {
   return `${(score * 100).toFixed(0)}%`;
 }
 
-/**
- * Format date to readable string
- */
 export function formatDate(
   date: Date | string,
   locale: string = getCurrentLocale(),
@@ -43,9 +30,7 @@ export function formatDate(
   return d.toLocaleDateString(locale);
 }
 
-/**
- * Format time to readable string (e.g., "2:30 PM")
- */
+
 export function formatTime(
   date: Date | string,
   locale: string = getCurrentLocale(),
@@ -57,9 +42,6 @@ export function formatTime(
   });
 }
 
-/**
- * Calculate distance in km between two coordinates
- */
 export function calculateDistance(
   lat1: number,
   lng1: number,
@@ -79,9 +61,7 @@ export function calculateDistance(
   return R * c;
 }
 
-/**
- * Debounce function to limit function execution
- */
+
 export function debounce<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number,
@@ -94,9 +74,7 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
   };
 }
 
-/**
- * Throttle function to limit function execution
- */
+
 export function throttle<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number,
@@ -112,9 +90,7 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
   };
 }
 
-/**
- * Get initials from name
- */
+
 export function getInitials(name: string): string {
   return name
     .split(" ")
@@ -124,14 +100,7 @@ export function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-/**
- * Get translated text from translation keys
- * Falls back to English text if translation key is not provided
- * @param translationKey - The i18n key (e.g., "places.nile-felucca.name")
- * @param fallbackText - The default English text
- * @param t - The translation function from useI18n hook
- * @returns The translated text or fallback text
- */
+
 export function getTranslatedText(
   translationKey: string | undefined,
   fallbackText: string,

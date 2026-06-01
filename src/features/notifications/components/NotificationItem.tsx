@@ -1,36 +1,11 @@
-import { useNavigate } from "react-router-dom";
-import { memo, useCallback } from "react";
-import {
-  Star,
-  Heart,
-  MessageSquare,
-  ThumbsUp,
-  MapPin,
-  Bell,
-  X,
-} from "lucide-react";
+import { memo } from "react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatRelativeNotificationTime } from "../utils/notificationPresentation";
-import type { Notification, NotificationType } from "../types";
+import { formatRelativeNotificationTime } from "@/features/notifications/utils/notificationPresentation";
+import { renderNotificationTypeGlyph } from "@/features/notifications/utils/notificationTypeGlyph";
+import { useNotificationItem } from "@/features/notifications/hooks/useNotificationItem";
+import type { Notification } from "@/features/notifications/types";
 import { useI18n } from "@/components/i18n";
-
-const renderNotificationTypeIcon = (type: string, className: string) => {
-  switch (type as NotificationType) {
-    case "recommendation":
-      return <Star className={className} />;
-    case "favorite_update":
-      return <Heart className={className} />;
-    case "review_response":
-      return <MessageSquare className={className} />;
-    case "like":
-      return <ThumbsUp className={className} />;
-    case "new_place":
-      return <MapPin className={className} />;
-    case "system":
-    default:
-      return <Bell className={className} />;
-  }
-};
 
 interface NotificationItemProps {
   notification: Notification;
@@ -46,50 +21,8 @@ const NotificationItem = ({
   pending = false,
 }: NotificationItemProps) => {
   const { t } = useI18n();
-  const navigate = useNavigate();
-
-  const destinationUrl = notification.actionUrl?.replace(
-    /^\/venue(\/|$)/,
-    "/venues$1",
-  );
-
-  const handleClick = useCallback(() => {
-    if (pending) return;
-
-    if (!notification.isRead) {
-      void onMarkRead(notification.id);
-    }
-
-    if (destinationUrl?.startsWith("/")) {
-      navigate(destinationUrl);
-    }
-  }, [
-    destinationUrl,
-    navigate,
-    notification.id,
-    notification.isRead,
-    onMarkRead,
-    pending,
-  ]);
-
-  const handleDelete = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (pending) return;
-      void onDelete(notification.id);
-    },
-    [notification.id, onDelete, pending],
-  );
-
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        handleClick();
-      }
-    },
-    [handleClick],
-  );
+  const { openNotificationTarget, dismissNotification, activateFromKeyboard } =
+    useNotificationItem({ notification, onMarkRead, onDelete, pending });
 
   return (
     <div
@@ -97,14 +30,14 @@ const NotificationItem = ({
       tabIndex={0}
       aria-busy={pending}
       aria-label={notification.title || t("notifications.item")}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
+      onClick={openNotificationTarget}
+      onKeyDown={activateFromKeyboard}
       className={cn(
-        "group relative flex min-h-24 touch-manipulation items-start gap-3 rounded-xl border p-3 transition-all duration-200 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:gap-4 sm:p-4",
+        "group relative flex min-h-24 cursor-pointer touch-manipulation select-none items-start gap-3 rounded-xl border p-3 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:gap-4 sm:p-4",
         notification.isRead
-          ? "bg-card border-border hover:bg-muted/30"
-          : "bg-secondary/5 border-secondary/25 hover:bg-secondary/10",
-        pending && "opacity-80 cursor-wait",
+          ? "border-border bg-card hover:bg-muted/30"
+          : "border-secondary/25 bg-secondary/5 hover:bg-secondary/10",
+        pending && "cursor-wait opacity-80",
       )}
     >
       {!notification.isRead && (
@@ -119,10 +52,13 @@ const NotificationItem = ({
             : "bg-secondary/15 text-secondary-foreground",
         )}
       >
-        {renderNotificationTypeIcon(notification.type, "h-4 w-4 sm:h-5 sm:w-5")}
+        {renderNotificationTypeGlyph(
+          notification.type,
+          "h-4 w-4 sm:h-5 sm:w-5",
+        )}
       </div>
 
-      <div dir="auto" className="flex-1 min-w-0 space-y-0.5 pr-6">
+      <div dir="auto" className="min-w-0 flex-1 space-y-0.5 pr-6">
         <p
           className={cn(
             "line-clamp-2 break-words text-role-secondary leading-snug",
@@ -145,7 +81,7 @@ const NotificationItem = ({
         aria-label={t("notifications.delete")}
         type="button"
         disabled={pending}
-        onClick={handleDelete}
+        onClick={dismissNotification}
         className="absolute top-1 inline-flex h-11 w-11 items-center justify-center rounded-full bg-muted/60 text-muted-foreground transition-opacity hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed sm:top-2 md:opacity-0 md:group-hover:opacity-100 group-focus-within:opacity-100 [inset-inline-end:0.25rem] sm:[inset-inline-end:0.5rem]"
       >
         <X className="h-4 w-4" />

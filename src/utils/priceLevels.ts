@@ -54,7 +54,7 @@ export const PRICE_LEVEL_OPTIONS: PriceLevelOption[] = PRICE_LEVEL_VALUES.map(
     ...PRICE_LEVEL_META[value],
   }),
 );
-//here i become have shape like this :
+//here i becme have shape like this :
 // {
 //   value: "cheap",
 //   label: "Value",
@@ -70,7 +70,7 @@ export const BUDGET_OPTIONS: Array<{
   label: `${option.label} (${option.symbol})`,
 }));
 /*'
-This code can separte 
+by this code can separte 
 in ui use label ->Value ($$) or Luxury ($$$$$)
 but system-> will only get value like cheap or luxury when user select an option
 */

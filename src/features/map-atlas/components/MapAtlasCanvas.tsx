@@ -220,7 +220,7 @@ function MapAtlasCanvas({
 
     mapRef.current.flyTo(
       [userLocation.coordinates.latitude, userLocation.coordinates.longitude],
-      Math.max(mapRef.current.getZoom(), 14),
+      Math.max(mapRef.current.getZoom(), 16),
       {
         duration: shouldReduceMotion ? 0 : 0.55,
       },
@@ -358,9 +358,14 @@ function MapAtlasCanvas({
               {isSelected && (
                 <Popup closeButton={false} className="map-atlas-popup">
                   <div className="space-y-1.5">
-                    <p className="text-sm font-semibold leading-tight text-foreground">
+                    <a
+                      href={`/venue/${place.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-left text-sm font-semibold leading-tight text-foreground underline-offset-4 transition hover:underline focus-visible:underline"
+                    >
                       {place.name}
-                    </p>
+                    </a>
                     <p className="line-clamp-2 text-xs text-muted-foreground">
                       {place.address}
                     </p>
