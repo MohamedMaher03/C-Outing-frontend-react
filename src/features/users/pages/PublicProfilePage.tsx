@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   Activity,
   AlertCircle,
@@ -13,27 +12,23 @@ import {
   User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useI18n } from "@/components/i18n";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import { usePublicProfile } from "../hooks/usePublicProfile";
+import { usePublicProfilePage } from "@/features/users/hooks/usePublicProfilePage";
+import {
+  clampStarRating,
+  formatProfileActivityDate,
+} from "@/features/users/utils/publicProfilePresentation";
 
-const toDisplayDate = (
-  value: string | Date,
-  formatter: Intl.DateTimeFormat,
-  fallback: string,
-): string => {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return fallback;
-  }
-  return formatter.format(parsed);
-};
-
-function StarRow({ rating }: { rating: number }) {
-  const { t } = useI18n();
-  const safeRating = Math.min(5, Math.max(0, Math.round(rating)));
+function StarRow({
+  rating,
+  t,
+}: {
+  rating: number;
+  t: ReturnType<typeof usePublicProfilePage>["t"];
+}) {
+  const safeRating = clampStarRating(rating);
   const ratingLabel = t("users.publicProfile.ratingLabel", {
     rating: safeRating,
   });
@@ -84,11 +79,9 @@ function StatPill({
 }
 
 const PublicProfilePage = () => {
-  const { t, locale } = useI18n();
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-
   const {
+    t,
+    dateFormatter,
     profile,
     reviews,
     loading,
@@ -96,23 +89,13 @@ const PublicProfilePage = () => {
     error,
     reviewsWarning,
     isOwnProfile,
-    reload,
+    sidebarView,
+    liveStatusMessage,
+    recentCountLabel,
+    goBack,
+    retryProfileLoad,
     clearReviewsWarning,
-  } = usePublicProfile(id ?? "");
-
-  const numberFormatter = useMemo(
-    () => new Intl.NumberFormat(locale),
-    [locale],
-  );
-  const dateFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }),
-    [locale],
-  );
+  } = usePublicProfilePage();
 
   if (loading) {
     return (
@@ -123,7 +106,7 @@ const PublicProfilePage = () => {
     );
   }
 
-  if (error || !profile) {
+  if (error || !profile || !sidebarView) {
     return (
       <div className="mx-auto flex min-h-[70vh] w-full max-w-lg items-center px-4">
         <div className="w-full space-y-4">
@@ -138,7 +121,7 @@ const PublicProfilePage = () => {
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              onClick={() => void reload()}
+              onClick={retryProfileLoad}
               disabled={isReloading}
               className="min-h-11 w-full touch-manipulation sm:w-auto"
             >
@@ -149,7 +132,7 @@ const PublicProfilePage = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate(-1)}
+              onClick={goBack}
               disabled={isReloading}
               className="min-h-11 w-full touch-manipulation sm:w-auto"
             >
@@ -161,37 +144,20 @@ const PublicProfilePage = () => {
     );
   }
 
-  const joinedYear = profile.joinedDate
-    ? new Date(profile.joinedDate).getFullYear()
-    : null;
-  const isBanned = Boolean(profile.isBanned);
-  const hasAgeBadge = typeof profile.age === "number" && profile.age >= 0;
-  const showMetaBadges = hasAgeBadge || isBanned;
-  const reviewCount = numberFormatter.format(Math.max(0, profile.reviewCount));
-  const recentCount = numberFormatter.format(reviews.length);
-  const interactionCount = numberFormatter.format(
-    Math.max(0, profile.totalInteractions ?? 0),
-  );
-  const profileBio = profile.bio?.trim() ?? "";
-
   return (
     <main
       className="mx-auto w-full max-w-6xl pb-10 lg:pb-14"
       aria-busy={isReloading}
     >
       <p className="sr-only" aria-live="polite" aria-atomic="true">
-        {isReloading
-          ? t("users.publicProfile.live.refreshing")
-          : reviewsWarning
-            ? t("users.publicProfile.live.partial")
-            : t("users.publicProfile.live.upToDate")}
+        {liveStatusMessage}
       </p>
 
       <div className="px-4 pt-4 md:pt-5">
         <Button
           type="button"
           variant="ghost"
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           className="min-h-11 touch-manipulation gap-2 px-3 text-sm text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground motion-reduce:transition-none"
         >
           <ArrowLeft
@@ -227,9 +193,9 @@ const PublicProfilePage = () => {
                   {profile.name}
                 </h1>
 
-                {showMetaBadges && (
+                {sidebarView.showMetaBadges && (
                   <div className="flex flex-wrap items-center justify-center gap-1.5 text-role-caption sm:justify-start">
-                    {isBanned && (
+                    {sidebarView.isBanned && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-secondary/50 bg-secondary/22 px-2.5 py-1 font-medium text-white dark:border-primary-foreground/32 dark:bg-primary-foreground/12 dark:text-primary-foreground">
                         <ShieldAlert
                           className="h-3 w-3 text-secondary dark:text-primary"
@@ -241,7 +207,7 @@ const PublicProfilePage = () => {
                   </div>
                 )}
 
-                {joinedYear && (
+                {sidebarView.joinedYear && (
                   <div className="flex items-center justify-center gap-1 text-role-caption text-white/88 sm:justify-start dark:text-primary-foreground/88">
                     <CalendarDays
                       className="h-3.5 w-3.5 text-secondary dark:text-secondary"
@@ -249,7 +215,7 @@ const PublicProfilePage = () => {
                     />
                     <span>
                       {t("users.publicProfile.memberSince", {
-                        year: joinedYear,
+                        year: sidebarView.joinedYear,
                       })}
                     </span>
                   </div>
@@ -274,7 +240,7 @@ const PublicProfilePage = () => {
                     className="mt-1.5 text-role-secondary max-w-prose break-words leading-relaxed text-white/95 dark:text-primary-foreground/94"
                     dir="auto"
                   >
-                    {profileBio || t("users.publicProfile.bioUnavailable")}
+                    {sidebarView.profileBio || t("users.publicProfile.bioUnavailable")}
                   </p>
                 </div>
               </div>
@@ -282,15 +248,15 @@ const PublicProfilePage = () => {
 
             <div className="relative mt-5 grid grid-cols-2 gap-3 border-t border-secondary/45 pt-4 dark:border-primary-foreground/22 sm:grid-cols-3">
               <StatPill
-                value={reviewCount}
+                value={sidebarView.reviewCountLabel}
                 label={t("users.publicProfile.stats.reviews")}
               />
               <StatPill
-                value={recentCount}
+                value={sidebarView.recentCountLabel}
                 label={t("users.publicProfile.stats.recent")}
               />
               <StatPill
-                value={interactionCount}
+                value={sidebarView.interactionCountLabel}
                 label={t("users.publicProfile.stats.interactions")}
                 className="col-span-2 sm:col-span-1"
               />
@@ -326,7 +292,7 @@ const PublicProfilePage = () => {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => void reload()}
+                    onClick={retryProfileLoad}
                     disabled={isReloading}
                     className="min-h-11 w-full touch-manipulation gap-1.5 transition-colors duration-200 ease-out motion-reduce:transition-none sm:w-auto"
                   >
@@ -353,7 +319,7 @@ const PublicProfilePage = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => void reload()}
+                      onClick={retryProfileLoad}
                       disabled={isReloading}
                       className="min-h-11 w-full touch-manipulation sm:w-auto"
                     >
@@ -383,7 +349,7 @@ const PublicProfilePage = () => {
               {t("users.publicProfile.recentReviews")}
             </h2>
             <span className="text-role-secondary text-muted-foreground text-numeric-tabular">
-              {t("users.publicProfile.shownCount", { count: recentCount })}
+              {t("users.publicProfile.shownCount", { count: recentCountLabel })}
             </span>
           </div>
 
@@ -412,7 +378,7 @@ const PublicProfilePage = () => {
                         {review.placeName}
                       </span>
                     </div>
-                    <StarRow rating={review.rating} />
+                    <StarRow rating={review.rating} t={t} />
                   </div>
 
                   <p
@@ -423,7 +389,7 @@ const PublicProfilePage = () => {
                   </p>
 
                   <p className="text-role-caption mt-2 text-muted-foreground/70">
-                    {toDisplayDate(
+                    {formatProfileActivityDate(
                       review.date,
                       dateFormatter,
                       t("users.publicProfile.dateUnavailable"),

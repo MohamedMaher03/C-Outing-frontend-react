@@ -1,198 +1,53 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type ClipboardEvent,
-  type FormEvent,
-} from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Mail, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InlineLoading } from "@/components/ui/LoadingSpinner";
 import { Input } from "@/components/ui/input";
-import { useVerifyEmail } from "@/features/auth/hooks/useVerifyEmail";
-import { AUTH_OTP_LENGTH } from "@/features/auth/constants";
-import { useAuth } from "@/features/auth/context/AuthContext";
 import {
   AuthShell,
   AuthSurface,
 } from "@/features/auth/components/layout/AuthShell";
 import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
-import { useI18n } from "@/components/i18n";
-import { normalizeEmail } from "@/utils/textNormalization";
+import { useVerifyEmailPage } from "@/features/auth/hooks/useVerifyEmailPage";
+import { otpDigitCellClassName } from "@/features/auth/utils/otpDigitInput";
 
-const OTP_LENGTH = AUTH_OTP_LENGTH;
-const RESEND_COOLDOWN_SECONDS = 60;
-const SIMPLE_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function maskEmail(email: string): string {
-  const [local, domain] = email.split("@");
-  if (!domain || local.length <= 2) return email;
-  return `${local[0]}${"*".repeat(local.length - 2)}${local[local.length - 1]}@${domain}`;
-}
-
-const isValidEmail = (value: string): boolean =>
-  SIMPLE_EMAIL_PATTERN.test(normalizeEmail(value));
+const VerifyEmailHelpPanel = ({ t }: { t: (key: string) => string }) => (
+  <div className="space-y-2 rounded-xl border border-border/70 bg-background/60 p-4 text-sm text-muted-foreground">
+    <p className="font-medium text-foreground">{t("auth.verify.help.title")}</p>
+    <p>{t("auth.verify.help.step1")}</p>
+    <p>{t("auth.verify.help.step2")}</p>
+    <p>{t("auth.verify.help.step3")}</p>
+  </div>
+);
 
 export default function VerifyEmailPage() {
-  const { t, formatNumber } = useI18n();
-  const navigate = useNavigate();
-  const location = useLocation();
   const {
-    pendingVerificationEmail,
-    setPendingVerificationEmail,
-    clearPendingVerificationEmail,
-  } = useAuth();
-
-  const routeStateEmail = normalizeEmail(
-    (location.state as { email?: string } | null)?.email ?? "",
-  );
-  const queryEmail = normalizeEmail(
-    new URLSearchParams(location.search).get("email") ?? "",
-  );
-  const email = routeStateEmail || queryEmail || pendingVerificationEmail || "";
-  const hasEmailContext = email.length > 0;
-
-  const { verifyOtp, resendOtp, isLoading, isResending, error, clearError } =
-    useVerifyEmail();
-
-  const [emailEntry, setEmailEntry] = useState(email);
-  const [emailEntryError, setEmailEntryError] = useState<string | null>(null);
-  const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
-  const [countdown, setCountdown] = useState(RESEND_COOLDOWN_SECONDS);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const successTimeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (!hasEmailContext) return;
-    setPendingVerificationEmail(email);
-  }, [email, hasEmailContext, setPendingVerificationEmail]);
-
-  useEffect(() => {
-    if (!hasEmailContext) return;
-
-    if (countdown <= 0) return;
-
-    const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(id);
-  }, [countdown, hasEmailContext]);
-
-  useEffect(
-    () => () => {
-      if (successTimeoutRef.current !== null) {
-        window.clearTimeout(successTimeoutRef.current);
-      }
-    },
-    [],
-  );
-
-  const handleDigitChange = (index: number, raw: string) => {
-    const pasted = raw.replace(/\D/g, "");
-    if (pasted.length > 1) {
-      const next = [...digits];
-      pasted
-        .split("")
-        .slice(0, OTP_LENGTH)
-        .forEach((d, i) => {
-          if (index + i < OTP_LENGTH) next[index + i] = d;
-        });
-      setDigits(next);
-      const focusIndex = Math.min(index + pasted.length, OTP_LENGTH - 1);
-      inputRefs.current[focusIndex]?.focus();
-      return;
-    }
-
-    if (!/^\d?$/.test(raw)) return;
-    const next = [...digits];
-    next[index] = raw;
-    setDigits(next);
-    if (raw && index < OTP_LENGTH - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !digits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData("text").replace(/\D/g, "");
-    if (!text) return;
-    const next = Array(OTP_LENGTH).fill("");
-    text
-      .split("")
-      .slice(0, OTP_LENGTH)
-      .forEach((d, i) => (next[i] = d));
-    setDigits(next);
-    inputRefs.current[Math.min(text.length, OTP_LENGTH - 1)]?.focus();
-  };
-
-  const otp = digits.join("");
-  const isComplete = otp.length === OTP_LENGTH && digits.every((d) => d !== "");
-  const maskedEmail = hasEmailContext ? `\u2068${maskEmail(email)}\u2069` : "";
-  const canResend = countdown <= 0;
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!hasEmailContext || !isComplete || isLoading) return;
-    clearError();
-    const success = await verifyOtp(email, otp);
-    if (success) {
-      clearPendingVerificationEmail();
-      navigate("/onboarding", { replace: true });
-    }
-  };
-
-  const handleResend = async () => {
-    if (!hasEmailContext || !canResend || isResending) return;
-
-    clearError();
-    const success = await resendOtp(email);
-    if (success) {
-      setPendingVerificationEmail(email);
-      setCountdown(RESEND_COOLDOWN_SECONDS);
-      setDigits(Array(OTP_LENGTH).fill(""));
-      setSuccessMessage(t("auth.verify.newCodeSent"));
-      inputRefs.current[0]?.focus();
-      if (successTimeoutRef.current !== null) {
-        window.clearTimeout(successTimeoutRef.current);
-      }
-      successTimeoutRef.current = window.setTimeout(
-        () => setSuccessMessage(null),
-        4000,
-      );
-    }
-  };
-
-  const handleStartRecovery = async () => {
-    const normalizedEmail = normalizeEmail(emailEntry);
-
-    if (!isValidEmail(normalizedEmail)) {
-      setEmailEntryError(t("auth.validation.invalidEmail"));
-      return;
-    }
-
-    setEmailEntryError(null);
-    clearError();
-
-    const success = await resendOtp(normalizedEmail);
-    if (!success) return;
-
-    setPendingVerificationEmail(normalizedEmail);
-    setSuccessMessage(t("auth.verify.recovery.codeSent"));
-    setCountdown(RESEND_COOLDOWN_SECONDS);
-
-    navigate(`/verify-email?email=${encodeURIComponent(normalizedEmail)}`, {
-      replace: true,
-      state: { email: normalizedEmail },
-    });
-  };
+    t,
+    formatNumber,
+    digits,
+    otpLength,
+    otpComplete,
+    assignInputRef,
+    handleDigitChange,
+    handleKeyDown,
+    handlePaste,
+    isLoading,
+    isResending,
+    error,
+    clearError,
+    hasEmailContext,
+    emailEntry,
+    emailEntryError,
+    resendCountdown,
+    successMessage,
+    maskedEmailForDisplay,
+    canResendVerification,
+    submitOtpVerification,
+    resendVerificationCode,
+    startEmailRecovery,
+    updateEmailEntry,
+    goToLogin,
+    goToRegister,
+  } = useVerifyEmailPage();
 
   if (!hasEmailContext) {
     return (
@@ -200,7 +55,7 @@ export default function VerifyEmailPage() {
         <AuthSurface>
           <button
             type="button"
-            onClick={() => navigate("/login")}
+            onClick={goToLogin}
             className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 text-sm text-muted-foreground transition-colors hover:text-foreground/90"
           >
             <ArrowLeft className="rtl-mirror h-4 w-4" />
@@ -237,10 +92,7 @@ export default function VerifyEmailPage() {
               id="verify-recovery-email"
               type="email"
               value={emailEntry}
-              onChange={(event) => {
-                setEmailEntry(event.target.value);
-                if (emailEntryError) setEmailEntryError(null);
-              }}
+              onChange={(event) => updateEmailEntry(event.target.value)}
               placeholder={t("auth.placeholders.email")}
               disabled={isResending}
               autoComplete="email"
@@ -256,9 +108,7 @@ export default function VerifyEmailPage() {
             type="button"
             className="w-full"
             disabled={isResending}
-            onClick={() => {
-              void handleStartRecovery();
-            }}
+            onClick={() => void startEmailRecovery()}
           >
             {isResending ? (
               <span className="inline-flex items-center gap-2">
@@ -270,14 +120,7 @@ export default function VerifyEmailPage() {
             )}
           </Button>
 
-          <div className="space-y-2 rounded-xl border border-border/70 bg-background/60 p-4 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">
-              {t("auth.verify.help.title")}
-            </p>
-            <p>{t("auth.verify.help.step1")}</p>
-            <p>{t("auth.verify.help.step2")}</p>
-            <p>{t("auth.verify.help.step3")}</p>
-          </div>
+          <VerifyEmailHelpPanel t={t} />
         </AuthSurface>
       </AuthShell>
     );
@@ -288,7 +131,7 @@ export default function VerifyEmailPage() {
       <AuthSurface>
         <button
           type="button"
-          onClick={() => navigate("/register")}
+          onClick={goToRegister}
           className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 text-sm text-muted-foreground transition-colors hover:text-foreground/90"
         >
           <ArrowLeft className="rtl-mirror h-4 w-4" />
@@ -306,7 +149,7 @@ export default function VerifyEmailPage() {
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
             {t("auth.verify.subtitle", {
-              email: maskedEmail,
+              email: maskedEmailForDisplay,
             })}
           </p>
         </div>
@@ -318,7 +161,7 @@ export default function VerifyEmailPage() {
         )}
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={submitOtpVerification}
           className="space-y-6"
           noValidate
           aria-busy={isLoading}
@@ -327,9 +170,7 @@ export default function VerifyEmailPage() {
             {digits.map((digit, index) => (
               <input
                 key={index}
-                ref={(el) => {
-                  inputRefs.current[index] = el;
-                }}
+                ref={assignInputRef(index)}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
@@ -337,21 +178,14 @@ export default function VerifyEmailPage() {
                 autoFocus={index === 0}
                 aria-label={t("auth.otpDigit", {
                   current: index + 1,
-                  total: OTP_LENGTH,
+                  total: otpLength,
                 })}
-                onChange={(e) => handleDigitChange(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
+                onChange={(event) =>
+                  handleDigitChange(index, event.target.value)
+                }
+                onKeyDown={(event) => handleKeyDown(index, event)}
                 onPaste={handlePaste}
-                className={[
-                  "h-12 w-10 rounded-lg border text-center text-lg font-semibold sm:w-11",
-                  "bg-background/70 text-foreground",
-                  "transition-colors duration-200 ease-out",
-                  "focus:outline-none focus:ring-2 focus:ring-primary/35 focus:border-primary/40",
-                  digit
-                    ? "border-primary/45 bg-primary/10"
-                    : "border-border/70",
-                  isLoading ? "opacity-50 cursor-not-allowed" : "",
-                ].join(" ")}
+                className={otpDigitCellClassName(Boolean(digit), isLoading)}
                 disabled={isLoading}
               />
             ))}
@@ -360,7 +194,7 @@ export default function VerifyEmailPage() {
           <Button
             type="submit"
             className="w-full font-medium shadow-sm hover:bg-primary/95"
-            disabled={!isComplete || isLoading}
+            disabled={!otpComplete || isLoading}
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
@@ -377,10 +211,10 @@ export default function VerifyEmailPage() {
           <p className="text-sm text-muted-foreground">
             {t("auth.verify.noCode")}
           </p>
-          {canResend ? (
+          {canResendVerification ? (
             <button
               type="button"
-              onClick={handleResend}
+              onClick={resendVerificationCode}
               disabled={isResending}
               className="inline-flex min-h-11 items-center gap-1.5 px-2 text-sm font-medium text-secondary transition-colors hover:text-secondary/90 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary dark:hover:text-primary/90"
             >
@@ -399,20 +233,13 @@ export default function VerifyEmailPage() {
           ) : (
             <p className="text-sm font-medium text-secondary dark:text-primary">
               {t("auth.verify.resendIn", {
-                seconds: formatNumber(countdown),
+                seconds: formatNumber(resendCountdown),
               })}
             </p>
           )}
         </div>
 
-        <div className="space-y-2 rounded-xl border border-border/70 bg-background/60 p-4 text-sm text-muted-foreground">
-          <p className="font-medium text-foreground">
-            {t("auth.verify.help.title")}
-          </p>
-          <p>{t("auth.verify.help.step1")}</p>
-          <p>{t("auth.verify.help.step2")}</p>
-          <p>{t("auth.verify.help.step3")}</p>
-        </div>
+        <VerifyEmailHelpPanel t={t} />
       </AuthSurface>
     </AuthShell>
   );

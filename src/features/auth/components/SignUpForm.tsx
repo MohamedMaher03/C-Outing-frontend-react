@@ -1,10 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { signUpSchema } from "@/features/auth/validation/signUp.schema";
-import type { SignUpFormData } from "@/features/auth/validation/signUp.schema";
-import type { SignUpFormInput } from "@/features/auth/validation/signUp.schema";
-import { PasswordInput } from "./form/PasswordInput";
 import { ArrowLeft, Check, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InlineLoading } from "@/components/ui/LoadingSpinner";
@@ -12,116 +5,42 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { FormError } from "@/components/ui/form-error";
 import { FormField } from "./form/FormField";
-import { useNavigate } from "react-router-dom";
-import { useSignUp } from "@/features/auth/hooks/useSignUp";
-import { SIGN_UP_FORM_FIELDS } from "@/features/auth/mocks";
-import type { SignUpFieldConfig } from "@/features/auth/types";
+import { PasswordInput } from "./form/PasswordInput";
 import { AuthShell, AuthSurface } from "./layout/AuthShell";
 import { AuthStatusBanner } from "./ui/AuthStatusBanner";
-import { useI18n } from "@/components/i18n";
-import { AUTH_PASSWORD_RULES } from "../constants";
-import {
-  COUNTRIES,
-  CUSTOM_COUNTRY_VALUE,
-  DEFAULT_COUNTRY,
-  SIGN_UP_BACKEND_FIELD_MAP,
-  normalizePhone,
-} from "../../../utils/SignUpForm.constants";
-
-const toSignUpFieldName = (rawField: string) => {
-  const normalized = rawField
-    .trim()
-    .split(".")
-    .pop()
-    ?.replace(/\[[0-9]+\]/g, "")
-    .toLowerCase();
-
-  return normalized ? SIGN_UP_BACKEND_FIELD_MAP[normalized] : undefined;
-};
+import { useSignUpPage } from "@/features/auth/hooks/useSignUpPage";
+import { SIGN_UP_FORM_FIELDS } from "@/features/auth/mocks";
+import type { SignUpFieldConfig } from "@/features/auth/types";
 
 const SignUpForm = () => {
-  const { t } = useI18n();
-  const navigate = useNavigate();
-  const { registerUser, isLoading, error, validationErrors, clearError } =
-    useSignUp();
-  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY);
-  const activeCountryCode =
-    countryCode === CUSTOM_COUNTRY_VALUE ? "" : countryCode;
-  const countryLabel = useMemo(() => {
-    if (countryCode === CUSTOM_COUNTRY_VALUE)
-      return t("auth.phoneCountryOther");
-    const match = COUNTRIES.find((country) => country.code === countryCode);
-    return match ? match.label : "";
-  }, [countryCode, t]);
+  const {
+    t,
+    form,
+    isLoading,
+    error,
+    clearError,
+    countryCode,
+    setCountryCode,
+    countryLabel,
+    passwordStrengthIndicators,
+    submitRegistration,
+    goToLogin,
+    countries,
+    customCountryValue,
+  } = useSignUpPage();
 
   const {
     register,
     handleSubmit,
-    clearErrors,
-    setError,
-    reset,
-    control,
     formState: { errors },
-  } = useForm<SignUpFormInput, unknown, SignUpFormData>({
-    resolver: zodResolver(signUpSchema),
-  });
-
-  const passwordValue = useWatch({ control, name: "password" }) ?? "";
-  const passwordRules = [
-    {
-      id: "min",
-      label: t("auth.passwordRuleMinChars", {
-        min: AUTH_PASSWORD_RULES.MIN_LENGTH,
-      }),
-      satisfied: passwordValue.length >= AUTH_PASSWORD_RULES.MIN_LENGTH,
-    },
-    {
-      id: "upperLower",
-      label: t("auth.passwordRuleUpperLower"),
-      satisfied: /[a-z]/.test(passwordValue) && /[A-Z]/.test(passwordValue),
-    },
-    {
-      id: "number",
-      label: t("auth.passwordRuleNumber"),
-      satisfied: /\d/.test(passwordValue),
-    },
-    {
-      id: "specialChar",
-      label: t("auth.passwordRuleSpecialChar"),
-      satisfied: /[^\w\s]/.test(passwordValue),
-    },
-  ];
-
-  useEffect(() => {
-    if (!validationErrors) return;
-
-    Object.entries(validationErrors).forEach(([backendField, messages]) => {
-      const formField = toSignUpFieldName(backendField);
-      const message = messages[0];
-
-      if (!formField || !message) return;
-      setError(formField, { type: "server", message });
-    });
-  }, [setError, validationErrors]);
-
-  const onSubmit = async (data: SignUpFormData) => {
-    clearError();
-    clearErrors();
-
-    const normalizedPhone = normalizePhone(data.phone, activeCountryCode);
-    const success = await registerUser({ ...data, phone: normalizedPhone });
-    if (success) {
-      reset();
-      navigate("/verify-email", { state: { email: data.email } });
-    }
-  };
+  } = form;
 
   return (
     <AuthShell maxWidth="2xl">
       <AuthSurface>
         <button
           type="button"
-          onClick={() => navigate("/login")}
+          onClick={goToLogin}
           className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 text-sm text-muted-foreground transition-colors hover:text-foreground/90"
         >
           <ArrowLeft className="rtl-mirror h-4 w-4" />
@@ -138,7 +57,7 @@ const SignUpForm = () => {
         {error && <AuthStatusBanner message={error} onDismiss={clearError} />}
 
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(submitRegistration)}
           className="space-y-5"
           noValidate
           aria-busy={isLoading}
@@ -168,12 +87,12 @@ const SignUpForm = () => {
                         aria-label={`${t("auth.phoneCountryLabel")}: ${countryLabel}`}
                         disabled={isLoading}
                       >
-                        {COUNTRIES.map((country) => (
+                        {countries.map((country) => (
                           <option key={country.code} value={country.code}>
                             {country.label} {country.code}
                           </option>
                         ))}
-                        <option value={CUSTOM_COUNTRY_VALUE}>
+                        <option value={customCountryValue}>
                           {t("auth.phoneCountryOther")}
                         </option>
                       </select>
@@ -185,7 +104,7 @@ const SignUpForm = () => {
                         inputMode="numeric"
                         autoComplete="tel-national"
                         placeholder={
-                          countryCode === CUSTOM_COUNTRY_VALUE
+                          countryCode === customCountryValue
                             ? t("auth.placeholders.phoneInternational")
                             : t("auth.placeholders.phoneNational")
                         }
@@ -250,12 +169,9 @@ const SignUpForm = () => {
               <p className="text-sm font-semibold text-foreground">
                 {t("auth.passwordRulesTitle")}
               </p>
-              {/* <span className="text-xs text-muted-foreground">
-                {t("auth.passwordRulesHint")}
-              </span> */}
             </div>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-              {passwordRules.map((rule) => (
+              {passwordStrengthIndicators.map((rule) => (
                 <li
                   key={rule.id}
                   className={`flex items-start gap-2 text-xs sm:text-sm ${
@@ -339,7 +255,7 @@ const SignUpForm = () => {
           <span>{t("auth.alreadyHaveAccount")}</span>
           <button
             type="button"
-            onClick={() => navigate("/login")}
+            onClick={goToLogin}
             className="inline-flex min-h-11 items-center px-1.5 font-semibold text-primary transition-colors hover:text-primary"
           >
             {t("auth.signIn")}

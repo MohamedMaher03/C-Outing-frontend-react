@@ -1,127 +1,58 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type ClipboardEvent,
-} from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { Controller } from "react-hook-form";
+import { Navigate } from "react-router-dom";
 import { ArrowLeft, KeyRound, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormError } from "@/components/ui/form-error";
 import { InlineLoading } from "@/components/ui/LoadingSpinner";
-import { useResetPassword } from "@/features/auth/hooks/useResetPassword";
-import { AUTH_OTP_LENGTH } from "@/features/auth/constants";
-import {
-  resetPasswordSchema,
-  type ResetPasswordFormData,
-} from "@/features/auth/validation/resetPassword.schema";
 import {
   AuthShell,
   AuthSurface,
 } from "@/features/auth/components/layout/AuthShell";
 import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
-import { useI18n } from "@/components/i18n";
-
-const OTP_LENGTH = AUTH_OTP_LENGTH;
-
-function maskEmail(email: string): string {
-  const [local, domain] = email.split("@");
-  if (!domain || local.length <= 2) return email;
-  return `${local[0]}${"*".repeat(local.length - 2)}${local[local.length - 1]}@${domain}`;
-}
+import { useResetPasswordPage } from "@/features/auth/hooks/useResetPasswordPage";
+import { otpDigitCellClassName } from "@/features/auth/utils/otpDigitInput";
 
 export default function ResetPasswordPage() {
-  const { t } = useI18n();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const email = (location.state as { email?: string } | null)?.email ?? "";
-
-  const { resetPassword, resendResetOtp, isLoading, error, clearError } =
-    useResetPassword();
-
-  const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const {
+    t,
+    form,
+    digits,
+    otpLength,
+    otpComplete,
+    assignInputRef,
+    handleDigitChange,
+    handleKeyDown,
+    handlePaste,
+    isLoading,
+    error,
+    clearError,
+    maskedEmailForDisplay,
+    requiresEmailRedirect,
+    resetSucceeded,
+    showNewPassword,
+    showConfirmPassword,
+    submitPasswordReset,
+    requestFreshOtp,
+    goToForgotPassword,
+    goToLogin,
+    toggleNewPasswordVisibility,
+    toggleConfirmPasswordVisibility,
+  } = useResetPasswordPage();
 
   const {
     register,
     handleSubmit,
     control,
-    setValue,
     formState: { errors },
-  } = useForm<ResetPasswordFormData>({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { email, otp: "", newPassword: "", confirmPassword: "" },
-  });
+  } = form;
 
-  useEffect(() => {
-    setValue("email", email);
-  }, [email, setValue]);
+  if (requiresEmailRedirect) {
+    return <Navigate to="/forgot-password" replace />;
+  }
 
-  useEffect(() => {
-    setValue("otp", digits.join(""));
-  }, [digits, setValue]);
-
-  if (!email) return <Navigate to="/forgot-password" replace />;
-
-  const handleDigitChange = (index: number, raw: string) => {
-    const pasted = raw.replace(/\D/g, "");
-    if (pasted.length > 1) {
-      const next = [...digits];
-      pasted
-        .split("")
-        .slice(0, OTP_LENGTH)
-        .forEach((d, i) => {
-          if (index + i < OTP_LENGTH) next[index + i] = d;
-        });
-      setDigits(next);
-      inputRefs.current[
-        Math.min(index + pasted.length, OTP_LENGTH - 1)
-      ]?.focus();
-      return;
-    }
-    if (!/^\d?$/.test(raw)) return;
-    const next = [...digits];
-    next[index] = raw;
-    setDigits(next);
-    if (raw && index < OTP_LENGTH - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !digits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData("text").replace(/\D/g, "");
-    if (!text) return;
-    const next = Array(OTP_LENGTH).fill("");
-    text
-      .split("")
-      .slice(0, OTP_LENGTH)
-      .forEach((d, i) => (next[i] = d));
-    setDigits(next);
-    inputRefs.current[Math.min(text.length, OTP_LENGTH - 1)]?.focus();
-  };
-
-  const onSubmit = async (data: ResetPasswordFormData) => {
-    clearError();
-    const ok = await resetPassword(data);
-    if (ok) setSuccess(true);
-  };
-
-  if (success) {
+  if (resetSucceeded) {
     return (
       <AuthShell>
         <AuthSurface className="text-center">
@@ -138,7 +69,7 @@ export default function ResetPasswordPage() {
           </p>
           <Button
             className="h-11 w-full font-medium shadow-sm hover:bg-primary/95"
-            onClick={() => navigate("/login", { replace: true })}
+            onClick={goToLogin}
           >
             {t("auth.backToLogin")}
           </Button>
@@ -147,16 +78,12 @@ export default function ResetPasswordPage() {
     );
   }
 
-  const otpComplete =
-    digits.length === OTP_LENGTH && digits.every((d) => d !== "");
-  const maskedEmail = `\u2068${maskEmail(email)}\u2069`;
-
   return (
     <AuthShell>
       <AuthSurface>
         <button
           type="button"
-          onClick={() => navigate("/forgot-password")}
+          onClick={goToForgotPassword}
           className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 text-sm text-muted-foreground transition-colors hover:text-foreground/90"
         >
           <ArrowLeft className="rtl-mirror h-4 w-4" />
@@ -174,7 +101,7 @@ export default function ResetPasswordPage() {
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
             {t("auth.reset.subtitle", {
-              email: maskedEmail,
+              email: maskedEmailForDisplay,
             })}
           </p>
         </div>
@@ -182,7 +109,7 @@ export default function ResetPasswordPage() {
         {error && <AuthStatusBanner message={error} onDismiss={clearError} />}
 
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(submitPasswordReset)}
           className="space-y-5"
           noValidate
           aria-busy={isLoading}
@@ -199,9 +126,7 @@ export default function ResetPasswordPage() {
                   {digits.map((digit, index) => (
                     <input
                       key={index}
-                      ref={(el) => {
-                        inputRefs.current[index] = el;
-                      }}
+                      ref={assignInputRef(index)}
                       type="text"
                       inputMode="numeric"
                       maxLength={1}
@@ -209,21 +134,14 @@ export default function ResetPasswordPage() {
                       autoFocus={index === 0}
                       aria-label={t("auth.otpDigit", {
                         current: index + 1,
-                        total: OTP_LENGTH,
+                        total: otpLength,
                       })}
-                      onChange={(e) => handleDigitChange(index, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(index, e)}
+                      onChange={(event) =>
+                        handleDigitChange(index, event.target.value)
+                      }
+                      onKeyDown={(event) => handleKeyDown(index, event)}
                       onPaste={handlePaste}
-                      className={[
-                        "h-12 w-10 rounded-lg border text-center text-lg font-semibold sm:w-11",
-                        "bg-background/70 text-foreground",
-                        "transition-colors duration-200 ease-out",
-                        "focus:outline-none focus:ring-2 focus:ring-primary/35 focus:border-primary/40",
-                        digit
-                          ? "border-primary/45 bg-primary/10"
-                          : "border-border/70",
-                        isLoading ? "opacity-50 cursor-not-allowed" : "",
-                      ].join(" ")}
+                      className={otpDigitCellClassName(Boolean(digit), isLoading)}
                       disabled={isLoading}
                     />
                   ))}
@@ -238,7 +156,7 @@ export default function ResetPasswordPage() {
             <div className="relative">
               <Input
                 id="newPassword"
-                type={showPassword ? "text" : "password"}
+                type={showNewPassword ? "text" : "password"}
                 dir="ltr"
                 placeholder={t("auth.reset.minChars")}
                 disabled={isLoading}
@@ -248,16 +166,16 @@ export default function ResetPasswordPage() {
               />
               <button
                 type="button"
-                onClick={() => setShowPassword((v) => !v)}
+                onClick={toggleNewPasswordVisibility}
                 disabled={isLoading}
                 aria-label={
-                  showPassword ? t("auth.hidePassword") : t("auth.showPassword")
+                  showNewPassword ? t("auth.hidePassword") : t("auth.showPassword")
                 }
-                aria-pressed={showPassword}
+                aria-pressed={showNewPassword}
                 className="absolute top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
                 style={{ insetInlineEnd: "0.25rem" }}
               >
-                {showPassword ? (
+                {showNewPassword ? (
                   <EyeOff className="h-4 w-4" />
                 ) : (
                   <Eye className="h-4 w-4" />
@@ -274,7 +192,7 @@ export default function ResetPasswordPage() {
             <div className="relative">
               <Input
                 id="confirmPassword"
-                type={showConfirm ? "text" : "password"}
+                type={showConfirmPassword ? "text" : "password"}
                 dir="ltr"
                 placeholder={t("auth.reset.repeatPassword")}
                 disabled={isLoading}
@@ -284,16 +202,16 @@ export default function ResetPasswordPage() {
               />
               <button
                 type="button"
-                onClick={() => setShowConfirm((v) => !v)}
+                onClick={toggleConfirmPasswordVisibility}
                 disabled={isLoading}
                 aria-label={
-                  showConfirm ? t("auth.hidePassword") : t("auth.showPassword")
+                  showConfirmPassword ? t("auth.hidePassword") : t("auth.showPassword")
                 }
-                aria-pressed={showConfirm}
+                aria-pressed={showConfirmPassword}
                 className="absolute top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
                 style={{ insetInlineEnd: "0.25rem" }}
               >
-                {showConfirm ? (
+                {showConfirmPassword ? (
                   <EyeOff className="h-4 w-4" />
                 ) : (
                   <Eye className="h-4 w-4" />
@@ -323,9 +241,7 @@ export default function ResetPasswordPage() {
           {t("auth.reset.noCode")}{" "}
           <button
             type="button"
-            onClick={() => {
-              void resendResetOtp(email);
-            }}
+            onClick={requestFreshOtp}
             className="inline-flex min-h-11 items-center px-1 font-medium text-foreground/80 transition-colors hover:text-foreground"
             disabled={isLoading}
           >

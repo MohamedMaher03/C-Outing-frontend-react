@@ -1,80 +1,42 @@
-import { useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { InlineLoading } from "@/components/ui/LoadingSpinner";
 import { Label } from "@/components/ui/label";
 import { FormError } from "@/components/ui/form-error";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormField } from "./form/FormField";
-import { useNavigate } from "react-router-dom";
 import { AuthShell, AuthSurface } from "./layout/AuthShell";
 import { AuthStatusBanner } from "./ui/AuthStatusBanner";
-
-import { loginSchema } from "@/features/auth/validation/login.schema";
-import type {
-  LoginFormData,
-  LoginFormInput,
-} from "@/features/auth/validation/login.schema";
 import { PasswordInput } from "./form/PasswordInput";
-import { useLogin } from "@/features/auth/hooks/useLogin";
+import { useLoginPage } from "@/features/auth/hooks/useLoginPage";
 import { LOGIN_FORM_FIELDS } from "@/features/auth/mocks";
 import type { LoginField } from "../types";
-import { useI18n } from "@/components/i18n";
-import { normalizeEmail } from "@/utils/textNormalization";
 
 const LoginForm = () => {
-  const { t } = useI18n();
-  const navigate = useNavigate();
   const {
-    loginUser,
-    resendVerificationEmail,
+    t,
+    form,
     isLoading,
     isResendingVerification,
     pendingVerificationEmail,
     error,
     clearError,
-  } = useLogin();
-  const [verificationHint, setVerificationHint] = useState<string | null>(null);
+    recoveryEmail,
+    hasRecoveryEmail,
+    verificationHint,
+    submitCredentials,
+    openVerificationFlow,
+    resendVerificationCode,
+    goToForgotPassword,
+    goToRegister,
+  } = useLoginPage();
 
   const {
     register,
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<LoginFormInput, unknown, LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      staySignedIn: false,
-    },
-  });
-
-  const typedEmail = useWatch({ control, name: "email" }) ?? "";
-  const recoveryEmail = pendingVerificationEmail ?? normalizeEmail(typedEmail);
-  const hasRecoveryEmail = recoveryEmail.length > 0;
-
-  const onSubmit = async (data: LoginFormData) => {
-    setVerificationHint(null);
-    await loginUser(data);
-  };
-
-  const handleOpenVerification = () => {
-    if (!hasRecoveryEmail) return;
-
-    navigate(`/verify-email?email=${encodeURIComponent(recoveryEmail)}`, {
-      state: { email: recoveryEmail },
-    });
-  };
-
-  const handleResendVerification = async () => {
-    if (!hasRecoveryEmail) return;
-
-    clearError();
-    const success = await resendVerificationEmail(recoveryEmail);
-    if (success) {
-      setVerificationHint(t("auth.login.verifyGuide.resendSuccess"));
-    }
-  };
+  } = form;
 
   return (
     <AuthShell>
@@ -113,7 +75,7 @@ const LoginForm = () => {
                 size="sm"
                 className="h-10"
                 disabled={!hasRecoveryEmail || isLoading}
-                onClick={handleOpenVerification}
+                onClick={openVerificationFlow}
               >
                 {t("auth.login.verifyGuide.continueAction")}
               </Button>
@@ -126,7 +88,7 @@ const LoginForm = () => {
                 disabled={
                   !hasRecoveryEmail || isLoading || isResendingVerification
                 }
-                onClick={handleResendVerification}
+                onClick={resendVerificationCode}
               >
                 {isResendingVerification ? (
                   <span className="inline-flex items-center gap-2">
@@ -148,7 +110,7 @@ const LoginForm = () => {
         )}
 
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(submitCredentials)}
           className="space-y-4"
           noValidate
           aria-busy={isLoading}
@@ -178,7 +140,7 @@ const LoginForm = () => {
               <button
                 type="button"
                 disabled={isLoading}
-                onClick={() => navigate("/forgot-password")}
+                onClick={goToForgotPassword}
                 className="-mx-2 inline-flex min-h-11 items-center px-2 text-sm font-semibold text-primary transition-colors hover:text-primary/90"
               >
                 {t("auth.forgotPassword")}
@@ -241,7 +203,7 @@ const LoginForm = () => {
           <span>{t("auth.noAccount")}</span>
           <button
             type="button"
-            onClick={() => navigate("/register")}
+            onClick={goToRegister}
             className="inline-flex min-h-11 items-center px-1.5 font-semibold text-primary transition-colors hover:text-primary"
           >
             {t("auth.createOne")}

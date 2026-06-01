@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { getErrorMessage, isApiError } from "@/utils/apiError";
 import type { PublicUserProfile, UserReviewActivity } from "../types";
 import { getPublicProfileBundle } from "../services/userService";
+import {
+  INVALID_PROFILE_LINK_MESSAGE,
+  resolvePublicProfileErrorMessage,
+} from "../utils/publicProfileErrors";
 
 interface UsePublicProfileReturn {
   profile: PublicUserProfile | null;
@@ -15,32 +18,6 @@ interface UsePublicProfileReturn {
   reload: () => Promise<void>;
   clearReviewsWarning: () => void;
 }
-
-const toFriendlyErrorMessage = (error: unknown, fallback: string): string => {
-  if (typeof navigator !== "undefined" && navigator.onLine === false) {
-    return "You are offline. Reconnect and try again.";
-  }
-
-  if (isApiError(error)) {
-    if (error.statusCode === 401) {
-      return "Your session expired. Please sign in again.";
-    }
-    if (error.statusCode === 403) {
-      return "You do not have permission to view this profile.";
-    }
-    if (error.statusCode === 404) {
-      return "This profile does not exist or is no longer available.";
-    }
-    if (error.statusCode === 429) {
-      return "Too many requests right now. Please wait a few seconds and retry.";
-    }
-    if (typeof error.statusCode === "number" && error.statusCode >= 500) {
-      return "We are having trouble loading this profile. Please try again shortly.";
-    }
-  }
-
-  return getErrorMessage(error, fallback);
-};
 
 export const usePublicProfile = (userId: string): UsePublicProfileReturn => {
   const { user } = useAuth();
@@ -77,7 +54,7 @@ export const usePublicProfile = (userId: string): UsePublicProfileReturn => {
         setProfile(null);
         setReviews([]);
         setReviewsWarning(null);
-        setError("This profile link is invalid.");
+        setError(INVALID_PROFILE_LINK_MESSAGE);
         setLoading(false);
         setIsReloading(false);
         return;
@@ -115,12 +92,7 @@ export const usePublicProfile = (userId: string): UsePublicProfileReturn => {
         setProfile(null);
         setReviews([]);
         setReviewsWarning(null);
-        setError(
-          toFriendlyErrorMessage(
-            err,
-            "We could not load this profile right now.",
-          ),
-        );
+        setError(resolvePublicProfileErrorMessage(err));
       } finally {
         if (mountedRef.current && requestId === requestIdRef.current) {
           if (showLoader) {

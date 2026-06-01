@@ -1,50 +1,39 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormError } from "@/components/ui/form-error";
 import { InlineLoading } from "@/components/ui/LoadingSpinner";
-import { useForgotPassword } from "@/features/auth/hooks/useForgotPassword";
-import {
-  forgotPasswordSchema,
-  type ForgotPasswordFormData,
-} from "@/features/auth/validation/forgotPassword.schema";
 import {
   AuthShell,
   AuthSurface,
 } from "@/features/auth/components/layout/AuthShell";
 import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner";
-import { useI18n } from "@/components/i18n";
+import { useForgotPasswordPage } from "@/features/auth/hooks/useForgotPasswordPage";
 
 export default function ForgotPasswordPage() {
-  const { t } = useI18n();
-  const navigate = useNavigate();
-  const { sendResetOtp, isLoading, error, clearError } = useForgotPassword();
+  const {
+    t,
+    form,
+    isLoading,
+    error,
+    clearError,
+    submitResetRequest,
+    goToLogin,
+  } = useForgotPasswordPage();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ForgotPasswordFormData>({
-    resolver: zodResolver(forgotPasswordSchema),
-  });
-
-  const onSubmit = async (data: ForgotPasswordFormData) => {
-    const success = await sendResetOtp(data);
-    if (success) {
-      navigate("/reset-password", { state: { email: data.email } });
-    }
-  };
+  } = form;
 
   return (
     <AuthShell>
       <AuthSurface>
         <button
           type="button"
-          onClick={() => navigate("/login")}
+          onClick={goToLogin}
           className="-mx-2 inline-flex min-h-11 items-center gap-2 px-2 text-sm text-muted-foreground transition-colors hover:text-foreground/90"
         >
           <ArrowLeft className="rtl-mirror h-4 w-4" />
@@ -68,7 +57,7 @@ export default function ForgotPasswordPage() {
         {error && <AuthStatusBanner message={error} onDismiss={clearError} />}
 
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(submitResetRequest)}
           className="space-y-5"
           noValidate
           aria-busy={isLoading}
