@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -100,7 +100,10 @@ const NotificationsPage = () => {
                       >
                         <Checkbox
                           id={itemId}
-                          checked={resolveToggleChecked(group.channel, item.key)}
+                          checked={resolveToggleChecked(
+                            group.channel,
+                            item.key,
+                          )}
                           onCheckedChange={() =>
                             flipNotificationPreference(group.channel, item.key)
                           }
