@@ -86,9 +86,6 @@ const ManagePlacesPage = lazy(
 const ManageReviewsPage = lazy(
   () => import("@/features/admin/pages/ManageReviewsPage"),
 );
-const ManageCategoriesPage = lazy(
-  () => import("@/features/admin/pages/ManageCategoriesPage"),
-);
 const SystemSettingsPage = lazy(
   () => import("@/features/admin/pages/SystemSettingsPage"),
 );
@@ -274,10 +271,7 @@ function App() {
             <Route path="/admin/users" element={<ManageUsersPage />} />
             <Route path="/admin/places" element={<ManagePlacesPage />} />
             <Route path="/admin/reviews" element={<ManageReviewsPage />} />
-            <Route
-              path="/admin/categories"
-              element={<ManageCategoriesPage />}
-            />
+            {/* Categories management page removed */}
             <Route path="/admin/settings" element={<SystemSettingsPage />} />
           </Route>
 

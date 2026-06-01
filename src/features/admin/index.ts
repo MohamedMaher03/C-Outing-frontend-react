@@ -2,7 +2,7 @@ export { useAdminDashboard } from "./hooks/useAdminDashboard";
 export { useManageUsers } from "./hooks/useManageUsers";
 export { useManagePlaces } from "./hooks/useManagePlaces";
 export { useManageReviews } from "./hooks/useManageReviews";
-export { useManageCategories } from "./hooks/useManageCategories";
+// `useManageCategories` removed along with categories management page
 export { useSystemSettings } from "./hooks/useSystemSettings";
 export { adminApi } from "./api/adminApi";
 export { adminService } from "./services/adminService";

@@ -2,11 +2,8 @@ import {
   Settings,
   Save,
   Shield,
-  Bell,
-  MessageSquare,
   AlertTriangle,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,44 +14,23 @@ import {
   AdminPageLayout,
   AdminSection,
 } from "@/features/admin/components";
-import { useSystemSettings } from "@/features/admin/hooks/useSystemSettings";
-import { useI18n } from "@/components/i18n";
+import { useSystemSettingsPage } from "@/features/admin/hooks/useSystemSettingsPage";
 
 const SystemSettingsPage = () => {
-  const navigate = useNavigate();
-  const { t } = useI18n();
   const {
+    t,
     settings,
     loading,
     saving,
-    saved,
     error,
     hasUnsavedChanges,
-    retry,
+    settingToggleSpecs,
+    saveActionLabel,
+    navigateBack,
+    persistSettings,
+    retrySettingsLoad,
     update,
-    handleSave,
-  } = useSystemSettings();
-
-  const settingItems = [
-    {
-      key: "enableNotifications" as const,
-      labelKey: "admin.settings.toggle.notifications.label",
-      descriptionKey: "admin.settings.toggle.notifications.description",
-      icon: Bell,
-    },
-    {
-      key: "enableReviews" as const,
-      labelKey: "admin.settings.toggle.reviews.label",
-      descriptionKey: "admin.settings.toggle.reviews.description",
-      icon: MessageSquare,
-    },
-    {
-      key: "moderationRequired" as const,
-      labelKey: "admin.settings.toggle.moderation.label",
-      descriptionKey: "admin.settings.toggle.moderation.description",
-      icon: Shield,
-    },
-  ];
+  } = useSystemSettingsPage();
 
   if (loading) {
     return (
@@ -73,9 +49,7 @@ const SystemSettingsPage = () => {
         <AdminErrorBanner
           title={t("admin.settings.error.loadTitle")}
           message={error ?? t("admin.settings.error.loadMessage")}
-          onRetry={() => {
-            void retry();
-          }}
+          onRetry={retrySettingsLoad}
         />
       </AdminPageLayout>
     );
@@ -92,9 +66,7 @@ const SystemSettingsPage = () => {
       <AdminErrorBanner
         title={t("admin.settings.error.syncTitle")}
         message={error}
-        onRetry={() => {
-          void retry();
-        }}
+        onRetry={retrySettingsLoad}
       />
 
       <AdminSection
@@ -113,7 +85,7 @@ const SystemSettingsPage = () => {
         </div>
 
         <div className="space-y-2">
-          {settingItems.map((item) => (
+          {settingToggleSpecs.map((item) => (
             <div
               key={item.key}
               className="flex items-start gap-4 p-3 rounded-xl hover:bg-muted/30 transition-colors"
@@ -180,22 +152,18 @@ const SystemSettingsPage = () => {
       <div className="sticky bottom-0 flex flex-col-reverse gap-3 border-t border-border/60 bg-background/95 pt-3 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:flex-row">
         <Button
           variant="ghost"
-          onClick={() => navigate(-1)}
+          onClick={navigateBack}
           className="flex-1 w-full"
         >
           {t("admin.settings.actions.cancel")}
         </Button>
         <Button
-          onClick={() => void handleSave()}
+          onClick={persistSettings}
           disabled={saving || !hasUnsavedChanges}
           className="w-full flex-1 gap-2 font-semibold"
         >
           <Save className="h-4 w-4" />
-          {saved
-            ? t("admin.settings.actions.saved")
-            : saving
-              ? t("admin.settings.actions.saving")
-              : t("admin.settings.actions.save")}
+          {saveActionLabel}
         </Button>
       </div>
     </AdminPageLayout>

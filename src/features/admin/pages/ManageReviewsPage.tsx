@@ -9,7 +9,7 @@ import {
   User,
   Loader2,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { useManageReviews } from "@/features/admin/hooks/useManageReviews";
+import { useManageReviewsPage } from "@/features/admin/hooks/useManageReviewsPage";
 import {
   AdminEmptyState,
   AdminErrorBanner,
@@ -35,12 +35,10 @@ import {
   AdminPageHeader,
   AdminSection,
 } from "@/features/admin/components";
-import { REVIEW_STATUS_FILTER_OPTIONS } from "@/features/admin/constants/filterOptions";
 import {
   reviewRowStateClass,
   reviewStatusConfig,
 } from "@/features/admin/constants/statusConfigs";
-import { useI18n } from "@/components/i18n";
 
 const ADMIN_REVIEW_ROW_STYLE: CSSProperties = {
   contentVisibility: "auto",
@@ -49,8 +47,9 @@ const ADMIN_REVIEW_ROW_STYLE: CSSProperties = {
 };
 
 const ManageReviewsPage = () => {
-  const { t, locale, formatNumber } = useI18n();
   const {
+    t,
+    formatNumber,
     reviews,
     loading,
     error,
@@ -66,57 +65,21 @@ const ManageReviewsPage = () => {
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    goToPage,
     setSearch,
     setStatusFilter,
-    retry,
     handleStatusChange,
     handleDelete,
-  } = useManageReviews();
-
-  const monthDayFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        month: "short",
-        day: "numeric",
-      }),
-    [locale],
-  );
-
-  const statusFilterOptions = REVIEW_STATUS_FILTER_OPTIONS.map((option) => ({
-    ...option,
-    label:
-      option.value === "all"
-        ? t("admin.filter.all")
-        : t(`admin.status.${option.value}`),
-  }));
-
-  const getStatusLabel = (status: keyof typeof reviewStatusConfig): string =>
-    t(`admin.status.${status}`);
-
-  const [pageJump, setPageJump] = useState(() => String(pageIndex));
-
-  useEffect(() => {
-    setPageJump(String(pageIndex));
-  }, [pageIndex]);
-
-  const commitPageJump = () => {
-    const nextPage = Number(pageJump);
-
-    if (!Number.isFinite(nextPage)) {
-      setPageJump(String(pageIndex));
-      return;
-    }
-
-    goToPage(nextPage);
-  };
-
-  const flaggedReviewsCount = reviews.filter(
-    (review) => review.status === "flagged",
-  ).length;
-  const pendingReviewsCount = reviews.filter(
-    (review) => review.status === "pending",
-  ).length;
+    statusFilterOptions,
+    flaggedReviewsCount,
+    pendingReviewsCount,
+    resolveStatusLabel,
+    formatReviewCreatedOn,
+    retryReviewRegistry,
+    pageJumpDraft,
+    setPageJumpDraft,
+    commitPageJump,
+    handlePageJumpKeyDown,
+  } = useManageReviewsPage();
 
   if (loading) {
     return (
@@ -139,9 +102,7 @@ const ManageReviewsPage = () => {
       <AdminErrorBanner
         title={t("admin.reviews.error.updateTitle")}
         message={error}
-        onRetry={() => {
-          void retry();
-        }}
+        onRetry={retryReviewRegistry}
       />
 
       <AdminSection
@@ -223,7 +184,7 @@ const ManageReviewsPage = () => {
                           {review.venueName}
                         </span>
                         {" · "}
-                        {monthDayFormatter.format(new Date(review.createdAt))}
+                        {formatReviewCreatedOn(review.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -249,7 +210,7 @@ const ManageReviewsPage = () => {
                       )}
                     >
                       <StatusIcon className="h-2.5 w-2.5 mr-0.5" />{" "}
-                      {getStatusLabel(review.status)}
+                      {resolveStatusLabel(review.status)}
                     </Badge>
                   </div>
                 </div>
@@ -376,15 +337,10 @@ const ManageReviewsPage = () => {
                   type="number"
                   min={1}
                   max={totalPages}
-                  value={pageJump}
-                  onChange={(event) => setPageJump(event.target.value)}
+                  value={pageJumpDraft}
+                  onChange={(event) => setPageJumpDraft(event.target.value)}
                   onBlur={commitPageJump}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      commitPageJump();
-                    }
-                  }}
+                  onKeyDown={handlePageJumpKeyDown}
                   className="h-8 w-20 text-center"
                   aria-label={t(
                     "admin.pagination.goToAria",

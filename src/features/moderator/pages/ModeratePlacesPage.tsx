@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { type CSSProperties } from "react";
 import {
   Search,
   MapPin,
@@ -23,15 +17,12 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
-import { useModeratePlaces } from "@/features/moderator/hooks/useModeratePlaces";
-import { isGoogleMapsVenueUrl } from "@/features/admin/utils/placeForm";
+import { useModeratePlacesPage } from "@/features/moderator/hooks/useModeratePlacesPage";
 import {
   moderatorPlaceStatusConfig,
   moderatorPlaceRowStateClass,
   moderatorToastClasses,
 } from "@/features/moderator/constants/statusConfigs";
-import { MODERATOR_PLACE_STATUS_FILTER_OPTIONS } from "@/features/moderator/constants/filterOptions";
 import {
   ModeratorEmptyState,
   ModeratorErrorBanner,
@@ -41,14 +32,7 @@ import {
   ModeratorSection,
 } from "@/features/moderator/components";
 import { formatCount } from "@/features/moderator/utils/formatters";
-import { useI18n } from "@/components/i18n";
-
-const PLACE_PLACEHOLDER_IMAGE =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' fill='%23f4efe5'/%3E%3Crect x='14' y='18' width='68' height='60' rx='10' fill='%23e5d8bf'/%3E%3Ccircle cx='38' cy='42' r='9' fill='%23967f59'/%3E%3Cpath d='M24 67c4-8 12-12 20-12s16 4 20 12' stroke='%23806a49' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E";
-
-const EMPTY_FORM = {
-  venueUrl: "",
-};
+import { assignImageFallbackOnError } from "@/features/moderator/utils/moderatorQueueMetrics";
 
 const MODERATOR_PLACE_ROW_STYLE: CSSProperties = {
   contentVisibility: "auto",
@@ -57,14 +41,11 @@ const MODERATOR_PLACE_ROW_STYLE: CSSProperties = {
 };
 
 const ModeratePlacesPage = () => {
-  const navigate = useNavigate();
-  const formRef = useRef<HTMLDivElement>(null);
-  const { t, locale } = useI18n();
-
   const {
+    t,
+    locale,
     loading,
     error,
-    queueErrorState,
     pendingPlaceIdSet,
     search,
     statusFilter,
@@ -75,8 +56,6 @@ const ModeratePlacesPage = () => {
     totalPages,
     hasPreviousPage,
     hasNextPage,
-    pendingCount,
-    flaggedCount,
     showAddForm,
     form,
     formErrors,
@@ -86,73 +65,29 @@ const ModeratePlacesPage = () => {
     setStatusFilter,
     goToPreviousPage,
     goToNextPage,
-    goToPage,
-    setShowAddForm,
     setForm,
-    retry,
     handleApprove,
     handleFlag,
     handleAddPlace,
-  } = useModeratePlaces();
-
-  const statusFilterOptions = useMemo(
-    () =>
-      MODERATOR_PLACE_STATUS_FILTER_OPTIONS.map((option) => ({
-        ...option,
-        label:
-          option.value === "all"
-            ? t("admin.filter.all")
-            : t(`admin.status.${option.value}`),
-      })),
-    [t],
-  );
-
-  useEffect(() => {
-    let timerId: number | null = null;
-
-    if (showAddForm) {
-      timerId = window.setTimeout(
-        () =>
-          formRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          }),
-        50,
-      );
-    }
-
-    return () => {
-      if (timerId) {
-        window.clearTimeout(timerId);
-      }
-    };
-  }, [showAddForm]);
-
-  const placeSummary = useMemo(
-    () => ({ pending: pendingCount, flagged: flaggedCount }),
-    [pendingCount, flaggedCount],
-  );
-
-  const [pageJump, setPageJump] = useState(() => String(pageIndex));
-
-  useEffect(() => {
-    setPageJump(String(pageIndex));
-  }, [pageIndex]);
-
-  const commitPageJump = () => {
-    const nextPage = Number(pageJump);
-
-    if (!Number.isFinite(nextPage)) {
-      setPageJump(String(pageIndex));
-      return;
-    }
-
-    goToPage(nextPage);
-  };
-
-  const normalizedVenueUrl = form.venueUrl.trim();
-  const hasTypedVenueUrl = normalizedVenueUrl.length > 0;
-  const hasValidVenueUrl = isGoogleMapsVenueUrl(normalizedVenueUrl);
+    addPlaceFormAnchorRef,
+    statusFilterOptions,
+    placeQueueSummary,
+    venueUrlField,
+    venueUrlHintMessage,
+    venueUrlHintClass,
+    queueErrorState,
+    queueErrorTitle,
+    placePlaceholderImage,
+    resolveEmptyDescription,
+    dismissAddPlaceForm,
+    openVenueDetail,
+    navigateBack,
+    retryPlaceQueue,
+    pageJumpDraft,
+    setPageJumpDraft,
+    commitPageJump,
+    handlePageJumpKeyDown,
+  } = useModeratePlacesPage();
 
   if (loading) {
     return (
@@ -170,8 +105,8 @@ const ModeratePlacesPage = () => {
         <ModeratorPageHeader
           title={t("moderator.places.header.title")}
           description={t("moderator.places.header.description", {
-            pending: formatCount(placeSummary.pending, locale),
-            flagged: formatCount(placeSummary.flagged, locale),
+            pending: formatCount(placeQueueSummary.pending, locale),
+            flagged: formatCount(placeQueueSummary.flagged, locale),
           })}
           icon={MapPin}
         />
@@ -183,13 +118,11 @@ const ModeratePlacesPage = () => {
             description={t("moderator.places.error.forbiddenMessage")}
             action={
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <Button variant="outline" onClick={() => navigate(-1)}>
+                <Button variant="outline" onClick={navigateBack}>
                   {t("moderator.places.actions.goBack")}
                 </Button>
                 <Button
-                  onClick={() => {
-                    void retry();
-                  }}
+                  onClick={retryPlaceQueue}
                 >
                   {t("common.retry")}
                 </Button>
@@ -200,11 +133,6 @@ const ModeratePlacesPage = () => {
       </ModeratorPageLayout>
     );
   }
-
-  const queueErrorTitle =
-    queueErrorState?.kind === "load-failure"
-      ? t("moderator.places.error.loadFailureTitle")
-      : t("moderator.places.error.updateTitle");
 
   return (
     <ModeratorPageLayout>
@@ -229,16 +157,14 @@ const ModeratePlacesPage = () => {
       <ModeratorErrorBanner
         title={queueErrorTitle}
         message={error}
-        onRetry={() => {
-          void retry();
-        }}
+        onRetry={retryPlaceQueue}
       />
 
       <ModeratorPageHeader
         title={t("moderator.places.header.title")}
         description={t("moderator.places.header.description", {
-          pending: formatCount(placeSummary.pending, locale),
-          flagged: formatCount(placeSummary.flagged, locale),
+          pending: formatCount(placeQueueSummary.pending, locale),
+          flagged: formatCount(placeQueueSummary.flagged, locale),
         })}
         icon={MapPin}
       />
@@ -251,7 +177,7 @@ const ModeratePlacesPage = () => {
         >
           <div
             id="moderator-add-place-form"
-            ref={formRef}
+            ref={addPlaceFormAnchorRef}
             className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
           >
             <div className="rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 via-card to-background p-5 sm:p-6">
@@ -341,9 +267,9 @@ const ModeratePlacesPage = () => {
                   inputMode="url"
                 />
 
-                {hasValidVenueUrl ? (
+                {venueUrlField.isValid ? (
                   <a
-                    href={normalizedVenueUrl}
+                    href={venueUrlField.normalizedUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border px-4 text-role-secondary font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -360,33 +286,8 @@ const ModeratePlacesPage = () => {
                 </p>
               ) : null}
 
-              <p
-                className={cn(
-                  "mt-2 text-role-caption",
-                  !hasTypedVenueUrl
-                    ? "text-muted-foreground"
-                    : hasValidVenueUrl
-                      ? "text-primary"
-                      : "text-destructive",
-                )}
-              >
-                {!hasTypedVenueUrl
-                  ? t(
-                      "moderator.places.form.urlHintDefault",
-                      undefined,
-                      "Paste a Google Maps link to continue.",
-                    )
-                  : hasValidVenueUrl
-                    ? t(
-                        "moderator.places.form.urlHintValid",
-                        undefined,
-                        "Valid link. Ready to start scraping.",
-                      )
-                    : t(
-                        "moderator.places.form.urlHintInvalid",
-                        undefined,
-                        "Invalid URL. Use a Google Maps place link.",
-                      )}
+              <p className={cn("mt-2 text-role-caption", venueUrlHintClass)}>
+                {venueUrlHintMessage}
               </p>
 
               <p className="mt-3 text-role-caption text-muted-foreground">
@@ -404,16 +305,13 @@ const ModeratePlacesPage = () => {
                 <Button
                   variant="outline"
                   className="min-h-11"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setForm(EMPTY_FORM);
-                  }}
+                  onClick={dismissAddPlaceForm}
                 >
                   {t("admin.places.actions.cancel")}
                 </Button>
                 <Button
                   onClick={handleAddPlace}
-                  disabled={submittingForm || !hasValidVenueUrl}
+                  disabled={submittingForm || !venueUrlField.isValid}
                   className="gap-2 min-h-11"
                 >
                   {submittingForm ? (
@@ -475,11 +373,7 @@ const ModeratePlacesPage = () => {
           <ModeratorEmptyState
             icon={MapPin}
             title={t("moderator.places.empty.title")}
-            description={
-              search.trim().length > 0
-                ? t("moderator.places.empty.withSearch")
-                : t("moderator.places.empty.default")
-            }
+            description={resolveEmptyDescription()}
           />
         ) : (
           filtered.map((place) => {
@@ -499,16 +393,15 @@ const ModeratePlacesPage = () => {
               >
                 <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
                   <img
-                    src={place.image || PLACE_PLACEHOLDER_IMAGE}
+                    src={place.image || placePlaceholderImage}
                     alt={place.name}
                     className="h-14 w-14 rounded-xl object-cover flex-shrink-0"
                     loading="lazy"
                     decoding="async"
                     referrerPolicy="no-referrer"
-                    onError={(event) => {
-                      (event.currentTarget as HTMLImageElement).src =
-                        PLACE_PLACEHOLDER_IMAGE;
-                    }}
+                    onError={(event) =>
+                      assignImageFallbackOnError(event, placePlaceholderImage)
+                    }
                   />
 
                   <div className="min-w-0 flex-1">
@@ -557,7 +450,7 @@ const ModeratePlacesPage = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate(`/venue/${place.id}`)}
+                    onClick={() => openVenueDetail(place.id)}
                     className="text-role-secondary gap-1 min-h-11 sm:h-8"
                   >
                     <Eye className="h-3.5 w-3.5" />{" "}
@@ -631,15 +524,10 @@ const ModeratePlacesPage = () => {
                   type="number"
                   min={1}
                   max={totalPages}
-                  value={pageJump}
-                  onChange={(event) => setPageJump(event.target.value)}
+                  value={pageJumpDraft}
+                  onChange={(event) => setPageJumpDraft(event.target.value)}
                   onBlur={commitPageJump}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      commitPageJump();
-                    }
-                  }}
+                  onKeyDown={handlePageJumpKeyDown}
                   className="h-8 w-20 text-center"
                   aria-label={t(
                     "moderator.pagination.goToAria",

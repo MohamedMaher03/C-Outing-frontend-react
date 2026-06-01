@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import {
   Search,
   MessageSquare,
@@ -15,12 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { useModerateReviews } from "@/features/moderator/hooks/useModerateReviews";
+import { useModerateReviewsPage } from "@/features/moderator/hooks/useModerateReviewsPage";
 import {
   moderatorReviewRowStateClass,
   moderatorReviewStatusConfig,
 } from "@/features/moderator/constants/statusConfigs";
-import { MODERATOR_REVIEW_STATUS_FILTER_OPTIONS } from "@/features/moderator/constants/filterOptions";
 import {
   ModeratorEmptyState,
   ModeratorErrorBanner,
@@ -29,14 +28,11 @@ import {
   ModeratorPageLayout,
   ModeratorSection,
 } from "@/features/moderator/components";
+import { formatCount, formatShortDate } from "@/features/moderator/utils/formatters";
 import {
-  formatCount,
-  formatShortDate,
-} from "@/features/moderator/utils/formatters";
-import { useI18n } from "@/components/i18n";
-
-const REVIEW_PLACEHOLDER_IMAGE =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' fill='%23f4efe5'/%3E%3Ccircle cx='48' cy='36' r='16' fill='%23c8b088'/%3E%3Crect x='22' y='58' width='52' height='24' rx='12' fill='%23967f59'/%3E%3C/svg%3E";
+  REVIEW_AVATAR_PLACEHOLDER_IMAGE,
+  assignImageFallbackOnError,
+} from "@/features/moderator/utils/moderatorQueueMetrics";
 
 const MODERATOR_REVIEW_ROW_STYLE: CSSProperties = {
   contentVisibility: "auto",
@@ -45,8 +41,9 @@ const MODERATOR_REVIEW_ROW_STYLE: CSSProperties = {
 };
 
 const ModerateReviewsPage = () => {
-  const { t, locale } = useI18n();
   const {
+    t,
+    locale,
     reviews,
     loading,
     error,
@@ -64,58 +61,18 @@ const ModerateReviewsPage = () => {
     setStatusFilter,
     goToPreviousPage,
     goToNextPage,
-    goToPage,
-    retry,
     handleApprove,
     handleReject,
     handleFlag,
-  } = useModerateReviews();
-
-  const statusFilterOptions = useMemo(
-    () =>
-      MODERATOR_REVIEW_STATUS_FILTER_OPTIONS.map((option) => ({
-        ...option,
-        label:
-          option.value === "all"
-            ? t("admin.filter.all")
-            : t(`admin.status.${option.value}`),
-      })),
-    [t],
-  );
-
-  const reviewSummary = useMemo(
-    () =>
-      reviews.reduce(
-        (summary, review) => {
-          if (review.status === "flagged") {
-            summary.flagged += 1;
-          }
-          if (review.status === "pending") {
-            summary.pending += 1;
-          }
-          return summary;
-        },
-        { flagged: 0, pending: 0 },
-      ),
-    [reviews],
-  );
-
-  const [pageJump, setPageJump] = useState(() => String(pageIndex));
-
-  useEffect(() => {
-    setPageJump(String(pageIndex));
-  }, [pageIndex]);
-
-  const commitPageJump = () => {
-    const nextPage = Number(pageJump);
-
-    if (!Number.isFinite(nextPage)) {
-      setPageJump(String(pageIndex));
-      return;
-    }
-
-    goToPage(nextPage);
-  };
+    statusFilterOptions,
+    reviewQueueSummary,
+    resolveEmptyDescription,
+    retryReviewQueue,
+    pageJumpDraft,
+    setPageJumpDraft,
+    commitPageJump,
+    handlePageJumpKeyDown,
+  } = useModerateReviewsPage();
 
   if (loading) {
     return (
@@ -133,8 +90,8 @@ const ModerateReviewsPage = () => {
         title={t("moderator.reviews.header.title")}
         description={t("moderator.reviews.header.description", {
           total: formatCount(reviews.length, locale),
-          pending: formatCount(reviewSummary.pending, locale),
-          flagged: formatCount(reviewSummary.flagged, locale),
+          pending: formatCount(reviewQueueSummary.pending, locale),
+          flagged: formatCount(reviewQueueSummary.flagged, locale),
         })}
         icon={MessageSquare}
       />
@@ -142,9 +99,7 @@ const ModerateReviewsPage = () => {
       <ModeratorErrorBanner
         title={t("moderator.reviews.error.loadTitle")}
         message={error}
-        onRetry={() => {
-          void retry();
-        }}
+        onRetry={retryReviewQueue}
       />
 
       <ModeratorSection
@@ -184,11 +139,7 @@ const ModerateReviewsPage = () => {
           <ModeratorEmptyState
             icon={MessageSquare}
             title={t("moderator.reviews.empty.title")}
-            description={
-              search.trim().length > 0
-                ? t("moderator.reviews.empty.withSearch")
-                : t("moderator.reviews.empty.default")
-            }
+            description={resolveEmptyDescription()}
           />
         ) : (
           filtered.map((review) => {
@@ -216,10 +167,12 @@ const ModerateReviewsPage = () => {
                           className="h-full w-full object-cover"
                           loading="lazy"
                           decoding="async"
-                          onError={(event) => {
-                            (event.currentTarget as HTMLImageElement).src =
-                              REVIEW_PLACEHOLDER_IMAGE;
-                          }}
+                          onError={(event) =>
+                            assignImageFallbackOnError(
+                              event,
+                              REVIEW_AVATAR_PLACEHOLDER_IMAGE,
+                            )
+                          }
                         />
                       ) : (
                         <User className="h-4 w-4 text-secondary dark:text-primary" />
@@ -364,15 +317,10 @@ const ModerateReviewsPage = () => {
                   type="number"
                   min={1}
                   max={totalPages}
-                  value={pageJump}
-                  onChange={(event) => setPageJump(event.target.value)}
+                  value={pageJumpDraft}
+                  onChange={(event) => setPageJumpDraft(event.target.value)}
                   onBlur={commitPageJump}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      commitPageJump();
-                    }
-                  }}
+                  onKeyDown={handlePageJumpKeyDown}
                   className="h-8 w-20 text-center"
                   aria-label={t(
                     "moderator.pagination.goToAria",

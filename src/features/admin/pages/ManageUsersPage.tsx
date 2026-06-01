@@ -1,5 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
-
 import {
   Search,
   ShieldCheck,
@@ -17,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { useManageUsers } from "@/features/admin/hooks/useManageUsers";
 import {
   AdminEmptyState,
   AdminErrorBanner,
@@ -26,19 +23,17 @@ import {
   AdminPageHeader,
   AdminSection,
 } from "@/features/admin/components";
-import {
-  MANAGEABLE_USER_ROLES,
-  USER_ROLE_FILTER_OPTIONS,
-} from "@/features/admin/constants/filterOptions";
+import { MANAGEABLE_USER_ROLES } from "@/features/admin/constants/filterOptions";
 import {
   userRoleBadge,
   userStatusBadge,
 } from "@/features/admin/constants/statusConfigs";
-import { useI18n } from "@/components/i18n";
+import { useManageUsersPage } from "@/features/admin/hooks/useManageUsersPage";
 
 const ManageUsersPage = () => {
-  const { t, locale, formatNumber } = useI18n();
   const {
+    t,
+    formatNumber,
     users,
     loading,
     error,
@@ -54,90 +49,26 @@ const ManageUsersPage = () => {
     hasNextPage,
     setSearch,
     setRoleFilter,
-    setActionMenu,
-    retry,
     goToPreviousPage,
     goToNextPage,
-    goToPage,
     handleStatusChange,
     handleRoleChange,
     handleDeleteUser,
-  } = useManageUsers();
+    roleFilterOptions,
+    activeUsersCount,
+    formatJoinedMonthYear,
+    resolveStatusLabel,
+    resolveRoleLabel,
+    toggleUserActionMenu,
+    retryUserDirectory,
+    showInitialLoading,
+    pageJumpDraft,
+    setPageJumpDraft,
+    commitPageJump,
+    handlePageJumpKeyDown,
+  } = useManageUsersPage();
 
-  const monthYearFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        month: "short",
-        year: "numeric",
-      }),
-    [locale],
-  );
-
-  const roleFilterOptions = USER_ROLE_FILTER_OPTIONS.map((option) => ({
-    ...option,
-    label:
-      option.value === "all"
-        ? t("admin.filter.all")
-        : t(`admin.role.${option.value}`),
-  }));
-
-  const getStatusLabel = (status: keyof typeof userStatusBadge): string =>
-    t(`admin.status.${status}`);
-
-  const getRoleLabel = (role: keyof typeof userRoleBadge): string =>
-    t(`admin.role.${role}`);
-
-  const [pageJump, setPageJump] = useState(() => String(pageIndex));
-
-  useEffect(() => {
-    setPageJump(String(pageIndex));
-  }, [pageIndex]);
-
-  const commitPageJump = () => {
-    const nextPage = Number(pageJump);
-
-    if (!Number.isFinite(nextPage)) {
-      setPageJump(String(pageIndex));
-      return;
-    }
-
-    goToPage(nextPage);
-  };
-
-  useEffect(() => {
-    if (!actionMenu) return;
-
-    const handleOutsideClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const withinOpenMenu = target?.closest(
-        `[data-user-menu-root="${actionMenu}"]`,
-      );
-
-      if (!withinOpenMenu) {
-        setActionMenu(null);
-      }
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setActionMenu(null);
-      }
-    };
-
-    document.addEventListener("mousedown", handleOutsideClick);
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [actionMenu, setActionMenu]);
-
-  const activeUsersCount = users.filter(
-    (user) => user.status === "active",
-  ).length;
-
-  if (loading && users.length === 0) {
+  if (showInitialLoading) {
     return (
       <LoadingSpinner size="md" text={t("admin.users.loading")} fullScreen />
     );
@@ -157,9 +88,7 @@ const ManageUsersPage = () => {
       <AdminErrorBanner
         title={t("admin.users.error.updateTitle")}
         message={error}
-        onRetry={() => {
-          void retry();
-        }}
+        onRetry={retryUserDirectory}
       />
 
       <AdminSection
@@ -237,7 +166,7 @@ const ManageUsersPage = () => {
                         role.class,
                       )}
                     >
-                      {getRoleLabel(user.role)}
+                      {resolveRoleLabel(user.role)}
                     </Badge>
                   </div>
                   <p className="truncate text-role-caption text-muted-foreground">
@@ -248,7 +177,7 @@ const ManageUsersPage = () => {
                       className={cn("flex items-center gap-1", status.class)}
                     >
                       <StatusIcon className="h-3 w-3" />
-                      {getStatusLabel(user.status)}
+                      {resolveStatusLabel(user.status)}
                     </span>
                     <span>·</span>
                     <span>
@@ -259,7 +188,7 @@ const ManageUsersPage = () => {
                     <span>·</span>
                     <span>
                       {t("admin.users.meta.joined")}{" "}
-                      {monthYearFormatter.format(new Date(user.joinedDate))}
+                      {formatJoinedMonthYear(user.joinedDate)}
                     </span>
                   </div>
                 </div>
@@ -271,11 +200,7 @@ const ManageUsersPage = () => {
                     variant="ghost"
                     size="sm"
                     type="button"
-                    onClick={() =>
-                      setActionMenu(
-                        actionMenu === user.userId ? null : user.userId,
-                      )
-                    }
+                    onClick={() => toggleUserActionMenu(user.userId)}
                     className="min-h-11 w-full gap-1 text-role-secondary sm:w-auto"
                     aria-haspopup="menu"
                     aria-expanded={actionMenu === user.userId}
@@ -364,7 +289,7 @@ const ManageUsersPage = () => {
                         >
                           <User className="h-3.5 w-3.5" />
                           {t("admin.users.actions.setRole", {
-                            role: getRoleLabel(roleOption),
+                            role: resolveRoleLabel(roleOption),
                           })}
                         </button>
                       ))}
@@ -408,15 +333,10 @@ const ManageUsersPage = () => {
                   type="number"
                   min={1}
                   max={totalPages}
-                  value={pageJump}
-                  onChange={(event) => setPageJump(event.target.value)}
+                  value={pageJumpDraft}
+                  onChange={(event) => setPageJumpDraft(event.target.value)}
                   onBlur={commitPageJump}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      commitPageJump();
-                    }
-                  }}
+                  onKeyDown={handlePageJumpKeyDown}
                   className="min-h-11 w-20 text-center"
                   aria-label={t(
                     "admin.pagination.goToAria",

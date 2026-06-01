@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import {
   Search,
   MapPin,
@@ -31,8 +31,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
-import { useManagePlaces } from "@/features/admin/hooks/useManagePlaces";
+import { useManagePlacesPage } from "@/features/admin/hooks/useManagePlacesPage";
 import {
   AdminEmptyState,
   AdminErrorBanner,
@@ -41,16 +40,10 @@ import {
   AdminPageHeader,
   AdminSection,
 } from "@/features/admin/components";
-import { PLACE_STATUS_FILTER_OPTIONS } from "@/features/admin/constants/filterOptions";
 import {
   adminToastClasses,
   placeStatusConfig,
 } from "@/features/admin/constants/statusConfigs";
-import {
-  EMPTY_PLACE_FORM,
-  isGoogleMapsVenueUrl,
-} from "@/features/admin/utils/placeForm";
-import { useI18n } from "@/components/i18n";
 
 const ADMIN_LIST_ROW_STYLE: CSSProperties = {
   contentVisibility: "auto",
@@ -59,12 +52,9 @@ const ADMIN_LIST_ROW_STYLE: CSSProperties = {
 };
 
 const ManagePlacesPage = () => {
-  const navigate = useNavigate();
-  const { t, formatNumber } = useI18n();
-  const formRef = useRef<HTMLDivElement>(null);
-
   const {
-    places,
+    t,
+    formatNumber,
     loading,
     error,
     pendingPlaceIds,
@@ -86,75 +76,30 @@ const ManagePlacesPage = () => {
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    goToPage,
     setSearch,
     setStatusFilter,
-    setShowAddForm,
     setForm,
     dismissScrapeStartedMessage,
     dismissPlaceActionNotice,
-    retry,
     handleStatusChange,
     handleDelete,
     handleAddPlace,
-  } = useManagePlaces();
-
-  const statusFilterOptions = PLACE_STATUS_FILTER_OPTIONS.map((option) => ({
-    ...option,
-    label:
-      option.value === "all"
-        ? t("admin.filter.all")
-        : t(`admin.status.${option.value}`),
-  }));
-
-  const getStatusLabel = (status: string): string =>
-    t(`admin.status.${status}`, undefined, status);
-
-  const [pageJump, setPageJump] = useState(() => String(pageIndex));
-
-  useEffect(() => {
-    setPageJump(String(pageIndex));
-  }, [pageIndex]);
-
-  const commitPageJump = () => {
-    const nextPage = Number(pageJump);
-
-    if (!Number.isFinite(nextPage)) {
-      setPageJump(String(pageIndex));
-      return;
-    }
-
-    goToPage(nextPage);
-  };
-
-  useEffect(() => {
-    let timerId: number | null = null;
-
-    if (showAddForm) {
-      timerId = window.setTimeout(
-        () =>
-          formRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          }),
-        50,
-      );
-    }
-
-    return () => {
-      if (timerId) {
-        window.clearTimeout(timerId);
-      }
-    };
-  }, [showAddForm]);
-
-  const flaggedPlacesCount = places.filter(
-    (place) => place.status === "flagged",
-  ).length;
-
-  const normalizedVenueUrl = form.venueUrl.trim();
-  const hasTypedVenueUrl = normalizedVenueUrl.length > 0;
-  const hasValidVenueUrl = isGoogleMapsVenueUrl(normalizedVenueUrl);
+    addPlaceFormAnchorRef,
+    statusFilterOptions,
+    flaggedPlacesCount,
+    venueUrlField,
+    venueUrlHintMessage,
+    venueUrlHintClass,
+    resolveStatusLabel,
+    toggleAddPlaceForm,
+    dismissAddPlaceForm,
+    openVenueDetail,
+    retryPlaceRegistry,
+    pageJumpDraft,
+    setPageJumpDraft,
+    commitPageJump,
+    handlePageJumpKeyDown,
+  } = useManagePlacesPage();
 
   if (loading) {
     return (
@@ -185,9 +130,7 @@ const ManagePlacesPage = () => {
       <AdminErrorBanner
         title={t("admin.places.error.updateTitle")}
         message={error}
-        onRetry={() => {
-          void retry();
-        }}
+        onRetry={retryPlaceRegistry}
       />
       <AdminPageHeader
         title={t("admin.places.header.title")}
@@ -198,7 +141,7 @@ const ManagePlacesPage = () => {
         icon={MapPin}
         actions={
           <Button
-            onClick={() => setShowAddForm((v) => !v)}
+            onClick={toggleAddPlaceForm}
             className="gap-2 flex-shrink-0 w-full sm:w-auto"
             variant={showAddForm ? "outline" : "default"}
             aria-expanded={showAddForm}
@@ -314,7 +257,7 @@ const ManagePlacesPage = () => {
         <AdminSection tone="surface" className="py-0" contentClassName="gap-6">
           <div
             id="admin-add-place-form"
-            ref={formRef}
+            ref={addPlaceFormAnchorRef}
             className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
           >
             <div className="rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 via-card to-background p-5 sm:p-6">
@@ -403,9 +346,9 @@ const ManagePlacesPage = () => {
                   spellCheck={false}
                   inputMode="url"
                 />
-                {hasValidVenueUrl ? (
+                {venueUrlField.isValid ? (
                   <a
-                    href={normalizedVenueUrl}
+                    href={venueUrlField.normalizedUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border px-4 text-role-secondary font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -422,33 +365,8 @@ const ManagePlacesPage = () => {
                 </p>
               ) : null}
 
-              <p
-                className={cn(
-                  "mt-2 text-role-caption",
-                  !hasTypedVenueUrl
-                    ? "text-muted-foreground"
-                    : hasValidVenueUrl
-                      ? "text-primary"
-                      : "text-destructive",
-                )}
-              >
-                {!hasTypedVenueUrl
-                  ? t(
-                      "admin.places.form.urlHintDefault",
-                      undefined,
-                      "Paste a Google Maps link to continue.",
-                    )
-                  : hasValidVenueUrl
-                    ? t(
-                        "admin.places.form.urlHintValid",
-                        undefined,
-                        "Looks valid. You can start scraping now.",
-                      )
-                    : t(
-                        "admin.places.form.urlHintInvalid",
-                        undefined,
-                        "Invalid URL. Use a Google Maps place link.",
-                      )}
+              <p className={cn("mt-2 text-role-caption", venueUrlHintClass)}>
+                {venueUrlHintMessage}
               </p>
 
               <p className="mt-3 text-role-caption text-muted-foreground">
@@ -461,10 +379,7 @@ const ManagePlacesPage = () => {
               <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:justify-end">
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setForm(EMPTY_PLACE_FORM);
-                  }}
+                  onClick={dismissAddPlaceForm}
                   className="w-full sm:w-auto"
                 >
                   {t("admin.places.actions.cancel")}
@@ -472,7 +387,7 @@ const ManagePlacesPage = () => {
 
                 <Button
                   onClick={handleAddPlace}
-                  disabled={submittingForm || !hasValidVenueUrl}
+                  disabled={submittingForm || !venueUrlField.isValid}
                   className="gap-2 w-full sm:w-auto"
                 >
                   {submittingForm ? (
@@ -569,7 +484,7 @@ const ManagePlacesPage = () => {
                       )}
                     >
                       <StatusIcon className="h-2.5 w-2.5 mr-0.5" />{" "}
-                      {getStatusLabel(place.status)}
+                      {resolveStatusLabel(place.status)}
                     </Badge>
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-3 text-role-caption text-muted-foreground">
@@ -593,7 +508,7 @@ const ManagePlacesPage = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate(`/venue/${place.id}`)}
+                    onClick={() => openVenueDetail(place.id)}
                     className="text-xs gap-1 min-h-11 sm:h-8"
                     disabled={isPendingAction}
                   >
@@ -724,15 +639,10 @@ const ManagePlacesPage = () => {
                   type="number"
                   min={1}
                   max={totalPages}
-                  value={pageJump}
-                  onChange={(event) => setPageJump(event.target.value)}
+                  value={pageJumpDraft}
+                  onChange={(event) => setPageJumpDraft(event.target.value)}
                   onBlur={commitPageJump}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      commitPageJump();
-                    }
-                  }}
+                  onKeyDown={handlePageJumpKeyDown}
                   className="h-8 w-20 text-center"
                   aria-label={t(
                     "admin.pagination.goToAria",

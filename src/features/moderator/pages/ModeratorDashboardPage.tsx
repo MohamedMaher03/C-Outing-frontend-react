@@ -1,15 +1,8 @@
-import {
-  Shield,
-  Activity,
-  MapPin,
-  MessageSquare,
-  AlertTriangle,
-} from "lucide-react";
+import { Activity, AlertTriangle, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useModeratorDashboard } from "@/features/moderator/hooks/useModeratorDashboard";
 import {
   moderationActionColor,
   moderationActionIcon,
@@ -21,15 +14,25 @@ import {
   ModeratorPageLayout,
   ModeratorSection,
 } from "@/features/moderator/components";
-import {
-  formatCount,
-  formatDateTime,
-} from "@/features/moderator/utils/formatters";
-import { useI18n } from "@/components/i18n";
+import { useModeratorDashboardPage } from "@/features/moderator/hooks/useModeratorDashboardPage";
+import { formatCount } from "@/features/moderator/utils/formatters";
 
 const ModeratorDashboardPage = () => {
-  const { t, locale } = useI18n();
-  const { stats, actions, loading, error, retry } = useModeratorDashboard();
+  const {
+    t,
+    locale,
+    stats,
+    actions,
+    loading,
+    error,
+    primaryMetricCards,
+    secondaryMetricCards,
+    quickNavLinks,
+    formatActionTimestamp,
+    resolveActionVerb,
+    resolveItemTypeLabel,
+    retryDashboard,
+  } = useModeratorDashboardPage();
 
   if (loading) {
     return (
@@ -56,9 +59,7 @@ const ModeratorDashboardPage = () => {
               type="button"
               variant="outline"
               className="min-h-11"
-              onClick={() => {
-                void retry();
-              }}
+              onClick={retryDashboard}
             >
               {t("common.retry")}
             </Button>
@@ -67,78 +68,6 @@ const ModeratorDashboardPage = () => {
       </ModeratorPageLayout>
     );
   }
-
-  const statCards = [
-    {
-      label: t("moderator.dashboard.stat.pendingReviews"),
-      value: stats.pendingReviews,
-      icon: MessageSquare,
-      color: "bg-secondary/18 text-foreground",
-    },
-    {
-      label: t("moderator.dashboard.stat.flaggedPlaces"),
-      value: stats.flaggedPlaces,
-      icon: AlertTriangle,
-      color: "bg-destructive/10 text-destructive",
-    },
-    {
-      label: t("moderator.dashboard.stat.openReports"),
-      value: stats.openReports,
-      icon: Shield,
-      color: "bg-destructive/10 text-destructive",
-    },
-    {
-      label: t("moderator.dashboard.stat.resolvedToday"),
-      value: stats.resolvedToday,
-      icon: Activity,
-      color: "bg-primary/10 text-primary",
-    },
-    {
-      label: t("moderator.dashboard.stat.resolvedThisWeek"),
-      value: stats.resolvedThisWeek,
-      icon: Activity,
-      color: "bg-primary/10 text-primary",
-    },
-    {
-      label: t("moderator.dashboard.stat.totalModerated"),
-      value: stats.totalModerated,
-      icon: Shield,
-      color: "bg-primary/20 text-primary",
-    },
-  ];
-
-  const quickLinks = [
-    {
-      label: t("moderator.dashboard.quick.reviewQueue"),
-      subtitle: t("moderator.dashboard.quick.pending", {
-        count: formatCount(stats.pendingReviews, locale),
-      }),
-      to: "/moderator/reviews",
-      icon: MessageSquare,
-      iconClass: "bg-secondary/18 text-foreground",
-    },
-    {
-      label: t("moderator.dashboard.quick.flaggedPlaces"),
-      subtitle: t("moderator.dashboard.quick.toReview", {
-        count: formatCount(stats.flaggedPlaces, locale),
-      }),
-      to: "/moderator/places",
-      icon: MapPin,
-      iconClass: "bg-destructive/10 text-destructive",
-    },
-    {
-      label: t("moderator.dashboard.quick.reports"),
-      subtitle: t("moderator.dashboard.quick.open", {
-        count: formatCount(stats.openReports, locale),
-      }),
-      to: "/moderator/reports",
-      icon: AlertTriangle,
-      iconClass: "bg-destructive/10 text-destructive",
-    },
-  ];
-
-  const primaryStatCards = statCards.slice(0, 3);
-  const secondaryStatCards = statCards.slice(3);
 
   return (
     <ModeratorPageLayout>
@@ -151,9 +80,7 @@ const ModeratorDashboardPage = () => {
       <ModeratorErrorBanner
         title={t("moderator.dashboard.errorRefreshTitle")}
         message={error}
-        onRetry={() => {
-          void retry();
-        }}
+        onRetry={retryDashboard}
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] xl:items-start">
@@ -164,7 +91,7 @@ const ModeratorDashboardPage = () => {
           contentClassName="gap-4"
         >
           <div className="grid gap-3 sm:grid-cols-3">
-            {primaryStatCards.map((stat) => (
+            {primaryMetricCards.map((stat) => (
               <article
                 key={stat.label}
                 className="space-y-3 rounded-xl border border-border bg-background/45 p-4"
@@ -190,7 +117,7 @@ const ModeratorDashboardPage = () => {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            {secondaryStatCards.map((stat) => (
+            {secondaryMetricCards.map((stat) => (
               <article
                 key={stat.label}
                 className="flex items-center gap-3 rounded-xl border border-border/80 bg-muted/20 px-3 py-3"
@@ -224,7 +151,7 @@ const ModeratorDashboardPage = () => {
           )}
           contentClassName="gap-3"
         >
-          {quickLinks.map((link) => (
+          {quickNavLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}
@@ -297,22 +224,12 @@ const ModeratorDashboardPage = () => {
                         {action.moderatorName}
                       </span>{" "}
                       <span className="text-muted-foreground">
-                        {t(
-                          `moderator.dashboard.action.${action.action}`,
-                          undefined,
-                          action.action,
-                        )}
+                        {resolveActionVerb(action.action)}
                       </span>{" "}
                       <span className="font-medium">{action.itemName}</span>
                       <span className="text-muted-foreground">
                         {" "}
-                        (
-                        {t(
-                          `moderator.dashboard.itemType.${action.itemType}`,
-                          undefined,
-                          action.itemType,
-                        )}
-                        )
+                        ({resolveItemTypeLabel(action.itemType)})
                       </span>
                     </p>
                     {action.note ? (
@@ -321,7 +238,7 @@ const ModeratorDashboardPage = () => {
                       </p>
                     ) : null}
                     <p className="mt-0.5 text-role-caption text-muted-foreground">
-                      {formatDateTime(action.timestamp, locale)}
+                      {formatActionTimestamp(action.timestamp)}
                     </p>
                   </div>
                 </div>

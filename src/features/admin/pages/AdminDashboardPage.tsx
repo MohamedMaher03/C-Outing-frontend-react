@@ -1,12 +1,4 @@
-import {
-  Users,
-  MapPin,
-  MessageSquare,
-  AlertTriangle,
-  UserPlus,
-  Activity,
-} from "lucide-react";
-import { type CSSProperties, useMemo } from "react";
+import { type CSSProperties } from "react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import {
   AdminErrorBanner,
@@ -14,43 +6,32 @@ import {
   AdminPageLayout,
   AdminSection,
 } from "@/features/admin/components";
-import { useAdminDashboard } from "@/features/admin/hooks/useAdminDashboard";
-import { useI18n } from "@/components/i18n";
+import { useAdminDashboardPage } from "@/features/admin/hooks/useAdminDashboardPage";
+import {
+  ADMIN_ACTIVITY_ROW_INTRINSIC_SIZE,
+  resolveAdminActivityVisuals,
+} from "@/features/admin/utils/adminDashboardPresentation";
 
 const ADMIN_ACTIVITY_ROW_STYLE: CSSProperties = {
   contentVisibility: "auto",
-  containIntrinsicSize: "88px",
+  containIntrinsicSize: ADMIN_ACTIVITY_ROW_INTRINSIC_SIZE,
   contain: "layout paint style",
 };
 
-const activityIcons: Record<string, typeof Users> = {
-  user_joined: UserPlus,
-  review_posted: MessageSquare,
-  place_added: MapPin,
-  report_filed: AlertTriangle,
-};
-
-const activityColors: Record<string, string> = {
-  user_joined: "bg-primary/10 text-primary",
-  review_posted: "bg-secondary/18 text-foreground",
-  place_added: "bg-muted text-foreground",
-  report_filed: "bg-destructive/10 text-destructive",
-};
-
 const AdminDashboardPage = () => {
-  const { t, locale, formatNumber } = useI18n();
-  const { stats, activity, loading, error, retry } = useAdminDashboard();
-
-  const activityDateTimeFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    [locale],
-  );
+  const {
+    t,
+    formatNumber,
+    stats,
+    activity,
+    loading,
+    error,
+    primaryMetricCards,
+    secondaryMetricCards,
+    operationalHealth,
+    formatActivityTimestamp,
+    retryDashboard,
+  } = useAdminDashboardPage();
 
   if (loading) {
     return (
@@ -62,68 +43,17 @@ const AdminDashboardPage = () => {
     );
   }
 
-  if (!stats) {
+  if (!stats || !operationalHealth) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <AdminErrorBanner
           title={t("admin.dashboard.unavailableTitle")}
           message={error ?? t("admin.dashboard.unavailableMessage")}
-          onRetry={() => {
-            void retry();
-          }}
+          onRetry={retryDashboard}
         />
       </div>
     );
   }
-
-  const statCards = [
-    {
-      label: t("admin.dashboard.stat.totalUsers"),
-      value: stats.totalUsers,
-      icon: Users,
-      color: "bg-primary/10 text-primary",
-    },
-    {
-      label: t("admin.dashboard.stat.totalPlaces"),
-      value: stats.totalPlaces,
-      icon: MapPin,
-      color: "bg-secondary/18 text-foreground",
-    },
-    {
-      label: t("admin.dashboard.stat.totalReviews"),
-      value: stats.totalReviews,
-      icon: MessageSquare,
-      color: "bg-muted text-foreground",
-    },
-    {
-      label: t("admin.dashboard.stat.openReports"),
-      value: stats.totalReports,
-      icon: AlertTriangle,
-      color: "bg-destructive/10 text-destructive",
-    },
-  ];
-
-  const normalizedSystemStatus = (
-    stats.systemStatus ?? "healthy"
-  ).toLowerCase();
-  const isHealthy = normalizedSystemStatus === "healthy";
-  const healthTimestamp = stats.healthTimestamp
-    ? new Date(stats.healthTimestamp)
-    : null;
-  const healthTimestampLabel =
-    healthTimestamp && !Number.isNaN(healthTimestamp.getTime())
-      ? activityDateTimeFormatter.format(healthTimestamp)
-      : t("admin.status.unknown");
-  const systemStatusLabel =
-    normalizedSystemStatus === "healthy"
-      ? t("admin.status.healthy")
-      : normalizedSystemStatus === "degraded"
-        ? t("admin.status.degraded")
-        : normalizedSystemStatus === "down"
-          ? t("admin.status.down")
-          : (stats.systemStatus ?? t("admin.status.unknown"));
-  const primaryStatCards = statCards.slice(0, 4);
-  const secondaryStatCards = statCards.slice(4);
 
   return (
     <AdminPageLayout>
@@ -142,9 +72,7 @@ const AdminDashboardPage = () => {
       <AdminErrorBanner
         title={t("admin.dashboard.errorRefreshTitle")}
         message={error}
-        onRetry={() => {
-          void retry();
-        }}
+        onRetry={retryDashboard}
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] xl:items-start">
@@ -155,7 +83,7 @@ const AdminDashboardPage = () => {
           contentClassName="gap-5"
         >
           <div className="grid gap-3 sm:grid-cols-2">
-            {primaryStatCards.map((stat) => (
+            {primaryMetricCards.map((stat) => (
               <article
                 key={stat.label}
                 className="space-y-3 rounded-xl border border-border bg-background/45 p-4"
@@ -177,7 +105,7 @@ const AdminDashboardPage = () => {
             ))}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {secondaryStatCards.map((stat) => (
+            {secondaryMetricCards.map((stat) => (
               <article
                 key={stat.label}
                 className="flex items-center gap-3 rounded-xl border border-border/80 bg-muted/20 px-3 py-3"
@@ -215,9 +143,9 @@ const AdminDashboardPage = () => {
           ) : (
             <div className="max-h-[32rem] space-y-2 overflow-auto pr-1">
               {activity.map((item) => {
-                const Icon = activityIcons[item.type] || Activity;
-                const colorClass =
-                  activityColors[item.type] || "bg-muted text-muted-foreground";
+                const { Icon, toneClass } = resolveAdminActivityVisuals(
+                  item.type,
+                );
 
                 return (
                   <div
@@ -226,7 +154,7 @@ const AdminDashboardPage = () => {
                     style={ADMIN_ACTIVITY_ROW_STYLE}
                   >
                     <div
-                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${colorClass}`}
+                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${toneClass}`}
                     >
                       <Icon className="h-4 w-4" />
                     </div>
@@ -235,9 +163,7 @@ const AdminDashboardPage = () => {
                         {item.description}
                       </p>
                       <p className="text-role-caption text-muted-foreground">
-                        {activityDateTimeFormatter.format(
-                          new Date(item.timestamp),
-                        )}
+                        {formatActivityTimestamp(item.timestamp)}
                       </p>
                     </div>
                   </div>
@@ -260,19 +186,19 @@ const AdminDashboardPage = () => {
             </p>
             <p
               className={
-                isHealthy
+                operationalHealth.isHealthy
                   ? "mt-1 flex items-center gap-1 text-role-secondary font-semibold text-primary"
                   : "mt-1 flex items-center gap-1 text-role-secondary font-semibold text-destructive"
               }
             >
               <span
                 className={
-                  isHealthy
+                  operationalHealth.isHealthy
                     ? "h-2 w-2 rounded-full bg-primary"
                     : "h-2 w-2 rounded-full bg-destructive"
                 }
               />
-              {systemStatusLabel}
+              {operationalHealth.statusLabel}
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card px-4 py-3">
@@ -280,7 +206,7 @@ const AdminDashboardPage = () => {
               {t("admin.dashboard.operational.apiResponse")}
             </p>
             <p className="mt-1 text-role-secondary text-numeric-tabular font-semibold text-foreground">
-              {healthTimestampLabel}
+              {operationalHealth.healthTimestampLabel}
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card px-4 py-3">

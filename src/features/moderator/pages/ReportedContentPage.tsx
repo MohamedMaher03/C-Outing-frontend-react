@@ -1,3 +1,4 @@
+import { type CSSProperties } from "react";
 import {
   Search,
   ShieldAlert,
@@ -15,7 +16,6 @@ import {
   MessageSquare,
   Loader2,
 } from "lucide-react";
-import { type CSSProperties, useMemo } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,8 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { useReportedContent } from "@/features/moderator/hooks/useReportedContent";
-import { MODERATOR_REPORT_STATUS_FILTER_OPTIONS } from "@/features/moderator/constants/filterOptions";
+import { useReportedContentPage } from "@/features/moderator/hooks/useReportedContentPage";
 import {
   getReportedRowStateClass,
   moderatorToastClasses,
@@ -53,7 +52,6 @@ import {
   formatLongDate,
   formatRelativeTime,
 } from "@/features/moderator/utils/formatters";
-import { useI18n } from "@/components/i18n";
 
 const MODERATOR_REPORT_ROW_STYLE: CSSProperties = {
   contentVisibility: "auto",
@@ -62,56 +60,29 @@ const MODERATOR_REPORT_ROW_STYLE: CSSProperties = {
 };
 
 const ReportedContentPage = () => {
-  const { t, locale } = useI18n();
   const {
-    reports,
+    t,
+    locale,
     loading,
     error,
-    pendingReportIdSet,
-    search,
-    statusFilter,
     expandedId,
-    actionLoading,
     toasts,
     filteredReports: filtered,
+    search,
+    statusFilter,
     setSearch,
     setStatusFilter,
-    setExpandedId,
-    retry,
     handleStatusChange,
     handleDeleteReview,
     handleWarnUser,
     handleBanUser,
-  } = useReportedContent();
-
-  const statusFilterOptions = useMemo(
-    () =>
-      MODERATOR_REPORT_STATUS_FILTER_OPTIONS.map((option) => ({
-        ...option,
-        label:
-          option.value === "all"
-            ? t("admin.filter.all")
-            : t(`moderator.report.status.${option.value}`),
-      })),
-    [t],
-  );
-
-  const reportSummary = useMemo(
-    () =>
-      reports.reduce(
-        (summary, report) => {
-          if (report.status === "open") {
-            summary.open += 1;
-          }
-          if (report.status === "investigating") {
-            summary.investigating += 1;
-          }
-          return summary;
-        },
-        { open: 0, investigating: 0 },
-      ),
-    [reports],
-  );
+    statusFilterOptions,
+    reportQueueSummary,
+    resolveEmptyDescription,
+    toggleReportDetails,
+    deriveRowActionFlags,
+    retryReportQueue,
+  } = useReportedContentPage();
 
   if (loading) {
     return (
@@ -155,8 +126,8 @@ const ReportedContentPage = () => {
       <ModeratorPageHeader
         title={t("moderator.reports.header.title")}
         description={t("moderator.reports.header.description", {
-          open: formatCount(reportSummary.open, locale),
-          investigating: formatCount(reportSummary.investigating, locale),
+          open: formatCount(reportQueueSummary.open, locale),
+          investigating: formatCount(reportQueueSummary.investigating, locale),
         })}
         icon={ShieldAlert}
       />
@@ -164,9 +135,7 @@ const ReportedContentPage = () => {
       <ModeratorErrorBanner
         title={t("moderator.reports.error.loadTitle")}
         message={error}
-        onRetry={() => {
-          void retry();
-        }}
+        onRetry={retryReportQueue}
       />
 
       <ModeratorSection
@@ -206,11 +175,7 @@ const ReportedContentPage = () => {
           <ModeratorEmptyState
             icon={ShieldAlert}
             title={t("moderator.reports.empty.title")}
-            description={
-              search.trim().length > 0
-                ? t("moderator.reports.empty.withSearch")
-                : t("moderator.reports.empty.default")
-            }
+            description={resolveEmptyDescription()}
           />
         ) : (
           filtered.map((report) => {
@@ -219,14 +184,14 @@ const ReportedContentPage = () => {
             const TypeIcon = MessageSquareWarning;
             const priority = reportedPriorityConfig[report.priority];
             const isExpanded = expandedId === report.id;
-            const isPending = pendingReportIdSet.has(report.id);
+            const {
+              isPending,
+              isStatusPending,
+              isDeletePending,
+              isWarnPending,
+              isBanPending,
+            } = deriveRowActionFlags(report.id);
             const detailsPanelId = `report-details-${report.id}`;
-            const isStatusPending = actionLoading?.startsWith(
-              `${report.id}_status_`,
-            );
-            const isDeletePending = actionLoading === `${report.id}_delete`;
-            const isWarnPending = actionLoading === `${report.id}_warn`;
-            const isBanPending = actionLoading === `${report.id}_ban`;
 
             return (
               <div
@@ -285,9 +250,7 @@ const ReportedContentPage = () => {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        setExpandedId(isExpanded ? null : report.id)
-                      }
+                      onClick={() => toggleReportDetails(report.id, isExpanded)}
                       aria-expanded={isExpanded}
                       aria-controls={detailsPanelId}
                       className="text-role-secondary gap-1 min-h-11 sm:h-8"
