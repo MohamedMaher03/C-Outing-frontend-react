@@ -9,7 +9,8 @@ import {
 import { CATEGORIES, MOOD_OPTIONS, POPULAR_DISTRICTS } from "@/mocks/mockData";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useUserLocation } from "@/features/home/hooks/useUserLocation";
-import { calculateDistanceKm } from "@/features/home/utils/distance";
+import { applyMapAtlasPlaceFilters } from "@/features/map-atlas/utils/mapAtlasPlaceFilters";
+import { resolveMapAtlasErrorMessage } from "@/features/map-atlas/utils/mapAtlasErrors";
 import type {
   DiscoverySource,
   FilterType,
@@ -21,7 +22,6 @@ import {
   INTERACTION_ACTION_TYPES,
   trackVenueInteractionSafe,
 } from "@/features/interactions";
-import { getErrorMessage, isApiError } from "@/utils/apiError";
 import {
   DEFAULT_MAP_ATLAS_RECOMMENDATION_COUNT,
   type MapAtlasRecommendationCount,
@@ -82,40 +82,6 @@ interface UseMapAtlasReturn {
   isPlaceSavePending: (id: string) => boolean;
   reloadPlaces: () => Promise<void>;
 }
-
-const toFriendlyErrorMessage = (error: unknown, fallback: string): string => {
-  if (typeof navigator !== "undefined" && navigator.onLine === false) {
-    return "You are offline. Reconnect and retry.";
-  }
-
-  if (isApiError(error)) {
-    if (error.statusCode === 401) {
-      return "Your session expired. Sign in again and retry.";
-    }
-
-    if (error.statusCode === 403) {
-      return "Your account does not have access to this map data.";
-    }
-
-    if (error.statusCode === 404) {
-      return "Requested map data was not found.";
-    }
-
-    if (error.statusCode === 429) {
-      return "Too many requests. Please wait a moment and retry.";
-    }
-
-    if (
-      error.statusCode === 408 ||
-      error.statusCode === 504 ||
-      (typeof error.statusCode === "number" && error.statusCode >= 500)
-    ) {
-      return "Server timeout while loading map data. Please try again shortly.";
-    }
-  }
-
-  return getErrorMessage(error, fallback);
-};
 
 export const useMapAtlas = (): UseMapAtlasReturn => {
   const { user } = useAuth();
@@ -217,60 +183,18 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
   const curatedTrendingRequestIdRef = useRef(0);
   const skipRecommendationCountEffectRef = useRef(true);
 
-  const applyFilters = useCallback(
-    (list: HomePlace[]): HomePlace[] => {
-      let filtered = [...list];
-
-      const toSafeLower = (value: unknown) =>
-        typeof value === "string" ? value.toLowerCase() : "";
-
-      if (normalizedSearch) {
-        filtered = filtered.filter(
-          (place) =>
-            toSafeLower(place.name).includes(normalizedSearch) ||
-            toSafeLower(place.address).includes(normalizedSearch) ||
-            toSafeLower(place.category).includes(normalizedSearch) ||
-            (place.atmosphereTags ?? []).some((tag) =>
-              toSafeLower(tag).includes(normalizedSearch),
-            ),
-        );
-      }
-
-      if (selectedFilterSet.has("open-now")) {
-        filtered = filtered.filter((place) => place.isOpen === true);
-      }
-
-      if (selectedFilterSet.has("saved")) {
-        filtered = filtered.filter((place) => place.isSaved === true);
-      }
-
-      if (selectedFilterSet.has("has-wifi")) {
-        filtered = filtered.filter((place) => place.hasWifi === true);
-      }
-
-      if (selectedFilterSet.has("near-me") && userCoordinates) {
-        const { latitude, longitude } = userCoordinates;
-        const withDistance = filtered.map((place) => {
-          const distance =
-            Number.isFinite(place.latitude) && Number.isFinite(place.longitude)
-              ? calculateDistanceKm(
-                  latitude,
-                  longitude,
-                  place.latitude,
-                  place.longitude,
-                )
-              : Number.POSITIVE_INFINITY;
-
-          return { place, distance };
-        });
-
-        withDistance.sort((first, second) => first.distance - second.distance);
-        filtered = withDistance.map((entry) => entry.place);
-      }
-
-      return filtered;
-    },
+  const filterContext = useMemo(
+    () => ({
+      normalizedSearch,
+      selectedFilterSet,
+      userCoordinates,
+    }),
     [normalizedSearch, selectedFilterSet, userCoordinates],
+  );
+
+  const applyFilters = useCallback(
+    (list: HomePlace[]) => applyMapAtlasPlaceFilters(list, filterContext),
+    [filterContext],
   );
 
   const curatedPlaces = useMemo(
@@ -372,7 +296,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
       }
 
       setError(
-        toFriendlyErrorMessage(
+        resolveMapAtlasErrorMessage(
           loadError,
           "We could not load your map places. Please retry.",
         ),
@@ -481,7 +405,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
 
         setRawMoodPlaces([]);
         setMoodError(
-          toFriendlyErrorMessage(loadError, "Could not load mood picks."),
+          resolveMapAtlasErrorMessage(loadError, "Could not load mood picks."),
         );
       } finally {
         if (mountedRef.current && requestId === moodRequestIdRef.current) {
@@ -512,7 +436,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
 
         setGlobalTopRatedVenues([]);
         setTopRatedError(
-          toFriendlyErrorMessage(loadError, "Could not load top-rated venues."),
+          resolveMapAtlasErrorMessage(loadError, "Could not load top-rated venues."),
         );
       } finally {
         if (mountedRef.current && requestId === topRatedRequestIdRef.current) {
@@ -558,7 +482,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
 
         setTopRatedInAreaVenues([]);
         setTopRatedInAreaError(
-          toFriendlyErrorMessage(
+          resolveMapAtlasErrorMessage(
             loadError,
             "Could not load top-rated venues for this area.",
           ),
@@ -614,7 +538,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
 
         setRawDiscoveryPlaces([]);
         setDiscoveryError(
-          toFriendlyErrorMessage(loadError, "Could not load district venues."),
+          resolveMapAtlasErrorMessage(loadError, "Could not load district venues."),
         );
       } finally {
         if (mountedRef.current && requestId === discoveryRequestIdRef.current) {
@@ -664,7 +588,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
 
         setRawDiscoveryPlaces([]);
         setDiscoveryError(
-          toFriendlyErrorMessage(loadError, "Could not load venues by type."),
+          resolveMapAtlasErrorMessage(loadError, "Could not load venues by type."),
         );
       } finally {
         if (mountedRef.current && requestId === discoveryRequestIdRef.current) {
@@ -714,7 +638,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
 
         setRawDiscoveryPlaces([]);
         setDiscoveryError(
-          toFriendlyErrorMessage(
+          resolveMapAtlasErrorMessage(
             loadError,
             "Could not load venues for this budget level.",
           ),
@@ -818,7 +742,7 @@ export const useMapAtlas = (): UseMapAtlasReturn => {
         }
 
         setSaveError(
-          toFriendlyErrorMessage(
+          resolveMapAtlasErrorMessage(
             toggleError,
             "Could not update save state for this place.",
           ),

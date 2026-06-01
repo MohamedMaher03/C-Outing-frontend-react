@@ -1,10 +1,7 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   ArrowUpRight,
   Bookmark,
-  Compass,
-  Flame,
+  Clock3,
   Heart,
   Layers3,
   LocateFixed,
@@ -13,385 +10,40 @@ import {
   Navigation,
   RefreshCcw,
   Search,
-  Sparkles,
   Star,
   Wifi,
-  Clock3,
-  type LucideIcon,
 } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import "leaflet/dist/leaflet.css";
 import "@/features/map-atlas/components/map-atlas.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
-import { useI18n } from "@/components/i18n";
-import { useTheme } from "@/components/theme/useTheme";
 import { cn } from "@/lib/utils";
 import MapAtlasCanvas from "@/features/map-atlas/components/MapAtlasCanvas";
 import MapAtlasRecommendationCountSelector from "@/features/map-atlas/components/MapAtlasRecommendationCountSelector";
+import { MapAtlasStatCard } from "@/features/map-atlas/components/MapAtlasStatCard";
+import { FILTER_OPTIONS } from "@/features/home/mocks";
+import { useMapAtlasPage } from "@/features/map-atlas/hooks/useMapAtlasPage";
 import {
-  DISCOVERY_SOURCE_OPTIONS,
-  FILTER_OPTIONS,
-  VENUE_PRICE_RANGE_OPTIONS,
-} from "@/features/home/mocks";
-import { useMapAtlas } from "@/features/map-atlas/hooks/useMapAtlas";
-import {
-  INTERACTION_ACTION_TYPES,
-  trackVenueInteractionSafe,
-} from "@/features/interactions";
-import type { HomePlace } from "@/features/home/types";
-import {
-  buildGoogleMapsDirectionsUrl,
-  computeMapAtlasStats,
-} from "@/features/map-atlas/utils/mapAtlas";
-import {
-  PRICE_LEVEL_META,
-  type CanonicalPriceLevel,
-} from "@/utils/priceLevels";
-
-const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const;
-
-type MapAtlasVisibleSource = "discovery" | "curated" | "trending";
-
-const SOURCE_META: Record<
-  MapAtlasVisibleSource,
-  { icon: LucideIcon; fallbackLabel: string }
-> = {
-  discovery: {
-    icon: Compass,
-    fallbackLabel: "Discovery",
-  },
-  curated: {
-    icon: Sparkles,
-    fallbackLabel: "Curated",
-  },
-  trending: {
-    icon: Flame,
-    fallbackLabel: "Trending",
-  },
-};
-
-const SOURCE_IDS: MapAtlasVisibleSource[] = [
-  "discovery",
-  "curated",
-  "trending",
-];
-
-const RATING_FILTERS = [
-  { value: 0, key: "all", label: "All ratings" },
-  { value: 4, key: "4plus", label: "4.0+" },
-  { value: 4.5, key: "45plus", label: "4.5+" },
-] as const;
-
-const getOpenStatusCopy = (
-  isOpen: boolean | null | undefined,
-  t: (key: string) => string,
-): string => {
-  if (isOpen === true) return t("home.place.open");
-  else if (isOpen === false) return t("home.place.closed");
-  else return t("home.place.unknown");
-};
+  MAP_ATLAS_EASE_OUT_QUART,
+  MAP_ATLAS_RATING_FILTERS,
+  MAP_ATLAS_SOURCE_META,
+  isMapAtlasFilterActive,
+  placeHasValidDirections,
+  resolveMapAtlasOpenStatusLabel,
+  resolveMapAtlasOpenStatusToneClass,
+} from "@/features/map-atlas/utils/mapAtlasPresentation";
 
 export default function MapAtlasPage() {
-  const navigate = useNavigate();
-  const { t, formatNumber } = useI18n();
-  const shouldReduceMotion = useReducedMotion();
-  const { resolvedTheme } = useTheme();
+  const page = useMapAtlasPage();
 
-  const {
-    search,
-    setSearch,
-    selectedFilters,
-    toggleFilter,
-    selectedDistrict,
-    autoSelectedDistrictId,
-    setSelectedDistrict,
-    selectedVenueType,
-    setSelectedVenueType,
-    selectedPriceRange,
-    setSelectedPriceRange,
-    selectedArea,
-    setSelectedArea,
-    activeDiscoverySource,
-    setActiveDiscoverySource,
-    discoveryPlaces,
-    isDiscoveryLoading,
-    discoveryError,
-    curatedPlaces,
-    trendingPlaces,
-    recommendationCount,
-    setRecommendationCount,
-    isCuratedTrendingLoading,
-    requestUserLocation,
-    toggleSave,
-    isPlaceSavePending,
-    retryDiscovery,
-    retryCuratedTrending,
-    isLoading,
-    error,
-    reloadPlaces,
-    categories,
-    popularDistricts,
-    userLocation,
-    saveError,
-    clearSaveError,
-  } = useMapAtlas();
-
-  const [selectedSource, setSelectedSource] =
-    useState<MapAtlasVisibleSource>("discovery");
-  const [selectedPlaceIdState, setSelectedPlaceIdState] = useState<
-    string | null
-  >(null);
-  const [minimumRating, setMinimumRating] = useState<number>(0);
-  const [fitRequestToken, setFitRequestToken] = useState(0);
-  const [centerUserRequestToken, setCenterUserRequestToken] = useState(0);
-  const mapViewportRef = useRef<HTMLElement | null>(null);
-
-  const sourcePlaces = useMemo(
-    () => ({
-      discovery: discoveryPlaces,
-      curated: curatedPlaces,
-      trending: trendingPlaces,
-    }),
-    [curatedPlaces, discoveryPlaces, trendingPlaces],
-  );
-
-  const sourceOptions = useMemo(
-    () =>
-      SOURCE_IDS.map((sourceId) => ({
-        id: sourceId,
-        label: t(
-          `mapAtlas.source.${sourceId}`,
-          undefined,
-          SOURCE_META[sourceId].fallbackLabel,
-        ),
-        count: sourcePlaces[sourceId].length,
-      })),
-    [sourcePlaces, t],
-  );
-
-  const sourceData = sourcePlaces[selectedSource];
-
-  const mapPlaces = useMemo(
-    () => sourceData.filter((place) => place.rating >= minimumRating),
-    [minimumRating, sourceData],
-  );
-
-  const selectedPlaceId = useMemo(() => {
-    if (mapPlaces.length === 0) {
-      return null;
-    }
-
-    if (
-      selectedPlaceIdState &&
-      mapPlaces.some((place) => place.id === selectedPlaceIdState)
-    ) {
-      return selectedPlaceIdState;
-    }
-
-    return mapPlaces[0].id;
-  }, [mapPlaces, selectedPlaceIdState]);
-
-  const selectedPlace =
-    selectedPlaceId !== null
-      ? (mapPlaces.find((place) => place.id === selectedPlaceId) ?? null)
-      : null;
-
-  const sourceIsLoading =
-    (selectedSource === "discovery" && isDiscoveryLoading) ||
-    ((selectedSource === "curated" || selectedSource === "trending") &&
-      isCuratedTrendingLoading);
-
-  const sourceError = selectedSource === "discovery" ? discoveryError : null;
-
-  const stats = useMemo(() => computeMapAtlasStats(mapPlaces), [mapPlaces]);
-
-  const locationStatus = useMemo(() => {
-    if (userLocation.status === "granted") {
-      return t("mapAtlas.location.granted", undefined, "Location active");
-    }
-
-    if (userLocation.status === "loading") {
-      return t("mapAtlas.location.loading", undefined, "Locating...");
-    }
-
-    if (userLocation.status === "denied") {
-      return t(
-        "mapAtlas.location.denied",
-        undefined,
-        "Location denied. Use browser settings to enable it.",
-      );
-    }
-
-    if (userLocation.status === "unsupported") {
-      return t(
-        "mapAtlas.location.unsupported",
-        undefined,
-        "Geolocation is not supported on this browser.",
-      );
-    }
-
-    if (userLocation.status === "unavailable") {
-      return t(
-        "mapAtlas.location.unavailable",
-        undefined,
-        "Location unavailable right now.",
-      );
-    }
-
-    if (userLocation.status === "error") {
-      return t(
-        "mapAtlas.location.error",
-        undefined,
-        "Could not read your location.",
-      );
-    }
-
-    return t(
-      "mapAtlas.location.idle",
-      undefined,
-      "Enable location to unlock near-me guidance.",
-    );
-  }, [t, userLocation.status]);
-
-  const retryCurrentSource = () => {
-    if (selectedSource === "discovery") {
-      retryDiscovery();
-      return;
-    }
-
-    if (selectedSource === "curated" || selectedSource === "trending") {
-      retryCuratedTrending();
-      return;
-    }
-
-    void reloadPlaces();
-  };
-
-  const scrollToMapViewport = useCallback(() => {
-    if (!mapViewportRef.current) {
-      return;
-    }
-
-    const performScroll = () => {
-      mapViewportRef.current?.scrollIntoView({
-        behavior: shouldReduceMotion ? "auto" : "smooth",
-        block: "start",
-      });
-    };
-
-    if (typeof window === "undefined") {
-      performScroll();
-      return;
-    }
-
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(performScroll);
-    });
-  }, [shouldReduceMotion]);
-
-  const handleFitResults = () => {
-    scrollToMapViewport();
-    setFitRequestToken((current) => current + 1);
-  };
-
-  const handleCenterOnMe = () => {
-    scrollToMapViewport();
-
-    if (userLocation.status !== "granted" || !userLocation.coordinates) {
-      requestUserLocation();
-      return;
-    }
-
-    setCenterUserRequestToken((current) => current + 1);
-  };
-
-  const handleOpenDirections = (place: HomePlace) => {
-    if (!Number.isFinite(place.latitude) || !Number.isFinite(place.longitude)) {
-      return;
-    }
-
-    const mapsUrl = buildGoogleMapsDirectionsUrl(
-      place.latitude,
-      place.longitude,
-      place.name,
-    );
-
-    window.open(mapsUrl, "_blank", "noopener,noreferrer");
-    void trackVenueInteractionSafe(
-      place.id,
-      INTERACTION_ACTION_TYPES.directions,
-    );
-  };
-
-  const getLocalizedBudgetLabel = useCallback(
-    (priceLevel: CanonicalPriceLevel) =>
-      t(
-        `budget.${priceLevel}`,
-        undefined,
-        `${PRICE_LEVEL_META[priceLevel].label} (${PRICE_LEVEL_META[priceLevel].symbol})`,
-      ),
-    [t],
-  );
-
-  const getLocalizedDistrictName = useCallback(
-    (districtId: string, fallbackName: string) =>
-      t(`onboarding.district.${districtId}`, undefined, fallbackName),
-    [t],
-  );
-
-  const getLocalizedCategoryName = useCallback(
-    (categoryId: string, fallbackLabel: string) =>
-      t(`mapAtlas.category.${categoryId}`, undefined, fallbackLabel),
-    [t],
-  );
-
-  const discoverySourceOptions = useMemo(
-    () =>
-      DISCOVERY_SOURCE_OPTIONS.map((source) => ({
-        ...source,
-        label: t(`home.discovery.source.${source.id}`, undefined, source.label),
-      })),
-    [t],
-  );
-
-  const typeDiscoveryOptions = useMemo(
-    () =>
-      categories.map((category) => ({
-        id: category.id,
-        label: getLocalizedCategoryName(category.id, category.label),
-      })),
-    [categories, getLocalizedCategoryName],
-  );
-
-  const localizedPriceRangeOptions = useMemo(
-    () =>
-      VENUE_PRICE_RANGE_OPTIONS.map((option) => ({
-        ...option,
-        label: getLocalizedBudgetLabel(option.id),
-      })),
-    [getLocalizedBudgetLabel],
-  );
-
-  const selectedDistrictRecord = useMemo(
-    () =>
-      popularDistricts.find((district) => district.name === selectedDistrict) ??
-      null,
-    [popularDistricts, selectedDistrict],
-  );
-
-  const showNearYouDistrictHint =
-    activeDiscoverySource === "district" &&
-    autoSelectedDistrictId !== null &&
-    selectedDistrictRecord?.id === autoSelectedDistrictId;
-
-  if (isLoading) {
+  if (page.isLoading) {
     return (
       <PageLoading
-        text={t("mapAtlas.loading.title", undefined, "Loading Map Atlas")}
-        subText={t(
+        text={page.t("mapAtlas.loading.title", undefined, "Loading Map Atlas")}
+        subText={page.t(
           "mapAtlas.loading.subtitle",
           undefined,
           "Preparing Cairo pins and personalized places...",
@@ -400,34 +52,30 @@ export default function MapAtlasPage() {
     );
   }
 
-  if (error) {
+  if (page.error) {
     return (
       <div className="mx-auto flex min-h-[70vh] w-full max-w-4xl items-center px-4 py-10">
         <section className="w-full rounded-3xl border border-destructive/25 bg-destructive/5 p-6 sm:p-8">
           <p className="text-role-caption uppercase text-destructive">
-            {t("mapAtlas.error.badge", undefined, "Map Atlas unavailable")}
+            {page.t("mapAtlas.error.badge", undefined, "Map Atlas unavailable")}
           </p>
           <h1 className="mt-2 text-role-heading text-foreground text-safe-wrap">
-            {t(
+            {page.t(
               "mapAtlas.error.title",
               undefined,
               "We could not load your map experience right now",
             )}
           </h1>
           <p className="mt-2 text-role-secondary text-measure-comfortable text-muted-foreground">
-            {error}
+            {page.error}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Button type="button" onClick={() => void reloadPlaces()}>
+            <Button type="button" onClick={() => void page.reloadPlaces()}>
               <RefreshCcw className="h-4 w-4" />
-              {t("common.retry")}
+              {page.t("common.retry")}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate("/")}
-            >
-              {t("mapAtlas.error.backHome", undefined, "Back to Home")}
+            <Button type="button" variant="outline" onClick={page.returnHome}>
+              {page.t("mapAtlas.error.backHome", undefined, "Back to Home")}
             </Button>
           </div>
         </section>
@@ -441,8 +89,8 @@ export default function MapAtlasPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{
-        duration: shouldReduceMotion ? 0.01 : 0.22,
-        ease: EASE_OUT_QUART,
+        duration: page.prefersReducedMotion ? 0.01 : 0.22,
+        ease: MAP_ATLAS_EASE_OUT_QUART,
       }}
     >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 md:gap-6 md:py-7">
@@ -451,13 +99,13 @@ export default function MapAtlasPage() {
             <div>
               <p className="text-role-caption inline-flex items-center gap-1 rounded-full border border-secondary/30 bg-secondary/10 px-2.5 py-1 text-foreground">
                 <MapPinned className="h-3.5 w-3.5 text-secondary dark:text-primary" />
-                {t("mapAtlas.badge", undefined, "Cairo Atlas")}
+                {page.t("mapAtlas.badge", undefined, "Cairo Atlas")}
               </p>
               <h1 className="mt-2 text-role-heading text-foreground text-safe-wrap">
-                {t("mapAtlas.title", undefined, "Map-First Place Discovery")}
+                {page.t("mapAtlas.title", undefined, "Map-First Place Discovery")}
               </h1>
               <p className="mt-1 text-role-secondary text-measure-comfortable text-muted-foreground">
-                {t(
+                {page.t(
                   "mapAtlas.subtitle",
                   undefined,
                   "Switch recommendation sources, inspect clusters, and pick your next place directly from Cairo's map.",
@@ -469,15 +117,15 @@ export default function MapAtlasPage() {
           <div className="mt-4 grid gap-3 lg:grid-cols-[1.1fr_1fr]">
             <div className="relative">
               <Label htmlFor="map-atlas-search" className="sr-only">
-                {t("mapAtlas.search.label", undefined, "Search map places")}
+                {page.t("mapAtlas.search.label", undefined, "Search map places")}
               </Label>
               <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="map-atlas-search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                value={page.search}
+                onChange={(event) => page.setSearch(event.target.value)}
                 maxLength={140}
-                placeholder={t(
+                placeholder={page.t(
                   "mapAtlas.search.placeholder",
                   undefined,
                   "Search by place, district, category, or atmosphere tag...",
@@ -488,17 +136,17 @@ export default function MapAtlasPage() {
 
             <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
               {FILTER_OPTIONS.map((filter) => {
-                const active =
-                  filter.id === "all"
-                    ? selectedFilters.length === 0
-                    : selectedFilters.includes(filter.id);
+                const active = isMapAtlasFilterActive(
+                  filter.id,
+                  page.selectedFilters,
+                );
                 const Icon = filter.icon;
 
                 return (
                   <button
                     key={filter.id}
                     type="button"
-                    onClick={() => toggleFilter(filter.id)}
+                    onClick={() => page.toggleFilter(filter.id)}
                     aria-pressed={active}
                     className={cn(
                       "inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors",
@@ -509,7 +157,7 @@ export default function MapAtlasPage() {
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />
-                    {t(`home.filter.${filter.id}`, undefined, filter.label)}
+                    {page.t(`home.filter.${filter.id}`, undefined, filter.label)}
                   </button>
                 );
               })}
@@ -517,15 +165,15 @@ export default function MapAtlasPage() {
           </div>
 
           <div className="mt-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
-            {sourceOptions.map((source) => {
-              const Icon = SOURCE_META[source.id].icon;
-              const active = selectedSource === source.id;
+            {page.sourceTabOptions.map((source) => {
+              const Icon = MAP_ATLAS_SOURCE_META[source.id].icon;
+              const active = page.visibleSource === source.id;
 
               return (
                 <button
                   key={`map-source-${source.id}`}
                   type="button"
-                  onClick={() => setSelectedSource(source.id)}
+                  onClick={() => page.setVisibleSource(source.id)}
                   className={cn(
                     "inline-flex min-h-11 items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition-colors",
                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
@@ -544,7 +192,7 @@ export default function MapAtlasPage() {
                         : "border-border/70 bg-muted/60 text-muted-foreground",
                     )}
                   >
-                    {formatNumber(source.count)}
+                    {page.formatNumber(source.count)}
                   </span>
                 </button>
               );
@@ -552,25 +200,25 @@ export default function MapAtlasPage() {
           </div>
 
           <AnimatePresence initial={false} mode="wait">
-            {selectedSource === "discovery" && (
+            {page.visibleSource === "discovery" && (
               <motion.div
                 key="discovery-controls"
-                initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
+                initial={{ opacity: 0, y: page.prefersReducedMotion ? 0 : 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                transition={{ duration: shouldReduceMotion ? 0.01 : 0.2 }}
+                exit={{ opacity: 0, y: page.prefersReducedMotion ? 0 : -8 }}
+                transition={{ duration: page.prefersReducedMotion ? 0.01 : 0.2 }}
                 className="mt-4 space-y-4 rounded-2xl border border-border/65 bg-background/65 p-4"
               >
                 <div>
                   <p className="text-role-caption uppercase tracking-wide text-muted-foreground">
-                    {t(
+                    {page.t(
                       "mapAtlas.discovery.title",
                       undefined,
                       "How do you want to explore?",
                     )}
                   </p>
                   <p className="mt-1 text-role-secondary text-muted-foreground">
-                    {t(
+                    {page.t(
                       "mapAtlas.discovery.subtitle",
                       undefined,
                       "Pick a discovery lens, then refine your results below.",
@@ -580,16 +228,16 @@ export default function MapAtlasPage() {
 
                 <div
                   role="radiogroup"
-                  aria-label={t(
+                  aria-label={page.t(
                     "mapAtlas.discovery.lensAria",
                     undefined,
                     "Discovery lens",
                   )}
                   className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5"
                 >
-                  {discoverySourceOptions.map((source) => {
+                  {page.discoverySourceOptions.map((source) => {
                     const Icon = source.icon;
-                    const active = activeDiscoverySource === source.id;
+                    const active = page.activeDiscoverySource === source.id;
 
                     return (
                       <button
@@ -597,7 +245,7 @@ export default function MapAtlasPage() {
                         type="button"
                         role="radio"
                         aria-checked={active}
-                        onClick={() => setActiveDiscoverySource(source.id)}
+                        onClick={() => page.setActiveDiscoverySource(source.id)}
                         className={cn(
                           "group min-h-[3.25rem] rounded-2xl border px-3 py-2.5 text-left transition-colors",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
@@ -633,33 +281,34 @@ export default function MapAtlasPage() {
                   })}
                 </div>
 
-                {activeDiscoverySource === "district" && (
+                {page.activeDiscoverySource === "district" && (
                   <div className="space-y-2.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <Label className="text-role-secondary font-semibold text-foreground">
-                        {t(
+                        {page.t(
                           "mapAtlas.discovery.districtLabel",
                           undefined,
                           "Choose a district",
                         )}
                       </Label>
-                      {showNearYouDistrictHint && selectedDistrictRecord && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/70 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                          <LocateFixed className="h-3 w-3" />
-                          {t(
-                            "mapAtlas.discovery.nearYou",
-                            undefined,
-                            "Near you",
-                          )}
-                        </span>
-                      )}
+                      {page.nearYouDistrictHintVisible &&
+                        page.selectedDistrictRecord && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/70 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                            <LocateFixed className="h-3 w-3" />
+                            {page.t(
+                              "mapAtlas.discovery.nearYou",
+                              undefined,
+                              "Near you",
+                            )}
+                          </span>
+                        )}
                     </div>
 
-                    {userLocation.status === "granted" && (
+                    {page.userLocation.status === "granted" && (
                       <div className="flex flex-wrap items-start gap-2 rounded-2xl border border-primary/15 bg-primary/5 px-3 py-2 text-role-micro text-muted-foreground sm:items-center">
                         <LocateFixed className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary sm:mt-0" />
                         <p className="min-w-0 flex-1">
-                          {t(
+                          {page.t(
                             "mapAtlas.discovery.districtSortHint",
                             undefined,
                             "Districts are sorted from nearest to farthest based on your location.",
@@ -668,34 +317,37 @@ export default function MapAtlasPage() {
                       </div>
                     )}
 
-                    {showNearYouDistrictHint && selectedDistrictRecord && (
-                      <p className="text-role-micro text-muted-foreground">
-                        {t(
-                          "mapAtlas.discovery.autoDistrict",
-                          {
-                            district: getLocalizedDistrictName(
-                              selectedDistrictRecord.id,
-                              selectedDistrictRecord.name,
-                            ),
-                          },
-                          `Showing places in ${selectedDistrictRecord.name} — nearest to your location.`,
-                        )}
-                      </p>
-                    )}
+                    {page.nearYouDistrictHintVisible &&
+                      page.selectedDistrictRecord && (
+                        <p className="text-role-micro text-muted-foreground">
+                          {page.t(
+                            "mapAtlas.discovery.autoDistrict",
+                            {
+                              district: page.districtLabel(
+                                page.selectedDistrictRecord.id,
+                                page.selectedDistrictRecord.name,
+                              ),
+                            },
+                            `Showing places in ${page.selectedDistrictRecord.name} — nearest to your location.`,
+                          )}
+                        </p>
+                      )}
 
                     <div
                       role="listbox"
-                      aria-label={t(
+                      aria-label={page.t(
                         "home.discovery.districtsAria",
                         undefined,
                         "Popular districts",
                       )}
                       className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide"
                     >
-                      {popularDistricts.map((district) => {
-                        const isActive = selectedDistrict === district.name;
+                      {page.popularDistricts.map((district) => {
+                        const isActive =
+                          page.selectedDistrict === district.name;
                         const isNearYou =
-                          autoSelectedDistrictId === district.id && isActive;
+                          page.autoSelectedDistrictId === district.id &&
+                          isActive;
 
                         return (
                           <button
@@ -703,12 +355,9 @@ export default function MapAtlasPage() {
                             type="button"
                             role="option"
                             aria-selected={isActive}
-                            onClick={() => {
-                              setSelectedDistrict(
-                                isActive ? null : district.name,
-                              );
-                              setActiveDiscoverySource("district");
-                            }}
+                            onClick={() =>
+                              page.selectDistrict(district.name, isActive)
+                            }
                             className={cn(
                               "inline-flex min-h-11 flex-shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
                               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
@@ -720,10 +369,7 @@ export default function MapAtlasPage() {
                             {isNearYou && (
                               <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
                             )}
-                            {getLocalizedDistrictName(
-                              district.id,
-                              district.name,
-                            )}
+                            {page.districtLabel(district.id, district.name)}
                           </button>
                         );
                       })}
@@ -731,27 +377,26 @@ export default function MapAtlasPage() {
                   </div>
                 )}
 
-                {activeDiscoverySource === "type" && (
+                {page.activeDiscoverySource === "type" && (
                   <div className="space-y-2.5">
                     <Label className="text-role-secondary font-semibold text-foreground">
-                      {t(
+                      {page.t(
                         "mapAtlas.discovery.typeLabel",
                         undefined,
                         "Choose a venue type",
                       )}
                     </Label>
                     <div className="flex flex-wrap gap-2">
-                      {typeDiscoveryOptions.map((option) => {
-                        const isActive = selectedVenueType === option.id;
+                      {page.venueTypeOptions.map((option) => {
+                        const isActive = page.selectedVenueType === option.id;
 
                         return (
                           <button
                             key={option.id}
                             type="button"
-                            onClick={() => {
-                              setSelectedVenueType(isActive ? null : option.id);
-                              setActiveDiscoverySource("type");
-                            }}
+                            onClick={() =>
+                              page.selectVenueType(option.id, isActive)
+                            }
                             className={cn(
                               "min-h-11 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors",
                               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
@@ -768,29 +413,27 @@ export default function MapAtlasPage() {
                   </div>
                 )}
 
-                {activeDiscoverySource === "price-range" && (
+                {page.activeDiscoverySource === "price-range" && (
                   <div className="space-y-2.5">
                     <Label className="text-role-secondary font-semibold text-foreground">
-                      {t(
+                      {page.t(
                         "mapAtlas.discovery.priceLabel",
                         undefined,
                         "Choose a budget level",
                       )}
                     </Label>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                      {localizedPriceRangeOptions.map((option) => {
-                        const isActive = selectedPriceRange === option.id;
+                      {page.priceRangeOptions.map((option) => {
+                        const isActive =
+                          page.selectedPriceRange === option.id;
 
                         return (
                           <button
                             key={option.id}
                             type="button"
-                            onClick={() => {
-                              setSelectedPriceRange(
-                                isActive ? null : option.id,
-                              );
-                              setActiveDiscoverySource("price-range");
-                            }}
+                            onClick={() =>
+                              page.selectPriceRange(option.id, isActive)
+                            }
                             className={cn(
                               "min-h-[4.5rem] rounded-2xl border px-3 py-3 text-left transition-colors",
                               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
@@ -819,9 +462,9 @@ export default function MapAtlasPage() {
                   </div>
                 )}
 
-                {activeDiscoverySource === "top-rated" && (
+                {page.activeDiscoverySource === "top-rated" && (
                   <p className="text-role-secondary rounded-xl border border-border/60 bg-card/70 px-3.5 py-3 text-muted-foreground">
-                    {t(
+                    {page.t(
                       "mapAtlas.discovery.topRatedHint",
                       undefined,
                       "Showing the highest-rated venues across Cairo — no extra filter needed.",
@@ -829,27 +472,24 @@ export default function MapAtlasPage() {
                   </p>
                 )}
 
-                {activeDiscoverySource === "top-rated-area" && (
+                {page.activeDiscoverySource === "top-rated-area" && (
                   <div className="space-y-2.5">
                     <Label className="text-role-secondary font-semibold text-foreground">
-                      {t(
+                      {page.t(
                         "mapAtlas.discovery.areaLabel",
                         undefined,
                         "Choose an area for top-rated picks",
                       )}
                     </Label>
                     <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
-                      {popularDistricts.map((district) => {
-                        const isActive = selectedArea === district.name;
+                      {page.popularDistricts.map((district) => {
+                        const isActive = page.selectedArea === district.name;
 
                         return (
                           <button
                             key={`area-${district.id}`}
                             type="button"
-                            onClick={() => {
-                              setSelectedArea(district.name);
-                              setActiveDiscoverySource("top-rated-area");
-                            }}
+                            onClick={() => page.selectTopRatedArea(district.name)}
                             className={cn(
                               "inline-flex min-h-11 flex-shrink-0 items-center rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
                               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
@@ -858,10 +498,7 @@ export default function MapAtlasPage() {
                                 : "border-border/70 bg-card text-foreground hover:border-primary/60 hover:bg-primary/12",
                             )}
                           >
-                            {getLocalizedDistrictName(
-                              district.id,
-                              district.name,
-                            )}
+                            {page.districtLabel(district.id, district.name)}
                           </button>
                         );
                       })}
@@ -871,64 +508,55 @@ export default function MapAtlasPage() {
               </motion.div>
             )}
 
-            {(selectedSource === "curated" ||
-              selectedSource === "trending") && (
+            {(page.visibleSource === "curated" ||
+              page.visibleSource === "trending") && (
               <motion.div
-                key={`${selectedSource}-count-controls`}
-                initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 8 }}
+                key={`${page.visibleSource}-count-controls`}
+                initial={{ opacity: 0, y: page.prefersReducedMotion ? 0 : 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                transition={{ duration: shouldReduceMotion ? 0.01 : 0.2 }}
+                exit={{ opacity: 0, y: page.prefersReducedMotion ? 0 : -8 }}
+                transition={{ duration: page.prefersReducedMotion ? 0.01 : 0.2 }}
                 className="mt-4"
               >
                 <MapAtlasRecommendationCountSelector
-                  source={selectedSource}
-                  sourceLabel={
-                    sourceOptions.find((source) => source.id === selectedSource)
-                      ?.label ?? SOURCE_META[selectedSource].fallbackLabel
-                  }
-                  count={recommendationCount}
-                  onCountChange={setRecommendationCount}
-                  isLoading={isCuratedTrendingLoading}
+                  source={page.visibleSource}
+                  sourceLabel={page.activeSourceLabel}
+                  count={page.recommendationCount}
+                  onCountChange={page.setRecommendationCount}
+                  isLoading={page.isCuratedTrendingLoading}
                 />
               </motion.div>
             )}
           </AnimatePresence>
 
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <MapStatCard
-              label={t("mapAtlas.stats.total", undefined, "Total")}
-              value={formatNumber(stats.total)}
+            <MapAtlasStatCard
+              label={page.t("mapAtlas.stats.total", undefined, "Total")}
+              value={page.formatNumber(page.mapStats.total)}
             />
-            <MapStatCard
-              label={t("mapAtlas.stats.open", undefined, "Open now")}
-              value={formatNumber(stats.openNow)}
+            <MapAtlasStatCard
+              label={page.t("mapAtlas.stats.open", undefined, "Open now")}
+              value={page.formatNumber(page.mapStats.openNow)}
             />
-            <MapStatCard
-              label={t("mapAtlas.stats.saved", undefined, "Saved")}
-              value={formatNumber(stats.saved)}
+            <MapAtlasStatCard
+              label={page.t("mapAtlas.stats.saved", undefined, "Saved")}
+              value={page.formatNumber(page.mapStats.saved)}
             />
-            <MapStatCard
-              label={t("mapAtlas.stats.avg", undefined, "Avg rating")}
-              value={
-                stats.averageRating > 0
-                  ? formatNumber(stats.averageRating, {
-                      minimumFractionDigits: 1,
-                      maximumFractionDigits: 1,
-                    })
-                  : "-"
-              }
+            <MapAtlasStatCard
+              label={page.t("mapAtlas.stats.avg", undefined, "Avg rating")}
+              value={page.averageRatingDisplay}
             />
           </div>
 
           <div className="mt-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
-            {RATING_FILTERS.map((filter) => {
-              const active = minimumRating === filter.value;
+            {MAP_ATLAS_RATING_FILTERS.map((filter) => {
+              const active = page.minimumRating === filter.value;
+
               return (
                 <button
                   key={`rating-${filter.key}`}
                   type="button"
-                  onClick={() => setMinimumRating(filter.value)}
+                  onClick={() => page.setMinimumRating(filter.value)}
                   className={cn(
                     "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
                     active
@@ -937,7 +565,7 @@ export default function MapAtlasPage() {
                   )}
                 >
                   <Star className="h-3.5 w-3.5" />
-                  {t(`mapAtlas.rating.${filter.key}`, undefined, filter.label)}
+                  {page.t(`mapAtlas.rating.${filter.key}`, undefined, filter.label)}
                 </button>
               );
             })}
@@ -945,7 +573,7 @@ export default function MapAtlasPage() {
         </section>
 
         <section
-          ref={mapViewportRef}
+          ref={page.mapViewportRef}
           className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,20rem)] 2xl:grid-cols-[minmax(0,1fr)_minmax(20rem,22rem)]"
         >
           <div className="space-y-3">
@@ -953,10 +581,10 @@ export default function MapAtlasPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-role-caption uppercase text-muted-foreground">
-                    {t("mapAtlas.map.toolsLabel", undefined, "Map tools")}
+                    {page.t("mapAtlas.map.toolsLabel", undefined, "Map tools")}
                   </p>
                   <p className="mt-1 text-role-secondary text-muted-foreground">
-                    {t(
+                    {page.t(
                       "mapAtlas.map.toolsHint",
                       undefined,
                       "Refit the map or jump back to your location.",
@@ -969,40 +597,40 @@ export default function MapAtlasPage() {
                     type="button"
                     variant="outline"
                     className="h-11 flex-1 rounded-full px-4 sm:flex-none"
-                    onClick={handleFitResults}
+                    onClick={page.fitMapToResults}
                   >
                     <Layers3 className="h-4 w-4" />
-                    {t("mapAtlas.action.fit", undefined, "Fit results")}
+                    {page.t("mapAtlas.action.fit", undefined, "Fit results")}
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     className="h-11 flex-1 rounded-full px-4 sm:flex-none"
-                    onClick={handleCenterOnMe}
-                    disabled={userLocation.status === "loading"}
+                    onClick={page.centerMapOnUser}
+                    disabled={page.userLocation.status === "loading"}
                   >
                     <LocateFixed className="h-4 w-4" />
-                    {t("mapAtlas.action.centerMe", undefined, "Center on me")}
+                    {page.t("mapAtlas.action.centerMe", undefined, "Center on me")}
                   </Button>
                 </div>
               </div>
             </div>
 
             <MapAtlasCanvas
-              places={mapPlaces}
-              selectedPlaceId={selectedPlaceId}
-              onSelectPlace={setSelectedPlaceIdState}
-              userLocation={userLocation}
-              resolvedTheme={resolvedTheme}
-              fitRequestToken={fitRequestToken}
-              centerUserRequestToken={centerUserRequestToken}
+              places={page.mapPlaces}
+              selectedPlaceId={page.selectedPlaceId}
+              onSelectPlace={page.setPinnedPlaceId}
+              userLocation={page.userLocation}
+              resolvedTheme={page.resolvedTheme}
+              fitRequestToken={page.fitRequestToken}
+              centerUserRequestToken={page.centerUserRequestToken}
             />
 
             <div className="rounded-2xl border border-border/70 bg-card/80 px-3.5 py-3 text-muted-foreground">
               <p className="text-role-caption text-foreground">
-                {t("mapAtlas.location.label", undefined, "Location status")}
+                {page.t("mapAtlas.location.label", undefined, "Location status")}
               </p>
-              <p className="mt-1 text-role-secondary">{locationStatus}</p>
+              <p className="mt-1 text-role-secondary">{page.locationStatusLabel}</p>
             </div>
           </div>
 
@@ -1010,19 +638,16 @@ export default function MapAtlasPage() {
             <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3">
               <div>
                 <p className="text-role-caption uppercase text-muted-foreground">
-                  {t("mapAtlas.side.title", undefined, "Mapped places")}
+                  {page.t("mapAtlas.side.title", undefined, "Mapped places")}
                 </p>
                 <p className="mt-1 text-role-secondary font-semibold text-foreground">
-                  {t(
+                  {page.t(
                     "mapAtlas.side.subtitle",
                     {
-                      count: formatNumber(mapPlaces.length),
-                      source:
-                        sourceOptions.find(
-                          (source) => source.id === selectedSource,
-                        )?.label ?? "",
+                      count: page.formatNumber(page.mapPlaces.length),
+                      source: page.activeSourceLabel,
                     },
-                    `${formatNumber(mapPlaces.length)} places in ${selectedSource}`,
+                    `${page.formatNumber(page.mapPlaces.length)} places in ${page.visibleSource}`,
                   )}
                 </p>
               </div>
@@ -1032,40 +657,40 @@ export default function MapAtlasPage() {
                 variant="ghost"
                 size="sm"
                 className="h-11 rounded-full px-3"
-                onClick={retryCurrentSource}
+                onClick={page.retryVisibleSource}
               >
                 <RefreshCcw className="h-3.5 w-3.5" />
-                {t("common.retry")}
+                {page.t("common.retry")}
               </Button>
             </div>
 
-            {saveError && (
+            {page.saveError && (
               <div
                 role="alert"
                 className="mt-3 rounded-2xl border border-destructive/25 bg-destructive/10 px-3.5 py-3"
               >
                 <p className="text-role-micro font-semibold text-destructive">
-                  {saveError}
+                  {page.saveError}
                 </p>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   className="mt-2 h-11 rounded-full px-3 text-xs"
-                  onClick={clearSaveError}
+                  onClick={page.clearSaveError}
                 >
-                  {t("common.dismiss", undefined, "Dismiss")}
+                  {page.t("common.dismiss", undefined, "Dismiss")}
                 </Button>
               </div>
             )}
 
-            {sourceError ? (
+            {page.sourceError ? (
               <div className="mt-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-3.5 py-3">
                 <p className="text-role-micro font-semibold text-destructive">
-                  {sourceError}
+                  {page.sourceError}
                 </p>
               </div>
-            ) : sourceIsLoading ? (
+            ) : page.sourceIsLoading ? (
               <div className="mt-3 space-y-2.5">
                 {Array.from({ length: 5 }).map((_, index) => (
                   <div
@@ -1074,17 +699,17 @@ export default function MapAtlasPage() {
                   />
                 ))}
               </div>
-            ) : mapPlaces.length === 0 ? (
+            ) : page.mapPlaces.length === 0 ? (
               <div className="mt-3 rounded-2xl border border-dashed border-border/75 bg-muted/35 px-3.5 py-6 text-center">
                 <p className="text-role-secondary font-semibold text-foreground">
-                  {t(
+                  {page.t(
                     "mapAtlas.empty.title",
                     undefined,
                     "No places for this map state",
                   )}
                 </p>
                 <p className="mt-1 text-role-micro text-muted-foreground">
-                  {t(
+                  {page.t(
                     "mapAtlas.empty.subtitle",
                     undefined,
                     "Try another source, adjust filters, or lower minimum rating.",
@@ -1096,63 +721,13 @@ export default function MapAtlasPage() {
                 className="mt-3 max-h-[48vh] space-y-2.5 overflow-y-auto pr-1 scrollbar-premium sm:max-h-[55vh] lg:max-h-[calc(100vh-16rem)]"
                 aria-live="polite"
               >
-                {mapPlaces.map((place) => {
-                  const selected = place.id === selectedPlaceId;
-                  const hasDirections =
-                    Number.isFinite(place.latitude) &&
-                    Number.isFinite(place.longitude);
-                  const distanceLabel = (() => {
-                    if (
-                      userLocation.status !== "granted" ||
-                      !userLocation.coordinates ||
-                      !Number.isFinite(place.latitude) ||
-                      !Number.isFinite(place.longitude)
-                    ) {
-                      return null;
-                    }
-
-                    const fromLat = userLocation.coordinates.latitude;
-                    const fromLng = userLocation.coordinates.longitude;
-                    const toLat = place.latitude;
-                    const toLng = place.longitude;
-                    const deltaLat = ((toLat - fromLat) * Math.PI) / 180;
-                    const deltaLng = ((toLng - fromLng) * Math.PI) / 180;
-                    const a =
-                      Math.sin(deltaLat / 2) ** 2 +
-                      Math.cos((fromLat * Math.PI) / 180) *
-                        Math.cos((toLat * Math.PI) / 180) *
-                        Math.sin(deltaLng / 2) ** 2;
-                    const distanceKm =
-                      6371 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-
-                    if (!Number.isFinite(distanceKm) || distanceKm < 0) {
-                      return null;
-                    }
-
-                    if (distanceKm < 1) {
-                      return t(
-                        "mapAtlas.distance.fromMeMeters",
-                        {
-                          distance: formatNumber(
-                            Math.max(1, Math.round(distanceKm * 1000)),
-                          ),
-                        },
-                        "{distance} m from me",
-                      );
-                    }
-
-                    return t(
-                      "mapAtlas.distance.fromMeKm",
-                      {
-                        distance: formatNumber(
-                          distanceKm < 10
-                            ? Number(distanceKm.toFixed(1))
-                            : Math.round(distanceKm),
-                        ),
-                      },
-                      "{distance} km from me",
-                    );
-                  })();
+                {page.mapPlaces.map((place) => {
+                  const selected = place.id === page.selectedPlaceId;
+                  const distanceLabel = page.resolvePlaceDistanceLabel(place);
+                  const openStatusCopy = resolveMapAtlasOpenStatusLabel(
+                    place.isOpen,
+                    page.t,
+                  );
 
                   return (
                     <article
@@ -1170,7 +745,7 @@ export default function MapAtlasPage() {
                     >
                       <button
                         type="button"
-                        onClick={() => setSelectedPlaceIdState(place.id)}
+                        onClick={() => page.setPinnedPlaceId(place.id)}
                         className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                         aria-pressed={selected}
                       >
@@ -1180,7 +755,7 @@ export default function MapAtlasPage() {
                           </p>
                           <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-border/70 bg-muted/55 px-2 py-0.5 text-[11px] font-semibold text-foreground">
                             <Star className="h-3 w-3 text-secondary dark:text-primary" />
-                            {formatNumber(place.rating, {
+                            {page.formatNumber(place.rating, {
                               minimumFractionDigits: 1,
                               maximumFractionDigits: 1,
                             })}
@@ -1201,43 +776,28 @@ export default function MapAtlasPage() {
                         )}
 
                         <div className="text-role-micro mt-2 flex flex-wrap items-center gap-1.5 font-semibold">
-                          {(() => {
-                            const openStatusCopy = getOpenStatusCopy(
-                              place.isOpen,
-                              t,
-                            );
-
-                            if (!openStatusCopy) {
-                              return null;
-                            }
-
-                            return (
-                              <span
-                                className={cn(
-                                  "rounded-full border px-2 py-0.5",
-                                  place.isOpen === true
-                                    ? "border-emerald-300/70 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                                    : place.isOpen === false
-                                      ? "border-border/70 bg-muted/60 text-muted-foreground"
-                                      : "border-amber-300/70 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-                                )}
-                              >
-                                <Clock3 className="mr-1 inline h-3 w-3" />
-                                {openStatusCopy}
-                              </span>
-                            );
-                          })()}
+                          {openStatusCopy && (
+                            <span
+                              className={cn(
+                                "rounded-full border px-2 py-0.5",
+                                resolveMapAtlasOpenStatusToneClass(place.isOpen),
+                              )}
+                            >
+                              <Clock3 className="mr-1 inline h-3 w-3" />
+                              {openStatusCopy}
+                            </span>
+                          )}
 
                           {place.hasWifi && (
                             <span className="rounded-full border border-border/70 bg-muted/55 px-2 py-0.5 text-foreground">
                               <Wifi className="mr-1 inline h-3 w-3" />
-                              {t("mapAtlas.badge.wifi", undefined, "Wi-Fi")}
+                              {page.t("mapAtlas.badge.wifi", undefined, "Wi-Fi")}
                             </span>
                           )}
 
                           {place.priceLevel && (
                             <span className="rounded-full border border-border/70 bg-muted/55 px-2 py-0.5 text-foreground">
-                              {getLocalizedBudgetLabel(place.priceLevel)}
+                              {page.budgetLabel(place.priceLevel)}
                             </span>
                           )}
                         </div>
@@ -1248,9 +808,9 @@ export default function MapAtlasPage() {
                           type="button"
                           size="sm"
                           className="h-11 rounded-full px-3 text-xs"
-                          onClick={() => navigate(`/venue/${place.id}`)}
+                          onClick={() => page.openVenueDetail(place.id)}
                         >
-                          {t("mapAtlas.action.details", undefined, "Details")}
+                          {page.t("mapAtlas.action.details", undefined, "Details")}
                           <ArrowUpRight className="h-3.5 w-3.5" />
                         </Button>
 
@@ -1258,12 +818,12 @@ export default function MapAtlasPage() {
                           type="button"
                           size="sm"
                           variant="outline"
-                          disabled={!hasDirections}
+                          disabled={!placeHasValidDirections(place)}
                           className="h-11 rounded-full px-3 text-xs"
-                          onClick={() => handleOpenDirections(place)}
+                          onClick={() => page.openVenueDirections(place)}
                         >
                           <Navigation className="h-3.5 w-3.5" />
-                          {t(
+                          {page.t(
                             "mapAtlas.action.directions",
                             undefined,
                             "Directions",
@@ -1274,9 +834,9 @@ export default function MapAtlasPage() {
                           type="button"
                           size="sm"
                           variant={place.isSaved ? "secondary" : "outline"}
-                          disabled={isPlaceSavePending(place.id)}
+                          disabled={page.isPlaceSavePending(place.id)}
                           className="h-11 rounded-full px-3 text-xs"
-                          onClick={() => void toggleSave(place.id)}
+                          onClick={() => void page.toggleSave(place.id)}
                         >
                           {place.isSaved ? (
                             <Bookmark className="h-3.5 w-3.5" />
@@ -1284,8 +844,8 @@ export default function MapAtlasPage() {
                             <Heart className="h-3.5 w-3.5" />
                           )}
                           {place.isSaved
-                            ? t("mapAtlas.action.saved", undefined, "Saved")
-                            : t("mapAtlas.action.save", undefined, "Save")}
+                            ? page.t("mapAtlas.action.saved", undefined, "Saved")
+                            : page.t("mapAtlas.action.save", undefined, "Save")}
                         </Button>
                       </div>
                     </article>
@@ -1296,31 +856,31 @@ export default function MapAtlasPage() {
           </aside>
         </section>
 
-        {selectedPlace && (
+        {page.selectedPlace && (
           <section className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm">
             <p className="text-role-caption uppercase text-muted-foreground">
-              {t("mapAtlas.selection.label", undefined, "Selected place")}
+              {page.t("mapAtlas.selection.label", undefined, "Selected place")}
             </p>
             <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
               <div>
                 <a
-                  href={`/venue/${selectedPlace.id}`}
+                  href={`/venue/${page.selectedPlace.id}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-left text-role-subheading text-foreground underline-offset-4 transition hover:underline focus-visible:underline"
                 >
-                  {selectedPlace.name}
+                  {page.selectedPlace.name}
                 </a>
                 <p className="text-role-secondary text-muted-foreground">
-                  {selectedPlace.address}
+                  {page.selectedPlace.address}
                 </p>
               </div>
               <Button
                 type="button"
-                onClick={() => navigate(`/venue/${selectedPlace.id}`)}
+                onClick={() => page.openVenueDetail(page.selectedPlace!.id)}
                 className="h-11 rounded-full px-4"
               >
-                {t("mapAtlas.action.openVenue", undefined, "Open venue")}
+                {page.t("mapAtlas.action.openVenue", undefined, "Open venue")}
                 <ArrowUpRight className="h-4 w-4" />
               </Button>
             </div>
@@ -1328,23 +888,5 @@ export default function MapAtlasPage() {
         )}
       </div>
     </motion.div>
-  );
-}
-
-interface MapStatCardProps {
-  label: string;
-  value: string;
-}
-
-function MapStatCard({ label, value }: MapStatCardProps) {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-background/70 px-3 py-2.5">
-      <p className="text-role-caption uppercase text-muted-foreground">
-        {label}
-      </p>
-      <p className="text-role-subheading text-numeric-tabular mt-1 text-foreground">
-        {value}
-      </p>
-    </div>
   );
 }

@@ -1,12 +1,4 @@
-import {
-  Suspense,
-  lazy,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { useParams } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import {
   ArrowLeft,
   Star,
@@ -35,28 +27,25 @@ import {
   ChefHat,
   Ear,
 } from "lucide-react";
-import type { MenuItem } from "@/features/place-detail/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useI18n } from "@/components/i18n";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { usePlaceDetail } from "@/features/place-detail/hooks/usePlaceDetail";
-import { INTERACTION_ACTION_TYPES } from "@/features/interactions";
-import { PRICE_LEVEL_META } from "@/features/place-detail/utils/priceLevel";
+import { usePlaceDetailPage } from "@/features/place-detail/hooks/usePlaceDetailPage";
 import { getDefaultVenueImageDataUrl } from "@/features/place-detail/utils/defaultImages";
+import { formatCountLabel } from "@/features/place-detail/utils/formatters";
 import {
-  formatCountLabel,
-} from "@/features/place-detail/utils/formatters";
+  PLACE_DETAIL_FACILITY_BADGE_CLASS,
+  shouldShowAccessibleBadge,
+} from "@/features/place-detail/utils/placeDetailPresentation";
 import { ReviewSkeleton } from "@/features/place-detail/components/ReviewSkeleton";
 import { ReviewsPagination } from "@/features/place-detail/components/ReviewsPagination";
 import { OpenHoursCard } from "@/features/place-detail/components/OpenHoursCard";
 import { MetroStationsCard } from "@/features/place-detail/components/MetroStationsCard";
 import "@/features/place-detail/placeDetailTypography.css";
-import { useAuth } from "@/features/auth";
 
 const ReviewCardLazy = lazy(() =>
   import("@/features/place-detail/components/ReviewCard").then((module) => ({
@@ -87,270 +76,45 @@ const MenuImageGalleryLazy = lazy(() =>
 );
 
 const PlaceDetailPage = () => {
-  const { t, formatNumber, isArabic } = useI18n();
-  const { id } = useParams();
+  const page = usePlaceDetailPage();
+  const { place, chrome } = page;
 
-  const {
-    place,
-    loading,
-    error,
-    isFavorite,
-    savingFavorite,
-    isLiked,
-    savingLike,
-    notification,
-    currentUserId,
-    canOpenInMaps,
-    reviews,
-    reviewsPagination,
-    loadingMoreReviews,
-    socialReviews,
-    socialReviewsPagination,
-    loadingMoreSocialReviews,
-    myReview,
-    myReviewLoading,
-    reviewsLoading,
-    socialReviewsLoading,
-    socialReviewsLoaded,
-    reviewsError,
-    socialReviewsError,
-    submittingReview,
-    deletingReview,
-    reportingReview,
-    reviewSubmitted,
-    reviewActionError,
-    toggleFavorite,
-    toggleLike,
-    isReviewReported,
-    openInMaps,
-    goBack,
-    handleSubmitReview,
-    handleDeleteMyReview,
-    handleReportReview,
-    goToReviewsPage,
-    goToSocialReviewsPage,
-    trackInteraction,
-    refreshPlaceData,
-    retryReviewsLoad,
-    retrySocialReviewsLoad,
-    ensureSocialReviewsLoaded,
-  } = usePlaceDetail(id);
-
-  const [activeReviewTab, setActiveReviewTab] = useState<"website" | "social">(
-    "website",
-  );
-
-  useEffect(() => {
-    if (activeReviewTab !== "social") return;
-    void ensureSocialReviewsLoaded();
-  }, [activeReviewTab, ensureSocialReviewsLoaded]);
-
-  useEffect(() => {
-    if (socialReviewsLoaded) return;
-
-    const timer = window.setTimeout(() => {
-      void ensureSocialReviewsLoaded();
-    }, 900);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [ensureSocialReviewsLoaded, socialReviewsLoaded]);
-
-  const { user } = useAuth();
-  const userRole = user?.role ?? "user";
-  const isPrivilegedUser = userRole === "admin" || userRole === "moderator";
-
-  const websiteTotalCount = Math.max(
-    reviewsPagination.totalCount,
-    reviews.length,
-  );
-  const socialTotalCount = Math.max(
-    socialReviewsPagination.totalCount,
-    place?.googleMapsRatingCount ?? 0,
-    socialReviews.length,
-  );
-  const socialCountCompact = socialReviewsLoaded
-    ? formatNumber(socialTotalCount)
-    : place?.googleMapsRatingCount !== undefined
-      ? formatNumber(place.googleMapsRatingCount)
-      : "...";
-
-  const onDeleteMyReview = useCallback(async () => {
-    await handleDeleteMyReview();
-  }, [handleDeleteMyReview]);
-
-  const onLikeClick = useCallback(async () => toggleLike(), [toggleLike]);
-  const onFavoriteClick = useCallback(
-    async () => toggleFavorite(),
-    [toggleFavorite],
-  );
-
-  const venueCategoryType = `${place?.category ?? ""} ${place?.type ?? ""}`
-    .trim()
-    .toLowerCase();
-  const isFoodOrDrinkVenue =
-    /(restaurant|cafe|coffee|food|drink|bar|bakery|kitchen|grill|bistro|diner|pub|brunch|dessert|juice|tea|lounge|shawarma|pizza)/.test(
-      venueCategoryType,
-    );
-  const menuItems = useMemo((): MenuItem[] => {
-    if (!place) return [];
-    if ((place.menus?.length ?? 0) > 0) {
-      return place.menus ?? [];
-    }
-    return (place.menuImagesUrls ?? []).filter(Boolean).map((url) => ({ url }));
-  }, [place]);
-  const menuImagesCount = Math.max(
-    place?.menuImagesCount ?? 0,
-    menuItems.length,
-    place?.menuImagesUrls?.length ?? 0,
-  );
-  const hasMenuData =
-    Boolean(place?.menuUrl) || menuImagesCount > 0 || menuItems.length > 0;
-  const tagLabels = useMemo(
-    () =>
-      Array.from(
-        new Set([
-          ...(place?.cuisines ?? []),
-          ...(place?.dietaryAttributes ?? []),
-        ]),
-      ).filter(Boolean),
-    [place?.cuisines, place?.dietaryAttributes],
-  );
-  const hasWheelchairAccess = Boolean(
-    place?.wheelchairEntrance ||
-    place?.wheelchairSeating ||
-    place?.wheelchairCarPark ||
-    place?.wheelchairToilet,
-  );
-  const acceptsAnyPayment = Boolean(
-    place?.acceptsCards ||
-    place?.acceptsDebitCards ||
-    place?.acceptsCreditCards ||
-    place?.acceptsNfcMobile,
-  );
-  const showFacilitiesCard = Boolean(
-    place &&
-    (place.hasWifi ||
-      place.freeWifi ||
-      place.hasToilet ||
-      (place.seatingType?.length ?? 0) > 0 ||
-      place.hasIndoorSeating ||
-      place.hasOutdoorSeating ||
-      place.parkingAvailable ||
-      place.streetParking ||
-      place.lotParking ||
-      place.valetParking ||
-      place.garageParking ||
-      place.multiStoreyParking ||
-      place.hasDriveThrough ||
-      place.offersDelivery ||
-      acceptsAnyPayment ||
-      place.assistiveHearingLoop ||
-      hasWheelchairAccess),
-  );
-  const shouldShowMenuCard = hasMenuData || isFoodOrDrinkVenue;
-  const nearestMetroStations = useMemo(
-    () =>
-      [...(place?.metroStations ?? [])]
-        .sort((a, b) => a.rank - b.rank)
-        .slice(0, 3),
-    [place],
-  );
-  const averageRatingValue = place?.averageRating ?? place?.rating;
-  const safeAverageRating =
-    typeof averageRatingValue === "number" &&
-    Number.isFinite(averageRatingValue)
-      ? averageRatingValue
-      : 0;
-  const formattedAverageRating = safeAverageRating.toFixed(2);
-  const descriptionText = place?.description?.trim() ?? "";
-  const hasDescription = descriptionText.length > 0;
-  const hoursText = place?.hours?.trim() ?? "";
-  const hasHoursData = Boolean(hoursText) || place?.isOpen !== undefined;
-  const priceMeta = place?.priceLevel
-    ? PRICE_LEVEL_META[place.priceLevel]
-    : null;
-  const facilityBadgeClass =
-    "gap-1.5 border-accent/35 bg-accent/10 text-accent";
-
-  const trackExternalClick = useCallback(() => {
-    void trackInteraction(INTERACTION_ACTION_TYPES.view);
-  }, [trackInteraction]);
-
-  const trackPhotoView = useCallback(() => {
-    void trackInteraction(INTERACTION_ACTION_TYPES.viewPhotos);
-  }, [trackInteraction]);
-
-  const handleSharePlace = useCallback(async () => {
-    if (!place) return;
-
-    const shareTitle = place.name;
-    const shareText = t("placeDetail.share.text", {
-      name: place.name,
-    });
-    const shareUrl = window.location.href;
-
-    try {
-      if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({
-          title: shareTitle,
-          text: shareText,
-          url: shareUrl,
-        });
-      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(shareUrl);
-      }
-
-      await trackInteraction(INTERACTION_ACTION_TYPES.share);
-    } catch {
-      // ignore share errors, as they can be caused by user cancellation or unsupported features, and we don't want to block the user from sharing through other means
-    }
-  }, [place, t, trackInteraction]);
-
-  if (loading) {
+  if (page.loading) {
     return (
       <LoadingSpinner
         size="md"
-        text={t("placeDetail.loading")}
+        text={page.t("placeDetail.loading")}
         fullScreen={true}
       />
     );
   }
 
-  if (error || !place) {
+  if (page.error || !place) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="w-full max-w-md space-y-4">
           <Alert variant="destructive" className="border-destructive/30">
-            <AlertTitle>{t("placeDetail.error.openTitle")}</AlertTitle>
+            <AlertTitle>{page.t("placeDetail.error.openTitle")}</AlertTitle>
             <AlertDescription className="break-words">
-              {error || t("placeDetail.error.notFound")}
+              {page.error || page.t("placeDetail.error.notFound")}
             </AlertDescription>
           </Alert>
           <Button
             type="button"
             variant="outline"
             className="min-h-11 w-full"
-            onClick={() => void refreshPlaceData()}
+            onClick={() => void page.refreshPlaceData()}
           >
-            {t("common.retry")}
+            {page.t("common.retry")}
           </Button>
         </div>
       </div>
     );
   }
 
-  const notificationToneClass =
-    notification.type === "like"
-      ? "border-primary/30 bg-primary text-primary-foreground"
-      : notification.type === "report"
-        ? "border-destructive/30 bg-destructive text-destructive-foreground"
-        : "border-accent/35 bg-accent text-accent-foreground";
-
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-background via-background to-muted/30 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:pb-10">
-      {notification.show && (
+      {page.notification.show && (
         <div
           className="fixed top-[calc(1rem+env(safe-area-inset-top))] left-1/2 z-50 -translate-x-1/2 px-4 w-full max-w-[min(92vw,32rem)]"
           role="status"
@@ -360,27 +124,19 @@ const PlaceDetailPage = () => {
           <Card
             className={cn(
               "animate-in fade-in slide-in-from-top-2 duration-500 max-w-[min(92vw,32rem)] px-4 py-3 rounded-2xl border shadow-xl",
-              notificationToneClass,
+              chrome.notificationToneClass,
             )}
           >
             <div className="flex items-center gap-3">
-              {notification.type === "like" ? (
+              {page.notification.type === "like" ? (
                 <ThumbsUp className="h-5 w-5 fill-current" />
-              ) : notification.type === "report" ? (
+              ) : page.notification.type === "report" ? (
                 <Flag className="h-5 w-5 fill-current" />
               ) : (
                 <Heart className="h-5 w-5 fill-current" />
               )}
               <span className="pd-type-label font-semibold break-words">
-                {notification.type === "like"
-                  ? notification.action === "added"
-                    ? t("placeDetail.notice.placeLiked")
-                    : t("placeDetail.notice.likeRemoved")
-                  : notification.type === "report"
-                    ? t("placeDetail.notice.reportSubmitted")
-                    : notification.action === "added"
-                      ? t("placeDetail.notice.addedToFavorites")
-                      : t("placeDetail.notice.removedFromFavorites")}
+                {page.t(page.notificationMessageKey)}
               </span>
             </div>
           </Card>
@@ -398,9 +154,7 @@ const PlaceDetailPage = () => {
               decoding="async"
               fetchPriority="high"
               onError={(event) => {
-                event.currentTarget.src = getDefaultVenueImageDataUrl(
-                  place.name,
-                );
+                event.currentTarget.src = getDefaultVenueImageDataUrl(place.name);
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/35 to-black/10" />
@@ -409,38 +163,38 @@ const PlaceDetailPage = () => {
               type="button"
               variant="outline"
               size="icon"
-              aria-label={t("placeDetail.action.goBack")}
-              onClick={goBack}
+              aria-label={page.t("placeDetail.action.goBack")}
+              onClick={page.goBack}
               className="absolute start-3 top-3 h-10 w-10 rounded-full border-border/60 bg-card/90 text-foreground backdrop-blur-sm sm:start-4 sm:top-4 sm:h-11 sm:w-11"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
 
-            {!isPrivilegedUser && (
+            {!chrome.isPrivilegedUser && (
               <div className="absolute end-3 top-3 flex items-center gap-1.5 sm:end-4 sm:top-4 sm:gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  onClick={onLikeClick}
-                  disabled={savingLike}
+                  onClick={() => void page.toggleLike()}
+                  disabled={page.savingLike}
                   aria-label={
-                    isLiked
-                      ? t("placeDetail.action.unlike")
-                      : t("placeDetail.action.like")
+                    page.isLiked
+                      ? page.t("placeDetail.action.unlike")
+                      : page.t("placeDetail.action.like")
                   }
-                  aria-pressed={isLiked}
+                  aria-pressed={page.isLiked}
                   className="h-10 w-10 rounded-full border-border/60 bg-card/90 backdrop-blur-sm sm:h-11 sm:w-11"
                   title={
-                    isLiked
-                      ? t("placeDetail.action.unlike")
-                      : t("placeDetail.action.like")
+                    page.isLiked
+                      ? page.t("placeDetail.action.unlike")
+                      : page.t("placeDetail.action.like")
                   }
                 >
                   <ThumbsUp
                     className={cn(
                       "h-5 w-5 transition-colors",
-                      isLiked ? "text-accent fill-accent" : "text-foreground",
+                      page.isLiked ? "text-accent fill-accent" : "text-foreground",
                     )}
                   />
                 </Button>
@@ -448,10 +202,10 @@ const PlaceDetailPage = () => {
                   type="button"
                   variant="outline"
                   size="icon"
-                  onClick={() => void handleSharePlace()}
-                  aria-label={t("placeDetail.action.share")}
+                  onClick={() => void page.sharePlace()}
+                  aria-label={page.t("placeDetail.action.share")}
                   className="h-10 w-10 rounded-full border-border/60 bg-card/90 backdrop-blur-sm sm:h-11 sm:w-11"
-                  title={t("placeDetail.action.share")}
+                  title={page.t("placeDetail.action.share")}
                 >
                   <Share2 className="h-5 w-5" />
                 </Button>
@@ -459,25 +213,25 @@ const PlaceDetailPage = () => {
                   type="button"
                   variant="outline"
                   size="icon"
-                  onClick={onFavoriteClick}
-                  disabled={savingFavorite}
+                  onClick={() => void page.toggleFavorite()}
+                  disabled={page.savingFavorite}
                   aria-label={
-                    isFavorite
-                      ? t("home.place.removeFavorite")
-                      : t("home.place.addFavorite")
+                    page.isFavorite
+                      ? page.t("home.place.removeFavorite")
+                      : page.t("home.place.addFavorite")
                   }
-                  aria-pressed={isFavorite}
+                  aria-pressed={page.isFavorite}
                   className="h-10 w-10 rounded-full border-border/60 bg-card/90 backdrop-blur-sm sm:h-11 sm:w-11"
                   title={
-                    isFavorite
-                      ? t("home.place.removeFavorite")
-                      : t("home.place.addFavorite")
+                    page.isFavorite
+                      ? page.t("home.place.removeFavorite")
+                      : page.t("home.place.addFavorite")
                   }
                 >
                   <Heart
                     className={cn(
                       "h-5 w-5 transition-colors",
-                      isFavorite
+                      page.isFavorite
                         ? "text-accent fill-accent"
                         : "text-foreground",
                     )}
@@ -503,7 +257,7 @@ const PlaceDetailPage = () => {
                   className="gap-1 border-accent/40 text-accent shrink-0 pd-type-number self-start"
                 >
                   <Star className="h-3 w-3 fill-accent text-accent" />
-                  {formattedAverageRating}
+                  {chrome.formattedAverageRating}
                 </Badge>
               </div>
 
@@ -536,19 +290,19 @@ const PlaceDetailPage = () => {
                 </div>
               )}
 
-              {(priceMeta ||
+              {(chrome.priceMeta ||
                 place.priceRangeDisplay ||
                 place.priceMeanPerPerson) && (
                 <div className="flex items-center gap-3 flex-wrap text-role-secondary text-muted-foreground">
-                  {priceMeta && (
+                  {chrome.priceMeta && (
                     <span className="inline-flex items-center gap-1 font-semibold text-accent">
-                      <span>{priceMeta.label}</span>
+                      <span>{chrome.priceMeta.label}</span>
                       <span className="pd-type-micro text-accent/90">
-                        {priceMeta.symbol}
+                        {chrome.priceMeta.symbol}
                       </span>
                     </span>
                   )}
-                  {!priceMeta && place.priceRangeDisplay && (
+                  {!chrome.priceMeta && place.priceRangeDisplay && (
                     <span className="font-semibold text-accent">
                       {place.priceRangeDisplay}
                     </span>
@@ -557,21 +311,21 @@ const PlaceDetailPage = () => {
                     Number.isFinite(place.priceMeanPerPerson) && (
                       <span className="pd-type-micro text-muted-foreground">
                         {place.menuCurrency?.trim()
-                          ? t("placeDetail.price.perPersonWithCurrency", {
-                              amount: formatNumber(place.priceMeanPerPerson),
+                          ? page.t("placeDetail.price.perPersonWithCurrency", {
+                              amount: page.formatNumber(place.priceMeanPerPerson),
                               currency: place.menuCurrency.trim(),
                             })
-                          : t("placeDetail.price.perPerson", {
-                              amount: formatNumber(place.priceMeanPerPerson),
+                          : page.t("placeDetail.price.perPerson", {
+                              amount: page.formatNumber(place.priceMeanPerPerson),
                             })}
                       </span>
                     )}
                 </div>
               )}
 
-              {tagLabels.length > 0 && (
+              {chrome.tagLabels.length > 0 && (
                 <div className="flex gap-2 flex-wrap">
-                  {tagLabels.map((tag) => (
+                  {chrome.tagLabels.map((tag) => (
                     <Badge
                       key={tag}
                       variant="outline"
@@ -612,15 +366,16 @@ const PlaceDetailPage = () => {
                       {item}
                     </Badge>
                   ))}
-                  {(hasWheelchairAccess ||
-                    (place.accessibilityScore !== undefined &&
-                      place.accessibilityScore >= 0.7)) && (
+                  {shouldShowAccessibleBadge(
+                    chrome.hasWheelchairAccess,
+                    place.accessibilityScore,
+                  ) && (
                     <Badge
                       variant="outline"
                       className="gap-1 border-accent/35 bg-accent/10 text-accent"
                     >
                       <Accessibility className="h-3 w-3" />
-                      {t("placeDetail.badge.accessible")}
+                      {page.t("placeDetail.badge.accessible")}
                     </Badge>
                   )}
                 </div>
@@ -629,23 +384,23 @@ const PlaceDetailPage = () => {
           </Card>
 
           <div className="grid gap-5 min-w-0 max-w-full lg:grid-cols-2">
-            {hasDescription && (
+            {chrome.hasDescription && (
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-2 sm:p-5 lg:col-span-2">
                 <h2 className="pd-type-kicker text-foreground">
-                  {t("placeDetail.about")}
+                  {page.t("placeDetail.about")}
                 </h2>
                 <p className="pd-type-body pd-measure pd-contain-width text-muted-foreground break-words">
-                  {descriptionText}
+                  {chrome.descriptionText}
                 </p>
               </Card>
             )}
 
-            {hasHoursData && (
+            {chrome.hasHoursData && (
               <OpenHoursCard
-                hoursText={hoursText}
+                hoursText={chrome.hoursText}
                 isOpen={place.isOpen}
-                isArabic={isArabic}
-                t={t}
+                isArabic={page.isArabic}
+                t={page.t}
               />
             )}
 
@@ -656,7 +411,7 @@ const PlaceDetailPage = () => {
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5">
                 <h2 className="pd-type-kicker text-foreground inline-flex items-center gap-2">
                   <Mail className="h-4 w-4 text-accent" />
-                  {t("placeDetail.contact")}
+                  {page.t("placeDetail.contact")}
                 </h2>
                 <div className="flex flex-col gap-2.5">
                   {place.phone && (
@@ -673,11 +428,11 @@ const PlaceDetailPage = () => {
                       href={place.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={trackExternalClick}
+                      onClick={page.trackExternalClick}
                       className="inline-flex min-h-11 w-full min-w-0 items-center gap-2 pd-type-label pd-focus-ring text-accent hover:underline break-all"
                     >
                       <Globe className="h-4 w-4 shrink-0" />
-                      {t("placeDetail.contact.visitWebsite")}
+                      {page.t("placeDetail.contact.visitWebsite")}
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
@@ -686,11 +441,11 @@ const PlaceDetailPage = () => {
                       href={place.bookingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={trackExternalClick}
+                      onClick={page.trackExternalClick}
                       className="inline-flex min-h-11 w-full min-w-0 items-center gap-2 pd-type-label pd-focus-ring text-accent hover:underline"
                     >
                       <CalendarCheck className="h-4 w-4 shrink-0" />
-                      {t("placeDetail.contact.bookTable")}
+                      {page.t("placeDetail.contact.bookTable")}
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
@@ -699,11 +454,11 @@ const PlaceDetailPage = () => {
                       href={place.originalGoogleMapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={trackExternalClick}
+                      onClick={page.trackExternalClick}
                       className="inline-flex min-h-11 w-full min-w-0 items-center gap-2 pd-type-label pd-focus-ring text-accent hover:underline break-all"
                     >
                       <MapPin className="h-4 w-4 shrink-0" />
-                      {t("placeDetail.contact.googleMaps")}
+                      {page.t("placeDetail.contact.googleMaps")}
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
@@ -711,45 +466,45 @@ const PlaceDetailPage = () => {
               </Card>
             )}
 
-            {shouldShowMenuCard && (
+            {chrome.shouldShowMenuCard && (
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm flex flex-col gap-3 sm:p-5">
                 <div className="flex items-center gap-3 min-w-0">
                   <UtensilsCrossed className="h-5 w-5 text-accent shrink-0" />
                   <div>
                     <p className="pd-type-label text-foreground">
-                      {t("placeDetail.menu")}
+                      {page.t("placeDetail.menu")}
                     </p>
-                    {menuImagesCount > 0 && (
+                    {chrome.menuImagesCount > 0 && (
                       <p className="pd-type-micro pd-type-number text-muted-foreground inline-flex items-center gap-1 mt-0.5">
                         <Images className="h-3 w-3" />
                         {formatCountLabel(
-                          menuImagesCount,
-                          t("placeDetail.menuPhotoSingular"),
-                          t("placeDetail.menuPhotoPlural"),
+                          chrome.menuImagesCount,
+                          page.t("placeDetail.menuPhotoSingular"),
+                          page.t("placeDetail.menuPhotoPlural"),
                         )}{" "}
-                        {t("placeDetail.available")}
+                        {page.t("placeDetail.available")}
                       </p>
                     )}
                   </div>
                 </div>
 
-                {menuItems.length > 0 && (
+                {chrome.menuItems.length > 0 && (
                   <Suspense
                     fallback={
                       <div className="h-28 rounded-xl bg-muted/50 animate-pulse" />
                     }
                   >
                     <MenuImageGalleryLazy
-                      items={menuItems}
+                      items={chrome.menuItems}
                       placeName={place.name}
-                      onImageOpen={trackPhotoView}
+                      onImageOpen={page.trackPhotoView}
                     />
                   </Suspense>
                 )}
 
-                {!hasMenuData && (
+                {!chrome.hasMenuData && (
                   <p className="pd-type-micro text-muted-foreground">
-                    {t("placeDetail.menu.unavailable")}
+                    {page.t("placeDetail.menu.unavailable")}
                   </p>
                 )}
                 {place.menuUrl && (
@@ -763,9 +518,9 @@ const PlaceDetailPage = () => {
                         href={place.menuUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={trackPhotoView}
+                        onClick={page.trackPhotoView}
                       >
-                        {t("placeDetail.menu.view")}
+                        {page.t("placeDetail.menu.view")}
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     </Button>
@@ -774,115 +529,115 @@ const PlaceDetailPage = () => {
               </Card>
             )}
 
-            {nearestMetroStations.length > 0 && (
-              <MetroStationsCard stations={nearestMetroStations} />
+            {chrome.nearestMetroStations.length > 0 && (
+              <MetroStationsCard stations={chrome.nearestMetroStations} />
             )}
 
-            {showFacilitiesCard && (
+            {chrome.showFacilitiesCard && (
               <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-3 sm:p-5 lg:col-span-2">
                 <h2 className="pd-type-kicker text-foreground">
-                  {t("placeDetail.facilities")}
+                  {page.t("placeDetail.facilities")}
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {place.freeWifi && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <Wifi className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.wifi")}
+                      {page.t("placeDetail.facilities.wifi")}
                     </Badge>
                   )}
                   {place.hasWifi && !place.freeWifi && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <Wifi className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.wifiAvailable")}
+                      {page.t("placeDetail.facilities.wifiAvailable")}
                     </Badge>
                   )}
                   {place.hasToilet && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <Toilet className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.restrooms")}
+                      {page.t("placeDetail.facilities.restrooms")}
                     </Badge>
                   )}
                   {place.offersDelivery && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <Truck className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.delivery")}
+                      {page.t("placeDetail.facilities.delivery")}
                     </Badge>
                   )}
                   {place.hasDriveThrough && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <Car className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.driveThrough")}
+                      {page.t("placeDetail.facilities.driveThrough")}
                     </Badge>
                   )}
                   {place.parkingAvailable && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <ParkingSquare className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.parking")}
+                      {page.t("placeDetail.facilities.parking")}
                     </Badge>
                   )}
                   {place.lotParking && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <ParkingSquare className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.lotParking")}
+                      {page.t("placeDetail.facilities.lotParking")}
                     </Badge>
                   )}
                   {place.streetParking && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <ParkingSquare className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.streetParking")}
+                      {page.t("placeDetail.facilities.streetParking")}
                     </Badge>
                   )}
                   {place.valetParking && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <ParkingSquare className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.valetParking")}
+                      {page.t("placeDetail.facilities.valetParking")}
                     </Badge>
                   )}
                   {place.garageParking && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <ParkingSquare className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.garageParking")}
+                      {page.t("placeDetail.facilities.garageParking")}
                     </Badge>
                   )}
                   {place.multiStoreyParking && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <ParkingSquare className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.multiStoreyParking")}
+                      {page.t("placeDetail.facilities.multiStoreyParking")}
                     </Badge>
                   )}
                   {(place.seatingType ?? []).map((seat) => (
                     <Badge
                       key={seat}
                       variant="outline"
-                      className={facilityBadgeClass}
+                      className={PLACE_DETAIL_FACILITY_BADGE_CLASS}
                     >
                       {seat === "indoor"
-                        ? t("placeDetail.facilities.indoorSeating")
-                        : t("placeDetail.facilities.outdoorSeating")}
+                        ? page.t("placeDetail.facilities.indoorSeating")
+                        : page.t("placeDetail.facilities.outdoorSeating")}
                     </Badge>
                   ))}
-                  {acceptsAnyPayment && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                  {chrome.acceptsAnyPayment && (
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <CreditCard className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.cardPayment")}
+                      {page.t("placeDetail.facilities.cardPayment")}
                     </Badge>
                   )}
                   {place.acceptsNfcMobile && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <Smartphone className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.nfcPayment")}
+                      {page.t("placeDetail.facilities.nfcPayment")}
                     </Badge>
                   )}
-                  {hasWheelchairAccess && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                  {chrome.hasWheelchairAccess && (
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <Accessibility className="h-3.5 w-3.5" />
-                      {t("placeDetail.badge.accessible")}
+                      {page.t("placeDetail.badge.accessible")}
                     </Badge>
                   )}
                   {place.assistiveHearingLoop && (
-                    <Badge variant="outline" className={facilityBadgeClass}>
+                    <Badge variant="outline" className={PLACE_DETAIL_FACILITY_BADGE_CLASS}>
                       <Ear className="h-3.5 w-3.5" />
-                      {t("placeDetail.facilities.hearingLoop")}
+                      {page.t("placeDetail.facilities.hearingLoop")}
                     </Badge>
                   )}
                 </div>
@@ -893,14 +648,12 @@ const PlaceDetailPage = () => {
           <Card className="rounded-2xl border-border/70 bg-card/95 p-4 shadow-sm space-y-4 sm:p-5 max-w-full overflow-hidden">
             <h2 className="pd-type-kicker text-foreground flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-accent" />
-              {t("placeDetail.reviews.title")}
+              {page.t("placeDetail.reviews.title")}
             </h2>
 
             <Tabs
-              value={activeReviewTab}
-              onValueChange={(value) =>
-                setActiveReviewTab(value as "website" | "social")
-              }
+              value={page.activeReviewTab}
+              onValueChange={page.selectReviewTab}
               className="w-full"
             >
               <TabsList className="w-full bg-muted/60 grid grid-cols-2 h-auto p-1 gap-1">
@@ -910,8 +663,8 @@ const PlaceDetailPage = () => {
                 >
                   <Star className="h-3.5 w-3.5 shrink-0" />
                   <span className="pd-type-number break-words min-w-0">
-                    {t("placeDetail.reviews.usersShort", {
-                      count: formatNumber(websiteTotalCount),
+                    {page.t("placeDetail.reviews.usersShort", {
+                      count: page.formatNumber(chrome.websiteTotalCount),
                     })}
                   </span>
                 </TabsTrigger>
@@ -921,22 +674,22 @@ const PlaceDetailPage = () => {
                 >
                   <Globe className="h-3.5 w-3.5 shrink-0" />
                   <span className="pd-type-number break-words min-w-0">
-                    {t("placeDetail.reviews.socialShort", {
-                      count: socialCountCompact,
+                    {page.t("placeDetail.reviews.socialShort", {
+                      count: chrome.socialCountCompact,
                     })}
                   </span>
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="website" className="space-y-4 mt-4">
-                {myReviewLoading ? (
+                {page.myReviewLoading ? (
                   <p className="pd-type-micro text-muted-foreground">
-                    {t("placeDetail.reviews.loadingYourReview")}
+                    {page.t("placeDetail.reviews.loadingYourReview")}
                   </p>
-                ) : myReview ? (
+                ) : page.myReview ? (
                   <Alert className="border-accent/35 bg-accent/10 text-accent">
                     <AlertDescription className="pd-type-label">
-                      {t("placeDetail.reviews.alreadyReviewed")}
+                      {page.t("placeDetail.reviews.alreadyReviewed")}
                     </AlertDescription>
                   </Alert>
                 ) : null}
@@ -950,49 +703,46 @@ const PlaceDetailPage = () => {
                     </Card>
                   }
                 >
-                  {!isPrivilegedUser && (
+                  {!chrome.isPrivilegedUser && (
                     <AddReviewFormLazy
-                      key={`${myReview?.id ?? "create"}-${myReview?.createdAt ?? "none"}-${myReview ? "edit" : "create"}`}
-                      onSubmit={handleSubmitReview}
-                      submitting={submittingReview}
-                      submitted={reviewSubmitted}
-                      mode={myReview ? "edit" : "create"}
-                      initialRating={myReview?.rating ?? 0}
-                      initialComment={myReview?.comment ?? ""}
-                      onDelete={myReview ? onDeleteMyReview : undefined}
-                      deleting={deletingReview || reportingReview}
-                      errorMessage={reviewActionError}
+                      key={`${page.myReview?.id ?? "create"}-${page.myReview?.createdAt ?? "none"}-${page.myReview ? "edit" : "create"}`}
+                      onSubmit={page.handleSubmitReview}
+                      submitting={page.submittingReview}
+                      submitted={page.reviewSubmitted}
+                      mode={page.myReview ? "edit" : "create"}
+                      initialRating={page.myReview?.rating ?? 0}
+                      initialComment={page.myReview?.comment ?? ""}
+                      onDelete={
+                        page.myReview ? page.handleDeleteMyReview : undefined
+                      }
+                      deleting={page.deletingReview || page.reportingReview}
+                      errorMessage={page.reviewActionError}
                     />
                   )}
                 </Suspense>
 
-                {reviewsLoading ? (
+                {page.reviewsLoading ? (
                   <ReviewSkeleton />
-                ) : reviewsError ? (
-                  <Alert
-                    variant="destructive"
-                    className="border-destructive/30"
-                  >
-                    <AlertTitle>
-                      {t("placeDetail.reviews.userError")}
-                    </AlertTitle>
+                ) : page.reviewsError ? (
+                  <Alert variant="destructive" className="border-destructive/30">
+                    <AlertTitle>{page.t("placeDetail.reviews.userError")}</AlertTitle>
                     <AlertDescription className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                      <span className="break-words">{reviewsError}</span>
+                      <span className="break-words">{page.reviewsError}</span>
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => void retryReviewsLoad()}
+                        onClick={() => void page.retryReviewsLoad()}
                       >
-                        {t("common.retry")}
+                        {page.t("common.retry")}
                       </Button>
                     </AlertDescription>
                   </Alert>
-                ) : reviews.length === 0 ? (
+                ) : page.reviews.length === 0 ? (
                   <div className="text-center py-8">
                     <MessageSquare className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
                     <p className="pd-type-body text-muted-foreground">
-                      {t("placeDetail.reviews.empty")}
+                      {page.t("placeDetail.reviews.empty")}
                     </p>
                   </div>
                 ) : (
@@ -1001,28 +751,29 @@ const PlaceDetailPage = () => {
                     style={{ contentVisibility: "auto" }}
                   >
                     <Suspense fallback={<ReviewSkeleton />}>
-                      {reviews.map((review) => (
+                      {page.reviews.map((review) => (
                         <ReviewCardLazy
                           key={review.id}
                           review={review}
-                          alreadyReported={isReviewReported(review.id)}
+                          alreadyReported={page.isReviewReported(review.id)}
                           onReport={
-                            currentUserId && review.userId === currentUserId
+                            page.currentUserId &&
+                            review.userId === page.currentUserId
                               ? undefined
-                              : handleReportReview
+                              : page.handleReportReview
                           }
                         />
                       ))}
                     </Suspense>
 
-                    {reviewsPagination.totalPages > 1 && (
+                    {page.reviewsPagination.totalPages > 1 && (
                       <ReviewsPagination
-                        pageIndex={reviewsPagination.pageIndex}
-                        totalPages={reviewsPagination.totalPages}
-                        totalCount={reviewsPagination.totalCount}
-                        pageSize={reviewsPagination.pageSize}
-                        loading={loadingMoreReviews}
-                        onPageChange={goToReviewsPage}
+                        pageIndex={page.reviewsPagination.pageIndex}
+                        totalPages={page.reviewsPagination.totalPages}
+                        totalCount={page.reviewsPagination.totalCount}
+                        pageSize={page.reviewsPagination.pageSize}
+                        loading={page.loadingMoreReviews}
+                        onPageChange={page.goToReviewsPage}
                         className="pt-1"
                       />
                     )}
@@ -1034,37 +785,34 @@ const PlaceDetailPage = () => {
                 <Alert className="border-border/70 bg-muted/40">
                   <AlertDescription className="pd-type-label text-muted-foreground flex items-center gap-2">
                     <Globe className="h-3.5 w-3.5 shrink-0" />
-                    <span>{t("placeDetail.reviews.socialDescription")}</span>
+                    <span>{page.t("placeDetail.reviews.socialDescription")}</span>
                   </AlertDescription>
                 </Alert>
 
-                {socialReviewsLoading ? (
+                {page.socialReviewsLoading ? (
                   <ReviewSkeleton />
-                ) : socialReviewsError ? (
-                  <Alert
-                    variant="destructive"
-                    className="border-destructive/30"
-                  >
+                ) : page.socialReviewsError ? (
+                  <Alert variant="destructive" className="border-destructive/30">
                     <AlertTitle>
-                      {t("placeDetail.reviews.socialError")}
+                      {page.t("placeDetail.reviews.socialError")}
                     </AlertTitle>
                     <AlertDescription className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                      <span className="break-words">{socialReviewsError}</span>
+                      <span className="break-words">{page.socialReviewsError}</span>
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => void retrySocialReviewsLoad()}
+                        onClick={() => void page.retrySocialReviewsLoad()}
                       >
-                        {t("common.retry")}
+                        {page.t("common.retry")}
                       </Button>
                     </AlertDescription>
                   </Alert>
-                ) : socialReviews.length === 0 ? (
+                ) : page.socialReviews.length === 0 ? (
                   <div className="text-center py-8">
                     <Globe className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
                     <p className="pd-type-body text-muted-foreground">
-                      {t("placeDetail.reviews.socialEmpty")}
+                      {page.t("placeDetail.reviews.socialEmpty")}
                     </p>
                   </div>
                 ) : (
@@ -1073,19 +821,19 @@ const PlaceDetailPage = () => {
                     style={{ contentVisibility: "auto" }}
                   >
                     <Suspense fallback={<ReviewSkeleton />}>
-                      {socialReviews.map((review) => (
+                      {page.socialReviews.map((review) => (
                         <SocialReviewCardLazy key={review.id} review={review} />
                       ))}
                     </Suspense>
 
-                    {socialReviewsPagination.totalPages > 1 && (
+                    {page.socialReviewsPagination.totalPages > 1 && (
                       <ReviewsPagination
-                        pageIndex={socialReviewsPagination.pageIndex}
-                        totalPages={socialReviewsPagination.totalPages}
-                        totalCount={socialReviewsPagination.totalCount}
-                        pageSize={socialReviewsPagination.pageSize}
-                        loading={loadingMoreSocialReviews}
-                        onPageChange={goToSocialReviewsPage}
+                        pageIndex={page.socialReviewsPagination.pageIndex}
+                        totalPages={page.socialReviewsPagination.totalPages}
+                        totalCount={page.socialReviewsPagination.totalCount}
+                        pageSize={page.socialReviewsPagination.pageSize}
+                        loading={page.loadingMoreSocialReviews}
+                        onPageChange={page.goToSocialReviewsPage}
                         className="pt-1"
                       />
                     )}
@@ -1097,11 +845,11 @@ const PlaceDetailPage = () => {
 
           <Button
             className="hidden sm:inline-flex min-h-12 font-semibold gap-2 sm:w-auto sm:min-w-[260px]"
-            onClick={openInMaps}
-            disabled={!canOpenInMaps}
+            onClick={page.openInMaps}
+            disabled={!page.canOpenInMaps}
           >
             <ExternalLink className="h-4 w-4" />
-            {t("placeDetail.action.openMaps")}
+            {page.t("placeDetail.action.openMaps")}
           </Button>
         </div>
       </div>
@@ -1110,11 +858,11 @@ const PlaceDetailPage = () => {
         <div className="mx-auto w-full max-w-6xl px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <Button
             className="w-full min-h-12 font-semibold gap-2"
-            onClick={openInMaps}
-            disabled={!canOpenInMaps}
+            onClick={page.openInMaps}
+            disabled={!page.canOpenInMaps}
           >
             <ExternalLink className="h-4 w-4" />
-            {t("placeDetail.action.openMaps")}
+            {page.t("placeDetail.action.openMaps")}
           </Button>
         </div>
       </div>

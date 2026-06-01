@@ -24,6 +24,11 @@ import type {
   SocialReviewListResponse,
 } from "@/features/place-detail/types";
 import { getReviewIdentity } from "@/features/place-detail/utils/reviewIdentity";
+import {
+  locateUserReview,
+  mergeReviewsByIdentity,
+  mergeSocialReviewsById,
+} from "@/features/place-detail/utils/reviewListOps";
 import { getCurrentAuthUserId } from "@/features/place-detail/utils/authUser";
 import { getErrorMessage } from "@/utils/apiError";
 
@@ -41,36 +46,6 @@ const DEFAULT_PAGINATION: ReviewsPaginationState = {
   totalCount: 0,
   totalPages: 0,
   hasNextPage: false,
-};
-
-const mergeUniqueById = (current: Review[], incoming: Review[]): Review[] => {
-  const map = new Map<string, Review>();
-  current.forEach((review) => map.set(getReviewIdentity(review), review));
-  incoming.forEach((review) => map.set(getReviewIdentity(review), review));
-  return Array.from(map.values()).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-};
-
-const mergeUniqueSocialById = (
-  current: SocialMediaReview[],
-  incoming: SocialMediaReview[],
-): SocialMediaReview[] => {
-  const map = new Map<string, SocialMediaReview>();
-  current.forEach((review) => map.set(review.id, review));
-  incoming.forEach((review) => map.set(review.id, review));
-
-  return Array.from(map.values()).sort(
-    (a, b) => b.date.getTime() - a.date.getTime(),
-  );
-};
-
-const resolveMyReview = (
-  items: Review[],
-  currentUserId: string | null,
-): Review | null => {
-  if (!currentUserId) return null;
-  return items.find((review) => review.userId === currentUserId) ?? null;
 };
 
 export interface UsePlaceDetailReturn {
@@ -269,9 +244,9 @@ export const usePlaceDetail = (
 
         setReviews((prev) => {
           const nextReviews = append
-            ? mergeUniqueById(prev, data.items)
+            ? mergeReviewsByIdentity(prev, data.items)
             : data.items;
-          setMyReview(resolveMyReview(nextReviews, getCurrentAuthUserId()));
+          setMyReview(locateUserReview(nextReviews, getCurrentAuthUserId()));
           return nextReviews;
         });
         applyReviewPagination(data);
@@ -344,7 +319,7 @@ export const usePlaceDetail = (
         if (!isActivePlace(id)) return;
 
         if (append) {
-          setSocialReviews((prev) => mergeUniqueSocialById(prev, data.items));
+          setSocialReviews((prev) => mergeSocialReviewsById(prev, data.items));
         } else {
           setSocialReviews(data.items);
         }
@@ -386,7 +361,7 @@ export const usePlaceDetail = (
             : prev,
         );
       } catch {
-        // Non-blocking refresh.
+        return;
       }
     },
     [isActivePlace],
@@ -406,7 +381,7 @@ export const usePlaceDetail = (
         applyReviewPagination(reviewsPageResult);
         setReviewsError(null);
         setMyReview(
-          resolveMyReview(reviewsPageResult.items, getCurrentAuthUserId()),
+          locateUserReview(reviewsPageResult.items, getCurrentAuthUserId()),
         );
         setMyReviewLoading(false);
       }
@@ -420,9 +395,9 @@ export const usePlaceDetail = (
         venueId: id,
         actionType: INTERACTION_ACTION_TYPES.view,
       });
-    } catch {
-      // Interaction tracking is non-blocking by design.
-    }
+      } catch {
+        return;
+      }
   }, []);
 
   const refreshPlaceData = useCallback(async () => {
@@ -517,23 +492,14 @@ export const usePlaceDetail = (
     socialReviewsPagination,
   ]);
 
-  /**
-   * Navigate to an arbitrary reviews page (0-based index).
-   * Replaces the current page of reviews rather than appending.
-   */
   const goToReviewsPage = useCallback(
     async (pageIndex: number) => {
       if (!placeId || loadingMoreReviews) return;
-      // append=false replaces the current items
       await fetchReviews(placeId, pageIndex, false);
     },
     [fetchReviews, loadingMoreReviews, placeId],
   );
 
-  /**
-   * Navigate to an arbitrary social-reviews page (0-based index).
-   * Replaces the current page of social reviews rather than appending.
-   */
   const goToSocialReviewsPage = useCallback(
     async (pageIndex: number) => {
       if (!placeId || loadingMoreSocialReviews) return;
@@ -552,7 +518,7 @@ export const usePlaceDetail = (
           actionType,
         });
       } catch {
-        // Non-blocking action tracking.
+        return;
       }
     },
     [place],
