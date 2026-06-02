@@ -11,6 +11,7 @@ import { useI18n } from "@/components/i18n";
 import { useUserLocation } from "@/features/home/hooks/useUserLocation";
 import type { HomePlace } from "@/features/home/types";
 import type { FavoritesRefreshOptions } from "@/features/favorites/hooks/useFavorites";
+import { getErrorMessage } from "@/utils/apiError";
 
 export const useFavoritesPage = () => {
   const { t, formatNumber } = useI18n();
@@ -57,15 +58,38 @@ export const useFavoritesPage = () => {
   const runListRefresh = useCallback(
     async (options: FavoritesRefreshOptions = {}) => {
       setListRefreshInFlight(true);
-      await refreshFavorites(options).catch(() => undefined);
-      setListRefreshInFlight(false);
+      try {
+        await refreshFavorites(options);
+      } catch (error: unknown) {
+        console.error("[useFavoritesPage] Failed to refresh favorites list.", {
+          options,
+          message: getErrorMessage(
+            error,
+            "Unable to refresh favorites at this time.",
+          ),
+          error: error instanceof Error ? error : undefined,
+        });
+      } finally {
+        setListRefreshInFlight(false);
+      }
     },
     [refreshFavorites],
   );
 
   const unsavePlace = useCallback(
     async (venueId: string) => {
-      await toggleSave(venueId).catch(() => undefined);
+      try {
+        await toggleSave(venueId);
+      } catch (error: unknown) {
+        console.error("[useFavoritesPage] Failed to toggle favorite status.", {
+          venueId,
+          message: getErrorMessage(
+            error,
+            "Unable to update favorite status right now.",
+          ),
+          error: error instanceof Error ? error : undefined,
+        });
+      }
     },
     [toggleSave],
   );

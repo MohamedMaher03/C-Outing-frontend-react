@@ -277,11 +277,26 @@ export const usePlaceDetail = (
         const data = await getPlaceById(id);
         if (!isActivePlace(id)) return;
 
+        let favoriteStatusFromAdapter = false;
+        try {
+          favoriteStatusFromAdapter = await favoriteAdapter.isFavorite(id);
+        } catch (error: unknown) {
+          console.error(
+            "[usePlaceDetail] Failed to resolve fallback favorite status.",
+            {
+              placeId: id,
+              message: getErrorMessage(
+                error,
+                "Unable to determine favorite status from fallback source.",
+              ),
+              error: error instanceof Error ? error : undefined,
+            },
+          );
+        }
+
         setPlace(data);
         const fallbackFavoriteStatus =
-          data.isFavorited ??
-          data.isSaved ??
-          (await favoriteAdapter.isFavorite(id).catch(() => false));
+          data.isFavorited ?? data.isSaved ?? favoriteStatusFromAdapter;
 
         if (!isActivePlace(id)) return;
 
@@ -360,8 +375,15 @@ export const usePlaceDetail = (
               }
             : prev,
         );
-      } catch {
-        return;
+      } catch (error: unknown) {
+        console.error("[usePlaceDetail] Failed to refresh average rating.", {
+          placeId: id,
+          message: getErrorMessage(
+            error,
+            "Unable to refresh average rating at the moment.",
+          ),
+          error: error instanceof Error ? error : undefined,
+        });
       }
     },
     [isActivePlace],
@@ -369,10 +391,25 @@ export const usePlaceDetail = (
 
   const syncReviewsAfterMutation = useCallback(
     async (id: string) => {
-      const reviewsPageResult = await getPlaceReviews(id, {
-        pageIndex: 0,
-        pageSize: 10,
-      }).catch(() => null);
+      let reviewsPageResult: ReviewListResponse | null = null;
+      try {
+        reviewsPageResult = await getPlaceReviews(id, {
+          pageIndex: 0,
+          pageSize: 10,
+        });
+      } catch (error: unknown) {
+        console.error(
+          "[usePlaceDetail] Failed to synchronize reviews after mutation.",
+          {
+            placeId: id,
+            message: getErrorMessage(
+              error,
+              "Unable to refresh reviews after your action.",
+            ),
+            error: error instanceof Error ? error : undefined,
+          },
+        );
+      }
 
       if (!isActivePlace(id)) return;
 
@@ -395,9 +432,16 @@ export const usePlaceDetail = (
         venueId: id,
         actionType: INTERACTION_ACTION_TYPES.view,
       });
-      } catch {
-        return;
-      }
+    } catch (error: unknown) {
+      console.error("[usePlaceDetail] Failed to track place view interaction.", {
+        placeId: id,
+        message: getErrorMessage(
+          error,
+          "Unable to record place view interaction.",
+        ),
+        error: error instanceof Error ? error : undefined,
+      });
+    }
   }, []);
 
   const refreshPlaceData = useCallback(async () => {
@@ -517,8 +561,13 @@ export const usePlaceDetail = (
           venueId: place.id,
           actionType,
         });
-      } catch {
-        return;
+      } catch (error: unknown) {
+        console.error("[usePlaceDetail] Failed to track interaction.", {
+          placeId: place.id,
+          actionType,
+          message: getErrorMessage(error, "Unable to record interaction."),
+          error: error instanceof Error ? error : undefined,
+        });
       }
     },
     [place],
@@ -536,7 +585,16 @@ export const usePlaceDetail = (
       await favoriteAdapter.toggle(place.id, isFavorite);
       showNotification("favorite", newFavoriteState ? "added" : "removed");
       await trackInteraction(INTERACTION_ACTION_TYPES.favorite);
-    } catch {
+    } catch (error: unknown) {
+      console.error("[usePlaceDetail] Failed to toggle favorite state.", {
+        placeId: place.id,
+        nextState: !isFavorite,
+        message: getErrorMessage(
+          error,
+          "Unable to update favorite status right now.",
+        ),
+        error: error instanceof Error ? error : undefined,
+      });
       setIsFavorite(!isFavorite);
     } finally {
       setSavingFavorite(false);
@@ -576,7 +634,13 @@ export const usePlaceDetail = (
       );
       await trackInteraction(INTERACTION_ACTION_TYPES.like);
       showNotification("like", resolvedLikeState ? "added" : "removed");
-    } catch {
+    } catch (error: unknown) {
+      console.error("[usePlaceDetail] Failed to toggle like state.", {
+        placeId: place.id,
+        attemptedState: optimisticState,
+        message: getErrorMessage(error, "Unable to update like status."),
+        error: error instanceof Error ? error : undefined,
+      });
       setIsLiked(previousState);
       setPlace((prev) =>
         prev

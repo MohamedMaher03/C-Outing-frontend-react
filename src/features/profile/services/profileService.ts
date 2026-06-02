@@ -126,8 +126,6 @@ export const getUserPreferences = async (): Promise<UserPreferences> => {
     const preferences = await profileDataSource.getPreferences(userId);
     return normalizePreferences(preferences);
   } catch (error) {
-    // Some environments do not expose preferences endpoints yet.
-    // Keep profile page usable with safe defaults instead of hard-failing.
     if (isMissingPreferencesEndpointError(error)) {
       return normalizePreferences(undefined);
     }

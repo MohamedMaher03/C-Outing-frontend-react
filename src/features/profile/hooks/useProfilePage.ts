@@ -22,6 +22,7 @@ import {
 } from "@/features/profile/utils/profilePresentation";
 import { localizeAccountRoutes } from "@/features/profile/utils/profileAccountCatalog";
 import type { PreferenceValidationField } from "@/features/onboarding/utils/onboardingPreferences";
+import { getErrorMessage } from "@/utils/apiError";
 
 const PROFILE_DISTRICT_PAGE_SIZE = 8;
 
@@ -113,7 +114,17 @@ export const useProfilePage = () => {
   );
 
   const persistPreferences = useCallback(async () => {
-    await profileState.savePreferences().catch(() => undefined);
+    try {
+      await profileState.savePreferences();
+    } catch (error: unknown) {
+      console.error("[useProfilePage] Failed to persist profile preferences.", {
+        message: getErrorMessage(
+          error,
+          "Unable to save profile preferences right now.",
+        ),
+        error: error instanceof Error ? error : undefined,
+      });
+    }
   }, [profileState]);
 
   const openEditProfile = useCallback(() => navigate("/profile/edit"), [navigate]);
