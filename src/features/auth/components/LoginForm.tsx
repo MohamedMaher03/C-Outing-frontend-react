@@ -156,11 +156,16 @@ const LoginForm = () => {
             <FormError message={errors.password?.message} />
           </div>
 
-          <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
-            <Controller
-              control={control}
-              name="staySignedIn"
-              render={({ field }) => (
+          <Controller
+            control={control}
+            name="staySignedIn"
+            render={({ field }) => (
+              <label
+                htmlFor="staySignedIn"
+                className={`group flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/40 has-[:focus-visible]:bg-muted/30 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/50 motion-reduce:transition-none ${
+                  isLoading ? "pointer-events-none opacity-60" : ""
+                }`}
+              >
                 <Checkbox
                   id="staySignedIn"
                   checked={field.value ?? false}
@@ -168,20 +173,14 @@ const LoginForm = () => {
                     field.onChange(checked === true)
                   }
                   disabled={isLoading}
-                  className="shrink-0"
+                  className="h-5 w-5 shrink-0 rounded-md"
                 />
-              )}
-            />
-
-            <div className="space-y-1">
-              <Label
-                htmlFor="staySignedIn"
-                className="cursor-pointer font-medium leading-none text-foreground"
-              >
-                {t("auth.keepSignedIn")}
-              </Label>
-            </div>
-          </div>
+                <span className="text-sm font-medium leading-snug text-foreground">
+                  {t("auth.keepSignedIn")}
+                </span>
+              </label>
+            )}
+          />
 
           <Button
             type="submit"
