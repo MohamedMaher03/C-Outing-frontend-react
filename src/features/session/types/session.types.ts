@@ -13,12 +13,12 @@ export interface Session {
 }
 
 export type SessionStatus =
-  | "idle" // here i use this stats when no active session
-  | "creating" //use whem POST /Session in-flight
-  | "joining" //use when POST /Session/{code}/join in-flight
-  | "waiting" //use when Session joined, waiting for host to trigger recommendations
-  | "loading-recs" //use when GET /Session/{code}/recommend in-flight
-  | "ready"; //this used when recommendations received
+  | "idle"
+  | "creating"
+  | "joining"
+  | "waiting"
+  | "loading-recs"
+  | "ready";
 
 export const RECOMMENDATION_COUNT_OPTIONS = [10, 20, 30] as const;
 export type RecommendationCount = (typeof RECOMMENDATION_COUNT_OPTIONS)[number];
