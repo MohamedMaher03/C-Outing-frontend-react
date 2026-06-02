@@ -1,5 +1,4 @@
 export const API_ENDPOINTS = {
-  // ── Auth ─────────────────────────────────────────────────────
   auth: {
     login: "/api/v1/Auth/login",
     register: "/api/v1/Auth/register",
@@ -11,7 +10,6 @@ export const API_ENDPOINTS = {
     resetPassword: "/api/v1/Auth/reset-password",
   },
 
-  // ── Users / Profile ──────────────────────────────────────────
   users: {
     getMe: "/users/me",
     getProfile: (userId: string) => `/users/${userId}`,
@@ -39,7 +37,6 @@ export const API_ENDPOINTS = {
     deleteAccount: (userId: string) => `/users/${userId}/account`,
   },
 
-  // ── Home / Venues ────────────────────────────────────────────
   home: {
     toggleSave: (placeId: string) => `/api/v1/Venue/${placeId}/save`,
     moodPlaces: (moodId: string) => `/api/v1/Venue/mood/${moodId}`,
@@ -54,14 +51,12 @@ export const API_ENDPOINTS = {
     venueTopRatedInArea: "/api/v1/Venue/top-rated-in-area",
   },
 
-  // ── Recommendations ────────────────────────────────────────────────
   recommendations: {
     curated: "/api/v1/Recommendation/personalized",
     similar: (venueId: string) => `/api/v1/Recommendation/similar/${venueId}`,
     trending: "/api/v1/Recommendation/trending",
     mood: "/api/v1/Recommendation/mood",
   },
-  // ── Favorites ────────────────────────────────────────────────
   favorites: {
     getAll: "/api/v1/Favorite",
     add: "/api/v1/Favorite",
@@ -69,14 +64,12 @@ export const API_ENDPOINTS = {
     check: (venueId: string) => `/api/v1/Favorite/check/${venueId}`,
   },
 
-  // ── Onboarding (preferences submission) ──────────────────────
   onboarding: {
     submit: "/api/v1/Recommendation/onboarding",
     getPreferences: "/api/v1/Recommendation/onboarding/preferences",
     updatePreferences: "/api/v1/Recommendation/onboarding",
   },
 
-  // ── Places / Detail ──────────────────────────────────────────
   places: {
     getById: (id: string) => `/api/v1/Venue/${id}`,
     scrapeInitiate: "/api/v1/Venue/scrape/initiate",
@@ -94,7 +87,6 @@ export const API_ENDPOINTS = {
       `/api/v1/Review/venue/${venueId}/average-rating`,
   },
 
-  // ── Notifications (in-app feed) ────────────────────────────
   notifications: {
     getAll: "/api/v1/Notification",
     getUnread: "/api/v1/Notification/unread",
@@ -106,13 +98,11 @@ export const API_ENDPOINTS = {
       `/api/v1/Notification/${notificationId}`,
   },
 
-  // ── Interactions ─────────────────────────────────────────────
   interactions: {
     record: "/api/v1/Interaction",
     recordBatch: "/api/v1/Interaction/batch",
   },
 
-  // ── Admin ─────────────────────────────────────────────────────
   admin: {
     getStats: "/api/v1/Admin/stats",
     getUsers: "/api/v1/Admin/users",
@@ -134,7 +124,6 @@ export const API_ENDPOINTS = {
     getSystemHealth: "/api/v1/Admin/system/health",
   },
 
-  // ── Sessions (Group Recommendations) ─────────────────────────
   session: {
     create: "/api/v1/Session",
     join: (code: string) => `/api/v1/Session/${code}/join`,
@@ -143,7 +132,6 @@ export const API_ENDPOINTS = {
     recommend: (code: string) => `/api/v1/Session/${code}/recommend`,
   },
 
-  // ── Moderator ────────────────────────────────────────────────
   moderator: {
     getStats: "/api/v1/Moderator/stats",
     getReportedContent: "/api/v1/Moderator/reports",

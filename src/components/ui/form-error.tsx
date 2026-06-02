@@ -30,45 +30,66 @@ const STATIC_MESSAGE_KEYS: Record<string, string> = {
     "auth.validation.passwordComplexity",
 };
 
+type TranslationResolver = {
+  predicate: (payload: string) => boolean;
+  transformer: (payload: string) => { translationKey: string; variables: Record<string, string> };
+};
+
+const dynamicResolvers: ReadonlyArray<TranslationResolver> = [
+  {
+    predicate: (payload) => /^Password must be less than (\d+) characters$/.test(payload),
+    transformer: (payload) => {
+      const [, boundary = ""] =
+        payload.match(/^Password must be less than (\d+) characters$/) ?? [];
+      return { translationKey: "auth.validation.passwordMax", variables: { max: boundary } };
+    },
+  },
+  {
+    predicate: (payload) => /^Password must be at least (\d+) characters$/.test(payload),
+    transformer: (payload) => {
+      const [, boundary = ""] =
+        payload.match(/^Password must be at least (\d+) characters$/) ?? [];
+      return { translationKey: "auth.validation.passwordMin", variables: { min: boundary } };
+    },
+  },
+  {
+    predicate: (payload) => /^Avatar must be smaller than (\d+)MB$/.test(payload),
+    transformer: (payload) => {
+      const [, boundary = ""] = payload.match(/^Avatar must be smaller than (\d+)MB$/) ?? [];
+      return { translationKey: "auth.validation.avatarMax", variables: { max: boundary } };
+    },
+  },
+  {
+    predicate: (payload) => /^Code must be exactly (\d+) digits$/.test(payload),
+    transformer: (payload) => {
+      const [, boundary = ""] = payload.match(/^Code must be exactly (\d+) digits$/) ?? [];
+      return { translationKey: "auth.validation.codeLength", variables: { length: boundary } };
+    },
+  },
+];
+
 export const FormError = ({ message, className }: FormErrorProps) => {
   const { t } = useI18n();
+  const normalizedMessage = message?.trim();
 
-  if (!message) return null;
+  if (!normalizedMessage) {
+    return null;
+  }
 
-  const staticKey = STATIC_MESSAGE_KEYS[message];
-  let localizedMessage = staticKey ? t(staticKey) : message;
-
-  const passwordMaxMatch = message.match(
-    /^Password must be less than (\d+) characters$/,
+  const staticKey = STATIC_MESSAGE_KEYS[normalizedMessage];
+  const resolvedStaticMessage = staticKey ? t(staticKey) : normalizedMessage;
+  const matchedResolver = dynamicResolvers.find(({ predicate }) =>
+    predicate(normalizedMessage),
   );
-  if (passwordMaxMatch) {
-    localizedMessage = t("auth.validation.passwordMax", {
-      max: passwordMaxMatch[1],
-    });
-  }
+  const resolvedDynamicMessage = matchedResolver
+    ? (() => {
+        const { translationKey, variables } =
+          matchedResolver.transformer(normalizedMessage);
+        return t(translationKey, variables);
+      })()
+    : undefined;
 
-  const passwordMinMatch = message.match(
-    /^Password must be at least (\d+) characters$/,
-  );
-  if (passwordMinMatch) {
-    localizedMessage = t("auth.validation.passwordMin", {
-      min: passwordMinMatch[1],
-    });
-  }
-
-  const avatarMaxMatch = message.match(/^Avatar must be smaller than (\d+)MB$/);
-  if (avatarMaxMatch) {
-    localizedMessage = t("auth.validation.avatarMax", {
-      max: avatarMaxMatch[1],
-    });
-  }
-
-  const codeLengthMatch = message.match(/^Code must be exactly (\d+) digits$/);
-  if (codeLengthMatch) {
-    localizedMessage = t("auth.validation.codeLength", {
-      length: codeLengthMatch[1],
-    });
-  }
+  const localizedMessage = resolvedDynamicMessage ?? resolvedStaticMessage;
 
   return (
     <p

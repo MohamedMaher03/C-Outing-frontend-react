@@ -40,7 +40,6 @@ export const normalizePhone = (value: string, countryCode: string) => {
   const trimmed = value.trim();
   if (!trimmed) return trimmed;
   if (trimmed.startsWith("+")) return trimmed.replace(/\s+/g, "");
-
   const digits = trimmed.replace(/\D/g, "");
   if (!digits) return trimmed;
 

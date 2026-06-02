@@ -1,4 +1,3 @@
-
 const getCurrentLocale = (): string => {
   if (typeof document !== "undefined") {
     const current = document.documentElement.lang?.trim();
@@ -27,15 +26,20 @@ export function formatDate(
   locale: string = getCurrentLocale(),
 ): string {
   const d = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) {
+    return "";
+  }
   return d.toLocaleDateString(locale);
 }
-
 
 export function formatTime(
   date: Date | string,
   locale: string = getCurrentLocale(),
 ): string {
   const d = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) {
+    return "";
+  }
   return d.toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
@@ -48,7 +52,7 @@ export function calculateDistance(
   lat2: number,
   lng2: number,
 ): number {
-  const R = 6371; // Earth radius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
   const a =
@@ -61,45 +65,44 @@ export function calculateDistance(
   return R * c;
 }
 
-
 export function debounce<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number,
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout>;
 
-  return function (...args: Parameters<T>) {
+  return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn(...args), delay);
+    timeoutId = setTimeout(() => {
+      fn(...args);
+    }, Math.max(0, delay));
   };
 }
-
 
 export function throttle<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number,
 ): (...args: Parameters<T>) => void {
-  let lastCall = 0;
+  let lastExecutionAt = 0;
 
-  return function (...args: Parameters<T>) {
-    const now = Date.now();
-    if (now - lastCall >= delay) {
-      lastCall = now;
+  return (...args: Parameters<T>) => {
+    const currentTimestamp = Date.now();
+    if (currentTimestamp - lastExecutionAt >= Math.max(0, delay)) {
+      lastExecutionAt = currentTimestamp;
       fn(...args);
     }
   };
 }
 
-
 export function getInitials(name: string): string {
   return name
     .split(" ")
-    .map((n) => n[0])
+    .map((nameSegment) => nameSegment[0])
+    .filter((symbol): symbol is string => typeof symbol === "string")
     .join("")
     .toUpperCase()
     .slice(0, 2);
 }
-
 
 export function getTranslatedText(
   translationKey: string | undefined,
@@ -112,8 +115,10 @@ export function getTranslatedText(
       ) => string)
     | null,
 ): string {
-  if (!translationKey || !t) {
+  if (!translationKey || typeof t !== "function") {
     return fallbackText;
   }
-  return t(translationKey, undefined, fallbackText);
+
+  const translatedLabel = t(translationKey, undefined, fallbackText);
+  return translatedLabel.trim().length > 0 ? translatedLabel : fallbackText;
 }

@@ -1,21 +1,25 @@
 import { normalizeLowercase } from "./textNormalization";
 
 export const parseBooleanEnv = (value: unknown): boolean => {
-  if (typeof value !== "string") {
-    return false;
-  }
+  const normalized =
+    typeof value === "boolean"
+      ? String(value)
+      : typeof value === "number"
+        ? String(value)
+        : typeof value === "string"
+          ? value
+          : "";
 
-  const normalized = normalizeLowercase(value);
-  return normalized === "true" || normalized === "1" || normalized === "yes";
+  return ["true", "1", "yes"].includes(normalizeLowercase(normalized));
 };
 
 export const resolveFeatureMockFlag = (
   featureValue: unknown,
   globalValue: unknown,
 ): boolean => {
-  if (typeof featureValue === "string") {
-    return parseBooleanEnv(featureValue);
-  }
-
-  return parseBooleanEnv(globalValue);
+  const prioritizedValue =
+    featureValue !== undefined && featureValue !== null
+      ? featureValue
+      : globalValue;
+  return parseBooleanEnv(prioritizedValue);
 };

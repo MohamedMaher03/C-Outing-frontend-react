@@ -4,7 +4,7 @@ export const PRICE_LEVEL_VALUES = [
   "midrange",
   "expensive",
   "luxury",
-] as const; //here i define only aloowed values make it const to prevent modification and to get literal types
+] as const;
 
 export type CanonicalPriceLevel = (typeof PRICE_LEVEL_VALUES)[number];
 
@@ -48,29 +48,38 @@ export interface PriceLevelOption<
   value: T;
 }
 
-export const PRICE_LEVEL_OPTIONS: PriceLevelOption[] = PRICE_LEVEL_VALUES.map(
-  (value) => ({
+export const PRICE_LEVEL_OPTIONS: ReadonlyArray<PriceLevelOption> =
+  PRICE_LEVEL_VALUES.map((priceLevel) => ({
+    value: priceLevel,
+    ...PRICE_LEVEL_META[priceLevel],
+  }));
+
+export type PriceLevelOptionTransformer<TResult> = (
+  optionPayload: PriceLevelOption,
+) => TResult;
+
+export const projectPriceLevelOptions = <TResult>(
+  transformer: PriceLevelOptionTransformer<TResult>,
+): ReadonlyArray<TResult> =>
+  typeof transformer === "function"
+    ? PRICE_LEVEL_OPTIONS.map((optionPayload) => transformer(optionPayload))
+    : [];
+
+export const toCanonicalPriceLevel = (
+  candidate: unknown,
+): CanonicalPriceLevel | null => {
+  const normalizedCandidate =
+    typeof candidate === "string" ? candidate.trim().toLowerCase() : "";
+
+  return (
+    PRICE_LEVEL_VALUES.find((priceLevel) => priceLevel === normalizedCandidate) ??
+    null
+  );
+};
+
+export const BUDGET_OPTIONS = projectPriceLevelOptions(
+  ({ value, label, symbol }) => ({
     value,
-    ...PRICE_LEVEL_META[value],
+    label: `${label} (${symbol})`,
   }),
 );
-//here i becme have shape like this :
-// {
-//   value: "cheap",
-//   label: "Value",
-//   caption: "Great value",
-//   symbol: "$$"
-// }
-
-export const BUDGET_OPTIONS: Array<{
-  value: CanonicalPriceLevel;
-  label: string;
-}> = PRICE_LEVEL_OPTIONS.map((option) => ({
-  value: option.value,
-  label: `${option.label} (${option.symbol})`,
-}));
-/*'
-by this code can separte 
-in ui use label ->Value ($$) or Luxury ($$$$$)
-but system-> will only get value like cheap or luxury when user select an option
-*/

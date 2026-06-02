@@ -103,12 +103,7 @@ const ReportedContentPage = lazy(
   () => import("@/features/moderator/pages/ReportedContentPage"),
 );
 
-/**
- * Main App Component with Routing
- *
- * Wraps the application with Router and defines route structure.
- * Context providers (Auth, Theme) should be added here for global state.
- */
+
 function App() {
   const { t } = useI18n();
 
@@ -122,7 +117,6 @@ function App() {
         label: t("nav.manageReviews"),
         icon: MessageSquare,
       },
-      // { path: "/admin/categories", label: t("nav.categories"), icon: Tags },
       { path: "/admin/settings", label: t("nav.settings"), icon: Settings },
     ],
     [t],
@@ -161,7 +155,6 @@ function App() {
         }
       >
         <Routes>
-          {/* Public Routes - No Layout */}
           <Route
             path="/login"
             element={
@@ -189,7 +182,6 @@ function App() {
           />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* Onboarding — only for users who haven't completed it yet */}
           <Route
             path="/onboarding"
             element={
@@ -199,8 +191,8 @@ function App() {
             }
           />
 
-          {/* App Routes with AppLayout - all require authentication */}
-          {/* ── User Routes (ONLY user role) ───────────────────────── */}
+          {/* here app routes with AppLayout her all require authentication */}
+          {/* this user Routes (ONLY user role) */}
 
           <Route
             element={
@@ -237,7 +229,7 @@ function App() {
             />
           </Route>
 
-          {/* ── Protected Routes (ANY authenticated user) ──────────────────────────── */}
+          {/* here Protected Routes (ANY authenticated user) */}
           <Route
             element={
               <ProtectedRoute>
@@ -256,7 +248,7 @@ function App() {
             <Route path="/not-found" element={<NotFound />} />
           </Route>
 
-          {/* ── Admin Routes ──────────────────────────────── */}
+          {/* here Admin Routes */}
           <Route
             element={
               <RoleBasedRoute allowedRoles={["admin"]} redirectTo="/not-found">
@@ -275,7 +267,7 @@ function App() {
             <Route path="/admin/settings" element={<SystemSettingsPage />} />
           </Route>
 
-          {/* ── Moderator Routes ──────────────────────────── */}
+          {/* here the Moderator Routes */}
           <Route
             element={
               <RoleBasedRoute

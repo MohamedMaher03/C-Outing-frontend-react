@@ -12,7 +12,7 @@ export const VENUE_CATEGORIES = [
   "Museum",
   "Shopping Mall",
   "Gym",
-];
+] as const;
 
 export const BUDGET_LEVELS = PRICE_LEVEL_VALUES;
 
@@ -49,4 +49,4 @@ export const CAIRO_GIZA_BOUNDS = {
   south: 29.8363,
   east: 31.5466,
   west: 31.0042,
-};
+} as const;

@@ -3,13 +3,8 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 
-// Re-export RoleBasedRoute for convenient importing
 export { RoleBasedRoute } from "./RoleBasedRoute";
 
-/**
- * Protected Route Component
- * Wraps routes that require authentication
- */
 interface ProtectedRouteProps {
   children: ReactNode;
 }
@@ -19,12 +14,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
 
   if (isLoading) return <PageLoading />;
-
-  // Not authenticated → redirect to login
   if (!user) return <Navigate to="/login" replace />;
 
-  // User authenticated but hasn't completed onboarding → redirect to /onboarding
-  // Admin and moderator skip onboarding entirely
   if (
     user.role === "user" &&
     !user.hasCompletedOnboarding &&
@@ -36,10 +27,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   return children;
 }
 
-/**
- * Public Route Component
- * Redirects authenticated users away from public pages (login, register)
- */
 interface PublicRouteProps {
   children: ReactNode;
 }
@@ -52,7 +39,6 @@ export function PublicRoute({ children }: PublicRouteProps) {
   }
 
   if (user) {
-    // Redirect based on role
     if (user.role === "admin") {
       return <Navigate to="/admin" replace />;
     }
@@ -70,11 +56,6 @@ export function PublicRoute({ children }: PublicRouteProps) {
   return children;
 }
 
-/**
- * Onboarding Route Guard
- * Allows only authenticated users with an incomplete onboarding.
- * Users who already finished onboarding are sent straight to home.
- */
 interface OnboardingRouteProps {
   children: ReactNode;
 }
@@ -84,13 +65,10 @@ export function OnboardingRoute({ children }: OnboardingRouteProps) {
 
   if (isLoading) return <PageLoading />;
 
-  // Not authenticated → redirect to login
   if (!user) return <Navigate to="/login" replace />;
-
-  // Role not allowed on onboarding (admin/moderator have no onboarding)
   if (user.role !== "user") return <Navigate to="/not-found" replace />;
 
-  // Already completed → send to home
+  
   if (user.hasCompletedOnboarding) return <Navigate to="/" replace />;
 
   return children;

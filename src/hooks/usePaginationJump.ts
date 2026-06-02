@@ -24,12 +24,12 @@ export const usePaginationJump = (
   const commitPageJump = useCallback(() => {
     const targetPage = parsePageJumpDraft(pageJumpDraft);
 
-    if (targetPage === null) {
-      setPageJumpDraft(syncPageJumpDraft(pageIndex));
-      return;
-    }
+    const fallbackDraft = syncPageJumpDraft(pageIndex);
+    const targetPageOrFallback = targetPage ?? null;
 
-    goToPage(targetPage);
+    return targetPageOrFallback === null
+      ? setPageJumpDraft(fallbackDraft)
+      : goToPage(targetPageOrFallback);
   }, [goToPage, pageIndex, pageJumpDraft]);
 
   const handlePageJumpKeyDown = useCallback(

@@ -1,29 +1,62 @@
 import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+const cardVariants = cva("rounded-lg border bg-card text-card-foreground", {
+  variants: {
+    elevation: {
+      flat: "",
+      sm: "shadow-sm",
+      md: "shadow-md",
+      lg: "shadow-lg",
+    },
+  },
+  defaultVariants: {
+    elevation: "sm",
+  },
+});
+
+const cardSectionVariants = cva("", {
+  variants: {
+    spacing: {
+      compact: "p-4",
+      default: "p-6",
+      relaxed: "p-8",
+    },
+  },
+  defaultVariants: {
+    spacing: "default",
+  },
+});
+
+interface CardProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardVariants> {}
+
 const Card = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+  CardProps
+>(({ className, elevation, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn(
-      "rounded-lg border bg-card text-card-foreground shadow-sm",
-      className,
-    )}
+    className={cn(cardVariants({ elevation }), className)}
     {...props}
   />
 ));
 Card.displayName = "Card";
 
+interface CardSectionProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardSectionVariants> {}
+
 const CardHeader = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+  CardSectionProps
+>(({ className, spacing, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    className={cn("flex flex-col space-y-1.5", cardSectionVariants({ spacing }), className)}
     {...props}
   />
 ));
@@ -58,19 +91,23 @@ CardDescription.displayName = "CardDescription";
 
 const CardContent = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+  CardSectionProps
+>(({ className, spacing, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(cardSectionVariants({ spacing }), "pt-0", className)}
+    {...props}
+  />
 ));
 CardContent.displayName = "CardContent";
 
 const CardFooter = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+  CardSectionProps
+>(({ className, spacing, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center p-6 pt-0", className)}
+    className={cn("flex items-center", cardSectionVariants({ spacing }), "pt-0", className)}
     {...props}
   />
 ));

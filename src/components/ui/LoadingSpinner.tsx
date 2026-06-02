@@ -1,77 +1,80 @@
 import { createPortal } from "react-dom";
+import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import arrowLogo from "@/assets/images/arrow-loading.png";
 import pyramidLogo from "@/assets/images/pyramid-loading-2.png";
 import { useI18n } from "@/components/i18n";
 
-interface LoadingSpinnerProps {
-  /** Size of the spinner: sm (32px), md (64px), lg (96px), xl (128px) */
-  size?: "sm" | "md" | "lg" | "xl";
-  /** Optional text to display below the spinner */
+const spinnerVariants = cva("flex flex-col items-center justify-center gap-4", {
+  variants: {
+    size: {
+      sm: "",
+      md: "",
+      lg: "",
+      xl: "",
+    },
+  },
+  defaultVariants: {
+    size: "md",
+  },
+});
+
+type SpinnerScale = NonNullable<VariantProps<typeof spinnerVariants>["size"]>;
+
+interface LoadingSpinnerProps extends VariantProps<typeof spinnerVariants> {
   text?: string;
-  /** Optional sub-text below the main text */
   subText?: string;
-  /** Whether to show as a full-screen overlay */
   fullScreen?: boolean;
-  /** Additional className */
   className?: string;
+  portalTarget?: Element | DocumentFragment | null;
 }
 
-const sizeMap = {
+const logoScaleMap: Record<SpinnerScale, string> = {
   sm: "w-8 h-8",
   md: "w-16 h-16",
   lg: "w-24 h-24",
   xl: "w-32 h-32",
 };
 
-const glowSizeMap = {
+const glowScaleMap: Record<SpinnerScale, string> = {
   sm: "w-12 h-12",
   md: "w-24 h-24",
   lg: "w-32 h-32",
   xl: "w-40 h-40",
 };
 
-/**
- * LoadingSpinner — Spinning compass logo used across the entire project.
- *
- * Supports multiple sizes, optional text, and full-screen overlay mode.
- */
 export default function LoadingSpinner({
   size = "md",
   text,
   subText,
   fullScreen = false,
   className,
+  portalTarget,
 }: LoadingSpinnerProps) {
   const { t } = useI18n();
+  const resolvedScale = size ?? "md";
 
   const spinner = (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-4",
+        spinnerVariants({ size: resolvedScale }),
         className,
       )}
     >
-      {/* Compass container */}
       <div className="relative flex items-center justify-center">
-        {/* Pulsing glow ring */}
         <div
           className={cn(
             "absolute rounded-full bg-secondary/20 animate-compass-pulse",
-            glowSizeMap[size],
+            glowScaleMap[resolvedScale],
           )}
         />
-
-        {/* Stacked logo: pyramid (static) + arrow (spinning) */}
-        <div className={cn("relative", sizeMap[size])}>
-          {/* Static pyramid */}
+        <div className={cn("relative", logoScaleMap[resolvedScale])}>
           <img
             src={pyramidLogo}
             alt=""
             className="absolute inset-0 w-full h-full object-contain drop-shadow-md"
             draggable={false}
           />
-          {/* Spinning arrow */}
           <img
             src={arrowLogo}
             alt={t("common.loading")}
@@ -80,8 +83,6 @@ export default function LoadingSpinner({
           />
         </div>
       </div>
-
-      {/* Optional text */}
       {(text || subText) && (
         <div className="text-center">
           {text && (
@@ -95,22 +96,22 @@ export default function LoadingSpinner({
     </div>
   );
 
-  if (fullScreen) {
+  const portalHost =
+    portalTarget ??
+    (typeof document !== "undefined" ? document.body : null);
+
+  if (fullScreen && portalHost) {
     return createPortal(
       <div className="fixed inset-0 pointer-events-none flex items-center justify-center">
         {spinner}
       </div>,
-      document.body,
+      portalHost,
     );
   }
 
   return spinner;
 }
 
-/**
- * PageLoading — Full-page centered loading state (non-overlay).
- * Great for route-level loading states.
- */
 export function PageLoading({
   text,
   subText,
@@ -131,9 +132,6 @@ export function PageLoading({
   );
 }
 
-/**
- * InlineLoading — Small inline spinner for buttons / cards.
- */
 export function InlineLoading({
   className,
   size = "sm",
@@ -143,7 +141,7 @@ export function InlineLoading({
 }) {
   const { t } = useI18n();
 
-  const sizeClasses = {
+  const sizeClasses: Record<"sm" | "md" | "lg", string> = {
     sm: "w-4 h-4",
     md: "w-5 h-5",
     lg: "w-9 h-9",

@@ -37,6 +37,6 @@ export default function RoleBasedLayout({
     );
   }
 
-  // default → normal user
+  //here i am use the default is normal user.
   return <AppLayout></AppLayout>;
 }

@@ -126,7 +126,6 @@ const AppLayout = () => {
                 </button>
               );
             })}
-            {/* Notification bell with unread badge */}
             <NotificationBell />
             <LanguageToggle className="ml-2 max-[1250px]:hidden" />
             <LanguageToggle
@@ -138,7 +137,6 @@ const AppLayout = () => {
               mode="compact"
               className="ml-1 hidden max-[1250px]:inline-flex"
             />
-            {/* Logout Button */}
             <button
               type="button"
               onClick={handleLogout}
@@ -154,7 +152,6 @@ const AppLayout = () => {
           </nav>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 pb-[calc(5rem+max(env(safe-area-inset-bottom),0px))] md:pb-0">
           <motion.div
             key={location.pathname}
@@ -175,7 +172,7 @@ const AppLayout = () => {
           <ThemeToggle mode="compact" />
         </div>
 
-        {/* Mobile Bottom Tab Bar */}
+        {/* here this mobile botom bar */}
         <nav
           className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 supports-[backdrop-filter]:bg-card/85 supports-[backdrop-filter]:backdrop-blur"
           aria-label={t("layout.bottomNavigation")}
@@ -209,7 +206,6 @@ const AppLayout = () => {
               );
             })}
             <NotificationBell mobile />
-            {/* Mobile Logout Button */}
             <button
               type="button"
               onClick={handleLogout}

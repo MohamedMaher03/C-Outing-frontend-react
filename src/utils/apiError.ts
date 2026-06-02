@@ -3,11 +3,8 @@ import { isObjectRecord } from "./typeGuards";
 
 export class ApiError extends Error {
   public readonly isApiError = true as const;
-
   public readonly statusCode?: number;
-
   public readonly details?: unknown;
-
   public readonly validationErrors?: ValidationErrors;
 
   constructor(
@@ -48,6 +45,12 @@ const TRANSPORT_STATUS_MESSAGE_PATTERN =
   /^Request failed with status code \d+$/i;
 const LOAD_FAILURE_MESSAGE_PATTERN =
   /(network|timeout|timed out|failed to fetch|load failed|abort|network error|err_network|econnaborted)/i;
+const STATUS_FALLBACK_MESSAGES: Record<number, string> = {
+  401: "Your session expired. Please sign in again.",
+  403: "Access denied. You do not have permission to perform this action.",
+  404: "We couldn't find what you were looking for.",
+  429: "Too many requests right now. Please try again shortly.",
+};
 
 const asValidationErrors = (value: unknown): ValidationErrors | undefined => {
   if (!isObjectRecord(value)) return undefined;
@@ -124,9 +127,10 @@ export function extractBackendErrorMessage(
 export function extractBackendStatusCode(payload: unknown): number | undefined {
   if (!isObjectRecord(payload)) return undefined;
 
-  if (typeof payload.statusCode === "number") return payload.statusCode;
-  if (typeof payload.status === "number") return payload.status;
-  return undefined;
+  return [payload.statusCode, payload.status].find(
+    (statusCandidate): statusCandidate is number =>
+      typeof statusCandidate === "number",
+  );
 }
 
 export const isTransportStatusMessage = (message?: string): boolean =>
@@ -138,18 +142,9 @@ export const getStatusFallbackMessage = (
 ): string | undefined => {
   if (statusCode === undefined) return undefined;
 
-  if (statusCode === 401) {
-    return "Your session expired. Please sign in again.";
-  }
-  if (statusCode === 403) {
-    return "Access denied. You do not have permission to perform this action.";
-  }
-  if (statusCode === 404) {
-    return "We couldn't find what you were looking for.";
-  }
-  if (statusCode === 429) {
-    return "Too many requests right now. Please try again shortly.";
-  }
+  const messageByStatus = STATUS_FALLBACK_MESSAGES[statusCode];
+  if (messageByStatus) return messageByStatus;
+
   if (statusCode >= 500) {
     return "We're having trouble reaching the server. Please check your connection or try refreshing the page.";
   }
@@ -163,11 +158,11 @@ export const isLoadFailureError = (error: unknown): boolean => {
   }
 
   if (isApiError(error)) {
-    if (error.statusCode === 408 || error.statusCode === 504) {
-      return true;
-    }
-
-    if (typeof error.statusCode === "number" && error.statusCode >= 500) {
+    const transportStatusCode = error.statusCode;
+    if (
+      [408, 504].includes(transportStatusCode ?? -1) ||
+      (transportStatusCode ?? 0) >= 500
+    ) {
       return true;
     }
 
@@ -189,6 +184,8 @@ export const resolveApiUiErrorState = (
   error: unknown,
   messages: ApiUiErrorMessages,
 ): ApiUiErrorState => {
+  const resolvedStatusCode = isApiError(error) ? error.statusCode : undefined;
+
   if (isApiError(error) && error.statusCode === 403) {
     return {
       kind: "forbidden",
@@ -201,14 +198,14 @@ export const resolveApiUiErrorState = (
     return {
       kind: "load-failure",
       message: messages.loadFailureMessage,
-      statusCode: isApiError(error) ? error.statusCode : undefined,
+      statusCode: resolvedStatusCode,
     };
   }
 
   return {
     kind: "generic",
     message: getErrorMessage(error, messages.genericMessage),
-    statusCode: isApiError(error) ? error.statusCode : undefined,
+    statusCode: resolvedStatusCode,
   };
 };
 

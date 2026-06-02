@@ -6,10 +6,12 @@ export const useDismissOnOutsideInteraction = (
   rootAttribute: string,
 ) => {
   useEffect(() => {
-    if (!activeTargetId) return;
+    if (!activeTargetId || rootAttribute.trim().length === 0) return;
 
     const dismissIfOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
+      const target = event.target as Element | null;
+      if (!target) return;
+
       const withinRoot = target?.closest(
         `[${rootAttribute}="${activeTargetId}"]`,
       );
@@ -18,7 +20,7 @@ export const useDismissOnOutsideInteraction = (
     };
 
     const dismissOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") dismiss();
+      event.key === "Escape" && dismiss();
     };
 
     document.addEventListener("mousedown", dismissIfOutside);

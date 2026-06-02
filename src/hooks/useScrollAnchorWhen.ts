@@ -1,12 +1,12 @@
 import { useEffect, type RefObject } from "react";
 
-export const useScrollAnchorWhen = (
+export const useScrollAnchorWhen = <TAnchorElement extends HTMLElement>(
   isActive: boolean,
-  anchorRef: RefObject<HTMLElement | null>,
+  anchorRef: RefObject<TAnchorElement | null>,
   delayMs = 50,
 ) => {
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || delayMs < 0) return;
 
     const timerId = window.setTimeout(() => {
       anchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });

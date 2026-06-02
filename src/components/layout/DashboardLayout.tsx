@@ -1,8 +1,7 @@
 /**
- * Dashboard Layout
- *
- * here i use shared sidebar-based layout used by both Admin and Moderator roles.
- * Nav items are passed as props so each role gets its own navigation.
+ * note for me to remember :
+ * here i use shared sidebar-based layout used by both admin and moderator.
+ * i am her pass nav items as props so each role gets its own navigation.
  */
 
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -81,7 +80,6 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      {/* Logo & Title */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-border">
         <img src={logo} alt="C-Outing" className="h-9 w-auto rounded-lg" />
         <div>
@@ -99,7 +97,6 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
         <ThemeToggle alwaysShowLabels className="w-full" />
       </div>
 
-      {/* User Info */}
       <div className="px-5 py-4 border-b border-border">
         <p
           className="text-sm font-semibold text-foreground break-words"
@@ -126,7 +123,6 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
         </span>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const active = isActive(item.path);
@@ -158,7 +154,6 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
         })}
       </nav>
 
-      {/* Logout */}
       <div className="px-3 py-4 border-t border-border">
         <button
           type="button"
@@ -192,12 +187,10 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
         </div>
       )}
 
-      {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-64 flex-col bg-card border-border fixed inset-y-0 z-40 [inset-inline-start:0] [border-inline-end-width:1px]">
         {sidebarContent}
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -229,9 +222,7 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
         )}
       </AnimatePresence>
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen md:[margin-inline-start:16rem]">
-        {/* Top Bar (mobile) */}
         <header className="md:hidden flex items-center justify-between px-4 py-3 bg-card border-b border-border sticky top-0 z-30">
           <button
             type="button"
@@ -264,7 +255,6 @@ const DashboardLayout = ({ navItems, title }: DashboardLayoutProps) => {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1">
           <AnimatePresence mode="wait">
             <motion.div
