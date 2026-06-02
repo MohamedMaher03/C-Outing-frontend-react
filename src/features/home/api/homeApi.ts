@@ -7,7 +7,6 @@ import {
   mapHomeRankedRecommendationsPayload,
 } from "../mappers/homeApi.mapper";
 import type {
-  HomePageData,
   HomePlace,
   HomeRecommendationsQuery,
   HomeSearchQuery,
@@ -20,43 +19,6 @@ import type {
 import type { PaginatedResponse } from "@/types";
 
 export const homeApi = {
-  async fetchHomePageData(
-    params?: HomeRecommendationsQuery,
-  ): Promise<HomePageData> {
-    const count = params?.count;
-    const [curatedResult, trendingResult] = await Promise.allSettled([
-      axiosInstance.get<unknown>(API_ENDPOINTS.recommendations.curated, {
-        params: { count },
-      }),
-      axiosInstance.get<unknown>(API_ENDPOINTS.recommendations.trending, {
-        params: { count },
-      }),
-    ]);
-
-    let trendingPlaces: HomePlace[] = [];
-    if (trendingResult.status === "fulfilled") {
-      trendingPlaces = mapHomePlacesPayload(trendingResult.value.data);
-    } else {
-      console.error("Failed to fetch trending recommendations:", trendingResult.reason);
-    }
-
-    let curatedPlaces: HomePlace[] = [];
-    if (curatedResult.status === "fulfilled") {
-      curatedPlaces = mapHomeRankedRecommendationsPayload(curatedResult.value.data);
-    } else {
-      console.warn(
-        "Failed to fetch personalized recommendations, falling back to trending",
-        curatedResult.reason
-      );
-      curatedPlaces = trendingPlaces;
-    }
-
-    return {
-      curatedPlaces,
-      trendingPlaces,
-    };
-  },
-
   async fetchPersonalizedRecommendations(
     params?: HomeRecommendationsQuery,
   ): Promise<HomePlace[]> {
@@ -71,6 +33,7 @@ export const homeApi = {
     } catch (err) {
       console.warn("Failed to fetch personalized recommendations, falling back to trending", err);
       try {
+        //here i make fallback so if there probem in curated use trend.
         const { data } = await axiosInstance.get<unknown>(
           API_ENDPOINTS.recommendations.trending,
           {

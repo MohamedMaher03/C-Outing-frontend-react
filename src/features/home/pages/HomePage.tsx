@@ -1,5 +1,3 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Search,
   ChevronRight,
@@ -12,86 +10,82 @@ import {
   Wifi,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useI18n } from "@/components/i18n";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
 import { Input } from "@/components/ui/input";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
 import { GuidedTour } from "@/features/home/components/GuidedTour";
-import { useAuth } from "@/features/auth/context/AuthContext";
-import { useHome } from "@/features/home/hooks/useHomeHook";
-import { useGuidedTour } from "@/features/home/hooks/useGuidedTour";
-import { useSimilarVenueStudio } from "@/features/home/hooks/useSimilarVenueStudio";
-import {
-  useScrollRestoration,
-  useGreetingKey,
-  useSectionScrollIntoView,
-  useScrollKeyTracker,
-} from "@/features/home/hooks/usePageBehaviors";
+import { useHomePage } from "@/features/home/hooks/useHomePage";
 import { cn } from "@/lib/utils";
-import {
-  FILTER_OPTIONS,
-  DISCOVERY_SOURCE_OPTIONS,
-  MOOD_ICON_MAP,
-  VENUE_PRICE_RANGE_OPTIONS,
-} from "@/features/home/mocks";
-import type { VenuePriceRange } from "@/features/home/types";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { MOOD_ICON_MAP } from "@/features/home/mocks";
+import { AnimatePresence, motion } from "framer-motion";
 import cairoBg from "@/assets/images/cairo-bg.jpg";
 import { getTranslatedText } from "@/utils/helpers";
 import HorizontalScroller from "@/features/home/components/HorizontalScroller";
 import { GroupSessionWidget } from "@/features/session/components/GroupSessionWidget";
-import { authService } from "@/features/auth";
-import {
-  buildHeroContainerVariants,
-  buildHeroItemVariants,
-  buildStateTransition,
-  buildStaggeredCardDelay,
-  EASE_OUT_QUART,
-  EASE_OUT_EXPO,
-} from "@/features/home/utils/motionVariants";
+import { isQuickFilterActive } from "@/features/home/utils/homePagePresentation";
 
 const HomePage = () => {
-  const { t, formatNumber } = useI18n();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const shouldReduceMotion = useReducedMotion() ?? false;
-
-  const [searchInput, setSearchInput] = useState("");
-  const greetingKey = useGreetingKey();
-  useScrollRestoration();
-
   const {
+    t,
+    formatNumber,
+    shouldReduceMotion,
+    greetingKey,
+    explorerFirstName,
+    heroSearchDraft,
+    setHeroSearchDraft,
+    homeMotion,
+    moodSectionRef,
+    discoveryScrollKey,
+    filterScrollKey,
+    localizedFilters,
+    localizedDiscoverySources,
+    localizedPriceRangeOptions,
+    typeDiscoveryOptions,
+    showDiscoverySkeleton,
+    selectedMoodOption,
+    quickSeedVenues,
+    translateMoodLabel,
+    translateMoodDescription,
+    openVenueDetailTab,
+    commitHeroSearchNavigation,
+    commitPriceBandDiscovery,
+    commitDistrictDiscovery,
+    commitVenueTypeDiscovery,
+    commitAreaTopRatedDiscovery,
+    commitMoodSelection,
+    navigateToMoodSeeAll,
+    navigateToSeeAll,
+    reloadDocument,
     tourActive,
     currentStep,
     totalSteps,
-    next,
-    prev,
-    skip,
-    finish,
-    jumpTo,
-  } = useGuidedTour();
-
-  const {
+    tourNext,
+    tourPrev,
+    tourSkip,
+    tourFinish,
+    tourJumpTo,
+    seedSearchQuery,
+    setSeedSearchQuery,
+    isSeedSearchLoading,
+    seedSearchError,
+    setIsSeedInputFocused,
+    commitSeedSelection,
+    resolvedSeedPlace,
+    effectiveSuggestions,
+    showSuggestionDropdown,
     selectedFilters,
     toggleFilter,
     selectedMood,
     setSelectedMood,
     selectedDistrict,
-    setSelectedDistrict,
     selectedVenueType,
-    setSelectedVenueType,
     selectedPriceRange,
-    setSelectedPriceRange,
     selectedArea,
-    setSelectedArea,
     activeDiscoverySource,
     setActiveDiscoverySource,
     discoveryPlaces,
-    isDiscoveryLoading,
     discoveryError,
-    isGlobalTopRatedLoading,
-    isTopRatedInAreaLoading,
     curatedPlaces,
     trendingPlaces,
     moodPlaces,
@@ -99,12 +93,10 @@ const HomePage = () => {
     moodError,
     userLocation,
     selectedSimilarSeedId,
-    similarSeedPlaces,
     similarPlaces,
     isSimilarLoading,
     similarError,
     saveError,
-    selectPlaceForSimilar,
     requestUserLocation,
     toggleSave,
     clearSaveError,
@@ -115,152 +107,9 @@ const HomePage = () => {
     isLoading,
     error,
     reloadPlaces,
-    categories,
     moodOptions,
     popularDistricts,
-  } = useHome();
-
-  const discoveryScrollKey = useScrollKeyTracker(`${activeDiscoverySource}`);
-  const filterScrollKey = useScrollKeyTracker(selectedFilters.join(","));
-  const moodSectionRef = useRef<HTMLElement | null>(null);
-  const scrollMoodIntoView = useSectionScrollIntoView(moodSectionRef);
-
-  const studioProps = useSimilarVenueStudio({
-    selectedSimilarSeedId,
-    selectPlaceForSimilar,
-    seedCandidatePool: similarSeedPlaces,
-    defaultSeedOptions: curatedPlaces.slice(0, 6),
-  });
-
-  const {
-    seedSearchQuery,
-    setSeedSearchQuery,
-    isSeedSearchLoading,
-    seedSearchError,
-    setIsSeedInputFocused,
-    commitSeedSelection,
-    resolvedSeedPlace,
-    effectiveSuggestions,
-    showSuggestionDropdown,
-  } = studioProps;
-
-  const stateTransition = useMemo(
-    () => buildStateTransition(shouldReduceMotion),
-    [shouldReduceMotion],
-  );
-
-  const heroContainerVariants = useMemo(
-    () => buildHeroContainerVariants(shouldReduceMotion),
-    [shouldReduceMotion],
-  );
-
-  const heroItemVariants = useMemo(
-    () => buildHeroItemVariants(shouldReduceMotion),
-    [shouldReduceMotion],
-  );
-
-  const cardDelay = useCallback(
-    (index: number, base = 0) =>
-      buildStaggeredCardDelay(index, shouldReduceMotion, base),
-    [shouldReduceMotion],
-  );
-
-  const localizedFilters = useMemo(
-    () =>
-      FILTER_OPTIONS.map((filter) => ({
-        ...filter,
-        label: t(`home.filter.${filter.id}`, undefined, filter.label),
-      })),
-    [t],
-  );
-
-  const localizedDiscoverySources = useMemo(
-    () =>
-      DISCOVERY_SOURCE_OPTIONS.map((source) => ({
-        ...source,
-        label: t(`home.discovery.source.${source.id}`, undefined, source.label),
-      })),
-    [t],
-  );
-
-  const localizedPriceRangeOptions = useMemo(
-    () =>
-      VENUE_PRICE_RANGE_OPTIONS.map((option) => ({
-        ...option,
-        label: t(`budget.${option.id}`, undefined, option.label),
-        caption: t(
-          `home.price.caption.${option.id}`,
-          undefined,
-          option.caption,
-        ),
-      })),
-    [t],
-  );
-
-  const typeDiscoveryOptions = useMemo(
-    () =>
-      categories.map((category) => ({
-        id: category.id,
-        label: getTranslatedText(category.nameKey, category.label, t),
-      })),
-    [categories, t],
-  );
-
-  const showDiscoverySkeleton =
-    isDiscoveryLoading ||
-    (activeDiscoverySource === "top-rated" && isGlobalTopRatedLoading) ||
-    (activeDiscoverySource === "top-rated-area" && isTopRatedInAreaLoading);
-
-  const discoveryResultCount = discoveryPlaces.length;
-
-  const selectedMoodOption = useMemo(
-    () => moodOptions.find((mood) => mood.id === selectedMood) ?? null,
-    [moodOptions, selectedMood],
-  );
-
-  const getMoodLabel = useCallback(
-    (moodId: string, fallback: string) =>
-      t(`home.mood.${moodId}.label`, undefined, fallback),
-    [t],
-  );
-
-  const getMoodDescription = useCallback(
-    (moodId: string, fallback: string) =>
-      t(`home.mood.${moodId}.description`, undefined, fallback),
-    [t],
-  );
-
-  const openVenueInNewTab = useCallback((id: string) => {
-    authService.promoteSessionForNewTab();
-    window.open(`/venue/${id}`, "_blank", "noopener,noreferrer");
-  }, []);
-
-  const handlePriceRangeSelect = (priceRange: VenuePriceRange) => {
-    setSelectedPriceRange(
-      selectedPriceRange === priceRange ? null : priceRange,
-    );
-    setActiveDiscoverySource("price-range");
-  };
-
-  const handleSearchNavigate = useCallback(() => {
-    const trimmed = searchInput.trim();
-    if (!trimmed) return;
-    navigate(`/home/search?q=${encodeURIComponent(trimmed)}`);
-  }, [navigate, searchInput]);
-
-  const handleMoodOptionSelect = useCallback(
-    (moodId: string, isActive: boolean) => {
-      if (isActive) {
-        setSelectedMood(null);
-        return;
-      }
-      setSelectedMood(moodId);
-      scrollMoodIntoView();
-    },
-    [scrollMoodIntoView, setSelectedMood],
-  );
-
-  const userName = user?.name?.split(" ")[0] ?? t("home.user.explorer");
+  } = useHomePage();
 
   if (isLoading) {
     return (
@@ -311,7 +160,7 @@ const HomePage = () => {
                   </Button>
                   <Button
                     type="button"
-                    onClick={() => window.location.reload()}
+                    onClick={reloadDocument}
                     variant="outline"
                     className="h-10 rounded-full border-border/70 bg-background/60 px-5 text-sm font-semibold text-foreground hover:bg-background"
                   >
@@ -349,8 +198,8 @@ const HomePage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{
-        duration: shouldReduceMotion ? 0.01 : 0.32,
-        ease: EASE_OUT_QUART,
+        duration: homeMotion.pageFadeDuration,
+        ease: homeMotion.easeOutQuart,
       }}
       style={{ willChange: "auto", backfaceVisibility: "hidden" }}
     >
@@ -359,11 +208,11 @@ const HomePage = () => {
           <GuidedTour
             currentStep={currentStep}
             totalSteps={totalSteps}
-            onNext={next}
-            onPrev={prev}
-            onSkip={skip}
-            onFinish={finish}
-            onJumpTo={jumpTo}
+            onNext={tourNext}
+            onPrev={tourPrev}
+            onSkip={tourSkip}
+            onFinish={tourFinish}
+            onJumpTo={tourJumpTo}
           />
         )}
       </AnimatePresence>
@@ -372,11 +221,11 @@ const HomePage = () => {
         <motion.div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${cairoBg})` }}
-          initial={{ scale: shouldReduceMotion ? 1 : 1.06 }}
+          initial={{ scale: homeMotion.heroImageScaleFrom }}
           animate={{ scale: 1 }}
           transition={{
-            duration: shouldReduceMotion ? 0.01 : 0.85,
-            ease: EASE_OUT_EXPO,
+            duration: homeMotion.heroImageDuration,
+            ease: homeMotion.easeOutExpo,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--navy)/0.86)] via-[hsl(var(--navy)/0.56)] to-transparent dark:from-black/72 dark:via-black/46" />
@@ -384,13 +233,13 @@ const HomePage = () => {
 
         <motion.div
           className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-6 pt-8 sm:pb-7 sm:pt-10 lg:pb-8"
-          variants={heroContainerVariants}
+          variants={homeMotion.heroContainerVariants}
           initial="hidden"
           animate="visible"
         >
-          <motion.div className="mb-5 space-y-1.5" variants={heroItemVariants}>
+          <motion.div className="mb-5 space-y-1.5" variants={homeMotion.heroItemVariants}>
             <p className="text-white/80 text-xs font-medium tracking-widest uppercase">
-              {t(greetingKey)}, {userName}{" "}
+              {t(greetingKey)}, {explorerFirstName}{" "}
               <Sparkles className="inline-block h-4 w-4 text-cream" />
             </p>
             <h1 className="text-2xl font-semibold leading-tight sm:text-4xl lg:text-[3.2rem] lg:leading-[1.08]">
@@ -403,24 +252,24 @@ const HomePage = () => {
 
           <motion.div
             className="relative w-full max-w-2xl"
-            variants={heroItemVariants}
+            variants={homeMotion.heroItemVariants}
             data-tour="tour-search"
             id="tour-search"
           >
             <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-4.5 w-4.5 -translate-y-1/2 text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
             <Input
               placeholder={t("home.hero.searchPlaceholder")}
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              value={heroSearchDraft}
+              onChange={(e) => setHeroSearchDraft(e.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") handleSearchNavigate();
+                if (event.key === "Enter") commitHeroSearchNavigation();
               }}
               aria-label={t("home.hero.searchAria")}
               className="h-12 rounded-2xl border border-white/25 bg-white/85 pl-11 pr-[5.5rem] text-sm text-slate-900 shadow-lg transition-colors placeholder:text-slate-500 focus:border-secondary/70 focus:bg-white focus:ring-secondary/20 backdrop-blur-md dark:bg-black/45 dark:text-white dark:placeholder:text-white/65 dark:focus:bg-black/55 sm:h-14 sm:pl-12 sm:pr-28 sm:text-base"
             />
             <button
               type="button"
-              onClick={handleSearchNavigate}
+              onClick={commitHeroSearchNavigation}
               className="absolute right-2 top-1/2 z-10 h-10 min-w-[4.5rem] -translate-y-1/2 rounded-full bg-secondary/90 px-3 text-xs font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:h-11 sm:px-4"
               aria-label={t("home.hero.searchAction", undefined, "Search")}
             >
@@ -431,16 +280,13 @@ const HomePage = () => {
           <motion.div
             className="-mx-4 mt-3 flex gap-2 overflow-x-auto overflow-y-visible px-4 pb-1 pt-1 scrollbar-hide"
             aria-label={t("home.hero.filterAria")}
-            variants={heroItemVariants}
+            variants={homeMotion.heroItemVariants}
             data-tour="tour-filters"
             id="tour-filters"
           >
             {localizedFilters.map((filter, index) => {
               const Icon = filter.icon;
-              const isActive =
-                filter.id === "all"
-                  ? selectedFilters.length === 0
-                  : selectedFilters.includes(filter.id);
+              const isActive = isQuickFilterActive(filter.id, selectedFilters);
               return (
                 <motion.button
                   type="button"
@@ -461,8 +307,8 @@ const HomePage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
                     duration: shouldReduceMotion ? 0.01 : 0.26,
-                    ease: EASE_OUT_QUART,
-                    delay: cardDelay(index, 0.18),
+                    ease: homeMotion.easeOutQuart,
+                    delay: homeMotion.cardDelay(index, 0.18),
                   }}
                   className={`inline-flex h-11 flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-xs font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:h-11 sm:gap-2 sm:px-5 sm:text-sm ${
                     isActive
@@ -485,7 +331,7 @@ const HomePage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{
           duration: shouldReduceMotion ? 0.01 : 0.36,
-          ease: EASE_OUT_QUART,
+          ease: homeMotion.easeOutQuart,
           delay: shouldReduceMotion ? 0 : 0.1,
         }}
       >
@@ -503,7 +349,7 @@ const HomePage = () => {
             initial={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-            transition={stateTransition}
+            transition={homeMotion.stateTransition}
           >
             <div
               className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3"
@@ -574,7 +420,7 @@ const HomePage = () => {
                         type="button"
                         key={`mobile-mood-${mood.id}`}
                         onClick={() =>
-                          handleMoodOptionSelect(mood.id, isActive)
+                          commitMoodSelection(mood.id, isActive)
                         }
                         className={`flex min-h-[2.75rem] items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
@@ -592,7 +438,7 @@ const HomePage = () => {
                           )}
                         />
                         <span className="min-w-0 truncate text-xs font-medium text-foreground leading-tight">
-                          {getMoodLabel(mood.id, mood.label)}
+                          {translateMoodLabel(mood.id, mood.label)}
                         </span>
                       </button>
                     );
@@ -684,10 +530,9 @@ const HomePage = () => {
                       <button
                         type="button"
                         key={district.id}
-                        onClick={() => {
-                          setSelectedDistrict(isActive ? null : district.name);
-                          setActiveDiscoverySource("district");
-                        }}
+                        onClick={() =>
+                          commitDistrictDiscovery(district.name, isActive)
+                        }
                         className={`flex-shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
@@ -709,10 +554,9 @@ const HomePage = () => {
                       <button
                         type="button"
                         key={option.id}
-                        onClick={() => {
-                          setSelectedVenueType(isActive ? null : option.id);
-                          setActiveDiscoverySource("type");
-                        }}
+                        onClick={() =>
+                          commitVenueTypeDiscovery(option.id, isActive)
+                        }
                         className={`rounded-xl border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
@@ -734,7 +578,7 @@ const HomePage = () => {
                       <button
                         type="button"
                         key={option.id}
-                        onClick={() => handlePriceRangeSelect(option.id)}
+                        onClick={() => commitPriceBandDiscovery(option.id)}
                         className={`rounded-2xl border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                           isActive
                             ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
@@ -781,10 +625,7 @@ const HomePage = () => {
                         <button
                           type="button"
                           key={`${district.id}-area`}
-                          onClick={() => {
-                            setSelectedArea(district.name);
-                            setActiveDiscoverySource("top-rated-area");
-                          }}
+                          onClick={() => commitAreaTopRatedDiscovery(district.name)}
                           className={`flex-shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                             isActive
                               ? "border-primary/85 bg-primary text-primary-foreground shadow-sm"
@@ -803,7 +644,7 @@ const HomePage = () => {
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium text-foreground shrink-0 pt-2">
                     {t("home.discovery.results", {
-                      count: formatNumber(discoveryResultCount),
+                      count: formatNumber(discoveryPlaces.length),
                     })}
                   </p>
                   <p className="text-xs text-muted-foreground truncate text-right min-w-0 pt-2">
@@ -847,7 +688,7 @@ const HomePage = () => {
                         initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                        transition={stateTransition}
+                        transition={homeMotion.stateTransition}
                         className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
                       >
                         <p className="text-sm font-semibold text-destructive">
@@ -873,7 +714,7 @@ const HomePage = () => {
                         initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                        transition={stateTransition}
+                        transition={homeMotion.stateTransition}
                         className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
                       >
                         <p className="font-semibold text-foreground">
@@ -889,7 +730,7 @@ const HomePage = () => {
                         initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                        transition={stateTransition}
+                        transition={homeMotion.stateTransition}
                       >
                         <HorizontalScroller
                           ariaLabel={t("home.scroller.label.discovery")}
@@ -907,8 +748,8 @@ const HomePage = () => {
                               animate={{ opacity: 1, y: 0 }}
                               transition={{
                                 duration: shouldReduceMotion ? 0.01 : 0.3,
-                                ease: EASE_OUT_QUART,
-                                delay: cardDelay(index),
+                                ease: homeMotion.easeOutQuart,
+                                delay: homeMotion.cardDelay(index),
                               }}
                             >
                               <PlaceCard
@@ -917,7 +758,7 @@ const HomePage = () => {
                                 userLocation={userLocation}
                                 onToggleSave={toggleSave}
                                 isSavePending={isPlaceSavePending(place.id)}
-                                onClick={openVenueInNewTab}
+                                onClick={openVenueDetailTab}
                               />
                             </motion.div>
                           ))}
@@ -939,7 +780,7 @@ const HomePage = () => {
                   exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -10 }}
                   transition={{
                     duration: shouldReduceMotion ? 0.01 : 0.28,
-                    ease: EASE_OUT_QUART,
+                    ease: homeMotion.easeOutQuart,
                   }}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -957,7 +798,7 @@ const HomePage = () => {
                           })()}
                         </div>
                         {selectedMoodOption?.label
-                          ? getMoodLabel(
+                          ? translateMoodLabel(
                               selectedMoodOption.id,
                               selectedMoodOption.label,
                             )
@@ -965,7 +806,7 @@ const HomePage = () => {
                       </h2>
                       <p className="mt-0.5 text-sm text-muted-foreground sm:ml-9">
                         {selectedMoodOption?.description
-                          ? getMoodDescription(
+                          ? translateMoodDescription(
                               selectedMoodOption.id,
                               selectedMoodOption.description,
                             )
@@ -975,7 +816,7 @@ const HomePage = () => {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <Button
                         onClick={() =>
-                          navigate(`/home/see-all/mood/${selectedMood}`)
+                          selectedMood && navigateToMoodSeeAll(selectedMood)
                         }
                         variant="ghost"
                         size="sm"
@@ -1048,7 +889,7 @@ const HomePage = () => {
                             userLocation={userLocation}
                             onToggleSave={toggleSave}
                             isSavePending={isPlaceSavePending(place.id)}
-                            onClick={openVenueInNewTab}
+                            onClick={openVenueDetailTab}
                           />
                         </div>
                       ))}
@@ -1076,7 +917,7 @@ const HomePage = () => {
                   </p>
                 </div>
                 <Button
-                  onClick={() => navigate("/home/see-all/curated")}
+                  onClick={() => navigateToSeeAll("curated")}
                   variant="ghost"
                   size="sm"
                   className="h-10 flex-shrink-0 px-3 text-xs text-muted-foreground hover:text-foreground"
@@ -1097,7 +938,7 @@ const HomePage = () => {
                       userLocation={userLocation}
                       onToggleSave={toggleSave}
                       isSavePending={isPlaceSavePending(place.id)}
-                      onClick={openVenueInNewTab}
+                      onClick={openVenueDetailTab}
                     />
                   </div>
                 ))}
@@ -1119,7 +960,7 @@ const HomePage = () => {
                     </p>
                   </div>
                   <Button
-                    onClick={() => navigate("/home/see-all/trending")}
+                    onClick={() => navigateToSeeAll("trending")}
                     variant="ghost"
                     size="sm"
                     className="h-10 flex-shrink-0 px-3 text-xs text-muted-foreground hover:text-foreground"
@@ -1140,7 +981,7 @@ const HomePage = () => {
                         userLocation={userLocation}
                         onToggleSave={toggleSave}
                         isSavePending={isPlaceSavePending(place.id)}
-                        onClick={openVenueInNewTab}
+                        onClick={openVenueDetailTab}
                       />
                     </div>
                   ))}
@@ -1205,7 +1046,7 @@ const HomePage = () => {
                           }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                          transition={stateTransition}
+                          transition={homeMotion.stateTransition}
                           className="absolute z-20 mt-2 max-h-52 w-full overflow-y-auto rounded-2xl border border-border/70 bg-card p-2 shadow-lg sm:max-h-72"
                         >
                           {isSeedSearchLoading ? (
@@ -1262,12 +1103,7 @@ const HomePage = () => {
                   </div>
 
                   <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 scrollbar-hide sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
-                    {(studioProps.hasManuallySelectedSeed
-                      ? similarSeedPlaces
-                      : curatedPlaces.slice(0, 6)
-                    )
-                      .slice(0, 6)
-                      .map((place) => {
+                    {quickSeedVenues.map((place) => {
                         const isActiveSeed = selectedSimilarSeedId === place.id;
                         return (
                           <button
@@ -1294,7 +1130,7 @@ const HomePage = () => {
                       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                      transition={stateTransition}
+                      transition={homeMotion.stateTransition}
                     >
                       <HorizontalScroller
                         ariaLabel={t("home.scroller.label.similar")}
@@ -1314,7 +1150,7 @@ const HomePage = () => {
                       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                      transition={stateTransition}
+                      transition={homeMotion.stateTransition}
                       className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4"
                     >
                       <p className="text-sm font-semibold text-destructive">
@@ -1340,7 +1176,7 @@ const HomePage = () => {
                       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                      transition={stateTransition}
+                      transition={homeMotion.stateTransition}
                       className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-8 text-center"
                     >
                       <p className="font-semibold text-foreground">
@@ -1356,7 +1192,7 @@ const HomePage = () => {
                       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -8 }}
-                      transition={stateTransition}
+                      transition={homeMotion.stateTransition}
                     >
                       <HorizontalScroller
                         ariaLabel={t("home.scroller.label.similar")}
@@ -1374,8 +1210,8 @@ const HomePage = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{
                               duration: shouldReduceMotion ? 0.01 : 0.3,
-                              ease: EASE_OUT_QUART,
-                              delay: cardDelay(index),
+                              ease: homeMotion.easeOutQuart,
+                              delay: homeMotion.cardDelay(index),
                             }}
                           >
                             <PlaceCard
@@ -1385,7 +1221,7 @@ const HomePage = () => {
                               onToggleSave={toggleSave}
                               isSavePending={isPlaceSavePending(place.id)}
                               hideTopRatedBadge={showSuggestionDropdown}
-                              onClick={openVenueInNewTab}
+                              onClick={openVenueDetailTab}
                             />
                           </motion.div>
                         ))}
@@ -1419,7 +1255,7 @@ const HomePage = () => {
                     <button
                       type="button"
                       key={mood.id}
-                      onClick={() => handleMoodOptionSelect(mood.id, isActive)}
+                      onClick={() => commitMoodSelection(mood.id, isActive)}
                       className={`flex min-h-[3rem] flex-col items-center gap-1 rounded-2xl border px-2 py-3 text-center transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                         isActive
                           ? "border-primary/85 bg-primary text-primary-foreground shadow-sm dark:text-cream"
@@ -1442,7 +1278,7 @@ const HomePage = () => {
                             : "text-foreground",
                         )}
                       >
-                        {getMoodLabel(mood.id, mood.label)}
+                        {translateMoodLabel(mood.id, mood.label)}
                       </span>
                       <span
                         className={cn(
@@ -1452,7 +1288,7 @@ const HomePage = () => {
                             : "text-muted-foreground",
                         )}
                       >
-                        {getMoodDescription(mood.id, mood.description)}
+                        {translateMoodDescription(mood.id, mood.description)}
                       </span>
                     </button>
                   );

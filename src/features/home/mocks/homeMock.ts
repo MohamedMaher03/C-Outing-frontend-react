@@ -1,6 +1,5 @@
 import { PLACES } from "@/mocks/mockData";
 import type {
-  HomePageData,
   HomePlace,
   HomeRecommendationsQuery,
   HomeSearchQuery,
@@ -73,24 +72,6 @@ const buildPaginatedResponse = (
 };
 
 export const homeMock = {
-  async fetchHomePageData(
-    params?: HomeRecommendationsQuery,
-  ): Promise<HomePageData> {
-    await delay(800);
-
-    const all: HomePlace[] = normalizedPlaces();
-
-    const curatedPlaces = withCount(sortByPersonalized(all), params?.count, 10);
-
-    const trendingPlaces = withCount(
-      [...all].sort((a, b) => b.reviewCount - a.reviewCount),
-      params?.count,
-      10,
-    );
-
-    return { curatedPlaces, trendingPlaces };
-  },
-
   async fetchPersonalizedRecommendations(
     params?: HomeRecommendationsQuery,
   ): Promise<HomePlace[]> {

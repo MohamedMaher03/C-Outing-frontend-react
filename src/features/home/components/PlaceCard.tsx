@@ -1,204 +1,39 @@
-import { Heart, MapPin, Star, Clock, Wifi, Navigation } from "lucide-react";
-import { memo, useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { useI18n } from "@/components/i18n";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { cn } from "@/lib/utils";
+import { Star } from "lucide-react";
+import { memo } from "react";
+import { motion } from "framer-motion";
 import type { PlaceCardProps } from "@/features/home/types";
-import { getDistanceDisplayState } from "@/features/home/utils/distance";
-import { buildHomeImageCandidates } from "@/features/home/utils/imageUrl";
-import { PRICE_LEVEL_META } from "@/utils/priceLevels";
-import { motion, useReducedMotion } from "framer-motion";
+import { usePlaceCard } from "@/features/home/hooks/usePlaceCard";
+import { PlaceCardHero } from "@/features/home/components/place-card/PlaceCardHero";
+import { PlaceCardBody } from "@/features/home/components/place-card/PlaceCardBody";
 
-const TOP_RATED_MIN_RATING = 4.7;
-
-const getOpenStatusCopy = (
-  isOpen: boolean | null | undefined,
-  t: (key: string) => string,
-): string => {
-  if (isOpen === true) return t("home.place.open");
-  else if (isOpen === false) return t("home.place.closed");
-  else return t("home.place.unknown");
-};
-
-const toSafeNumber = (value: unknown, fallback = 0) => {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const parsed = Number.parseFloat(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return fallback;
-};
-
-const PlaceCard = ({
-  place,
-  variant = "grid",
-  userLocation,
-  onToggleSave,
-  isSavePending = false,
-  hideTopRatedBadge = false,
-  onClick,
-}: PlaceCardProps) => {
-  const { t, formatNumber } = useI18n();
-  const shouldReduceMotion = useReducedMotion();
-  const [imageRetryState, setImageRetryState] = useState<{
-    sourceKey: string;
-    index: number;
-  }>({
-    sourceKey: "",
-    index: 0,
-  });
-  const isHorizontal = variant === "horizontal";
-  const rating = toSafeNumber(place.rating);
-  const reviewCount = toSafeNumber(place.reviewCount);
-  const safeName = place.name?.trim() || t("home.place.untitled");
-  const safeAddress =
-    place.address?.trim() || t("home.place.addressUnavailable");
-  const safeTagList = (place.atmosphereTags ?? [])
-    .filter((tag): tag is string => typeof tag === "string")
-    .slice(0, 2);
-  const ratingDisplay = Number.isFinite(rating) ? rating.toFixed(2) : "0.00";
-  const reviewCountDisplay = useMemo(
-    () =>
-      Number.isFinite(reviewCount)
-        ? formatNumber(Math.max(0, reviewCount))
-        : formatNumber(0),
-    [formatNumber, reviewCount],
-  );
-  const isTopRated = rating >= TOP_RATED_MIN_RATING;
-  const cardAriaLabel = t("home.place.cardAria", {
-    name: safeName,
-    rating: ratingDisplay,
-  });
-  const openStatusCopy = getOpenStatusCopy(place.isOpen, t);
-  const distanceState = getDistanceDisplayState(
-    userLocation,
-    place.latitude,
-    place.longitude,
-  );
-  const priceMeta = place.priceLevel
-    ? PRICE_LEVEL_META[place.priceLevel]
-    : null;
-  const imageCandidates = useMemo(
-    () => buildHomeImageCandidates(place.image),
-    [place.image],
-  );
-
-  const imageSourceKey = place.image;
-  const imageCandidateIndex =
-    imageRetryState.sourceKey === imageSourceKey ? imageRetryState.index : 0;
-
-  const activeImageSrc = imageCandidates[imageCandidateIndex];
-  const isImageUnavailable = !activeImageSrc;
-
-  const distanceLabel = useMemo(() => {
-    if (distanceState.kind === "distance") {
-      const distanceKm = distanceState.valueKm;
-      if (!Number.isFinite(distanceKm) || distanceKm < 0) {
-        return t("home.distance.unavailable");
-      }
-
-      if (distanceKm < 1) {
-        return t("home.distance.metersAway", {
-          distance: formatNumber(Math.max(1, Math.round(distanceKm * 1000))),
-        });
-      }
-
-      if (distanceKm < 10) {
-        return t("home.distance.kmAway", {
-          distance: formatNumber(Number(distanceKm.toFixed(1))),
-        });
-      }
-
-      return t("home.distance.kmAway", {
-        distance: formatNumber(Math.round(distanceKm)),
-      });
-    }
-
-    if (distanceState.kind === "locating") {
-      return t("home.distance.locating");
-    }
-
-    if (distanceState.kind === "permission-denied") {
-      return t("home.distance.permissionDenied");
-    }
-
-    if (distanceState.kind === "unsupported") {
-      return t("home.distance.unsupported");
-    }
-
-    if (distanceState.kind === "position-unavailable") {
-      return t("home.distance.positionUnavailable");
-    }
-
-    if (distanceState.kind === "error") {
-      return t("home.distance.error");
-    }
-
-    return t("home.distance.unavailable");
-  }, [distanceState, formatNumber, t]);
-
-  const distanceClassName = cn(
-    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold",
-    distanceState.kind === "distance" &&
-      "border-emerald-200 bg-emerald-50 text-emerald-700",
-    distanceState.kind === "locating" &&
-      "border-border bg-muted/70 text-muted-foreground",
-    distanceState.kind === "permission-denied" &&
-      "border-secondary/40 bg-secondary/10 text-foreground",
-    (distanceState.kind === "unsupported" ||
-      distanceState.kind === "position-unavailable" ||
-      distanceState.kind === "error" ||
-      distanceState.kind === "place-coordinates-missing") &&
-      "border-border bg-muted/60 text-muted-foreground",
-  );
+const PlaceCard = (props: PlaceCardProps) => {
+  const viewModel = usePlaceCard(props);
+  const {
+    t,
+    showTopRatedRibbon,
+    topRatedThresholdLabel,
+    cardAriaLabel,
+    shellClassName,
+    cardMotion,
+    commitCardActivation,
+    commitKeyboardActivation,
+  } = viewModel;
 
   return (
     <motion.div
-      onClick={() => onClick?.(place.id)}
+      onClick={commitCardActivation}
       role="button"
       tabIndex={0}
       aria-label={cardAriaLabel}
-      whileHover={
-        shouldReduceMotion
-          ? undefined
-          : { y: -3, transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] } }
-      }
-      whileTap={
-        shouldReduceMotion
-          ? undefined
-          : { scale: 0.99, transition: { duration: 0.1 } }
-      }
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick?.(place.id);
-        }
-      }}
-      className={cn(
-        "group/place relative bg-card rounded-2xl border border-border/60 overflow-hidden cursor-pointer",
-        "transition-all duration-250 ease-out",
-        "md:hover:shadow-lg md:hover:shadow-primary/5 md:hover:border-secondary/20",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2",
-        "shadow-sm flex flex-col h-full",
-        isHorizontal
-          ? "w-[clamp(15.5rem,78vw,20rem)] sm:w-[18.25rem] flex-shrink-0"
-          : "w-full",
-      )}
+      whileHover={cardMotion.hover}
+      whileTap={cardMotion.tap}
+      onKeyDown={commitKeyboardActivation}
+      className={shellClassName}
     >
-      {/** the badge of the tp rated */}
-      {isTopRated && !hideTopRatedBadge && (
+      {showTopRatedRibbon && (
         <div
           className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-cream/35 bg-primary/95 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.08em] text-cream shadow-lg shadow-black/35 backdrop-blur-sm"
-          title={t("home.place.topRatedHint", {
-            rating: TOP_RATED_MIN_RATING.toFixed(2),
-          })}
+          title={t("home.place.topRatedHint", { rating: topRatedThresholdLabel })}
         >
           <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-secondary/20 dark:bg-primary-foreground/24">
             <Star className="h-2.5 w-2.5 fill-secondary text-secondary dark:fill-cream dark:text-cream" />
@@ -206,200 +41,13 @@ const PlaceCard = ({
           {t("home.place.topRatedBadge")}
         </div>
       )}
-
-      <div
-        className={cn(
-          "relative overflow-hidden",
-          isHorizontal ? "h-40" : "h-48",
-        )}
-      >
-        {activeImageSrc && (
-          <img
-            src={activeImageSrc}
-            alt={safeName}
-            className="h-full w-full object-cover transition-transform duration-500 ease-out md:group-hover/place:scale-105"
-            loading="lazy"
-            decoding="async"
-            referrerPolicy="no-referrer"
-            onError={() => {
-              setImageRetryState((prev) => {
-                const currentIndex =
-                  prev.sourceKey === imageSourceKey ? prev.index : 0;
-
-                return {
-                  sourceKey: imageSourceKey,
-                  index: Math.min(currentIndex + 1, imageCandidates.length),
-                };
-              });
-            }}
-          />
-        )}
-        {isImageUnavailable && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/70 px-4 text-center">
-            <span className="text-sm font-semibold text-muted-foreground break-words">
-              {t("home.place.imageUnavailable")}
-            </span>
-          </div>
-        )}
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/65 via-black/30 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-
-        <motion.button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSave?.(place.id);
-          }}
-          aria-label={
-            place.isSaved
-              ? t("home.place.removeFavorite")
-              : t("home.place.addFavorite")
-          }
-          aria-pressed={place.isSaved}
-          aria-busy={isSavePending}
-          disabled={isSavePending}
-          whileHover={
-            shouldReduceMotion
-              ? undefined
-              : { scale: 1.05, transition: { duration: 0.16 } }
-          }
-          whileTap={
-            shouldReduceMotion
-              ? undefined
-              : { scale: 0.92, transition: { duration: 0.1 } }
-          }
-          className={cn(
-            "absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full p-2.5 transition-all duration-200",
-            "backdrop-blur-md border border-white/20",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 focus-visible:ring-offset-black/40",
-            isSavePending && "opacity-85",
-            place.isSaved
-              ? "bg-destructive/90 text-destructive-foreground shadow-sm"
-              : "bg-card/80 text-foreground hover:bg-card hover:shadow-sm",
-          )}
-        >
-          {isSavePending ? (
-            <LoadingSpinner size="sm" className="scale-[0.78]" />
-          ) : (
-            <motion.span
-              key={place.isSaved ? "saved" : "idle"}
-              initial={false}
-              animate={
-                place.isSaved && !shouldReduceMotion
-                  ? { scale: [1, 1.2, 1], rotate: [0, -10, 0] }
-                  : { scale: 1, rotate: 0 }
-              }
-              transition={{
-                duration: shouldReduceMotion ? 0.01 : 0.28,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-            >
-              <Heart
-                className={cn(
-                  "h-4 w-4 transition-all",
-                  place.isSaved
-                    ? "fill-destructive-foreground text-destructive-foreground"
-                    : "text-foreground group-hover/place:text-destructive/80",
-                )}
-              />
-            </motion.span>
-          )}
-        </motion.button>
-
-        <Badge className="absolute bottom-3 left-3 border-0 bg-card/95 px-2.5 py-1 font-semibold text-foreground shadow-sm backdrop-blur-md gap-1">
-          <Star className="h-3.5 w-3.5 fill-secondary text-secondary dark:fill-primary dark:text-primary" />
-          {ratingDisplay}
-          <span className="text-muted-foreground font-normal ml-0.5">
-            ({reviewCountDisplay})
-          </span>
-        </Badge>
-
-        {place.hasWifi && (
-          <Badge className="absolute bottom-3 right-3 border-0 bg-card/90 px-2 py-1 text-foreground shadow-sm backdrop-blur-md gap-1">
-            <Wifi className="h-3 w-3 text-muted-foreground dark:text-foreground/95" />
-          </Badge>
-        )}
-      </div>
-
-      <div className="flex flex-col flex-1 space-y-2 p-4 sm:p-5">
-        <h3
-          className="text-sm font-semibold leading-tight text-foreground transition-colors line-clamp-2 break-words"
-          title={safeName}
-        >
-          {safeName}
-        </h3>
-
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-role-micro text-muted-foreground min-w-0">
-            <MapPin className="h-3 w-3 flex-shrink-0 text-muted-foreground dark:text-foreground/85" />
-            <span className="truncate" title={safeAddress}>
-              {safeAddress}
-            </span>
-          </div>
-          {openStatusCopy && (
-            <div
-              className={cn(
-                "ml-1 flex flex-shrink-0 items-center gap-1 text-xs font-semibold",
-                place.isOpen === true
-                  ? "text-emerald-600 dark:text-emerald-300"
-                  : place.isOpen === false
-                    ? "text-muted-foreground dark:text-foreground/75"
-                    : "text-amber-700 dark:text-amber-300",
-              )}
-            >
-              <Clock className="h-3 w-3" />
-              {openStatusCopy}
-            </div>
-          )}
-        </div>
-
-        <div className={distanceClassName} aria-live="polite">
-          <Navigation className="h-3 w-3" />
-          <span>{distanceLabel}</span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5 pt-0.5 mt-auto">
-          <div className="flex gap-1.5 overflow-hidden flex-1 min-w-0">
-            {safeTagList.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-border/40 bg-muted/70 px-2.5 py-1 text-xs font-medium text-muted-foreground flex-shrink-0 max-w-[126px] truncate"
-                title={tag}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-          {priceMeta ? (
-            <span
-              className="ml-auto inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-secondary/20 bg-secondary/10 px-2.5 py-1 text-[11px] font-medium text-foreground"
-              aria-label={t("home.place.budgetLevel", {
-                label: priceMeta.label,
-              })}
-              title={t("home.place.budgetLevel", { label: priceMeta.label })}
-            >
-              <span>{priceMeta.label}</span>
-              <span className="text-[11px] font-semibold text-secondary/80 dark:text-primary">
-                {priceMeta.symbol}
-              </span>
-            </span>
-          ) : (
-            <span
-              className="ml-auto inline-flex flex-shrink-0 items-center gap-1 rounded-full 
-  border border-dashed border-secondary/20 bg-secondary/10 px-2.5 py-1 
-  text-[11px] font-medium text-foreground opacity-60"
-            >
-              <span>{t("home.place.priceUnknown")}</span>
-            </span>
-          )}
-        </div>
-      </div>
+      <PlaceCardHero {...viewModel} />
+      <PlaceCardBody {...viewModel} />
     </motion.div>
   );
 };
 
 const MemoizedPlaceCard = memo(PlaceCard);
-
 MemoizedPlaceCard.displayName = "PlaceCard";
 
 export default MemoizedPlaceCard;

@@ -1,7 +1,6 @@
 import { homeApi } from "../api/homeApi";
 import { homeMock } from "../mocks/homeMock";
 import type {
-  HomePageData,
   HomePlace,
   HomeRecommendationsQuery,
   HomeSearchQuery,
@@ -32,15 +31,6 @@ const withServiceError = async <T>(
 };
 
 export const homeService = {
-  async fetchHomePageData(
-    params?: HomeRecommendationsQuery,
-  ): Promise<HomePageData> {
-    return withServiceError(
-      () => homeDataSource.fetchHomePageData(params),
-      "Failed to fetch home page data",
-    );
-  },
-
   async fetchPersonalizedRecommendations(
     params?: HomeRecommendationsQuery,
   ): Promise<HomePlace[]> {

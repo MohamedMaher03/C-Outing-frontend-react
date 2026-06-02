@@ -1,5 +1,4 @@
 import type {
-  HomePageData,
   HomePlace,
   HomeRecommendationsQuery,
   VenueByDistrictParams,
@@ -9,9 +8,6 @@ import type {
 } from "@/features/home/types";
 
 export interface MapAtlasDataSource {
-  fetchHomePageData: (
-    params?: HomeRecommendationsQuery,
-  ) => Promise<HomePageData>;
   fetchPersonalizedRecommendations: (
     params?: HomeRecommendationsQuery,
   ) => Promise<HomePlace[]>;

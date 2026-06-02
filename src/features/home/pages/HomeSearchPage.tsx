@@ -1,93 +1,44 @@
-import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
-import { useI18n } from "@/components/i18n";
-import { FILTER_OPTIONS, type FilterType } from "@/features/home";
+import { FILTER_OPTIONS } from "@/features/home";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
-import { useHomeSearch } from "@/features/home/hooks/useHomeSearch";
-import { useUserLocation } from "@/features/home/hooks/useUserLocation";
-import { normalizeSearchTerm } from "@/utils/textNormalization";
-import { POPULAR_DISTRICTS, CATEGORIES } from "@/mocks/mockData";
-import { VENUE_PRICE_RANGE_OPTIONS } from "@/features/home/mocks";
-import { PRICE_LEVEL_VALUES } from "@/utils/priceLevels";
-import { getTranslatedText } from "@/utils/helpers";
-import {
-  HOME_QUICK_FILTER_QUERY_KEY,
-  filterHomePlacesByQuickFilters,
-  parseHomeQuickFilters,
-} from "../utils/filters";
-import { safeParsePositiveInt, buildVenueSearchParams } from "../utils/domainHelpers";
-
-const QUICK_FILTER_QUERY_KEY = HOME_QUICK_FILTER_QUERY_KEY;
+import { useHomeSearchPage } from "@/features/home/hooks/useHomeSearchPage";
+import { isQuickFilterActive } from "@/features/home/utils/homePagePresentation";
 
 const HomeSearchPage = () => {
-  const { t, formatNumber } = useI18n();
-  const navigate = useNavigate();
-  const userLocation = useUserLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const searchParam = searchParams.get("q") ?? "";
-  const districtParam = searchParams.get("district") ?? "";
-  const typeParam = searchParams.get("type") ?? "";
-  const categoryParam = searchParams.get("category") ?? "";
-  const priceRangeParam = searchParams.get("priceRange") ?? "";
-  const minRatingParam = searchParams.get("minRating") ?? "";
-  const filtersParam = searchParams.get(QUICK_FILTER_QUERY_KEY) ?? "";
-
-  const normalizedSearch = useMemo(() => normalizeSearchTerm(searchParam), [searchParam]);
-  const selectedFilters = useMemo(() => parseHomeQuickFilters(filtersParam), [filtersParam]);
-
-  const [searchInput, setSearchInput] = useState(searchParam);
-  const [districtInput, setDistrictInput] = useState(districtParam);
-  const [typeInput, setTypeInput] = useState(typeParam);
-  const [categoryInput, setCategoryInput] = useState(categoryParam);
-  const [priceRangeInput, setPriceRangeInput] = useState(priceRangeParam);
-  const [minRatingInput, setMinRatingInput] = useState(minRatingParam);
-
-  const districtOptions = useMemo(
-    () =>
-      POPULAR_DISTRICTS.map((district) => ({
-        value: district.name,
-        label: getTranslatedText(district.nameKey, district.name, t),
-      })),
-    [t],
-  );
-
-  const typeOptions = useMemo(
-    () =>
-      CATEGORIES.map((category) => ({
-        value: category.id,
-        label: getTranslatedText(category.nameKey, category.label, t),
-      })),
-    [t],
-  );
-
-  const categoryOptions = typeOptions;
-
-  const priceRangeOptions = useMemo(
-    () =>
-      VENUE_PRICE_RANGE_OPTIONS.map((option) => ({
-        value: String(PRICE_LEVEL_VALUES.indexOf(option.id) + 1),
-        label: t(`budget.${option.id}`, undefined, option.label),
-      })),
-    [t],
-  );
-
-  const minRatingOptions = useMemo(
-    () => [
-      { value: "", label: t("home.search.filter.anyOption", undefined, "Any") },
-      { value: "4", label: t("home.search.filter.minRatingOption4", undefined, "4.0+") },
-      { value: "4.5", label: t("home.search.filter.minRatingOption45", undefined, "4.5+") },
-    ],
-    [t],
-  );
-
   const {
-    places,
+    t,
+    formatNumber,
+    navigateHome,
+    openVenueDetail,
+    userLocation,
+    normalizedSearch,
+    searchParam,
+    selectedFilters,
+    searchInput,
+    setSearchInput,
+    districtInput,
+    typeInput,
+    categoryInput,
+    priceRangeInput,
+    minRatingInput,
+    districtOptions,
+    categorySelectOptions,
+    priceRangeOptions,
+    minRatingOptions,
+    filteredPlaces,
+    activeFilterCount,
+    commitSearchForm,
+    toggleQuickFilter,
+    clearQuickFilters,
+    bindDistrictFilter,
+    bindTypeFilter,
+    bindCategoryFilter,
+    bindPriceRangeFilter,
+    bindMinRatingFilter,
     isLoading,
     error,
     saveError,
@@ -100,45 +51,7 @@ const HomeSearchPage = () => {
     retryFetch,
     toggleSave,
     isSavePending,
-  } = useHomeSearch({
-    searchTerm: searchParam,
-    district: districtParam,
-    type: typeParam,
-    category: categoryParam,
-    priceRange: safeParsePositiveInt(priceRangeParam),
-    minRating: safeParsePositiveInt(minRatingParam),
-  });
-
-  const applyFilters = (overrides?: Partial<Record<string, string>>) => {
-    const nextParams = buildVenueSearchParams({
-      q: overrides?.q ?? searchInput,
-      district: overrides?.district ?? districtInput,
-      type: overrides?.type ?? typeInput,
-      category: overrides?.category ?? categoryInput,
-      priceRange: overrides?.priceRange ?? priceRangeInput,
-      minRating: overrides?.minRating ?? minRatingInput,
-      [QUICK_FILTER_QUERY_KEY]: overrides?.[QUICK_FILTER_QUERY_KEY] ?? filtersParam,
-    });
-    setPageIndex(1);
-    setSearchParams(nextParams);
-  };
-
-  const handleQuickFilterToggle = (filter: FilterType) => {
-    const nextFilters =
-      filter === "all"
-        ? []
-        : selectedFilters.includes(filter)
-          ? selectedFilters.filter((item) => item !== filter)
-          : [...selectedFilters, filter];
-    applyFilters({ [QUICK_FILTER_QUERY_KEY]: nextFilters.join(",") });
-  };
-
-  const filteredPlaces = useMemo(
-    () => filterHomePlacesByQuickFilters(places, selectedFilters, userLocation),
-    [places, selectedFilters, userLocation],
-  );
-
-  const activeFilterCount = selectedFilters.length;
+  } = useHomeSearchPage();
 
   if (isLoading) {
     return (
@@ -156,7 +69,7 @@ const HomeSearchPage = () => {
           <div className="space-y-2">
             <button
               type="button"
-              onClick={() => navigate("/")}
+              onClick={navigateHome}
               className="inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -176,7 +89,10 @@ const HomeSearchPage = () => {
           </div>
         </div>
 
-        <LocationPermissionBanner userLocation={userLocation} onEnableLocation={userLocation.requestLocation} />
+        <LocationPermissionBanner
+          userLocation={userLocation}
+          onEnableLocation={userLocation.requestLocation}
+        />
 
         {saveError && (
           <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4">
@@ -195,13 +111,7 @@ const HomeSearchPage = () => {
           </div>
         )}
 
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            applyFilters();
-          }}
-          className="space-y-4"
-        >
+        <form onSubmit={commitSearchForm} className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[240px]">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -237,7 +147,7 @@ const HomeSearchPage = () => {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => applyFilters({ filters: "" })}
+                  onClick={clearQuickFilters}
                   className="h-9 rounded-full px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
                 >
                   {t("home.search.clearFilters", undefined, "Clear filters")}
@@ -248,13 +158,12 @@ const HomeSearchPage = () => {
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide sm:flex-wrap sm:overflow-visible">
               {FILTER_OPTIONS.map((filter) => {
                 const Icon = filter.icon;
-                const isActive =
-                  filter.id === "all" ? selectedFilters.length === 0 : selectedFilters.includes(filter.id);
+                const isActive = isQuickFilterActive(filter.id, selectedFilters);
                 return (
                   <button
                     type="button"
                     key={filter.id}
-                    onClick={() => handleQuickFilterToggle(filter.id)}
+                    onClick={() => toggleQuickFilter(filter.id)}
                     aria-pressed={isActive}
                     className={`inline-flex min-h-11 flex-shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 ${
                       isActive
@@ -278,28 +187,28 @@ const HomeSearchPage = () => {
                   labelFallback: "District",
                   value: districtInput,
                   options: districtOptions,
-                  onChange: (val: string) => { setDistrictInput(val); applyFilters({ district: val }); },
+                  onChange: bindDistrictFilter,
                 },
                 {
                   labelKey: "home.search.filter.typeLabel",
                   labelFallback: "Type",
                   value: typeInput,
-                  options: typeOptions,
-                  onChange: (val: string) => { setTypeInput(val); applyFilters({ type: val }); },
+                  options: categorySelectOptions,
+                  onChange: bindTypeFilter,
                 },
                 {
                   labelKey: "home.search.filter.categoryLabel",
                   labelFallback: "Category",
                   value: categoryInput,
-                  options: categoryOptions,
-                  onChange: (val: string) => { setCategoryInput(val); applyFilters({ category: val }); },
+                  options: categorySelectOptions,
+                  onChange: bindCategoryFilter,
                 },
                 {
                   labelKey: "home.search.filter.priceRangeLabel",
                   labelFallback: "Price range",
                   value: priceRangeInput,
                   options: priceRangeOptions,
-                  onChange: (val: string) => { setPriceRangeInput(val); applyFilters({ priceRange: val }); },
+                  onChange: bindPriceRangeFilter,
                 },
               ] as const
             ).map(({ labelKey, labelFallback, value, options, onChange }) => (
@@ -322,11 +231,7 @@ const HomeSearchPage = () => {
               <span>{t("home.search.filter.minRatingLabel", undefined, "Min rating")}</span>
               <select
                 value={minRatingInput}
-                onChange={(event) => {
-                  const val = event.target.value;
-                  setMinRatingInput(val);
-                  applyFilters({ minRating: val });
-                }}
+                onChange={(event) => bindMinRatingFilter(event.target.value)}
                 className="h-11 w-full rounded-xl border border-border/70 bg-card px-3 text-sm text-foreground"
               >
                 {minRatingOptions.map((opt) => (
@@ -391,7 +296,7 @@ const HomeSearchPage = () => {
                   userLocation={userLocation}
                   onToggleSave={toggleSave}
                   isSavePending={isSavePending(place.id)}
-                  onClick={(id) => navigate(`/venue/${id}`)}
+                  onClick={openVenueDetail}
                 />
               ))}
             </div>

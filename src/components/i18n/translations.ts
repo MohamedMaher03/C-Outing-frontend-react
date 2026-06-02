@@ -550,7 +550,6 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "home.mobile.moodSelectorTitle": "Mood selector",
     "home.mobile.moodSelectorHint": "Tap to personalize suggestions",
-    "home.mobile.trendingTags": "Trending tags",
 
     "home.discovery.title": "Venue Discovery",
     "home.discovery.subtitle":
@@ -2354,7 +2353,6 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "home.mobile.moodSelectorTitle": "اختيار الأجواء",
     "home.mobile.moodSelectorHint": "اضغط لتخصيص الاقتراحات",
-    "home.mobile.trendingTags": "وسوم رائجة",
 
     "home.discovery.title": "اكتشاف الأماكن",
     "home.discovery.subtitle":

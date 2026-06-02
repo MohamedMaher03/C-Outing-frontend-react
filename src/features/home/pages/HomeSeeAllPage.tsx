@@ -1,50 +1,19 @@
-import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Flame, Sparkles } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLoading } from "@/components/ui/LoadingSpinner";
-import { useI18n } from "@/components/i18n";
 import PlaceCard from "@/features/home/components/PlaceCard";
 import LocationPermissionBanner from "@/features/home/components/LocationPermissionBanner";
-import { useHomeSeeAll } from "@/features/home/hooks/useHomeSeeAll";
-import type { HomeRecommendationCollection } from "@/features/home/types";
-import { MOOD_ICON_MAP } from "@/features/home/mocks";
-import { MOOD_OPTIONS } from "@/mocks/mockData";
-
-const COLLECTION_META: Record<
-  Exclude<HomeRecommendationCollection, "mood">,
-  {
-    titleKey: string;
-    subtitleKey: string;
-    icon: typeof Sparkles;
-    colorClass: string;
-  }
-> = {
-  curated: {
-    titleKey: "home.seeAll.collection.curated.title",
-    subtitleKey: "home.seeAll.collection.curated.subtitle",
-    icon: Sparkles,
-    colorClass: "text-secondary",
-  },
-  trending: {
-    titleKey: "home.seeAll.collection.trending.title",
-    subtitleKey: "home.seeAll.collection.trending.subtitle",
-    icon: Flame,
-    colorClass: "text-orange-500",
-  },
-};
-
-const COUNT_OPTIONS = [10, 20, 30];
+import { useHomeSeeAllPage } from "@/features/home/hooks/useHomeSeeAllPage";
 
 const HomeSeeAllPage = () => {
-  const { t, formatNumber } = useI18n();
-  const navigate = useNavigate();
-  const { collection, moodId } = useParams<{
-    collection?: string;
-    moodId?: string;
-  }>();
-  const resolvedCollection = collection ?? (moodId ? "mood" : undefined);
   const {
+    t,
+    formatNumber,
+    navigateHome,
+    openVenueDetail,
+    isSavePendingFor,
+    countSteps,
+    collectionHeader,
     safeCollection,
     places,
     isLoading,
@@ -54,23 +23,10 @@ const HomeSeeAllPage = () => {
     count,
     setCount,
     toggleSave,
-    savePendingMap,
     retryFetch,
     userLocation,
     requestUserLocation,
-  } = useHomeSeeAll({ collection: resolvedCollection, moodId });
-
-  const moodOption = MOOD_OPTIONS.find((mood) => mood.id === moodId) ?? null;
-  const moodLabel = moodOption
-    ? t(`home.mood.${moodOption.id}.label`, undefined, moodOption.label)
-    : t("home.mood.defaultTitle");
-  const MoodIcon = moodOption
-    ? (MOOD_ICON_MAP[moodOption.icon] ?? Sparkles)
-    : Sparkles;
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [collection, moodId]);
+  } = useHomeSeeAllPage();
 
   if (!safeCollection) {
     return (
@@ -82,7 +38,7 @@ const HomeSeeAllPage = () => {
           <p className="text-sm text-muted-foreground mt-2">
             {t("home.seeAll.invalidType.description")}
           </p>
-          <Button type="button" className="mt-4" onClick={() => navigate("/")}>
+          <Button type="button" className="mt-4" onClick={navigateHome}>
             {t("home.seeAll.backHome")}
           </Button>
         </div>
@@ -90,28 +46,13 @@ const HomeSeeAllPage = () => {
     );
   }
 
-  const meta =
-    safeCollection === "mood"
-      ? {
-          title: t("home.seeAll.collection.mood.title", { mood: moodLabel }),
-          subtitle: t("home.seeAll.collection.mood.subtitle", {
-            mood: moodLabel,
-          }),
-          icon: MoodIcon,
-          colorClass: "text-secondary dark:text-primary",
-        }
-      : {
-          title: t(COLLECTION_META[safeCollection].titleKey),
-          subtitle: t(COLLECTION_META[safeCollection].subtitleKey),
-          icon: COLLECTION_META[safeCollection].icon,
-          colorClass: COLLECTION_META[safeCollection].colorClass,
-        };
-  const Icon = meta.icon;
+  const header = collectionHeader!;
+  const HeaderIcon = header.icon;
 
   if (isLoading) {
     return (
       <PageLoading
-        text={t("home.seeAll.loading", { title: meta.title })}
+        text={t("home.seeAll.loading", { title: header.title })}
         subText={t("home.seeAll.loadingSubtitle")}
       />
     );
@@ -124,17 +65,17 @@ const HomeSeeAllPage = () => {
           <div className="space-y-1">
             <button
               type="button"
-              onClick={() => navigate("/")}
+              onClick={navigateHome}
               className="inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
             >
               <ChevronLeft className="h-4 w-4" />
               {t("home.seeAll.backHome")}
             </button>
             <h1 className="text-3xl font-black tracking-tight flex items-center gap-2 text-foreground">
-              <Icon className={`h-7 w-7 ${meta.colorClass}`} />
-              {meta.title}
+              <HeaderIcon className={`h-7 w-7 ${header.colorClass}`} />
+              {header.title}
             </h1>
-            <p className="text-sm text-muted-foreground">{meta.subtitle}</p>
+            <p className="text-sm text-muted-foreground">{header.subtitle}</p>
           </div>
 
           <div
@@ -142,7 +83,7 @@ const HomeSeeAllPage = () => {
             role="group"
             aria-label={t("home.seeAll.countGroup")}
           >
-            {COUNT_OPTIONS.map((option) => (
+            {countSteps.map((option) => (
               <button
                 type="button"
                 key={option}
@@ -174,9 +115,7 @@ const HomeSeeAllPage = () => {
             aria-live="polite"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-medium text-destructive">
-                {saveError}
-              </p>
+              <p className="text-sm font-medium text-destructive">{saveError}</p>
               <Button
                 type="button"
                 variant="outline"
@@ -224,8 +163,8 @@ const HomeSeeAllPage = () => {
                 variant="grid"
                 userLocation={userLocation}
                 onToggleSave={toggleSave}
-                isSavePending={Boolean(savePendingMap[place.id])}
-                onClick={(id) => navigate(`/venue/${id}`)}
+                isSavePending={isSavePendingFor(place.id)}
+                onClick={openVenueDetail}
               />
             ))}
           </div>

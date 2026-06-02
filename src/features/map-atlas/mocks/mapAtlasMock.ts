@@ -2,7 +2,6 @@ import type { MapAtlasDataSource } from "@/features/map-atlas/types/dataSource";
 import { homeMock } from "@/features/home/mocks/homeMock";
 
 export const mapAtlasMock: MapAtlasDataSource = {
-  fetchHomePageData: homeMock.fetchHomePageData,
   fetchPersonalizedRecommendations: homeMock.fetchPersonalizedRecommendations,
   fetchTrendingRecommendations: homeMock.fetchTrendingRecommendations,
   togglePlaceSave: homeMock.togglePlaceSave,

@@ -41,16 +41,6 @@ const normalizePlaceId = (placeId: string): string => {
   return normalized;
 };
 
-export const fetchMapAtlasHomePageData = async (
-  params?: HomeRecommendationsQuery,
-): Promise<HomePageData> => {
-  const data = await mapAtlasDataSource.fetchHomePageData({
-    count: normalizeRecommendationCount(params?.count, 12),
-  });
-
-  return mapMapAtlasHomePageData(data);
-};
-
 export const fetchMapAtlasPersonalizedRecommendations = async (
   params?: HomeRecommendationsQuery,
 ): Promise<HomePlace[]> => {
@@ -69,6 +59,18 @@ export const fetchMapAtlasTrendingRecommendations = async (
   });
 
   return mapMapAtlasPlaces(places);
+};
+
+export const fetchMapAtlasHomePageData = async (
+  params?: HomeRecommendationsQuery,
+): Promise<HomePageData> => {
+  const count = normalizeRecommendationCount(params?.count, 12);
+  const [curatedPlaces, trendingPlaces] = await Promise.all([
+    fetchMapAtlasPersonalizedRecommendations({ count }),
+    fetchMapAtlasTrendingRecommendations({ count }),
+  ]);
+
+  return mapMapAtlasHomePageData({ curatedPlaces, trendingPlaces });
 };
 
 export const toggleMapAtlasPlaceSave = async (

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { resolveGreetingKey } from "@/features/home/utils/domainHelpers";
 
 const HOME_SCROLL_POSITION_KEY = "home_page_scroll_y";
 
@@ -21,7 +22,7 @@ export const useScrollRestoration = () => {
           String(currentScrollYRef.current),
         );
       } catch {
-        // noop
+        void 0;
       }
     };
   }, []);
@@ -38,26 +39,18 @@ export const useScrollRestoration = () => {
       }
       sessionStorage.removeItem(HOME_SCROLL_POSITION_KEY);
     } catch {
-      // noop
+      void 0;
     }
   }, []);
 };
 
 export const useGreetingKey = () => {
-  const [greetingKey, setGreetingKey] = useState(() => {
-    const hour = new Date().getHours();
-    if (hour >= 6 && hour < 12) return "home.greeting.morning";
-    if (hour >= 12 && hour < 18) return "home.greeting.afternoon";
-    return "home.greeting.evening";
-  });
+  const [greetingKey, setGreetingKey] = useState(() =>
+    resolveGreetingKey(new Date().getHours()),
+  );
 
   useEffect(() => {
-    const refresh = () => {
-      const hour = new Date().getHours();
-      if (hour >= 6 && hour < 12) return setGreetingKey("home.greeting.morning");
-      if (hour >= 12 && hour < 18) return setGreetingKey("home.greeting.afternoon");
-      return setGreetingKey("home.greeting.evening");
-    };
+    const refresh = () => setGreetingKey(resolveGreetingKey(new Date().getHours()));
     const intervalId = window.setInterval(refresh, 60_000);
     return () => window.clearInterval(intervalId);
   }, []);
