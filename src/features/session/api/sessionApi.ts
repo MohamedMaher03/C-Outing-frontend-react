@@ -1,5 +1,6 @@
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
+
 import type {
   Session,
   SessionRecommendation,
@@ -39,8 +40,7 @@ const mapVenueToRecommendation = (
   address: venue.location,
   category: venue.category,
   imageUrl: venue.displayImageUrl ?? venue.thumbnailUrl,
-  rating:
-    typeof venue.averageRating === "number" ? venue.averageRating : null,
+  rating: typeof venue.averageRating === "number" ? venue.averageRating : null,
   priceRange: venue.priceRange,
   atmosphereTags: Array.isArray(venue.atmosphereTags)
     ? venue.atmosphereTags
