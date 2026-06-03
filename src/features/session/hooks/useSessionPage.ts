@@ -3,9 +3,13 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
 import { useI18n } from "@/components/i18n/useI18n";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { useSession } from "./useSession";
+import { useSessionContext } from "../context/SessionContext";
+import { normalizeSessionCode } from "../utils/sessionCode";
 import { DEFAULT_RECOMMENDATION_COUNT } from "../types/session.types";
-import type { RecommendationCount, SessionStatus } from "../types/session.types";
+import type {
+  RecommendationCount,
+  SessionStatus,
+} from "../types/session.types";
 import { resolveSessionBootstrapIntent } from "../utils/sessionRouteIntent";
 import {
   resolveCapacityBarClass,
@@ -33,21 +37,55 @@ export const useSessionPage = () => {
     status,
     session,
     recommendations,
+    votes,
     error,
     isHost,
     memberCount,
     isRestoring,
     recommendationCount,
+    isSubmittingVote,
+    isFinalizingVotes,
+    myVoteVenueId,
+    winningVenueId,
+    hasFinalizedWinner,
     leaveSession,
+    endSession,
+    submitVote,
+    finalizeVotes,
     getRecommendations,
     restoreSession,
     createSession,
     joinSession,
-  } = useSession();
+    isActiveForCode,
+    resetSession,
+  } = useSessionContext();
 
   const bootstrapConsumed = useRef(false);
 
   useEffect(() => {
+    const normalizedRouteCode = routeCode
+      ? normalizeSessionCode(routeCode)
+      : "";
+
+    if (
+      normalizedRouteCode &&
+      (isActiveForCode(normalizedRouteCode) ||
+        (status !== "idle" &&
+          status !== "ended" &&
+          session?.code === normalizedRouteCode))
+    ) {
+      bootstrapConsumed.current = true;
+      return;
+    }
+    if (status === "ended") {
+      const intent = resolveSessionBootstrapIntent(searchParams, routeCode);
+      if (intent.kind === "create" || intent.kind === "join") {
+        bootstrapConsumed.current = false;
+        resetSession();
+        return;
+      }
+    }
+
     if (bootstrapConsumed.current || status !== "idle") return;
 
     const intent = resolveSessionBootstrapIntent(searchParams, routeCode);
@@ -71,12 +109,23 @@ export const useSessionPage = () => {
     createSession,
     joinSession,
     restoreSession,
+    isActiveForCode,
+    resetSession,
+    session?.code,
   ]);
 
   const exitSessionAndReturnHome = useCallback(async () => {
+    if (isHost && status === "ready") {
+      await endSession();
+      return;
+    }
     await leaveSession();
     navigate("/");
-  }, [leaveSession, navigate]);
+  }, [endSession, isHost, leaveSession, navigate, status]);
+
+  const returnHomeFromEndedSession = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
 
   const openVenueFromRecommendation = useCallback(
     (venueId: string) => {
@@ -101,6 +150,17 @@ export const useSessionPage = () => {
   const refreshRecommendations = useCallback(() => {
     void getRecommendations();
   }, [getRecommendations]);
+
+  const submitVenueVote = useCallback(
+    (venueId: string) => {
+      void submitVote(venueId);
+    },
+    [submitVote],
+  );
+
+  const finalizeSessionVotes = useCallback(() => {
+    void finalizeVotes();
+  }, [finalizeVotes]);
 
   const leaveActionLabel = isHost
     ? t("session.page.recs.end")
@@ -164,8 +224,19 @@ export const useSessionPage = () => {
       forLabel: t("session.page.recs.forLabel"),
       emptyTitle: t("session.page.recs.empty.title"),
       emptySubtitle: t("session.page.recs.empty.subtitle"),
+      finalizeVotes: t("session.page.votes.finalize"),
+      finalizingVotes: t("session.page.votes.finalizing"),
     }),
     [t, memberCount, recommendationCount],
+  );
+
+  const endedCopy = useMemo(
+    () => ({
+      title: t("session.page.ended.title"),
+      subtitle: t("session.page.ended.subtitle"),
+      back: t("session.page.ended.back"),
+    }),
+    [t],
   );
 
   const loadingCopy = useMemo(
@@ -196,23 +267,33 @@ export const useSessionPage = () => {
     status,
     session,
     recommendations,
+    votes,
     error,
     isHost,
     memberCount,
     isRestoring,
     recommendationCount,
+    isSubmittingVote,
+    isFinalizingVotes,
+    myVoteVenueId,
+    winningVenueId,
+    hasFinalizedWinner,
     leaveActionLabel,
     capacityPresentation,
     showSessionCodeInTopBar,
     isWaitingPhase,
     exitSessionAndReturnHome,
+    returnHomeFromEndedSession,
     openVenueFromRecommendation,
     requestDefaultRecommendations,
     requestRecommendationBatch,
     refreshRecommendations,
+    submitVenueVote,
+    finalizeSessionVotes,
     waitingRoomCopy,
     recommendationsCopy,
     loadingCopy,
     idleCopy,
+    endedCopy,
   };
 };

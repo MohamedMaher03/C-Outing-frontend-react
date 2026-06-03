@@ -11,6 +11,7 @@ import { AuthStatusBanner } from "@/features/auth/components/ui/AuthStatusBanner
 import { LogoutProgressOverlay } from "@/features/auth/components/ui/LogoutProgressOverlay";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { LanguageToggle, useI18n } from "@/components/i18n";
+import { SessionProvider } from "@/features/session/context/SessionContext";
 import logo from "@/assets/images/logo3.png";
 
 const AppLayout = () => {
@@ -28,6 +29,11 @@ const AppLayout = () => {
   const handleLogout = async () => {
     await logoutUser();
   };
+
+  const outletAnimationKey = useMemo(() => {
+    if (location.pathname.startsWith("/session")) return "/session";
+    return location.pathname;
+  }, [location.pathname]);
 
   const navItems = useMemo(
     () => [
@@ -73,7 +79,8 @@ const AppLayout = () => {
   };
 
   return (
-    <NotificationsCountProvider>
+    <SessionProvider>
+      <NotificationsCountProvider>
       <div className="min-h-screen bg-background flex flex-col">
         {logoutError && (
           <div className="fixed left-1/2 top-3 z-[90] w-[min(92vw,30rem)] -translate-x-1/2 md:left-auto md:top-[calc(4rem+0.75rem)] md:w-[min(28rem,calc(100vw-2rem))] md:translate-x-0 md:[inset-inline-end:1rem]">
@@ -154,7 +161,7 @@ const AppLayout = () => {
 
         <main className="flex-1 pb-[calc(5rem+max(env(safe-area-inset-bottom),0px))] md:pb-0">
           <motion.div
-            key={location.pathname}
+            key={outletAnimationKey}
             initial={
               shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }
             }
@@ -222,6 +229,7 @@ const AppLayout = () => {
         </nav>
       </div>
     </NotificationsCountProvider>
+    </SessionProvider>
   );
 };
 

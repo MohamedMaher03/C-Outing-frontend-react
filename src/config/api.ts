@@ -128,8 +128,13 @@ export const API_ENDPOINTS = {
     create: "/api/v1/Session",
     join: (code: string) => `/api/v1/Session/${code}/join`,
     leave: (code: string) => `/api/v1/Session/${code}/leave`,
+    end: (code: string) => `/api/v1/Session/${code}/end`,
     get: (code: string) => `/api/v1/Session/${code}`,
     recommend: (code: string) => `/api/v1/Session/${code}/recommend`,
+    vote: (code: string) => `/api/v1/Session/${code}/vote`,
+    voteFinalize: (code: string) => `/api/v1/Session/${code}/vote/finalize`,
+    votes: (code: string) => `/api/v1/Session/${code}/votes`,
+    hub: "/hubs/session",
   },
 
   moderator: {

@@ -10,6 +10,8 @@ export interface Session {
   members: SessionMember[];
   createdAt: string;
   status: "waiting" | "ready";
+  memberVotes?: Record<string, string>;
+  winningVenueId?: string | null;
 }
 
 export type SessionStatus =
@@ -18,7 +20,21 @@ export type SessionStatus =
   | "joining"
   | "waiting"
   | "loading-recs"
-  | "ready";
+  | "ready"
+  | "ended";
+
+export interface SessionVoteOption {
+  venueId: string;
+  votes: number;
+}
+
+export interface SessionVotes {
+  code: string;
+  totalMembers: number;
+  submittedVotes: number;
+  options: SessionVoteOption[];
+  winningVenueId: string | null;
+}
 
 export const RECOMMENDATION_COUNT_OPTIONS = [10, 20, 30] as const;
 export type RecommendationCount = (typeof RECOMMENDATION_COUNT_OPTIONS)[number];

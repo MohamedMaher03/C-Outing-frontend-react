@@ -221,8 +221,7 @@ function App() {
             <Route path="/profile/privacy" element={<PrivacyPage />} />
             <Route path="/profile/help" element={<HelpSupportPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
-            <Route path="/session/:code" element={<SessionPage />} />
-            <Route path="/session" element={<SessionPage />} />
+            <Route path="/session/:code?" element={<SessionPage />} />
             <Route
               path="/notifications"
               element={<Navigate to="/" replace />}

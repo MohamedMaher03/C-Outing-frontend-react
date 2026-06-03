@@ -1,6 +1,14 @@
 import axiosInstance from "@/config/axios.config";
 import { API_ENDPOINTS } from "@/config/api";
-import type { Session, SessionRecommendation } from "../types/session.types";
+import type {
+  Session,
+  SessionRecommendation,
+  SessionVotes,
+} from "../types/session.types";
+import {
+  normalizeSession,
+  normalizeSessionVotes,
+} from "../utils/normalizeSessionPayload";
 
 interface SessionRecommendationVenue {
   id: string;
@@ -55,7 +63,7 @@ export const sessionApi = {
     const response = await axiosInstance.post<Session>(
       API_ENDPOINTS.session.join(code),
     );
-    return response.data;
+    return normalizeSession(response.data) ?? response.data;
   },
 
   async leaveSession(code: string): Promise<void> {
@@ -66,7 +74,7 @@ export const sessionApi = {
     const response = await axiosInstance.get<Session>(
       API_ENDPOINTS.session.get(code),
     );
-    return response.data;
+    return normalizeSession(response.data) ?? response.data;
   },
 
   async getRecommendations(
@@ -81,5 +89,47 @@ export const sessionApi = {
     return [...entries]
       .sort((left, right) => left.rank - right.rank)
       .map(({ venue }) => mapVenueToRecommendation(venue));
+  },
+
+  async endSession(code: string): Promise<void> {
+    await axiosInstance.post(API_ENDPOINTS.session.end(code));
+  },
+
+  async submitVote(code: string, venueId: string): Promise<SessionVotes> {
+    const response = await axiosInstance.post<SessionVotes>(
+      API_ENDPOINTS.session.vote(code),
+      { venueId },
+    );
+    return (
+      normalizeSessionVotes(response.data, code) ?? {
+        code,
+        totalMembers: 0,
+        submittedVotes: 0,
+        options: [],
+        winningVenueId: null,
+      }
+    );
+  },
+
+  async finalizeVotes(code: string): Promise<SessionVotes> {
+    const response = await axiosInstance.post<SessionVotes>(
+      API_ENDPOINTS.session.voteFinalize(code),
+    );
+    return (
+      normalizeSessionVotes(response.data, code) ?? {
+        code,
+        totalMembers: 0,
+        submittedVotes: 0,
+        options: [],
+        winningVenueId: null,
+      }
+    );
+  },
+
+  async getVotes(code: string): Promise<SessionVotes | null> {
+    const response = await axiosInstance.get<SessionVotes>(
+      API_ENDPOINTS.session.votes(code),
+    );
+    return normalizeSessionVotes(response.data, code);
   },
 };
