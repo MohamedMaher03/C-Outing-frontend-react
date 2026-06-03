@@ -25,7 +25,7 @@ interface SessionRecommendationVenue {
 
 interface SessionRecommendationEntry {
   rank: number;
-  venue: SessionRecommendationVenue;
+  venue: SessionRecommendationVenue | null;
 }
 
 interface SessionRecommendationsResponse {
@@ -46,6 +46,12 @@ const mapVenueToRecommendation = (
     ? venue.atmosphereTags
     : [],
 });
+
+const isValidRecommendationEntry = (
+  entry: SessionRecommendationEntry,
+): entry is SessionRecommendationEntry & {
+  venue: SessionRecommendationVenue;
+} => entry.venue !== null;
 
 export const sessionApi = {
   async createSession(): Promise<string> {
@@ -87,6 +93,7 @@ export const sessionApi = {
     );
     const entries = response.data?.recommendations ?? [];
     return [...entries]
+      .filter(isValidRecommendationEntry)
       .sort((left, right) => left.rank - right.rank)
       .map(({ venue }) => mapVenueToRecommendation(venue));
   },
