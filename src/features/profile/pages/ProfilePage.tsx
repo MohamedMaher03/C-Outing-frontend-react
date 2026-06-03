@@ -11,6 +11,7 @@ import {
   X,
   Check,
   CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +29,7 @@ import { FAVORITE_ACTIVITIES, COMPANION_TYPES } from "@/features/onboarding/mock
 import { PreferenceValidationAlert } from "@/features/onboarding/components/PreferenceValidationAlert";
 import { PreferenceSectionHint } from "@/features/onboarding/components/PreferenceSectionHint";
 import { useProfilePage } from "@/features/profile/hooks/useProfilePage";
+import { PREFERENCE_SECTION_IDS } from "@/features/profile/utils/preferenceValidationChrome";
 import type { VibeBand } from "@/features/onboarding/utils/vibeBand";
 
 const VIBE_BAND_ICONS: Record<VibeBand, typeof Moon> = {
@@ -74,6 +76,8 @@ const ProfilePage = () => {
     sectionIssueRing,
     applyVibePreset,
     persistPreferences,
+    validationToast,
+    dismissValidationToast,
     openEditProfile,
     openAccountRoute,
     budgetOptions,
@@ -111,6 +115,28 @@ const ProfilePage = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 pb-24 pt-[clamp(1rem,2vw,1.5rem)] md:pb-6 md:pt-[clamp(1.25rem,2.5vw,2rem)] space-y-[clamp(1rem,2.4vw,2rem)] text-foreground">
+      {validationToast ? (
+        <div
+          className="fixed bottom-20 left-4 right-4 z-50 flex justify-center pointer-events-none sm:bottom-6 sm:left-auto sm:right-6 sm:justify-end"
+          role="alert"
+          aria-live="assertive"
+        >
+          <div className="pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-xl border border-destructive/30 bg-destructive px-4 py-3 text-destructive-foreground shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-300 motion-reduce:animate-none">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p className="flex-1 text-sm font-medium leading-snug break-words">
+              {validationToast.message}
+            </p>
+            <button
+              type="button"
+              onClick={dismissValidationToast}
+              className="rounded-md p-0.5 opacity-80 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive-foreground/50"
+              aria-label={t("common.dismiss")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-card/60 p-4 sm:p-5">
         <div className="h-16 w-16 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
           <img
@@ -219,15 +245,11 @@ const ProfilePage = () => {
             value="preferences"
             className="space-y-[clamp(1.25rem,2.5vw,2.25rem)] pt-4"
           >
-            {showPreferencesError ? (
-              <PreferenceValidationAlert
-                variant="error"
-                validationIssues={saveValidationIssues}
-                errorMessage={error}
-              />
-            ) : null}
-
-            <div className={cn("space-y-3 p-1", sectionIssueRing("interests"))}>
+            <div
+              id={PREFERENCE_SECTION_IDS.interests}
+              tabIndex={-1}
+              className={cn("space-y-3 p-1 outline-none", sectionIssueRing("interests"))}
+            >
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-role-caption text-foreground uppercase tracking-wider font-semibold">
                   {t("profile.preferences.interests")}
@@ -258,7 +280,11 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            <div className={cn("space-y-3 p-1", sectionIssueRing("vibe"))}>
+            <div
+              id={PREFERENCE_SECTION_IDS.vibe}
+              tabIndex={-1}
+              className={cn("space-y-3 p-1 outline-none", sectionIssueRing("vibe"))}
+            >
               <h3 className="text-role-caption text-foreground uppercase tracking-wider font-semibold">
                 {t("profile.preferences.vibe")}
               </h3>
@@ -323,7 +349,11 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            <div className={cn("space-y-3 p-1", sectionIssueRing("districts"))}>
+            <div
+              id={PREFERENCE_SECTION_IDS.districts}
+              tabIndex={-1}
+              className={cn("space-y-3 p-1 outline-none", sectionIssueRing("districts"))}
+            >
               <h3 className="text-role-caption text-foreground uppercase tracking-wider font-semibold">
                 {t("profile.preferences.areas")}
               </h3>
@@ -419,7 +449,11 @@ const ProfilePage = () => {
               </div>
             </div>
 
-            <div className={cn("space-y-3 p-1", sectionIssueRing("budget"))}>
+            <div
+              id={PREFERENCE_SECTION_IDS.budget}
+              tabIndex={-1}
+              className={cn("space-y-3 p-1 outline-none", sectionIssueRing("budget"))}
+            >
               <h3 className="text-role-caption text-foreground uppercase tracking-wider font-semibold">
                 {t("profile.preferences.budget")}
               </h3>
@@ -444,8 +478,10 @@ const ProfilePage = () => {
             </div>
 
             <div
+              id={PREFERENCE_SECTION_IDS.favoriteActivities}
+              tabIndex={-1}
               className={cn(
-                "space-y-3 p-1",
+                "space-y-3 p-1 outline-none",
                 sectionIssueRing("favoriteActivities"),
               )}
             >
@@ -475,8 +511,10 @@ const ProfilePage = () => {
             </div>
 
             <div
+              id={PREFERENCE_SECTION_IDS.companionTypes}
+              tabIndex={-1}
               className={cn(
-                "space-y-3 p-1",
+                "space-y-3 p-1 outline-none",
                 sectionIssueRing("companionTypes"),
               )}
             >
@@ -506,6 +544,13 @@ const ProfilePage = () => {
             </div>
 
             <div className="space-y-2">
+              {showPreferencesError ? (
+                <PreferenceValidationAlert
+                  variant="error"
+                  validationIssues={saveValidationIssues}
+                  errorMessage={error}
+                />
+              ) : null}
               <Button
                 onClick={() => void persistPreferences()}
                 disabled={saving}

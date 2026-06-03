@@ -57,6 +57,8 @@ describe("useProfile", () => {
       vibe: 60,
       districts: ["Maadi"],
       budget: "cheap",
+      favoriteActivities: ["walks"],
+      companionTypes: ["friends"],
     } as never);
 
     mockedUpdateUserPreferences.mockResolvedValue({
@@ -64,6 +66,8 @@ describe("useProfile", () => {
       vibe: 70,
       districts: ["Maadi"],
       budget: "midrange",
+      favoriteActivities: ["walks"],
+      companionTypes: ["friends"],
     } as never);
 
     mockedSignOut.mockResolvedValue(undefined);
@@ -93,15 +97,20 @@ describe("useProfile", () => {
       result.current.setSelectedBudget("midrange");
     });
 
+    let saveResult: Awaited<ReturnType<typeof result.current.savePreferences>>;
+
     await act(async () => {
-      await result.current.savePreferences();
+      saveResult = await result.current.savePreferences();
     });
 
+    expect(saveResult!.ok).toBe(true);
     expect(mockedUpdateUserPreferences).toHaveBeenCalledWith({
       interests: ["Cafes", "Music"],
       vibe: 60,
       districts: ["Maadi"],
       budget: "midrange",
+      favoriteActivities: ["walks"],
+      companionTypes: ["friends"],
     });
   });
 

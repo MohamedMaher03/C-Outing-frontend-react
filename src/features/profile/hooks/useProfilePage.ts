@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "@/components/i18n";
 import { POPULAR_DISTRICTS } from "@/mocks/mockData";
@@ -14,7 +14,9 @@ import { buildOnboardingVibeCopy } from "@/features/onboarding/utils/onboardingP
 import { resolveVibeBand, VIBE_PRESET_SCORES } from "@/features/onboarding/utils/vibeBand";
 import {
   preferenceFieldHasIssue,
+  scrollToPreferenceSection,
 } from "@/features/profile/utils/preferenceValidationChrome";
+import { formatPreferenceValidationIssues } from "@/features/onboarding/utils/preferenceValidationI18n";
 import {
   buildProfileHeaderView,
   resolveAccountChevronClass,
@@ -29,6 +31,13 @@ const PROFILE_DISTRICT_PAGE_SIZE = 8;
 const PROFILE_BUDGET_OPTIONS =
   SHARED_BUDGET_OPTIONS as Array<{ value: PriceLevel; label: string }>;
 
+const VALIDATION_TOAST_DURATION_MS = 6000;
+
+export type ProfileValidationToast = {
+  id: number;
+  message: string;
+};
+
 export const useProfilePage = () => {
   const navigate = useNavigate();
   const { t, formatNumber, direction } = useI18n();
@@ -37,6 +46,9 @@ export const useProfilePage = () => {
   const [activeTab, setActiveTab] = useState("preferences");
   const [districtSearch, setDistrictSearch] = useState("");
   const [districtPage, setDistrictPage] = useState(1);
+  const [validationToast, setValidationToast] =
+    useState<ProfileValidationToast | null>(null);
+  const validationToastTimerRef = useRef<number | null>(null);
 
   const labels = useMemo(() => createPreferenceLabelResolvers(t), [t]);
   const accountRoutes = useMemo(() => localizeAccountRoutes(t), [t]);
@@ -113,19 +125,69 @@ export const useProfilePage = () => {
     [profileState],
   );
 
+  const showValidationToast = useCallback(
+    (message: string) => {
+      if (validationToastTimerRef.current != null) {
+        window.clearTimeout(validationToastTimerRef.current);
+      }
+
+      const id = Date.now();
+      setValidationToast({ id, message });
+
+      validationToastTimerRef.current = window.setTimeout(() => {
+        setValidationToast((current) =>
+          current?.id === id ? null : current,
+        );
+        validationToastTimerRef.current = null;
+      }, VALIDATION_TOAST_DURATION_MS);
+    },
+    [],
+  );
+
+  useEffect(
+    () => () => {
+      if (validationToastTimerRef.current != null) {
+        window.clearTimeout(validationToastTimerRef.current);
+      }
+    },
+    [],
+  );
+
   const persistPreferences = useCallback(async () => {
     try {
-      await profileState.savePreferences();
+      const result = await profileState.savePreferences();
+
+      if (!result.ok) {
+        if (result.issues.length === 0) {
+          return;
+        }
+
+        const messages = formatPreferenceValidationIssues(result.issues, t);
+        const toastMessage =
+          messages.length > 1
+            ? t("profile.preferences.validationToastMultiple", {
+                message: messages[0],
+                count: messages.length,
+              })
+            : messages[0];
+
+        showValidationToast(toastMessage);
+        scrollToPreferenceSection(result.issues[0].field);
+        return;
+      }
     } catch (error: unknown) {
+      const message = getErrorMessage(
+        error,
+        t("profile.error.savePreferencesFallback"),
+      );
+
+      showValidationToast(message);
       console.error("[useProfilePage] Failed to persist profile preferences.", {
-        message: getErrorMessage(
-          error,
-          "Unable to save profile preferences right now.",
-        ),
+        message,
         error: error instanceof Error ? error : undefined,
       });
     }
-  }, [profileState]);
+  }, [profileState, showValidationToast, t]);
 
   const openEditProfile = useCallback(() => navigate("/profile/edit"), [navigate]);
   const openAccountRoute = useCallback(
@@ -161,6 +223,8 @@ export const useProfilePage = () => {
     sectionIssueRing,
     applyVibePreset,
     persistPreferences,
+    validationToast,
+    dismissValidationToast: () => setValidationToast(null),
     openEditProfile,
     openAccountRoute,
     budgetOptions: PROFILE_BUDGET_OPTIONS,

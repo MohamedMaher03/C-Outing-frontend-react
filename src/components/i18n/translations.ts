@@ -504,7 +504,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
     "home.hero.title": "Discover Cairo",
     "home.hero.subtitle":
-      "Powered spots curated for your vibe. Where are we heading today?",
+      "Tuned spots curated for your vibe. Where are we heading today?",
     "home.hero.searchPlaceholder": "Search places, districts, or tags...",
     "home.hero.searchAria": "Search Cairo venues",
     "home.hero.searchAction": "Search",
@@ -735,8 +735,10 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "session.page.recs.cardAria": "View {name}",
     "session.page.votes.title": "Group Vote",
     "session.page.votes.progress": "{submitted} of {total} voted",
-    "session.page.votes.finalized": "Winner chosen — host can end the session when ready.",
-    "session.page.votes.waitingHost": "All votes in — waiting for host to finalize.",
+    "session.page.votes.finalized":
+      "Winner chosen — host can end the session when ready.",
+    "session.page.votes.waitingHost":
+      "All votes in — waiting for host to finalize.",
     "session.page.votes.finalize": "Pick Winner",
     "session.page.votes.finalizing": "Finalizing…",
     "session.page.votes.vote": "Vote for this place",
@@ -1591,6 +1593,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.preferences.saving": "Saving changes...",
     "profile.preferences.saveSuccess":
       "Your preferences were saved successfully.",
+    "profile.preferences.validationToastMultiple":
+      "{message} ({count} issues total)",
     "profile.account.appearanceTitle": "Appearance",
     "profile.account.appearanceDescription": "Choose your default app theme.",
     "profile.account.item.edit.label": "Edit Profile",
@@ -1698,7 +1702,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.help.contactTitle": "Contact Support",
     "profile.help.contact.emailLabel": "Email Support",
     "profile.help.contact.comingSoon": "Coming Soon",
-    "profile.help.version": "C-Outing App v{version}",
+    "profile.help.version": "Cairo-Outing website v{version}",
     "profile.help.replyTime": "We usually reply within one business day.",
     "profile.help.faqTitle": "Frequently Asked Questions",
     "profile.help.searchPlaceholder": "Search help topics",
@@ -3291,6 +3295,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.preferences.save": "حفظ تغييرات التفضيلات",
     "profile.preferences.saving": "جارٍ حفظ التغييرات...",
     "profile.preferences.saveSuccess": "تم حفظ تفضيلاتك بنجاح.",
+    "profile.preferences.validationToastMultiple":
+      "{message} ({count} مشكلات إجمالاً)",
     "profile.account.appearanceTitle": "المظهر",
     "profile.account.appearanceDescription": "اختر نمط التطبيق الافتراضي.",
     "profile.account.item.edit.label": "تعديل الملف الشخصي",
@@ -3395,7 +3401,7 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "profile.help.contactTitle": "التواصل مع الدعم",
     "profile.help.contact.emailLabel": "الدعم عبر البريد الإلكتروني",
     "profile.help.contact.comingSoon": "قريبًا",
-    "profile.help.version": "تطبيق C-Outing الإصدار {version}",
+    "profile.help.version": " موقع Cairo-Outing الإصدار {version}",
     "profile.help.replyTime": "نرد عادة خلال يوم عمل واحد.",
     "profile.help.faqTitle": "الأسئلة الشائعة",
     "profile.help.searchPlaceholder": "ابحث في مواضيع المساعدة",
@@ -3600,8 +3606,10 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "session.page.recs.cardAria": "عرض {name}",
     "session.page.votes.title": "تصويت المجموعة",
     "session.page.votes.progress": "{submitted} من {total} صوّتوا",
-    "session.page.votes.finalized": "اتختار الفائز — المضيف يقدر ينهي الجلسة لما يكون جاهز.",
-    "session.page.votes.waitingHost": "كل الأصوات وصلت — مستنيين المضيف يختار الفائز.",
+    "session.page.votes.finalized":
+      "اتختار الفائز — المضيف يقدر ينهي الجلسة لما يكون جاهز.",
+    "session.page.votes.waitingHost":
+      "كل الأصوات وصلت — مستنيين المضيف يختار الفائز.",
     "session.page.votes.finalize": "اختيار الفائز",
     "session.page.votes.finalizing": "جارٍ الاختيار…",
     "session.page.votes.vote": "صوّت للمكان ده",
@@ -3611,7 +3619,8 @@ export const TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "session.page.votes.winner": "الفائز",
     "session.page.votes.count": "{count} صوت",
     "session.page.ended.title": "الجلسة انتهت",
-    "session.page.ended.subtitle": "شكرًا على التخطيط سوا. نشوفكم في الخروجة الجاية!",
+    "session.page.ended.subtitle":
+      "شكرًا على التخطيط سوا. نشوفكم في الخروجة الجاية!",
     "session.page.ended.back": "رجوع للرئيسية",
     "session.page.idle.title": "الجلسة غير موجودة",
     "session.page.idle.subtitle": "ممكن تكون الجلسة انتهت أو الكود غير صحيح.",

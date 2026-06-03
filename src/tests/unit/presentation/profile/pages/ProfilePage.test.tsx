@@ -61,7 +61,7 @@ const baseHookState = {
   setVibe: jest.fn(),
   toggleDistrict: jest.fn(),
   setSelectedBudget: jest.fn(),
-  savePreferences: jest.fn().mockResolvedValue(undefined),
+  savePreferences: jest.fn().mockResolvedValue({ ok: true }),
   handleSignOut: jest.fn().mockResolvedValue(undefined),
   refreshProfile: jest.fn().mockResolvedValue(undefined),
 };

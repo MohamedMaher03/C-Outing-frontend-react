@@ -39,10 +39,14 @@ interface UseProfileReturn {
   setSelectedBudget: (budget: PriceLevel) => void;
   toggleActivity: (id: string) => void;
   toggleCompanionType: (id: string) => void;
-  savePreferences: () => Promise<void>;
+  savePreferences: () => Promise<SavePreferencesResult>;
   handleSignOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
+
+type SavePreferencesResult =
+  | { ok: true }
+  | { ok: false; issues: PreferenceValidationIssue[] };
 
 export const useProfile = (): UseProfileReturn => {
   const { t } = useI18n();
@@ -143,9 +147,9 @@ export const useProfile = (): UseProfileReturn => {
     companionTypes: selectedCompanionTypes,
   });
 
-  const savePreferences = async () => {
+  const savePreferences = async (): Promise<SavePreferencesResult> => {
     if (saveInFlightRef.current || saving) {
-      return;
+      return { ok: false, issues: [] };
     }
 
     const validationIssues = validateOnboardingPreferences(
@@ -156,7 +160,7 @@ export const useProfile = (): UseProfileReturn => {
       setSaveSuccess(false);
       setSaveValidationIssues(validationIssues);
       setError(null);
-      return;
+      return { ok: false as const, issues: validationIssues };
     }
 
     saveInFlightRef.current = true;
@@ -178,6 +182,7 @@ export const useProfile = (): UseProfileReturn => {
 
       setPreferences(updatedPreferences);
       setSaveSuccess(true);
+      return { ok: true as const };
     } catch (err) {
       setSaveSuccess(false);
       setError(
