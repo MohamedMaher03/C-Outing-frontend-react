@@ -48,6 +48,8 @@ export function useSession() {
   const recsFetchedRef = useRef(false);
   const recsLoadingRef = useRef(false);
   const hubConnectedRef = useRef(false);
+  const syncInProgressRef = useRef(false);
+  const recsAutoFetchBlockedRef = useRef(false);
 
   const localMyVoteRef = useRef<string | undefined>(undefined);
 
@@ -99,12 +101,18 @@ export function useSession() {
       code: string,
       count: RecommendationCount = DEFAULT_RECOMMENDATION_COUNT,
     ) => {
-      if (recsFetchedRef.current || recsLoadingRef.current) return;
+      if (
+        recsFetchedRef.current ||
+        recsLoadingRef.current ||
+        recsAutoFetchBlockedRef.current
+      )
+        return;
       recsLoadingRef.current = true;
       try {
         const recs = await sessionApi.getRecommendations(code, { count });
         persistSessionRecommendations(code, count, recs);
         recsFetchedRef.current = true;
+        recsAutoFetchBlockedRef.current = false;
         setRecommendationCount(count);
         setRecommendations(recs);
         setStatus("ready");
@@ -116,6 +124,7 @@ export function useSession() {
         }
       } catch {
         recsFetchedRef.current = false;
+        recsAutoFetchBlockedRef.current = true;
       } finally {
         recsLoadingRef.current = false;
       }
@@ -168,6 +177,8 @@ export function useSession() {
       sessionCodeRef.current = null;
       recsFetchedRef.current = false;
       recsLoadingRef.current = false;
+      recsAutoFetchBlockedRef.current = false;
+      syncInProgressRef.current = false;
       hubConnectedRef.current = false;
       localMyVoteRef.current = undefined;
       purgeSessionRecommendationCache(code);
@@ -226,8 +237,13 @@ export function useSession() {
     const code = sessionCodeRef.current;
     if (!code) return;
 
+    if (syncInProgressRef.current) return;
+    syncInProgressRef.current = true;
+
     try {
       const updated = await sessionApi.getSession(code);
+      if (sessionCodeRef.current !== code) return;
+
       applySessionSnapshot(updated);
 
       if (updated.status === "ready") {
@@ -235,11 +251,15 @@ export function useSession() {
           const tally = await sessionApi.getVotes(code);
           updateVotesWithGuard(tally);
         } catch {
-          console.warn("Failed to sync votes with session snapshot.");
+          console.warn(
+            "Failed to fetch votes during sync; keeping existing votes.",
+          );
         }
       }
     } catch {
-      return;
+      // network error — next tick will retry
+    } finally {
+      syncInProgressRef.current = false;
     }
   }, [applySessionSnapshot, updateVotesWithGuard]);
 
@@ -285,7 +305,7 @@ export function useSession() {
       onSessionEnded: (endedCode) =>
         handlersRef.current.onSessionEnded(endedCode),
     });
-  });
+  }, []);
 
   useEffect(
     () => () => {
@@ -300,10 +320,12 @@ export function useSession() {
       setStatus("loading-recs");
       setRecommendationCount(count);
       recsLoadingRef.current = true;
+      recsAutoFetchBlockedRef.current = false;
       try {
         const recs = await sessionApi.getRecommendations(code, { count });
         persistSessionRecommendations(code, count, recs);
         recsFetchedRef.current = true;
+        recsAutoFetchBlockedRef.current = false;
         setRecommendations(recs);
         setStatus("ready");
         try {
@@ -314,6 +336,7 @@ export function useSession() {
         }
       } catch (err) {
         recsFetchedRef.current = false;
+        recsAutoFetchBlockedRef.current = true;
         setError(resolveErrorMessage(err, "Failed to fetch recommendations."));
         setRecommendations((existing) => {
           setStatus(existing?.length ? "ready" : "waiting");
@@ -333,6 +356,8 @@ export function useSession() {
       sessionCodeRef.current = null;
       recsFetchedRef.current = false;
       recsLoadingRef.current = false;
+      recsAutoFetchBlockedRef.current = false;
+      syncInProgressRef.current = false;
       hubConnectedRef.current = false;
       localMyVoteRef.current = undefined;
       setSession(null);
@@ -349,6 +374,8 @@ export function useSession() {
     sessionCodeRef.current = null;
     recsFetchedRef.current = false;
     recsLoadingRef.current = false;
+    recsAutoFetchBlockedRef.current = false;
+    syncInProgressRef.current = false;
     hubConnectedRef.current = false;
     localMyVoteRef.current = undefined;
     setSession(null);
@@ -397,6 +424,7 @@ export function useSession() {
     setError(null);
     setStatus("creating");
     recsFetchedRef.current = false;
+    recsAutoFetchBlockedRef.current = false;
     try {
       const code = await sessionApi.createSession();
       const newSession = await sessionApi.getSession(code);
@@ -418,6 +446,7 @@ export function useSession() {
       setError(null);
       setStatus("joining");
       recsFetchedRef.current = false;
+      recsAutoFetchBlockedRef.current = false;
       try {
         const joined = await sessionApi.joinSession(code);
         await activateSession(code, joined);
@@ -513,6 +542,7 @@ export function useSession() {
       if (!code) return;
       setError(null);
       recsFetchedRef.current = false;
+      recsAutoFetchBlockedRef.current = false;
       await loadRecommendationsForSession(code, count);
     },
     [session?.code, recommendationCount, loadRecommendationsForSession],
@@ -530,6 +560,7 @@ export function useSession() {
       setError(null);
       setIsRestoring(true);
       recsFetchedRef.current = false;
+      recsAutoFetchBlockedRef.current = false;
       try {
         const existing = await sessionApi.getSession(code);
         await activateSession(code, existing);
