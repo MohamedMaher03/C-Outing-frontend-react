@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useReducedMotion } from "framer-motion";
 import { useI18n } from "@/components/i18n/useI18n";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { useSessionContext } from "../context/SessionContext";
+import { useSessionContext } from "../context/useSessionContext";
 import { normalizeSessionCode } from "../utils/sessionCode";
 import { DEFAULT_RECOMMENDATION_COUNT } from "../types/session.types";
 import type {
