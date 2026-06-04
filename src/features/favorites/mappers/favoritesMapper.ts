@@ -1,6 +1,6 @@
 import type { PaginatedResponse } from "@/types";
 import type { FavoriteItem } from "../types";
-import { clampInteger, dedupeByKey } from "@/utils/mapper";
+import { clampInteger, dedupeByKey } from "@/mapper";
 import {
   normalizePageIndex,
   normalizePageSize,

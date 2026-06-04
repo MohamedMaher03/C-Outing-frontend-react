@@ -29,7 +29,7 @@ import {
   dedupeByKey,
   resolveVenuePriceLevel,
   unwrapNestedDataPayload,
-} from "@/utils/mapper";
+} from "@/mapper";
 import { isObjectRecord } from "@/utils/typeGuards";
 
 const clampReviewRating = (...values: unknown[]): number =>
@@ -111,7 +111,9 @@ const normalizeMetroStations = (raw: unknown): MetroStation[] => {
     .map((station, index) => ({
       rank: Math.max(
         1,
-        Math.round(coerceFirstFiniteNumber(station.rank, station.Rank) ?? index + 1),
+        Math.round(
+          coerceFirstFiniteNumber(station.rank, station.Rank) ?? index + 1,
+        ),
       ),
       stationName:
         coerceFirstNonEmptyString(
@@ -119,7 +121,8 @@ const normalizeMetroStations = (raw: unknown): MetroStation[] => {
           station.stationName,
           station.name,
         ) ?? "",
-      distance: coerceFirstNonEmptyString(station.Distance, station.distance) ?? "",
+      distance:
+        coerceFirstNonEmptyString(station.Distance, station.distance) ?? "",
       time: coerceFirstNonEmptyString(station.Time, station.time) ?? "",
     }))
     .filter(
@@ -136,7 +139,8 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
   const data = isObjectRecord(payload) ? payload : {};
   const location = isObjectRecord(data.location) ? data.location : undefined;
 
-  const venueName = coerceFirstNonEmptyString(data.name, data.title) ?? "Unknown Place";
+  const venueName =
+    coerceFirstNonEmptyString(data.name, data.title) ?? "Unknown Place";
   const imageUrls = coerceStringArray(data.imageUrls, Number.MAX_SAFE_INTEGER);
   const venuePhotos = normalizeVenuePhotos(data.venuePhotos);
   const headerPhotos = venuePhotos?.header ?? [];
@@ -171,19 +175,23 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
     ) ?? getDefaultVenueImageDataUrl(venueName);
 
   const resolvedAddress =
-    coerceFirstNonEmptyString(data.address, location?.address, data.location) ?? "";
+    coerceFirstNonEmptyString(data.address, location?.address, data.location) ??
+    "";
   const resolvedLocation =
     coerceFirstNonEmptyString(data.location, data.district, resolvedAddress) ??
     resolvedAddress;
   const rawPriceRange = coerceFirstNonEmptyString(data.priceRange);
   const normalizedPriceRangeDisplay =
-    coerceFirstNonEmptyString(data.priceRange_Display, data.priceRangeDisplay) ??
-    rawPriceRange;
+    coerceFirstNonEmptyString(
+      data.priceRange_Display,
+      data.priceRangeDisplay,
+    ) ?? rawPriceRange;
 
   return {
     id: coerceFirstNonEmptyString(data.id, data.venueId) ?? "",
     name: venueName,
-    category: coerceFirstNonEmptyString(data.category, data.type) ?? "Uncategorized",
+    category:
+      coerceFirstNonEmptyString(data.category, data.type) ?? "Uncategorized",
     latitude:
       coerceFirstFiniteNumber(
         data.latitude,
@@ -206,7 +214,9 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
     rating,
     averageRating: rating,
     reviewCount,
-    likeCount: coerceNonNegativeInteger(coerceFirstFiniteNumber(data.likeCount)),
+    likeCount: coerceNonNegativeInteger(
+      coerceFirstFiniteNumber(data.likeCount),
+    ),
     description: coerceFirstNonEmptyString(data.description, data.about) ?? "",
     image: selectedImage,
     displayImageUrl: displayImageUrl ?? selectedImage,
@@ -268,21 +278,26 @@ export const normalizePlaceDetail = (raw: unknown): PlaceDetail => {
       Number.MAX_SAFE_INTEGER,
     ),
     priceMeanPerPerson: coerceFirstFiniteNumber(data.priceMeanPerPerson),
-    googleMapsTotalReviews: coerceFirstFiniteNumber(data.googleMapsTotalReviews),
+    googleMapsTotalReviews: coerceFirstFiniteNumber(
+      data.googleMapsTotalReviews,
+    ),
     originalGoogleMapsUrl: coerceFirstNonEmptyString(
       data.originalGoogleMapsUrl,
       data.googleMapsUrl,
     ),
     status: coerceFirstNonEmptyString(data.status),
     isDeprecated: coerceBoolean(data.isDeprecated),
-    personalPriceRange: coerceFirstNonEmptyString(data.personalPriceRange) ?? null,
+    personalPriceRange:
+      coerceFirstNonEmptyString(data.personalPriceRange) ?? null,
     platformRating: coerceFirstFiniteNumber(data.platformRating),
     metroStations: metroStations.length > 0 ? metroStations : undefined,
     isSaved: coerceFirstBoolean(data.isSaved, data.isFavorited),
     isFavorited: coerceFirstBoolean(data.isFavorited, data.isSaved),
     isLiked: coerceBoolean(data.isLiked),
     matchScore: coerceFirstFiniteNumber(data.matchScore),
-    googleMapsRatingStars: coerceFirstNonEmptyString(data.googleMapsRatingStars),
+    googleMapsRatingStars: coerceFirstNonEmptyString(
+      data.googleMapsRatingStars,
+    ),
     googleMapsRatingCount: coerceFirstFiniteNumber(
       data.googleMapsRatingCount,
       reviewCount,
@@ -298,7 +313,9 @@ export const normalizeReview = (raw: unknown): Review => {
   const userId =
     coerceFirstNonEmptyString(data.userId, data.authorId, data.reviewerId) ??
     "unknown-user";
-  const createdAt = coerceValidDate(data.createdAt ?? data.date ?? data.updatedAt);
+  const createdAt = coerceValidDate(
+    data.createdAt ?? data.date ?? data.updatedAt,
+  );
   const updatedAtValue = coerceFirstNonEmptyString(data.updatedAt);
   const reviewId =
     coerceFirstNonEmptyString(data.id, data.reviewId) ??
@@ -308,8 +325,11 @@ export const normalizeReview = (raw: unknown): Review => {
     id: reviewId,
     venueId,
     venueName:
-      coerceFirstNonEmptyString(data.venueName, data.placeName, data.venueTitle) ??
-      "",
+      coerceFirstNonEmptyString(
+        data.venueName,
+        data.placeName,
+        data.venueTitle,
+      ) ?? "",
     userId,
     userName:
       coerceFirstNonEmptyString(
@@ -332,7 +352,8 @@ export const normalizeReview = (raw: unknown): Review => {
       ),
     rating: clampReviewRating(data.rating, data.stars),
     comment:
-      coerceFirstNonEmptyString(data.comment, data.content, data.reviewText) ?? "",
+      coerceFirstNonEmptyString(data.comment, data.content, data.reviewText) ??
+      "",
     createdAt: createdAt.toISOString(),
     updatedAt: updatedAtValue
       ? coerceValidDate(updatedAtValue).toISOString()
@@ -349,17 +370,17 @@ export const normalizeSocialReview = (raw: unknown): SocialMediaReview => {
     coerceFirstNonEmptyString(data.userId, data.userName, data.authorName) ??
       "author",
     coerceFirstNonEmptyString(data.createdAt, data.date) ?? "date",
-    (coerceFirstNonEmptyString(data.comment, data.content, data.text) ?? "text").slice(
-      0,
-      32,
-    ),
+    (
+      coerceFirstNonEmptyString(data.comment, data.content, data.text) ?? "text"
+    ).slice(0, 32),
   ]
     .join("_")
     .toLowerCase()
     .replace(/\s+/g, "-");
 
   const platformCandidate = (
-    coerceFirstNonEmptyString(data.source, data.platform, data.siteName) ?? "google"
+    coerceFirstNonEmptyString(data.source, data.platform, data.siteName) ??
+    "google"
   )
     .trim()
     .toLowerCase();
@@ -374,7 +395,10 @@ export const normalizeSocialReview = (raw: unknown): SocialMediaReview => {
           ? "tiktok"
           : platformCandidate.includes("google")
             ? "google"
-            : coerceFirstNonEmptyString(data.platform, data.source)?.toLowerCase();
+            : coerceFirstNonEmptyString(
+                data.platform,
+                data.source,
+              )?.toLowerCase();
 
   const normalizedPlatform: SocialMediaReview["platform"] =
     platform === "instagram" ||
@@ -418,7 +442,11 @@ export const normalizeSocialReview = (raw: unknown): SocialMediaReview => {
     sentiment: normalizedSentiment,
     sentimentScore: sentimentScore ?? undefined,
     date: coerceValidDate(data.date ?? data.createdAt),
-    likes: coerceFirstFiniteNumber(data.likes, data.likeCount, data.helpfulCount),
+    likes: coerceFirstFiniteNumber(
+      data.likes,
+      data.likeCount,
+      data.helpfulCount,
+    ),
     url: coerceFirstNonEmptyString(data.url, data.link),
   };
 };
@@ -478,8 +506,11 @@ const normalizePaginatedItems = <TItem>(
   const pageSize = Math.max(
     1,
     Math.round(
-      coerceFirstFiniteNumber(pageRecord.pageSize, pageRecord.size, pageRecord.limit) ??
-        fallbackPageSize,
+      coerceFirstFiniteNumber(
+        pageRecord.pageSize,
+        pageRecord.size,
+        pageRecord.limit,
+      ) ?? fallbackPageSize,
     ),
   );
   const totalCount = Math.max(
@@ -507,7 +538,8 @@ const normalizePaginatedItems = <TItem>(
     totalCount,
     totalPages,
     hasPreviousPage:
-      coerceBoolean(pageRecord.hasPreviousPage) ?? (pageIndex > 0 && totalPages > 0),
+      coerceBoolean(pageRecord.hasPreviousPage) ??
+      (pageIndex > 0 && totalPages > 0),
     hasNextPage:
       coerceBoolean(pageRecord.hasNextPage) ??
       (totalPages > 0 ? pageIndex + 1 < totalPages : false),
@@ -533,18 +565,24 @@ export const normalizeReviewSummary = (raw: unknown): ReviewSummary => {
 
   return {
     overallSentiment,
-    averageRating: coerceFirstFiniteNumber(data.averageRating, data.avgRating) ?? 0,
+    averageRating:
+      coerceFirstFiniteNumber(data.averageRating, data.avgRating) ?? 0,
     totalReviews: coerceNonNegativeInteger(
       coerceFirstFiniteNumber(data.totalReviews, data.reviewsCount),
     ),
     summary: coerceFirstNonEmptyString(data.summary, data.description) ?? "",
     highlights: coerceStringArray(data.highlights, Number.MAX_SAFE_INTEGER),
     commonTopics: rawTopics
-      .filter((topic): topic is Record<string, unknown> => isObjectRecord(topic))
+      .filter((topic): topic is Record<string, unknown> =>
+        isObjectRecord(topic),
+      )
       .map((topic) => {
-        const topicSentiment = coerceFirstNonEmptyString(topic.sentiment)?.toLowerCase();
+        const topicSentiment = coerceFirstNonEmptyString(
+          topic.sentiment,
+        )?.toLowerCase();
         return {
-          topic: coerceFirstNonEmptyString(topic.topic, topic.name) ?? "General",
+          topic:
+            coerceFirstNonEmptyString(topic.topic, topic.name) ?? "General",
           count: coerceNonNegativeInteger(
             coerceFirstFiniteNumber(topic.count, topic.mentions),
           ),
@@ -594,8 +632,12 @@ export const normalizeLikeState = (raw: unknown): boolean | null => {
   if (!isObjectRecord(payload)) return null;
 
   return (
-    coerceFirstBoolean(payload.isLiked, payload.liked, payload.value, payload.result) ??
-    null
+    coerceFirstBoolean(
+      payload.isLiked,
+      payload.liked,
+      payload.value,
+      payload.result,
+    ) ?? null
   );
 };
 

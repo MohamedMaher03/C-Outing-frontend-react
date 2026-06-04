@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { I18nContext } from "./i18n.context";
+import { I18nContext } from "./i18nContext";
 import {
   I18N_STORAGE_KEY,
   TRANSLATIONS,
@@ -43,7 +43,9 @@ const getInitialLanguage = (): AppLanguage => {
       return stored;
     }
   } catch {
-    // Fallback to browser language when storage is unavailable.
+    console.warn(
+      "Unable to retrieve language preference. Local storage is unavailable.",
+    );
   }
 
   const browserLanguage = window.navigator.language?.toLowerCase() ?? "en";
@@ -90,7 +92,9 @@ export function I18nProvider({ children }: I18nProviderProps) {
     try {
       window.localStorage.setItem(I18N_STORAGE_KEY, nextLanguage);
     } catch {
-      // Keep state in memory if storage access fails.
+      console.warn(
+        "Unable to persist language preference. Local storage is unavailable.",
+      );
     }
   }, []);
 

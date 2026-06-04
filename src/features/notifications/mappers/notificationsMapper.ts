@@ -5,7 +5,7 @@ import {
   coerceIsoDateString,
   dedupeByKey,
   normalizeUnreadCount,
-} from "@/utils/mapper";
+} from "@/mapper";
 import { isNonEmptyString } from "@/utils/typeGuards";
 
 const DEFAULT_PAGE_INDEX = 1;
@@ -29,7 +29,8 @@ const normalizeNotification = (
     typeof notification?.id === "string" ? notification.id.trim() : "";
   const id = rawId || fallbackId;
   const rawType =
-    typeof notification?.type === "string" && notification.type.trim().length > 0
+    typeof notification?.type === "string" &&
+    notification.type.trim().length > 0
       ? notification.type.trim()
       : "system";
 
@@ -103,7 +104,10 @@ export const mapNotificationsPage = (
 ): PaginatedResponse<Notification> => {
   const pageSize = normalizePageSize(page?.pageSize);
   const items = normalizeNotificationItems(page?.items);
-  const totalCount = Math.max(normalizeUnreadCount(page?.totalCount), items.length);
+  const totalCount = Math.max(
+    normalizeUnreadCount(page?.totalCount),
+    items.length,
+  );
   const computedTotalPages =
     totalCount === 0 ? 0 : Math.max(1, Math.ceil(totalCount / pageSize));
   const totalPages = clampInteger(page?.totalPages, 0, computedTotalPages || 1);

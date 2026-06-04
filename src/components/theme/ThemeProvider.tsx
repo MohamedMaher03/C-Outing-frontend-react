@@ -27,7 +27,6 @@ const getSystemResolvedTheme = (): ResolvedTheme => {
 
   return window.matchMedia(SYSTEM_THEME_QUERY).matches ? "dark" : "light";
 };
-
 const resolveTheme = (
   themePreference: ThemePreference,
   systemTheme: ResolvedTheme,
@@ -45,7 +44,9 @@ const getStoredThemePreference = (): ThemePreference => {
       return storedPreference;
     }
   } catch {
-    // Fallback to system theme if storage is unavailable.
+    console.warn(
+      "Failed to access localStorage for theme preference. Falling back to system theme.",
+    );
   }
 
   return "system";
@@ -67,7 +68,6 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     () => resolveTheme(themePreference, systemTheme),
     [themePreference, systemTheme],
   );
-
   useEffect(() => {
     if (
       typeof window === "undefined" ||
@@ -135,7 +135,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, nextPreference);
     } catch {
-      // Ignore storage failures and keep theme state in memory.
+      console.warn(
+        "Failed to access localStorage for theme preference. Keeping theme state in memory.",
+      );
     }
   }, []);
 

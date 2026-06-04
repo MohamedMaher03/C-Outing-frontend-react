@@ -6,7 +6,7 @@ import {
   coerceStringArray,
   coerceTrimmedString,
   dedupeByKey,
-} from "@/utils/mapper";
+} from "@/mapper";
 
 const normalizeMapAtlasPlace = (place: HomePlace): HomePlace | null => {
   const id = coerceTrimmedString(place?.id);

@@ -5,7 +5,7 @@ import {
   clampRating,
   coerceOptionalIsoDateString,
   coerceTrimmedString,
-} from "@/utils/mapper";
+} from "@/mapper";
 
 export const mapProfileDtoToPublicProfile = (
   dto: UserProfileDto,
@@ -37,7 +37,8 @@ export const mapReviewDtoToActivity = (
   comment: coerceTrimmedString(dto.comment) ?? "No comment provided.",
   date: coerceOptionalIsoDateString(dto.createdAt) ?? new Date(0).toISOString(),
   sentimentScore:
-    typeof dto.sentimentScore === "number" && Number.isFinite(dto.sentimentScore)
+    typeof dto.sentimentScore === "number" &&
+    Number.isFinite(dto.sentimentScore)
       ? dto.sentimentScore
       : undefined,
   userAvatar: dto.userAvatar,

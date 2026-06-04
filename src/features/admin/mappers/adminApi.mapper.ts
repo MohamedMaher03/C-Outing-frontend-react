@@ -9,7 +9,7 @@ import {
   resolvePriceLevelFromNumeric,
   unwrapSuccessEnvelope,
   type ApiSuccessEnvelope,
-} from "@/utils/mapper";
+} from "@/mapper";
 import type {
   AdminCategory,
   AdminPlace,
@@ -153,7 +153,8 @@ const mapRole = (role: unknown): AdminUserRole => {
     if (normalized === "user") return "user";
 
     const numericRole = Number(normalized);
-    if (Number.isFinite(numericRole)) return mapRoleFromNumericCode(numericRole);
+    if (Number.isFinite(numericRole))
+      return mapRoleFromNumericCode(numericRole);
   }
 
   return "user";
@@ -222,7 +223,9 @@ export const mapAdminUser = (dto: AdminUserDto): AdminUser => ({
 });
 
 export const mapAdminUsersPage = (
-  payload: ApiSuccessEnvelope<PaginatedDto<AdminUserDto>> | PaginatedDto<AdminUserDto>,
+  payload:
+    | ApiSuccessEnvelope<PaginatedDto<AdminUserDto>>
+    | PaginatedDto<AdminUserDto>,
 ): PaginatedResponse<AdminUser> =>
   mapAdminPaginatedPage(payload, mapAdminUser, false);
 
@@ -253,7 +256,9 @@ export const mapAdminPlace = (
 });
 
 const mapAdminVenuePage = (
-  payload: ApiSuccessEnvelope<PaginatedDto<AdminVenueDto>> | PaginatedDto<AdminVenueDto>,
+  payload:
+    | ApiSuccessEnvelope<PaginatedDto<AdminVenueDto>>
+    | PaginatedDto<AdminVenueDto>,
   reportedVenueIds: Set<string>,
   statusFallback?: AdminPlaceStatusFilter,
 ): PaginatedResponse<AdminPlace> =>
@@ -268,7 +273,11 @@ export const mapAdminVenuesPage = mapAdminVenuePage;
 export const mapReportedVenueIds = (
   payload: ApiSuccessEnvelope<ReportedVenueDto[]> | ReportedVenueDto[],
 ): Set<string> =>
-  new Set(extractEnvelopeArray(unwrapSuccessEnvelope(payload)).map((venue) => venue.id));
+  new Set(
+    extractEnvelopeArray(unwrapSuccessEnvelope(payload)).map(
+      (venue) => venue.id,
+    ),
+  );
 
 export const mapCreatedAdminPlace = (
   payload: ApiSuccessEnvelope<AdminCreatedVenueDto> | AdminCreatedVenueDto,
@@ -448,12 +457,14 @@ export const toDerivedCategories = (places: AdminPlace[]): AdminCategory[] => {
     new Map(),
   );
 
-  return Array.from(venueCountByCategory.entries()).map(([category, count]) => ({
-    id: category.toLowerCase().replace(/\s+/g, "-"),
-    label: category,
-    icon: "MapPin",
-    count,
-    color: "bg-slate-100",
-    status: "active" as const,
-  }));
+  return Array.from(venueCountByCategory.entries()).map(
+    ([category, count]) => ({
+      id: category.toLowerCase().replace(/\s+/g, "-"),
+      label: category,
+      icon: "MapPin",
+      count,
+      color: "bg-slate-100",
+      status: "active" as const,
+    }),
+  );
 };

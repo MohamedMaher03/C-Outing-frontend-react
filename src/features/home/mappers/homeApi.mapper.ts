@@ -13,7 +13,7 @@ import {
   mapPayloadCollection,
   resolveCanonicalPriceLevel,
   unwrapNestedDataPayload,
-} from "@/utils/mapper";
+} from "@/mapper";
 import { isObjectRecord } from "@/utils/typeGuards";
 import type { HomePlace } from "../types";
 
