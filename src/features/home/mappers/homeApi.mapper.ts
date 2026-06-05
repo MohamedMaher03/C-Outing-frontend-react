@@ -53,7 +53,9 @@ const extractMoodRecommendations = (
   const payload = unwrapNestedDataPayload(raw, 2);
   if (!isObjectRecord(payload)) return [];
 
-  const recommendations = payload.recommendations;
+  const recommendations = Array.isArray(payload.recommendations)
+    ? payload.recommendations
+    : payload.items;
   if (!Array.isArray(recommendations)) return [];
 
   return recommendations
