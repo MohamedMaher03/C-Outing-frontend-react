@@ -29,7 +29,7 @@ interface SessionRecommendationEntry {
 }
 
 interface SessionRecommendationsResponse {
-  recommendations: SessionRecommendationEntry[];
+  items: SessionRecommendationEntry[];
 }
 
 const mapVenueToRecommendation = (
@@ -91,7 +91,7 @@ export const sessionApi = {
       API_ENDPOINTS.session.recommend(code),
       { params: { count: params?.count ?? 10 } },
     );
-    const entries = response.data?.recommendations ?? [];
+    const entries = response.data?.items ?? [];
     return [...entries]
       .filter(isValidRecommendationEntry)
       .sort((left, right) => left.rank - right.rank)
