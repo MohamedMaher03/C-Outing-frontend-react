@@ -124,6 +124,8 @@ export function useSession() {
         }
       } catch {
         recsFetchedRef.current = false;
+        // Only block auto-fetch retry if we genuinely have nothing to show.
+        // If recs are already in state (prior successful load), allow retry.
         recsAutoFetchBlockedRef.current = true;
       } finally {
         recsLoadingRef.current = false;
@@ -149,15 +151,21 @@ export function useSession() {
 
       if (updated.status === "ready") {
         const code = updated.code;
+        // If recs are already fetched or being loaded, or the UI already shows
+        // the ready screen, don't interfere — avoids the race where the 3-second
+        // sync fires right after loadRecommendationsForSession sets status="ready"
+        // and resets it back to "loading-recs".
+        const currentStatus = statusRef.current;
+        if (currentStatus === "ready" || currentStatus === "loading-recs") {
+          return;
+        }
         if (!recsFetchedRef.current && !recsLoadingRef.current) {
-          if (statusRef.current !== "loading-recs") {
-            setStatus("loading-recs");
-          }
+          setStatus("loading-recs");
           void fetchRecommendationsIfReady(
             code,
             recommendationCountRef.current,
           );
-        } else if (recsFetchedRef.current && statusRef.current === "waiting") {
+        } else if (recsFetchedRef.current) {
           setStatus("ready");
         }
       }
@@ -317,6 +325,7 @@ export function useSession() {
 
   const loadRecommendationsForSession = useCallback(
     async (code: string, count: RecommendationCount) => {
+      statusRef.current = "loading-recs";
       setStatus("loading-recs");
       setRecommendationCount(count);
       recsLoadingRef.current = true;
@@ -327,6 +336,7 @@ export function useSession() {
         recsFetchedRef.current = true;
         recsAutoFetchBlockedRef.current = false;
         setRecommendations(recs);
+        statusRef.current = "ready";
         setStatus("ready");
         try {
           const tally = await sessionApi.getVotes(code);
@@ -339,7 +349,9 @@ export function useSession() {
         recsAutoFetchBlockedRef.current = true;
         setError(resolveErrorMessage(err, "Failed to fetch recommendations."));
         setRecommendations((existing) => {
-          setStatus(existing?.length ? "ready" : "waiting");
+          const nextStatus = existing?.length ? "ready" : "waiting";
+          statusRef.current = nextStatus;
+          setStatus(nextStatus);
           return existing;
         });
       } finally {
